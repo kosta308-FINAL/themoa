@@ -1,4 +1,4 @@
-import { aiSummary } from '../../constants/mockDashboard'
+import { aiSummary } from '../../../constants/mockDashboard'
 
 function AiSummaryBanner() {
   return (

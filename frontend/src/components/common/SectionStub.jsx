@@ -1,6 +1,6 @@
-import DashboardTopNav from '../../components/dashboard/DashboardTopNav'
-import DashboardFooter from '../../components/dashboard/DashboardFooter'
-import '../Dashboard/Dashboard.css'
+import DashboardTopNav from '../layout/DashboardTopNav'
+import DashboardFooter from '../layout/DashboardFooter'
+import '../../features/dashboard/Dashboard.css'
 
 function SectionStub({ title, description }) {
   return (

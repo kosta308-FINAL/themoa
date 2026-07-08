@@ -1,4 +1,4 @@
-import { spendingTip } from '../../constants/mockDashboard'
+import { spendingTip } from '../../../constants/mockDashboard'
 
 function SpendingTipCard() {
   return (

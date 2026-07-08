@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import DashboardIcon from './DashboardIcon'
+import DashboardIcon from '../common/DashboardIcon'
 import { navItems } from '../../constants/mockDashboard'
 
 function DashboardTopNav() {

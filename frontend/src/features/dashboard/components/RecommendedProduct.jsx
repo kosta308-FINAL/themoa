@@ -1,4 +1,4 @@
-import { recommendedProduct } from '../../constants/mockDashboard'
+import { recommendedProduct } from '../../../constants/mockDashboard'
 
 function RecommendedProduct() {
   return (

@@ -1,11 +1,11 @@
 import { Routes, Route } from 'react-router-dom'
-import LandingPage from '../pages/LandingPage/LandingPage'
-import Dashboard from '../pages/Dashboard/Dashboard'
-import ProductsPage from '../pages/dashboard-sections/ProductsPage'
-import PolicyPage from '../pages/dashboard-sections/PolicyPage'
-import SpendingGuidePage from '../pages/dashboard-sections/SpendingGuidePage'
-import LoanComparePage from '../pages/dashboard-sections/LoanComparePage'
-import MyPage from '../pages/dashboard-sections/MyPage'
+import LandingPage from '../features/landing/LandingPage'
+import Dashboard from '../features/dashboard/Dashboard'
+import ProductsPage from '../features/products/ProductsPage'
+import PolicyPage from '../features/policy/PolicyPage'
+import SpendingGuidePage from '../features/spending-guide/SpendingGuidePage'
+import LoanComparePage from '../features/loan-compare/LoanComparePage'
+import MyPage from '../features/mypage/MyPage'
 
 function AppRouter() {
   return (

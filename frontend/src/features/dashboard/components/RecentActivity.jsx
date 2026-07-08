@@ -1,5 +1,5 @@
-import DashboardIcon from './DashboardIcon'
-import { recentActivity } from '../../constants/mockDashboard'
+import DashboardIcon from '../../../components/common/DashboardIcon'
+import { recentActivity } from '../../../constants/mockDashboard'
 
 function RecentActivity() {
   return (

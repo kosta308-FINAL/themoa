@@ -1,5 +1,5 @@
-import DashboardIcon from './DashboardIcon'
-import { policyRecommendations } from '../../constants/mockDashboard'
+import DashboardIcon from '../../../components/common/DashboardIcon'
+import { policyRecommendations } from '../../../constants/mockDashboard'
 
 function PolicyRecommendations() {
   return (

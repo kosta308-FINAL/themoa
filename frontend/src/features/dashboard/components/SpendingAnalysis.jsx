@@ -1,4 +1,4 @@
-import { spendingBreakdown } from '../../constants/mockDashboard'
+import { spendingBreakdown } from '../../../constants/mockDashboard'
 
 function DonutChart({ categories }) {
   const radius = 60

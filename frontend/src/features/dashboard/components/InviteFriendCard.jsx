@@ -1,4 +1,4 @@
-import { inviteFriend } from '../../constants/mockDashboard'
+import { inviteFriend } from '../../../constants/mockDashboard'
 
 function InviteFriendCard() {
   return (

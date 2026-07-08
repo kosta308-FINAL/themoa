@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import DashboardIcon from './DashboardIcon'
+import DashboardIcon from '../../../components/common/DashboardIcon'
 import AiSummaryBanner from './AiSummaryBanner'
-import { mockFinancialInfo } from '../../constants/mockDashboard'
+import { mockFinancialInfo } from '../../../constants/mockDashboard'
 
 function InfoPrompt({ label, icon }) {
   return (

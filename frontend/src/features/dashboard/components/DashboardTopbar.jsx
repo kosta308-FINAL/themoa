@@ -1,4 +1,4 @@
-import { mockUser } from '../../constants/mockDashboard'
+import { mockUser } from '../../../constants/mockDashboard'
 
 function DashboardTopbar() {
   return (
