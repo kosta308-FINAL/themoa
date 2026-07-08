@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import Header from '../../components/layout/Header'
 import Footer from '../../components/layout/Footer'
 import './LandingPage.css'
@@ -264,8 +265,7 @@ function HeroSection() {
             목표 저축까지 역산해 알려주는 스마트 재정 관리 서비스예요.
           </p>
           <div className="hero-actions">
-            <a href="#" className="btn btn-primary btn-lg">시작하기</a>
-            {/* <a href="#features" className="btn btn-outline btn-lg">기능 살펴보기</a> */}
+            <Link to="/dashboard" className="btn btn-primary btn-lg">시작하기</Link>
           </div>
           <ul className="hero-bullets">
             <li>
