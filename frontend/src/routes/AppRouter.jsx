@@ -1,5 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import LandingPage from '../features/landing/LandingPage'
+import LoginPage from '../features/auth/LoginPage'
+import SignupPage from '../features/auth/SignupPage'
 import Dashboard from '../features/dashboard/Dashboard'
 import ProductsPage from '../features/products/ProductsPage'
 import PolicyPage from '../features/policy/PolicyPage'
@@ -11,6 +13,8 @@ function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/dashboard/products" element={<ProductsPage />} />
       <Route path="/dashboard/policy" element={<PolicyPage />} />

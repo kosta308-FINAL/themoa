@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 function Header() {
   return (
     <header className="header">
@@ -14,7 +16,7 @@ function Header() {
           <span className="logo-text">Themore</span>
         </div>
         <div className="header-actions">
-          <a href="#" className="btn btn-ghost">로그인</a>
+          <Link to="/login" className="btn btn-ghost">로그인</Link>
           {/* <a href="#" className="btn btn-primary">시작하기</a> */}
         </div>
       </div>
