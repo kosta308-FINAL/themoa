@@ -63,8 +63,31 @@ front/
 - 두 개 이상의 feature에서 재사용되는 아이콘, 버튼, 인풋, 빈 상태(EmptyState) 등
 - feature 안에서 만들다가 다른 화면에도 필요해지면 이곳으로 승격합니다
 
-### `api/`
-- axios 인스턴스와 도메인별 API 함수(`userApi.js`, `authApi.js` 등)를 모읍니다. feature 컴포넌트에서 axios를 직접 import하지 않습니다
+### `api/` — 모든 요청은 `axiosInstance`를 거친다
+- **서버 요청은 예외 없이 `api/axiosInstance.js`로 보냅니다.** feature 컴포넌트에서 `axios`를 직접 import하거나 `fetch`를 쓰지 않습니다. `axiosInstance`가 `baseURL`(`VITE_API_BASE_URL`), `withCredentials`, 요청 인터셉터의 `Authorization: Bearer` 헤더 주입을 담당하므로 우회하면 인증 헤더 없이 요청이 나갑니다
+- **`axios`를 직접 import하는 파일은 `axiosInstance.js` 하나뿐입니다.** baseURL·헤더·인터셉터 같은 공통 설정은 전부 이 파일에서만 바꿉니다
+- 도메인별로 요청 함수를 파일로 나눕니다: `authApi.js`, `userApi.js`, `spendingApi.js` … (`도메인Api.js`, camelCase)
+- 도메인 API 파일은 **URL과 요청/응답 형태만** 다룹니다. 화면 상태나 렌더링 로직을 넣지 않습니다
+
+```js
+// src/api/spendingApi.js
+import axiosInstance from './axiosInstance'
+
+export const getMonthlySpending = (yearMonth) =>
+  axiosInstance.get('/api/spending/monthly', { params: { yearMonth } })
+
+export const updateBudget = (payload) =>
+  axiosInstance.put('/api/budget', payload)
+```
+
+```jsx
+// src/features/spending-guide/SpendingGuidePage.jsx
+import { getMonthlySpending } from '../../api/spendingApi'
+
+const res = await getMonthlySpending('2026-07')
+```
+
+- 여러 화면이 같은 데이터를 부르거나 로딩/에러 상태가 반복되면, 호출을 감싼 커스텀 훅을 `hooks/`(공통) 또는 `features/도메인/hooks/`(그 화면 전용)에 만듭니다
 
 ### `contexts/`
 - Context API로 만든 전역 상태(로그인 정보 등). Provider와 Context 정의를 함께 둡니다
@@ -82,7 +105,7 @@ front/
 3. 이 화면 전용 하위 컴포넌트는 `기능이름/components/`에 작성합니다
 4. `routes/AppRouter.jsx`에 라우트를 추가합니다
 5. 다른 화면에서도 재사용해야 하는 컴포넌트가 생기면 `components/common`(범용 UI) 또는 `components/layout`(레이아웃)으로 옮깁니다
-6. API 호출이 필요하면 `api/`에 도메인별 함수를 추가하고, feature 컴포넌트는 그 함수를 import해서 씁니다
+6. API 호출이 필요하면 `api/도메인Api.js`에 `axiosInstance`를 쓰는 함수를 추가하고, feature 컴포넌트는 그 함수만 import해서 씁니다 (컴포넌트에서 `axios`/`fetch` 직접 사용 금지)
 
 ## 네이밍 규칙
 
@@ -91,4 +114,5 @@ front/
 | feature 폴더 | lowercase, 여러 단어는 kebab-case | `spending-guide` |
 | 컴포넌트 파일 | PascalCase | `SummaryCards.jsx` |
 | 훅 파일 | camelCase, `use` 접두사 | `useAuth.js` |
+| API 파일 | camelCase, `Api` 접미사 | `spendingApi.js` |
 | CSS 파일 | 대응하는 컴포넌트와 동일한 이름 | `Dashboard.jsx` ↔ `Dashboard.css` |
