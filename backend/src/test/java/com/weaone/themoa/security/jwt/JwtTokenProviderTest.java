@@ -20,7 +20,7 @@ class JwtTokenProviderTest {
     private JwtTokenProvider provider(String base64Secret) {
         AuthProperties properties = new AuthProperties(
                 new AuthProperties.Jwt(base64Secret, ACCESS_TOKEN_VALIDITY),
-                new AuthProperties.Refresh(Duration.ofDays(5), "refresh_token", "/api/auth", false),
+                new AuthProperties.Refresh(Duration.ofDays(5), "/api/auth", false),
                 new AuthProperties.EmailVerification(Duration.ofMinutes(5), Duration.ofSeconds(60), 5,
                         Duration.ofMinutes(30), "test@example.com")
         );

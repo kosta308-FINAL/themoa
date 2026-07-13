@@ -61,7 +61,7 @@ public class AuthController {
     /** Refresh rotation. 기존 토큰은 폐기되고 새 토큰 쌍이 나간다. */
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<TokenResponse>> refresh(
-            @CookieValue(name = "${app.auth.refresh.cookie-name}", required = false) String refreshToken) {
+            @CookieValue(name = RefreshTokenCookieFactory.COOKIE_NAME, required = false) String refreshToken) {
         IssuedTokens tokens = authTokenService.rotate(refreshToken == null ? "" : refreshToken);
         return tokenResponse(HttpStatus.OK, tokens);
     }
@@ -69,7 +69,7 @@ public class AuthController {
     /** 현재 기기 로그아웃. 다른 기기 세션은 유지된다. 이미 폐기된 토큰이어도 성공으로 처리한다. */
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
-            @CookieValue(name = "${app.auth.refresh.cookie-name}", required = false) String refreshToken) {
+            @CookieValue(name = RefreshTokenCookieFactory.COOKIE_NAME, required = false) String refreshToken) {
         authTokenService.revoke(refreshToken);
         return ResponseEntity.noContent()
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookieFactory.expire().toString())

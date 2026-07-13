@@ -13,15 +13,16 @@ import java.time.Duration;
 @Component
 public class RefreshTokenCookieFactory {
 
+    /** 컨트롤러의 {@code @CookieValue}가 컴파일 상수를 요구하므로 쿠키 이름은 여기서 고정한다. */
+    public static final String COOKIE_NAME = "refresh_token";
+
     private static final String SAME_SITE = "Strict";
 
-    private final String name;
     private final String path;
     private final boolean secure;
 
     public RefreshTokenCookieFactory(AuthProperties properties) {
         AuthProperties.Refresh config = properties.refresh();
-        this.name = config.cookieName();
         this.path = config.cookiePath();
         this.secure = config.cookieSecure();
     }
@@ -42,7 +43,7 @@ public class RefreshTokenCookieFactory {
     }
 
     private ResponseCookie.ResponseCookieBuilder baseBuilder() {
-        return ResponseCookie.from(name)
+        return ResponseCookie.from(COOKIE_NAME)
                 .httpOnly(true)
                 .secure(secure)
                 .path(path)

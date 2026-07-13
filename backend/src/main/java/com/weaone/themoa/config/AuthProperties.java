@@ -31,13 +31,11 @@ public record AuthProperties(
 
     /**
      * @param validity   Refresh Token 유효기간. 슬라이딩이라 재발급마다 이 값만큼 다시 연장된다(5일).
-     * @param cookieName Refresh Token을 담는 HttpOnly 쿠키 이름.
      * @param cookiePath 쿠키 전송 경로. 재발급·로그아웃 요청에만 실려 나가도록 좁힌다.
      * @param cookieSecure HTTPS 전용 여부. 배포는 반드시 true, 로컬 http 개발에서만 false.
      */
     public record Refresh(
             @NotNull Duration validity,
-            @NotBlank String cookieName,
             @NotBlank String cookiePath,
             boolean cookieSecure
     ) {
