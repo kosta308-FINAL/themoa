@@ -135,6 +135,25 @@
   font-weight: 700;
 }
 
+.dash-logout-btn {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid var(--dash-border);
+  color: var(--dash-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dash-logout-btn:hover {
+  background: var(--dash-accent-light);
+  color: var(--dash-accent-dark);
+}
+
 /* ─── Main ─────────────────────────────────────────────── */
 .dash-main {
   flex: 1;

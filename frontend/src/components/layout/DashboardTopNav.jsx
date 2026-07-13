@@ -1,8 +1,17 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import DashboardIcon from '../common/DashboardIcon'
 import { navItems } from '../../constants/mockDashboard'
+import { useAuth } from '../../hooks/useAuth'
 
 function DashboardTopNav() {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/')
+  }
+
   return (
     <nav className="dash-topnav">
       <div className="dash-topnav-logo">
@@ -27,6 +36,9 @@ function DashboardTopNav() {
             </NavLink>
           ))}
         </div>
+        <button type="button" className="dash-logout-btn" onClick={handleLogout}>
+          로그아웃
+        </button>
       </div>
     </nav>
   )
