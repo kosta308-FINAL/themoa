@@ -36,6 +36,10 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
+    // CODEF 카드사 커넥션(connectedId 발급) 연동
+    implementation 'io.codef.api:easycodef-java:1.0.6'
+    implementation 'org.json:json:20240303'
+
 //    implementation 'org.springframework.ai:spring-ai-starter-vector-store-qdrant' 나중에 qdrant세팅되면 주석해제
     implementation 'org.springframework.boot:spring-boot-starter-web'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
