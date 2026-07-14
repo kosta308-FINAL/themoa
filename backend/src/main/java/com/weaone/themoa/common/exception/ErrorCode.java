@@ -29,7 +29,15 @@ public enum ErrorCode {
     AUTH_EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "이메일 인증을 먼저 완료해 주세요."),
     AUTH_VERIFICATION_CODE_INVALID(HttpStatus.BAD_REQUEST, "인증 코드가 올바르지 않거나 만료되었습니다."),
     AUTH_VERIFICATION_RESEND_COOLDOWN(HttpStatus.TOO_MANY_REQUESTS, "잠시 후 다시 요청해 주세요."),
-    AUTH_EMAIL_SEND_FAILED(HttpStatus.BAD_GATEWAY, "인증 메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    AUTH_EMAIL_SEND_FAILED(HttpStatus.BAD_GATEWAY, "인증 메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요."),
+
+    // 카드 연동 - 커넥션
+    CARD_ISSUER_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "지원하지 않는 카드사입니다."),
+    CARD_CONNECTION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 연결된 카드사입니다."),
+    CARD_CONNECTION_COOLDOWN(HttpStatus.TOO_MANY_REQUESTS, "잠시 후 다시 시도해 주세요."),
+    CARD_CONNECTION_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "카드사 로그인 정보가 올바르지 않습니다."),
+    CARD_CONNECTION_LOCKED(HttpStatus.LOCKED, "카드사에서 계정이 잠겼습니다. 카드사 앱이나 고객센터에서 잠금을 해제한 후 다시 시도해 주세요."),
+    CARD_CONNECTION_EXTERNAL_ERROR(HttpStatus.BAD_GATEWAY, "카드사 연결 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
 
     private final HttpStatus status;
     private final String message;
