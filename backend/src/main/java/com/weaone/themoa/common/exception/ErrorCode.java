@@ -42,7 +42,14 @@ public enum ErrorCode {
     // 가맹점 신원
     MERCHANT_ALIAS_NOT_FOUND(HttpStatus.NOT_FOUND, "가맹점 별칭을 찾을 수 없습니다."),
     MERCHANT_ALIAS_TERM_BILLER_FORBIDDEN(HttpStatus.BAD_REQUEST, "결제대행사 이름은 가맹점 표기로 등록할 수 없습니다."),
-    MERCHANT_ALIAS_TERM_CONFLICT(HttpStatus.CONFLICT, "이미 다른 서비스로 등록된 표기입니다.");
+    MERCHANT_ALIAS_TERM_CONFLICT(HttpStatus.CONFLICT, "이미 다른 서비스로 등록된 표기입니다."),
+
+    // 카드 거래
+    CARD_TRANSACTION_NOT_FOUND(HttpStatus.NOT_FOUND, "거래 내역을 찾을 수 없습니다."),
+    CARD_TRANSACTION_DELETE_NOT_ALLOWED(HttpStatus.FORBIDDEN, "카드로 수집된 거래는 삭제할 수 없습니다."),
+    CARD_TRANSACTION_CANCEL_AMOUNT_NOT_CORRECTABLE(HttpStatus.CONFLICT, "취소금액을 정정할 수 있는 거래가 아닙니다."),
+    CARD_TRANSACTION_AMOUNT_NOT_CORRECTABLE(HttpStatus.CONFLICT, "환산금액을 정정할 수 있는 거래가 아닙니다."),
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;
