@@ -49,7 +49,10 @@ public enum ErrorCode {
     CARD_TRANSACTION_DELETE_NOT_ALLOWED(HttpStatus.FORBIDDEN, "카드로 수집된 거래는 삭제할 수 없습니다."),
     CARD_TRANSACTION_CANCEL_AMOUNT_NOT_CORRECTABLE(HttpStatus.CONFLICT, "취소금액을 정정할 수 있는 거래가 아닙니다."),
     CARD_TRANSACTION_AMOUNT_NOT_CORRECTABLE(HttpStatus.CONFLICT, "환산금액을 정정할 수 있는 거래가 아닙니다."),
-    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다.");
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다."),
+
+    // 카드 동기화
+    CARD_SYNC_RECOVERY_NOT_ELIGIBLE(HttpStatus.CONFLICT, "복귀 동기화 대상이 아닙니다.");
 
     private final HttpStatus status;
     private final String message;

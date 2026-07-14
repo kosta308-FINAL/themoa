@@ -77,8 +77,11 @@ public class CardTransactionSyncService {
         return member.isReturningAfterAbsence(LocalDateTime.now(ZONE_SEOUL), INACTIVITY_LIMIT_DAYS);
     }
 
-    /** 30일 초과 복귀자 전용 분기. §6-C. */
+    /** 30일 초과 복귀자 전용 분기. §6-C. recovery-status는 클라이언트 UI 판단용일 뿐이라 여기서 다시 검증한다. */
     public SyncSummary recover(Long memberId, RecoveryMode mode) {
+        if (!isReturningAfterLongAbsence(memberId)) {
+            throw new BusinessException(ErrorCode.CARD_SYNC_RECOVERY_NOT_ELIGIBLE);
+        }
         List<CardConnection> connections = cardConnectionRepository
                 .findByMember_IdAndStatus(memberId, ConnectionStatus.ACTIVE);
         LocalDate end = LocalDate.now(ZONE_SEOUL);
