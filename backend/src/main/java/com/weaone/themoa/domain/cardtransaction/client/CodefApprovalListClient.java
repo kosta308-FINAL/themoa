@@ -88,16 +88,9 @@ public class CodefApprovalListClient {
             throw new CodefClientException("CODEF 승인내역 조회가 실패했습니다.", null);
         }
 
-        JSONArray data = json.optJSONArray("data");
-        if (data == null) {
-            return List.of();
-        }
+        List<JSONObject> items = extractDataItems(json);
         List<CodefApprovalRecord> records = new ArrayList<>();
-        for (int i = 0; i < data.length(); i++) {
-            JSONObject item = data.optJSONObject(i);
-            if (item == null) {
-                continue;
-            }
+        for (JSONObject item : items) {
             records.add(new CodefApprovalRecord(
                     item.optString("resUsedDate", ""),
                     item.optString("resUsedTime", ""),
@@ -118,5 +111,27 @@ public class CodefApprovalListClient {
             ));
         }
         return records;
+    }
+
+    /**
+     * CODEF는 결과가 1건이면 {@code data}를 배열이 아니라 단일 객체로 내려준다.
+     * {@link JSONObject#optJSONArray}는 이 경우 null을 반환하므로 배열/객체 두 형태를 모두 처리해야 한다.
+     */
+    private List<JSONObject> extractDataItems(JSONObject json) {
+        Object data = json.opt("data");
+        if (data instanceof JSONArray array) {
+            List<JSONObject> items = new ArrayList<>();
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject item = array.optJSONObject(i);
+                if (item != null) {
+                    items.add(item);
+                }
+            }
+            return items;
+        }
+        if (data instanceof JSONObject single) {
+            return List.of(single);
+        }
+        return List.of();
     }
 }
