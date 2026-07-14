@@ -76,4 +76,9 @@ public class CardConnection {
     public void markLocked() {
         this.status = ConnectionStatus.LOCKED;
     }
+
+    /** CODEF 조회 + 저장 트랜잭션이 전체 성공했을 때만 호출한다(cardtransaction.md §6). 실패 시 앞당기지 않는다. */
+    public void markSynced(LocalDateTime now) {
+        this.lastSuccessfulSyncAt = now;
+    }
 }
