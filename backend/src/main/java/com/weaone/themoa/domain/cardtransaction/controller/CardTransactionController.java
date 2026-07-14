@@ -42,7 +42,8 @@ public class CardTransactionController {
     private final CardTransactionCorrectionService cardTransactionCorrectionService;
     private final CardTransactionSyncService cardTransactionSyncService;
 
-    @Operation(summary = "카드 거래내역 조회", description = "로그인 사용자의 카드 거래내역을 최신순으로 페이지 조회합니다.")
+    @Operation(summary = "카드 거래내역 조회",
+            description = "로그인 사용자의 카드 거래내역을 최신순으로 페이지 조회합니다. 먼저 /api/auth/login으로 로그인하고, 필요하면 /api/card-transactions/sync로 거래내역을 동기화하세요.")
     @GetMapping
     public ResponseEntity<ApiResponse<CardTransactionListResponse>> list(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
@@ -52,7 +53,8 @@ public class CardTransactionController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "거래 카테고리 수정", description = "선택한 거래의 카테고리를 사용자가 직접 수정합니다.")
+    @Operation(summary = "거래 카테고리 수정",
+            description = "선택한 거래의 카테고리를 사용자가 직접 수정합니다. 먼저 /api/card-transactions에서 수정할 transactionId를 확인하세요.")
     @PatchMapping("/{transactionId}/category")
     public ResponseEntity<Void> correctCategory(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
@@ -62,7 +64,8 @@ public class CardTransactionController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "거래 취소금액 정정", description = "취소금액이 불확실한 거래의 취소금액을 직접 정정합니다.")
+    @Operation(summary = "거래 취소금액 정정",
+            description = "취소금액이 불확실한 거래의 취소금액을 직접 정정합니다. 먼저 /api/card-transactions에서 cancelAmountUncertain=true인 transactionId를 확인하세요.")
     @PatchMapping("/{transactionId}/canceled-amount")
     public ResponseEntity<Void> correctCanceledAmount(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
@@ -72,7 +75,8 @@ public class CardTransactionController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "외화 거래 환산금액 정정", description = "외화 원금이 있는 거래의 원화 환산금액을 직접 정정합니다.")
+    @Operation(summary = "외화 거래 환산금액 정정",
+            description = "외화 원금이 있는 거래의 원화 환산금액을 직접 정정합니다. 먼저 /api/card-transactions에서 originalAmount가 있는 transactionId를 확인하세요.")
     @PatchMapping("/{transactionId}/amount")
     public ResponseEntity<Void> correctAmount(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
@@ -83,7 +87,8 @@ public class CardTransactionController {
     }
 
     /** 앱 열기(자동, manual=false → 30분 쓰로틀) / 수동 새로고침(manual=true → 쓰로틀 없이 락만, §6 (A)). */
-    @Operation(summary = "카드 거래내역 동기화", description = "연결된 카드사의 최근 승인내역을 조회해 거래내역에 반영합니다.")
+    @Operation(summary = "카드 거래내역 동기화",
+            description = "연결된 카드사의 최근 승인내역을 조회해 거래내역에 반영합니다. 일반 동기화는 오늘 기준 2일 전부터 오늘까지 조회합니다. 먼저 /api/auth/login으로 로그인하고 /api/card-connections로 카드사를 연결해야 합니다.")
     @PostMapping("/sync")
     public ResponseEntity<ApiResponse<SyncResponse>> sync(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
@@ -94,7 +99,8 @@ public class CardTransactionController {
     }
 
     /** 앱 홈 진입 시 30일 초과 복귀 여부를 판정한다(§6-C). true면 클라이언트가 복귀 선택 화면을 띄운다. */
-    @Operation(summary = "장기 미접속 복귀 여부 확인", description = "30일 초과 미이용 후 복귀한 사용자인지 확인합니다.")
+    @Operation(summary = "장기 미접속 복귀 선택 필요 여부 확인",
+            description = "서버가 마지막 이용 시각을 기준으로 복귀 선택 UI가 필요한지 판단합니다. 먼저 /api/auth/login으로 로그인한 뒤 앱 홈 진입 시 호출하세요.")
     @GetMapping("/sync/recovery-status")
     public ResponseEntity<ApiResponse<RecoveryStatusResponse>> recoveryStatus(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId) {
@@ -103,7 +109,8 @@ public class CardTransactionController {
     }
 
     /** 복귀 선택 완료 시에만 호출된다. 완료 후 member.last_active_at을 갱신한다(§6-C). */
-    @Operation(summary = "장기 미접속 복귀 동기화", description = "사용자가 선택한 복귀 모드에 따라 카드 거래내역을 동기화합니다.")
+    @Operation(summary = "장기 미접속 복귀 동기화",
+            description = "사용자가 선택한 복귀 모드에 따라 카드 거래내역을 동기화합니다. 먼저 /api/card-transactions/sync/recovery-status가 true인지 확인한 뒤 호출하세요.")
     @PostMapping("/sync/recovery")
     public ResponseEntity<ApiResponse<SyncResponse>> recover(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
