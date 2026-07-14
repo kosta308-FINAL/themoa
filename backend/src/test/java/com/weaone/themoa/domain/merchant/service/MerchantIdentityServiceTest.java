@@ -2,6 +2,9 @@ package com.weaone.themoa.domain.merchant.service;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
+import com.weaone.themoa.domain.category.entity.Category;
+import com.weaone.themoa.domain.category.entity.CategoryCode;
+import com.weaone.themoa.domain.category.repository.CategoryRepository;
 import com.weaone.themoa.domain.member.entity.Gender;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
@@ -46,14 +49,22 @@ class MerchantIdentityServiceTest {
     private BillerRepository billerRepository;
     @Mock
     private MemberRepository memberRepository;
+    @Mock
+    private CategoryRepository categoryRepository;
 
     @InjectMocks
     private MerchantIdentityService merchantIdentityService;
 
     private MerchantAlias aliasWithId(long id, String name) {
-        MerchantAlias alias = MerchantAlias.create(name, 7L);
+        MerchantAlias alias = MerchantAlias.create(name, null);
         ReflectionTestUtils.setField(alias, "id", id);
         return alias;
+    }
+
+    private Category categoryWithId(long id, CategoryCode code) {
+        Category category = Category.seed(code, code.name());
+        ReflectionTestUtils.setField(category, "id", id);
+        return category;
     }
 
     private Merchant merchantWithId(long id, String rawName, MerchantAlias globalAlias) {
@@ -172,12 +183,15 @@ class MerchantIdentityServiceTest {
     @Test
     @DisplayName("새 서비스명이면 alias를 새로 만든다")
     void registerAliasCreatesNew() {
+        Category subscription = categoryWithId(7L, CategoryCode.SUBSCRIPTION);
         given(merchantAliasRepository.findByCanonicalServiceNameNormalized("웨이브")).willReturn(Optional.empty());
+        given(categoryRepository.getReferenceById(7L)).willReturn(subscription);
         given(merchantAliasRepository.save(any(MerchantAlias.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         MerchantAlias result = merchantIdentityService.registerAlias(MEMBER_ID, "웨이브", 7L, null);
 
         assertThat(result.getCanonicalServiceName()).isEqualTo("웨이브");
+        assertThat(result.getDefaultCategory()).isEqualTo(subscription);
         then(merchantAliasRepository).should().save(any(MerchantAlias.class));
     }
 

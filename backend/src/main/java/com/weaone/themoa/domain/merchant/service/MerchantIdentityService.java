@@ -2,6 +2,8 @@ package com.weaone.themoa.domain.merchant.service;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
+import com.weaone.themoa.domain.category.entity.Category;
+import com.weaone.themoa.domain.category.repository.CategoryRepository;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
 import com.weaone.themoa.domain.merchant.entity.Merchant;
@@ -33,6 +35,7 @@ public class MerchantIdentityService {
     private final MerchantAliasTermsRepository merchantAliasTermsRepository;
     private final BillerRepository billerRepository;
     private final MemberRepository memberRepository;
+    private final CategoryRepository categoryRepository;
 
     /**
      * 수집 시 자동 매칭(merchant.md §3 2단계, §5-D-2). 원본 가맹점명 기준 merchant를 찾거나 만들고,
@@ -121,8 +124,11 @@ public class MerchantIdentityService {
     }
 
     private MerchantAlias saveNewAlias(String canonicalServiceName, Long defaultCategoryId) {
+        Category defaultCategory = defaultCategoryId == null
+                ? null
+                : categoryRepository.getReferenceById(defaultCategoryId);
         try {
-            return merchantAliasRepository.save(MerchantAlias.create(canonicalServiceName, defaultCategoryId));
+            return merchantAliasRepository.save(MerchantAlias.create(canonicalServiceName, defaultCategory));
         } catch (DataIntegrityViolationException e) {
             return merchantAliasRepository.findByCanonicalServiceNameNormalized(canonicalServiceName)
                     .orElseThrow(() -> e);

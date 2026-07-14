@@ -10,7 +10,7 @@ class MerchantTest {
     @Test
     @DisplayName("전역 시드 매칭 결과가 있으면 관찰 즉시 alias가 연결된다")
     void observeLinksGlobalAliasWhenGiven() {
-        MerchantAlias alias = MerchantAlias.create("Claude 구독", 7L);
+        MerchantAlias alias = MerchantAlias.create("Claude 구독", null);
 
         Merchant merchant = Merchant.observe("CLAUDE.AI SUBSCRIPTION", alias);
 
