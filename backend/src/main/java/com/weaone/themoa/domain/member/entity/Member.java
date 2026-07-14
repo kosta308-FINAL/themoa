@@ -115,4 +115,16 @@ public class Member {
     public void increaseTokenVersion() {
         tokenVersion++;
     }
+
+    /**
+     * last_active_at만 갱신한다(로그인 실패 카운트·잠금 상태는 건드리지 않음). 30일 초과 복귀 동기화
+     * 선택 완료 시점처럼, 로그인 자체와는 다른 "실제 이용" 신호에 사용한다(cardtransaction.md §6-C).
+     */
+    public void markActive(LocalDateTime now) {
+        this.lastActiveAt = now;
+    }
+
+    public boolean isReturningAfterAbsence(LocalDateTime now, long absenceDays) {
+        return lastActiveAt != null && lastActiveAt.isBefore(now.minusDays(absenceDays));
+    }
 }
