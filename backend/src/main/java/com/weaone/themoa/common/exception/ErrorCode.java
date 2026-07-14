@@ -37,7 +37,12 @@ public enum ErrorCode {
     CARD_CONNECTION_COOLDOWN(HttpStatus.TOO_MANY_REQUESTS, "잠시 후 다시 시도해 주세요."),
     CARD_CONNECTION_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "카드사 로그인 정보가 올바르지 않습니다."),
     CARD_CONNECTION_LOCKED(HttpStatus.LOCKED, "카드사에서 계정이 잠겼습니다. 카드사 앱이나 고객센터에서 잠금을 해제한 후 다시 시도해 주세요."),
-    CARD_CONNECTION_EXTERNAL_ERROR(HttpStatus.BAD_GATEWAY, "카드사 연결 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    CARD_CONNECTION_EXTERNAL_ERROR(HttpStatus.BAD_GATEWAY, "카드사 연결 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."),
+
+    // 가맹점 신원
+    MERCHANT_ALIAS_NOT_FOUND(HttpStatus.NOT_FOUND, "가맹점 별칭을 찾을 수 없습니다."),
+    MERCHANT_ALIAS_TERM_BILLER_FORBIDDEN(HttpStatus.BAD_REQUEST, "결제대행사 이름은 가맹점 표기로 등록할 수 없습니다."),
+    MERCHANT_ALIAS_TERM_CONFLICT(HttpStatus.CONFLICT, "이미 다른 서비스로 등록된 표기입니다.");
 
     private final HttpStatus status;
     private final String message;
