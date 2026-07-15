@@ -38,4 +38,5 @@ out/
 
 application.yaml
 .env
+externalApiTest
 sql
