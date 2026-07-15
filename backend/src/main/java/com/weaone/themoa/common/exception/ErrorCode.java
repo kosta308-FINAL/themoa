@@ -60,7 +60,10 @@ public enum ErrorCode {
     FIXED_EXPENSE_CANDIDATE_NOT_PENDING(HttpStatus.CONFLICT, "이미 응답한 추천 후보입니다."),
     FIXED_EXPENSE_NOT_FOUND(HttpStatus.NOT_FOUND, "고정지출을 찾을 수 없습니다."),
     FIXED_EXPENSE_MERCHANT_ALIAS_REQUIRED(HttpStatus.BAD_REQUEST, "카드형 고정지출은 가맹점을 선택해야 합니다."),
-    FIXED_EXPENSE_EXCHANGE_RATE_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "환율 정보를 구하지 못해 등록할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+    FIXED_EXPENSE_EXCHANGE_RATE_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "환율 정보를 구하지 못해 등록할 수 없습니다. 잠시 후 다시 시도해 주세요."),
+
+    // 알림
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;

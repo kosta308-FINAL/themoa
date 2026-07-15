@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 
 /**
  * 알림 적재의 단일 진입점. {@code dedup_key}로 같은 알림을 두 번 쌓지 않는다(erd.md §7).
- * 알림 목록 조회·읽음 처리 API는 알림.md 소관이라 이 서비스에 두지 않는다 — 여기는 "쓰기"만 담당한다.
+ * 알림 목록 조회·읽음 처리는 {@link NotificationQueryService} 소관이라 여기는 "쓰기"만 담당한다.
  */
 @Service
 @RequiredArgsConstructor
