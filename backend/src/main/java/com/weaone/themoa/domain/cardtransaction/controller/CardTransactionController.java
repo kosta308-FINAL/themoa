@@ -59,7 +59,7 @@ public class CardTransactionController {
     }
 
     @Operation(summary = "카테고리별 소비 비중/내역 조회",
-            description = "취소 제외 합계·건수를 카테고리별로 집계합니다(category.md §6). 부분취소는 순액으로 반영됩니다.")
+            description = "고정지출 태그 거래를 제외하고, 순액(부분취소 반영)이 0원보다 큰 소비만 카테고리별로 집계합니다(category.md §6). canceledTotal은 이 주기 결제 중 취소된 금액입니다.")
     @GetMapping("/category-summary")
     public ResponseEntity<ApiResponse<CategorySummaryListResponse>> categorySummary(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,

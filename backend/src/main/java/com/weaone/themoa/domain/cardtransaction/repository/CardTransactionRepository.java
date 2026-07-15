@@ -68,18 +68,38 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
                                                         @Param("maxAmount") BigDecimal maxAmount);
 
     /**
-     * 카테고리별 소비 비중/내역(category.md §6·§7): 취소 제외(APPROVED·PARTIAL_CANCELED만),
-     * 부분취소는 순액(amount − canceled_amount)으로 반영, category_id 스냅샷 기준 GROUP BY 한 방.
+     * 카테고리별 소비 비중/내역(category.md §6·§7): 거절 제외, 고정지출 태그 거래 제외. 도넛에는
+     * 거래별 순액(amount − canceled_amount)이 0원보다 큰 실제 소비만 반영한다(Type 2 음수행 포함,
+     * 0원/음수 조각은 만들지 않음). 건수도 순액이 0원보다 큰 거래만 센다. category_id 스냅샷 기준
+     * GROUP BY 한 방.
      */
     @Query("select t.category.id as categoryId, t.category.name as categoryName, "
-            + "sum(t.amount - coalesce(t.canceledAmount, 0)) as totalAmount, count(t) as transactionCount "
-            + "from CardTransaction t where t.member.id = :memberId and t.status in :statuses "
-            + "and t.usedDate between :startDate and :endDate "
-            + "group by t.category.id, t.category.name order by sum(t.amount - coalesce(t.canceledAmount, 0)) desc")
+            + "sum(case when (t.amount - coalesce(t.canceledAmount, 0)) > 0 "
+            + "then (t.amount - coalesce(t.canceledAmount, 0)) else 0 end) as totalAmount, "
+            + "sum(case when (t.amount - coalesce(t.canceledAmount, 0)) > 0 then 1L else 0L end) as transactionCount "
+            + "from CardTransaction t where t.member.id = :memberId and t.status <> :rejected "
+            + "and t.fixedExpense is null and t.usedDate between :startDate and :endDate "
+            + "group by t.category.id, t.category.name "
+            + "having sum(case when (t.amount - coalesce(t.canceledAmount, 0)) > 0 "
+            + "then (t.amount - coalesce(t.canceledAmount, 0)) else 0 end) > 0 "
+            + "order by totalAmount desc")
     List<CategorySummary> summarizeByCategory(@Param("memberId") Long memberId,
-                                               @Param("statuses") List<TransactionStatus> statuses,
+                                               @Param("rejected") TransactionStatus rejected,
                                                @Param("startDate") LocalDate startDate,
                                                @Param("endDate") LocalDate endDate);
+
+    /**
+     * 취소 안내값(category.md §6): 같은 기준 거래의 Type 1 canceled_amount 합 + Type 2 음수행
+     * abs(amount) 합. Type 2 행은 canceled_amount가 항상 비어 있어(cardtransaction.md §3-5) 이중
+     * 집계되지 않는다.
+     */
+    @Query("select coalesce(sum(case when t.amount < 0 then abs(t.amount) else coalesce(t.canceledAmount, 0) end), 0) "
+            + "from CardTransaction t where t.member.id = :memberId and t.status <> :rejected "
+            + "and t.fixedExpense is null and t.usedDate between :startDate and :endDate")
+    BigDecimal sumCanceledAmount(@Param("memberId") Long memberId,
+                                  @Param("rejected") TransactionStatus rejected,
+                                  @Param("startDate") LocalDate startDate,
+                                  @Param("endDate") LocalDate endDate);
 
     interface AliasGroupCount {
         Long getMerchantAliasId();
