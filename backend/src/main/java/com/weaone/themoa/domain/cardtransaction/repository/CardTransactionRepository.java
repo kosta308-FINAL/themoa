@@ -1,12 +1,17 @@
 package com.weaone.themoa.domain.cardtransaction.repository;
 
 import com.weaone.themoa.domain.cardtransaction.entity.CardTransaction;
+import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface CardTransactionRepository extends JpaRepository<CardTransaction, Long> {
@@ -18,4 +23,78 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
     Optional<CardTransaction> findByIdAndMember_Id(Long id, Long memberId);
 
     Page<CardTransaction> findByMember_IdOrderByUsedAtDesc(Long memberId, Pageable pageable);
+
+    /** 반복결제 탐지 1단계(fixedExpense.md §2): alias 레벨로 3회 이상 잡히는 그룹 후보. 취소 건 제외. */
+    @Query("select t.merchantAlias.id as merchantAliasId, count(t) as transactionCount from CardTransaction t "
+            + "where t.member.id = :memberId and t.merchantAlias is not null and t.status <> :canceled "
+            + "group by t.merchantAlias.id having count(t) >= :minCount")
+    List<AliasGroupCount> findAliasGroupCandidates(@Param("memberId") Long memberId,
+                                                     @Param("canceled") TransactionStatus canceled,
+                                                     @Param("minCount") long minCount);
+
+    /** 위 후보 alias의 실제 거래 목록(패턴 검증용, §2 규칙 2~5). */
+    List<CardTransaction> findByMember_IdAndMerchantAlias_IdAndStatusNotOrderByUsedDateAsc(
+            Long memberId, Long merchantAliasId, TransactionStatus canceled);
+
+    /**
+     * 반복결제 탐지(biller 경유, merchant.md §5-D-3): 이름으로 alias가 안 붙는 biller 거래를
+     * merchant 단위로 3회 이상 잡히는 후보. 실제 서비스 구분은 그룹핑 이후 금액 클러스터링이 담당한다.
+     */
+    @Query("select t.merchant.id as merchantId, count(t) as transactionCount from CardTransaction t "
+            + "where t.member.id = :memberId and t.merchantAlias is null and t.merchant is not null "
+            + "and t.status <> :canceled and upper(trim(t.merchant.merchantNameRaw)) in "
+            + "(select upper(trim(b.name)) from Biller b) "
+            + "group by t.merchant.id having count(t) >= :minCount")
+    List<MerchantGroupCount> findBillerMerchantGroupCandidates(@Param("memberId") Long memberId,
+                                                                 @Param("canceled") TransactionStatus canceled,
+                                                                 @Param("minCount") long minCount);
+
+    /** 위 후보 merchant의 실제 거래 목록(금액 클러스터링용, 금액 오름차순). */
+    List<CardTransaction> findByMember_IdAndMerchant_IdAndMerchantAliasIsNullAndStatusNotOrderByAmountAsc(
+            Long memberId, Long merchantId, TransactionStatus canceled);
+
+    /** 학습 루프 2단계(merchant.md §3): 같은 원본 가맹점(merchant)의 이 회원 거래 전체 재태깅 대상. */
+    List<CardTransaction> findByMember_IdAndMerchant_Id(Long memberId, Long merchantId);
+
+    /** F-05 미납 확인 후보(troubleshooting/billerProblem.md §6): 미태깅 + 금액오차 + 결제일 윈도우. */
+    @Query("select t from CardTransaction t where t.member.id = :memberId and t.fixedExpense is null "
+            + "and t.status <> :canceled and t.usedDate between :startDate and :endDate "
+            + "and t.amount between :minAmount and :maxAmount order by t.usedDate desc")
+    List<CardTransaction> findMissedPaymentCandidates(@Param("memberId") Long memberId,
+                                                        @Param("canceled") TransactionStatus canceled,
+                                                        @Param("startDate") LocalDate startDate,
+                                                        @Param("endDate") LocalDate endDate,
+                                                        @Param("minAmount") BigDecimal minAmount,
+                                                        @Param("maxAmount") BigDecimal maxAmount);
+
+    /**
+     * 카테고리별 소비 비중/내역(category.md §6·§7): 취소 제외(APPROVED·PARTIAL_CANCELED만),
+     * 부분취소는 순액(amount − canceled_amount)으로 반영, category_id 스냅샷 기준 GROUP BY 한 방.
+     */
+    @Query("select t.category.id as categoryId, t.category.name as categoryName, "
+            + "sum(t.amount - coalesce(t.canceledAmount, 0)) as totalAmount, count(t) as transactionCount "
+            + "from CardTransaction t where t.member.id = :memberId and t.status in :statuses "
+            + "and t.usedDate between :startDate and :endDate "
+            + "group by t.category.id, t.category.name order by sum(t.amount - coalesce(t.canceledAmount, 0)) desc")
+    List<CategorySummary> summarizeByCategory(@Param("memberId") Long memberId,
+                                               @Param("statuses") List<TransactionStatus> statuses,
+                                               @Param("startDate") LocalDate startDate,
+                                               @Param("endDate") LocalDate endDate);
+
+    interface AliasGroupCount {
+        Long getMerchantAliasId();
+        long getTransactionCount();
+    }
+
+    interface MerchantGroupCount {
+        Long getMerchantId();
+        long getTransactionCount();
+    }
+
+    interface CategorySummary {
+        Long getCategoryId();
+        String getCategoryName();
+        BigDecimal getTotalAmount();
+        long getTransactionCount();
+    }
 }

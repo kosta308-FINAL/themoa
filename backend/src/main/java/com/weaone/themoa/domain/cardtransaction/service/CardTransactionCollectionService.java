@@ -11,6 +11,7 @@ import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
 import com.weaone.themoa.domain.category.entity.Category;
 import com.weaone.themoa.domain.category.service.CategoryClassificationService;
+import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseMatchingService;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.merchant.entity.Merchant;
 import com.weaone.themoa.domain.merchant.entity.MerchantAlias;
@@ -34,8 +35,10 @@ import java.util.Optional;
 
 /**
  * 카드 거래 수집 파이프라인의 단일 진입점(cardtransaction.md §1): ①중복 판정 ②해외 원화 환산 ③가맹점 신원
- * ④카테고리 분류를 거쳐 저장한다. ⑤고정지출 매칭은 fixedExpense.md 미구현이라 이 파이프라인에 없다.
- * 이미 저장된 행이면 §6-3 갱신 규칙(사용자 정정 보호)만 적용하고 카테고리는 건드리지 않는다.
+ * ④카테고리 분류 ⑤고정지출 매칭(fixedExpense.md §5)을 거쳐 저장한다. 이미 저장된 행(재수집)이면
+ * §6-3 갱신 규칙(사용자 정정 보호)만 적용하고 카테고리는 건드리지 않지만, ⑤는 예외다 — 아직 어떤
+ * 고정지출에도 안 태깅된 행은 그 사이 새로 등록된 규칙이 있을 수 있어 재수집 때도 매칭을 다시 시도한다
+ * (이중차감 방지의 근간, §6-3). 이미 태깅된 행은 재매칭하지 않는다(태그를 흔들 위험만 있다).
  */
 @Slf4j
 @Service
@@ -54,6 +57,7 @@ public class CardTransactionCollectionService {
     private final MerchantAliasRepository merchantAliasRepository;
     private final CategoryClassificationService categoryClassificationService;
     private final ExchangeRateService exchangeRateService;
+    private final FixedExpenseMatchingService fixedExpenseMatchingService;
 
     @Transactional
     public CollectionOutcome collect(Member member, CardConnection cardConnection, CardIssuer cardIssuer,
@@ -94,7 +98,8 @@ public class CardTransactionCollectionService {
         CardTransaction transaction = CardTransaction.sync(member, card, category, approvalNo, usedDate, usedAt,
                 fx.amount(), fx.originalAmount(), fx.currencyCode(), fx.exchangeRate(), fx.exchangeRateEstimated(),
                 finalCancellation.status(), finalCancellation.canceledAmount(), finalCancellation.cancelAmountUncertain(),
-                merchantNameRaw, merchantTypeRaw, blankToNull(record.resMemberStoreAddr()),
+                merchantNameRaw, merchantTypeRaw, blankToNull(record.resMemberStoreCorpNo()),
+                blankToNull(record.resMemberStoreAddr()),
                 parseInstallmentMonths(record.resInstallmentMonth()));
         transaction.assignMerchant(merchantReferenceOrNull(identity.merchantId()),
                 merchantAliasReferenceOrNull(identity.merchantAliasId()));
@@ -111,6 +116,7 @@ public class CardTransactionCollectionService {
                             () -> { throw e; });
             return CollectionOutcome.UPDATED;
         }
+        fixedExpenseMatchingService.match(transaction);
         return CollectionOutcome.CREATED;
     }
 
@@ -138,6 +144,13 @@ public class CardTransactionCollectionService {
         transaction.reconcileOnResync(finalCancellation.status(), finalCancellation.canceledAmount(),
                 finalCancellation.cancelAmountUncertain(), amount, exchangeRate, exchangeRateEstimated,
                 merchantReferenceOrNull(identity.merchantId()), merchantAliasReferenceOrNull(identity.merchantAliasId()));
+
+        if (finalCancellation.status() == TransactionStatus.CANCELED) {
+            fixedExpenseMatchingService.unmatchIfCanceled(transaction);
+        } else if (transaction.getFixedExpense() == null) {
+            // 이 거래가 저장된 이후 새로 등록된 fixed_expense 규칙이 있을 수 있다 — 소급 매칭 시도(§6-3).
+            fixedExpenseMatchingService.match(transaction);
+        }
     }
 
     /** 전체취소는 amount 전액이 취소금액이다(§3-3) — FX 환산 후 금액이 확정된 뒤에만 채울 수 있다. */
@@ -182,10 +195,25 @@ public class CardTransactionCollectionService {
             case APPROVED, REJECTED -> new CancellationInfo(status, null, false);
             // 전체취소는 실지출 0이 목표라, FX 환산 후의 amount를 그대로 취소금액으로 맞춘다(§3-3).
             case CANCELED -> new CancellationInfo(status, null, false);
-            case PARTIAL_CANCELED -> cardIssuer.isCancelAmountUncertain()
+            case PARTIAL_CANCELED -> isCancelAmountUncertain(record, cardIssuer)
                     ? new CancellationInfo(status, null, true)
                     : new CancellationInfo(status, parseAmount(record.resCancelAmount()), false);
         };
+    }
+
+    /**
+     * 삼성·신한은 통화 무관하게 항상 불확실하고, 롯데는 해외 부분취소 건에만 해당한다(§3-4).
+     * 감지 기준은 FX-01과 동일하게 통화코드로 통일한다.
+     */
+    private boolean isCancelAmountUncertain(CodefApprovalRecord record, CardIssuer cardIssuer) {
+        if (!cardIssuer.isCancelAmountUncertain()) {
+            return false;
+        }
+        if (!cardIssuer.isCancelAmountUncertainForeignOnly()) {
+            return true;
+        }
+        String currency = StringUtils.hasText(record.resAccountCurrency()) ? record.resAccountCurrency() : CURRENCY_KRW;
+        return !CURRENCY_KRW.equals(currency);
     }
 
     /** 해외결제 원화 환산(FX-00~03, cardtransaction.md §4). */

@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.cardtransaction.entity;
 
 import com.weaone.themoa.domain.cardconnection.entity.Card;
 import com.weaone.themoa.domain.category.entity.Category;
+import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.merchant.entity.Merchant;
 import com.weaone.themoa.domain.merchant.entity.MerchantAlias;
@@ -29,8 +30,6 @@ import java.time.LocalDateTime;
 /**
  * 거래내역(erd.md "카드 연동" § 거래내역). 이번 구현 범위는 카드 수집(source=SYNC)뿐이다 — 수기 입력(MANUAL)
  * 생성 로직과 대체(replaced_at/replaced_by, entryMode.md 백필)는 별도 기능이라 이 엔티티에 아직 두지 않는다.
- * 고정지출 태깅(fixed_expense_id)도 fixedExpense.md 미구현이라 컬럼 자체를 두지 않는다 — 존재하지 않는
- * 테이블을 가리키는 FK를 만들 수 없다.
  */
 @Entity
 @Table(name = "card_transaction",
@@ -66,6 +65,11 @@ public class CardTransaction {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
+
+    /** 이중차감 방지 태그(fixedExpense.md §5). NULL이면 "오늘 쓴 돈"에 포함되는 일반 소비다. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fixed_expense_id")
+    private FixedExpense fixedExpense;
 
     /** true면 ④자동분류·⑤고정지출 카테고리 대입·관리자 소급 재분류 전 경로가 category_id를 건드리지 않는다. */
     @Column(name = "category_user_corrected", nullable = false)
@@ -126,6 +130,13 @@ public class CardTransaction {
     @Column(name = "merchant_type_raw", length = 100)
     private String merchantTypeRaw;
 
+    /**
+     * 가맹점 사업자번호 원본(resMemberStoreCorpNo). 신원 판별·dedup 키로는 쓰지 않는다 — PG 오염으로
+     * 한 번호에 무관 가맹점이 여럿 묶일 수 있다(merchant.md §1). 원본 보관 목적으로만 둔다.
+     */
+    @Column(name = "merchant_corp_no_raw", length = 50)
+    private String merchantCorpNoRaw;
+
     @Column(name = "address", length = 255)
     private String address;
 
@@ -140,8 +151,8 @@ public class CardTransaction {
                              BigDecimal originalAmount, String currencyCode, BigDecimal exchangeRate,
                              boolean exchangeRateEstimated, TransactionStatus status,
                              BigDecimal canceledAmount, boolean cancelAmountUncertain,
-                             String merchantNameRaw, String merchantTypeRaw, String address,
-                             Short installmentMonths) {
+                             String merchantNameRaw, String merchantTypeRaw, String merchantCorpNoRaw,
+                             String address, Short installmentMonths) {
         this.member = member;
         this.card = card;
         this.category = category;
@@ -160,6 +171,7 @@ public class CardTransaction {
         this.paymentMethod = PaymentMethod.CARD;
         this.merchantNameRaw = merchantNameRaw;
         this.merchantTypeRaw = merchantTypeRaw;
+        this.merchantCorpNoRaw = merchantCorpNoRaw;
         this.address = address;
         this.installmentMonths = installmentMonths;
     }
@@ -170,16 +182,28 @@ public class CardTransaction {
                                         BigDecimal originalAmount, String currencyCode, BigDecimal exchangeRate,
                                         boolean exchangeRateEstimated, TransactionStatus status,
                                         BigDecimal canceledAmount, boolean cancelAmountUncertain,
-                                        String merchantNameRaw, String merchantTypeRaw, String address,
-                                        Short installmentMonths) {
+                                        String merchantNameRaw, String merchantTypeRaw, String merchantCorpNoRaw,
+                                        String address, Short installmentMonths) {
         return new CardTransaction(member, card, category, approvalNo, usedDate, usedAt, amount, originalAmount,
                 currencyCode, exchangeRate, exchangeRateEstimated, status, canceledAmount, cancelAmountUncertain,
-                merchantNameRaw, merchantTypeRaw, address, installmentMonths);
+                merchantNameRaw, merchantTypeRaw, merchantCorpNoRaw, address, installmentMonths);
     }
 
     public void assignMerchant(Merchant merchant, MerchantAlias merchantAlias) {
         this.merchant = merchant;
         this.merchantAlias = merchantAlias;
+    }
+
+    /**
+     * 수집 매칭 성공(또는 취소 시 해제) 태깅(fixedExpense.md §5). 매칭 성공 시 그 고정지출의 카테고리를
+     * 대입한다 — 단 사용자가 건별로 이미 고친 거래는 덮어쓰지 않는다(merchant.md §5-D-6 가드,
+     * category.md §2-④와 동일 원칙). 해제(null)는 카테고리를 되돌리지 않는다.
+     */
+    public void assignFixedExpense(FixedExpense fixedExpense) {
+        this.fixedExpense = fixedExpense;
+        if (fixedExpense != null && !this.categoryUserCorrected) {
+            this.category = fixedExpense.getCategory();
+        }
     }
 
     /**
@@ -220,6 +244,11 @@ public class CardTransaction {
     public void correctAmount(BigDecimal amount) {
         this.amount = amount;
         this.amountUserCorrected = true;
+    }
+
+    /** 메모 자유 입력(`MOA-S-CAT-CTG-06`). 재수집이 덮어쓰지 않는다(cardtransaction.md §6-3). */
+    public void updateMemo(String memo) {
+        this.memo = memo;
     }
 
     /** 실지출 = amount − COALESCE(canceled_amount, 0)(cardtransaction.md §3-3). */

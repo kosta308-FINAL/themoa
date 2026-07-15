@@ -13,8 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 
 /**
- * 거래 건별 사용자 정정 3종(cardtransaction.md §3-4, §4, category.md §2-④). 모두 본인 거래에만 적용되고,
- * 정정 후에는 각 도메인의 재수집 갱신 로직이 이 값을 덮어쓰지 않는다(엔티티 쪽 가드).
+ * 거래 건별 사용자 정정 4종(cardtransaction.md §3-4, §4, category.md §2-④·§7). 모두 본인 거래에만 적용되고,
+ * 정정 후에는 각 도메인의 재수집 갱신 로직이 이 값을 덮어쓰지 않는다(엔티티 쪽 가드). 메모는 애초에
+ * 재수집이 건드리지 않는 자유 입력이라 별도 가드가 필요 없다.
  */
 @Service
 @RequiredArgsConstructor
@@ -47,6 +48,11 @@ public class CardTransactionCorrectionService {
             throw new BusinessException(ErrorCode.CARD_TRANSACTION_AMOUNT_NOT_CORRECTABLE);
         }
         transaction.correctAmount(amount);
+    }
+
+    @Transactional
+    public void updateMemo(Long memberId, Long transactionId, String memo) {
+        getOwnedTransaction(memberId, transactionId).updateMemo(memo);
     }
 
     private CardTransaction getOwnedTransaction(Long memberId, Long transactionId) {

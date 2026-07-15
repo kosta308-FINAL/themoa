@@ -4,8 +4,10 @@ import com.weaone.themoa.common.response.ApiResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.request.AmountCorrectionRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.request.CancelAmountCorrectionRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.request.CategoryCorrectionRequest;
+import com.weaone.themoa.domain.cardtransaction.dto.request.MemoUpdateRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.request.RecoveryRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionListResponse;
+import com.weaone.themoa.domain.cardtransaction.dto.response.CategorySummaryListResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.RecoveryStatusResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.SyncResponse;
 import com.weaone.themoa.domain.cardtransaction.service.CardTransactionCorrectionService;
@@ -26,8 +28,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDate;
 
 /**
  * 거래 조회 + 건별 사용자 정정(category.md §2-④, cardtransaction.md §3-4·§4). 카드 수집 거래(source=SYNC)는
@@ -50,6 +55,17 @@ public class CardTransactionController {
             @ParameterObject @PageableDefault(size = 30) Pageable pageable) {
         CardTransactionListResponse response = CardTransactionListResponse
                 .from(cardTransactionQueryService.list(memberId, pageable));
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "카테고리별 소비 비중/내역 조회",
+            description = "취소 제외 합계·건수를 카테고리별로 집계합니다(category.md §6). 부분취소는 순액으로 반영됩니다.")
+    @GetMapping("/category-summary")
+    public ResponseEntity<ApiResponse<CategorySummaryListResponse>> categorySummary(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
+            @Parameter(description = "집계 시작일(포함)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @Parameter(description = "집계 종료일(포함)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        CategorySummaryListResponse response = cardTransactionQueryService.summarizeByCategory(memberId, startDate, endDate);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -83,6 +99,17 @@ public class CardTransactionController {
             @Parameter(description = "정정할 거래 ID") @PathVariable Long transactionId,
             @Valid @RequestBody AmountCorrectionRequest request) {
         cardTransactionCorrectionService.correctAmount(memberId, transactionId, request.amount());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "거래 메모 수정",
+            description = "선택한 거래에 자유 메모를 남깁니다. 재수집으로 덮어써지지 않습니다. 먼저 /api/card-transactions에서 수정할 transactionId를 확인하세요.")
+    @PatchMapping("/{transactionId}/memo")
+    public ResponseEntity<Void> updateMemo(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
+            @Parameter(description = "수정할 거래 ID") @PathVariable Long transactionId,
+            @Valid @RequestBody MemoUpdateRequest request) {
+        cardTransactionCorrectionService.updateMemo(memberId, transactionId, request.memo());
         return ResponseEntity.noContent().build();
     }
 

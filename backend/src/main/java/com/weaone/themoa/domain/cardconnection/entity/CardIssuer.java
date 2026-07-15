@@ -38,17 +38,26 @@ public class CardIssuer {
     @Column(name = "cancel_amount_uncertain", nullable = false)
     private boolean cancelAmountUncertain;
 
-    private CardIssuer(String organization, String name, CodefValueType fxType,
-                        CodefValueType cancelType, boolean cancelAmountUncertain) {
+    /**
+     * true면 {@link #cancelAmountUncertain}이 해외 거래에만 적용된다(cardtransaction.md §3-4 — 롯데는
+     * "해외" 부분취소만 금액을 안 준다). false(삼성·신한)면 통화 무관하게 항상 적용된다.
+     */
+    @Column(name = "cancel_amount_uncertain_foreign_only", nullable = false)
+    private boolean cancelAmountUncertainForeignOnly;
+
+    private CardIssuer(String organization, String name, CodefValueType fxType, CodefValueType cancelType,
+                        boolean cancelAmountUncertain, boolean cancelAmountUncertainForeignOnly) {
         this.organization = organization;
         this.name = name;
         this.fxType = fxType;
         this.cancelType = cancelType;
         this.cancelAmountUncertain = cancelAmountUncertain;
+        this.cancelAmountUncertainForeignOnly = cancelAmountUncertainForeignOnly;
     }
 
-    public static CardIssuer seed(String organization, String name, CodefValueType fxType,
-                                   CodefValueType cancelType, boolean cancelAmountUncertain) {
-        return new CardIssuer(organization, name, fxType, cancelType, cancelAmountUncertain);
+    public static CardIssuer seed(String organization, String name, CodefValueType fxType, CodefValueType cancelType,
+                                   boolean cancelAmountUncertain, boolean cancelAmountUncertainForeignOnly) {
+        return new CardIssuer(organization, name, fxType, cancelType, cancelAmountUncertain,
+                cancelAmountUncertainForeignOnly);
     }
 }
