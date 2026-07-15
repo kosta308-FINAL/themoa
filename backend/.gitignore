@@ -39,4 +39,4 @@ out/
 application.yaml
 .env
 externalApiTest
-cardtransaction-seed.sql
+sql
