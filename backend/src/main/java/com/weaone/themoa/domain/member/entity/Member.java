@@ -116,6 +116,11 @@ public class Member {
         tokenVersion++;
     }
 
+    /** 비밀번호 변경(auth.md §7-3). token_version 증가·세션 폐기는 호출자(AuthService)가 이어서 처리한다. */
+    public void changePassword(String newPasswordHash) {
+        this.password = newPasswordHash;
+    }
+
     /**
      * last_active_at만 갱신한다(로그인 실패 카운트·잠금 상태는 건드리지 않음). 30일 초과 복귀 동기화
      * 선택 완료 시점처럼, 로그인 자체와는 다른 "실제 이용" 신호에 사용한다(cardtransaction.md §6-C).
