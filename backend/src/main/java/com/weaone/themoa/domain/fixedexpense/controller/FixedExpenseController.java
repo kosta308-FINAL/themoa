@@ -9,6 +9,8 @@ import com.weaone.themoa.domain.fixedexpense.dto.response.FixedExpenseListRespon
 import com.weaone.themoa.domain.fixedexpense.dto.response.FixedExpenseResponse;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
 import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseConfirmationService;
+import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseCyclePolicy;
+import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseDetectionService;
 import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseRegistrationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,6 +38,7 @@ public class FixedExpenseController {
 
     private final FixedExpenseRegistrationService fixedExpenseRegistrationService;
     private final FixedExpenseConfirmationService fixedExpenseConfirmationService;
+    private final FixedExpenseDetectionService fixedExpenseDetectionService;
 
     @Operation(summary = "고정지출 목록", description = "등록된(ACTIVE) 고정지출과 이번 달 합계를 조회합니다.")
     @GetMapping
@@ -90,6 +93,21 @@ public class FixedExpenseController {
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
             @PathVariable Long fixedExpenseId) {
         fixedExpenseRegistrationService.cancel(memberId, fixedExpenseId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 탐지 배치(새벽 03:30 cron, {@link FixedExpenseDetectionService#runNightlyDetection()})를 로그인
+     * 회원 본인 범위로 즉시 실행한다. 운영 동작을 바꾸지 않는다 — 새벽 배치가 스킵하는 게 아니라
+     * 그 배치가 회원별로 호출하는 것과 같은 메서드를 지금 바로 한 번 더 부르는 것뿐이라 결과는 멱등하다.
+     */
+    @Operation(summary = "고정지출 탐지 즉시 실행(테스트용)",
+            description = "새벽 배치를 기다리지 않고 로그인 회원의 카드거래를 지금 훑어 반복결제 후보를 만듭니다. " +
+                    "결과는 /api/fixed-expense-candidates에서 확인하세요.")
+    @PostMapping("/detect")
+    public ResponseEntity<Void> detectNow(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long memberId) {
+        fixedExpenseDetectionService.detectForMember(memberId, FixedExpenseCyclePolicy.currentYearMonth());
         return ResponseEntity.noContent().build();
     }
 
