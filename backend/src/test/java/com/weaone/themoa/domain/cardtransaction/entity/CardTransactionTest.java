@@ -30,7 +30,7 @@ class CardTransactionTest {
     private CardTransaction approvedTransaction(BigDecimal amount) {
         return CardTransaction.sync(member(), null, category(CategoryCode.SUBSCRIPTION), "12345678",
                 LocalDate.of(2026, 6, 10), LocalDateTime.of(2026, 6, 10, 10, 30), amount, null, "KRW", null, false,
-                TransactionStatus.APPROVED, null, false, "ANTHROPIC* CLAUDE SUB", null, null, null);
+                TransactionStatus.APPROVED, null, false, "ANTHROPIC* CLAUDE SUB", null, null, null, null);
     }
 
     @Test
@@ -75,7 +75,7 @@ class CardTransactionTest {
         CardTransaction transaction = CardTransaction.sync(member(), null, category(CategoryCode.SUBSCRIPTION),
                 "590688", LocalDate.of(2026, 6, 10), LocalDateTime.of(2026, 6, 10, 10, 30),
                 BigDecimal.valueOf(29500), BigDecimal.valueOf(22.00), "USD", BigDecimal.valueOf(1340.9091), false,
-                TransactionStatus.APPROVED, null, false, "ANTHROPIC* CLAUDE SUB", null, null, null);
+                TransactionStatus.APPROVED, null, false, "ANTHROPIC* CLAUDE SUB", null, null, null, null);
         transaction.correctAmount(BigDecimal.valueOf(30200));
 
         transaction.reconcileOnResync(TransactionStatus.APPROVED, null, false,

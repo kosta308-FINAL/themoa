@@ -63,11 +63,11 @@ class CardConnectionServiceTest {
     private CardConnectionService cardConnectionService;
 
     private CardIssuer shinhan() {
-        return CardIssuer.seed(ORGANIZATION_SHINHAN, "신한카드", CodefValueType.TYPE1, CodefValueType.TYPE1, true);
+        return CardIssuer.seed(ORGANIZATION_SHINHAN, "신한카드", CodefValueType.TYPE1, CodefValueType.TYPE1, true, false);
     }
 
     private CardIssuer hyundai() {
-        return CardIssuer.seed(ORGANIZATION_HYUNDAI, "현대카드", CodefValueType.TYPE2, CodefValueType.TYPE1, false);
+        return CardIssuer.seed(ORGANIZATION_HYUNDAI, "현대카드", CodefValueType.TYPE2, CodefValueType.TYPE1, false, false);
     }
 
     private CardConnectionCreateRequest request(String organization) {

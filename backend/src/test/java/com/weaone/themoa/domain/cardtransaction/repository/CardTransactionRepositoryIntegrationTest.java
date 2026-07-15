@@ -84,12 +84,12 @@ class CardTransactionRepositoryIntegrationTest {
 
         CardTransaction first = CardTransaction.sync(member, card, category, "43841056",
                 LocalDate.of(2026, 6, 10), LocalDateTime.of(2026, 6, 10, 10, 30), BigDecimal.valueOf(9700),
-                null, "KRW", null, false, TransactionStatus.APPROVED, null, false, "카카오T", "택시", null, null);
+                null, "KRW", null, false, TransactionStatus.APPROVED, null, false, "카카오T", "택시", null, null, null);
         cardTransactionRepository.saveAndFlush(first);
 
         CardTransaction duplicate = CardTransaction.sync(member, card, category, "43841056",
                 LocalDate.of(2026, 6, 10), LocalDateTime.of(2026, 6, 10, 10, 30), BigDecimal.valueOf(9700),
-                null, "KRW", null, false, TransactionStatus.APPROVED, null, false, "카카오T", "택시", null, null);
+                null, "KRW", null, false, TransactionStatus.APPROVED, null, false, "카카오T", "택시", null, null, null);
 
         assertThatThrownBy(() -> cardTransactionRepository.saveAndFlush(duplicate))
                 .isInstanceOf(DataIntegrityViolationException.class);
@@ -106,10 +106,10 @@ class CardTransactionRepositoryIntegrationTest {
 
         CardTransaction first = CardTransaction.sync(member, card, category, "11111111",
                 LocalDate.of(2026, 6, 10), LocalDateTime.of(2026, 6, 10, 10, 30), BigDecimal.valueOf(9700),
-                null, "KRW", null, false, TransactionStatus.APPROVED, null, false, "카카오T", "택시", null, null);
+                null, "KRW", null, false, TransactionStatus.APPROVED, null, false, "카카오T", "택시", null, null, null);
         CardTransaction second = CardTransaction.sync(member, card, category, "22222222",
                 LocalDate.of(2026, 6, 10), LocalDateTime.of(2026, 6, 10, 10, 30), BigDecimal.valueOf(9700),
-                null, "KRW", null, false, TransactionStatus.APPROVED, null, false, "카카오T", "택시", null, null);
+                null, "KRW", null, false, TransactionStatus.APPROVED, null, false, "카카오T", "택시", null, null, null);
 
         cardTransactionRepository.saveAndFlush(first);
         cardTransactionRepository.saveAndFlush(second);

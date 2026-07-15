@@ -12,6 +12,7 @@ import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionReposi
 import com.weaone.themoa.domain.category.entity.Category;
 import com.weaone.themoa.domain.category.entity.CategoryCode;
 import com.weaone.themoa.domain.category.service.CategoryClassificationService;
+import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseMatchingService;
 import com.weaone.themoa.domain.member.entity.Gender;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.merchant.repository.MerchantAliasRepository;
@@ -59,6 +60,8 @@ class CardTransactionCollectionServiceTest {
     private CategoryClassificationService categoryClassificationService;
     @Mock
     private ExchangeRateService exchangeRateService;
+    @Mock
+    private FixedExpenseMatchingService fixedExpenseMatchingService;
 
     @InjectMocks
     private CardTransactionCollectionService collectionService;
@@ -82,7 +85,7 @@ class CardTransactionCollectionServiceTest {
     }
 
     private CardIssuer issuer(CodefValueType fxType, CodefValueType cancelType, boolean cancelAmountUncertain) {
-        return CardIssuer.seed("0306", "신한카드", fxType, cancelType, cancelAmountUncertain);
+        return CardIssuer.seed("0306", "신한카드", fxType, cancelType, cancelAmountUncertain, false);
     }
 
     private Category subscription() {
@@ -126,7 +129,7 @@ class CardTransactionCollectionServiceTest {
         Card card = card(connection);
         CardTransaction existing = CardTransaction.sync(member(), card, subscription(), "43841056",
                 LocalDate.of(2026, 6, 10), LocalDateTime.of(2026, 6, 10, 10, 30), BigDecimal.valueOf(9700),
-                null, "KRW", null, false, TransactionStatus.APPROVED, null, false, "카카오T", "택시", null, null);
+                null, "KRW", null, false, TransactionStatus.APPROVED, null, false, "카카오T", "택시", null, null, null);
         given(cardRepository.findByCardConnection_IdAndCardNumberMasked(CONNECTION_ID, "4619****984*"))
                 .willReturn(Optional.of(card));
         given(cardTransactionRepository
@@ -192,6 +195,56 @@ class CardTransactionCollectionServiceTest {
         assertThat(saved.getCanceledAmount()).isNull();
         assertThat(saved.isCancelAmountUncertain()).isTrue();
         assertThat(saved.getNetAmount()).isEqualByComparingTo("50000");
+    }
+
+    @Test
+    @DisplayName("롯데카드는 국내 부분취소면 정확한 취소금액을 그대로 쓴다(해외 건만 불확실)")
+    void lotteDomesticPartialCancelUsesProvidedAmount() {
+        CardIssuer lotte = CardIssuer.seed("0311", "롯데카드", CodefValueType.TYPE2, CodefValueType.TYPE1, true, true);
+        CardConnection connection = connection(lotte);
+        Card card = card(connection);
+        CodefApprovalRecord domesticPartial = new CodefApprovalRecord("20260610", "103000", "4619****984*", "",
+                "가맹점", "50000", "KRW", "11112222", "", "", "", "", "2", "10000", "", "");
+        given(cardRepository.findByCardConnection_IdAndCardNumberMasked(CONNECTION_ID, "4619****984*"))
+                .willReturn(Optional.of(card));
+        given(cardTransactionRepository
+                .findByMember_IdAndCard_IdAndUsedDateAndUsedAtAndApprovalNo(any(), any(), any(), any(), any()))
+                .willReturn(Optional.empty());
+        given(merchantIdentityService.resolve(any(), any())).willReturn(MerchantIdentityResult.identified(20L, null));
+        given(categoryClassificationService.classify(any(), any())).willReturn(subscription());
+
+        collectionService.collect(member(), connection, lotte, domesticPartial);
+
+        var captor = org.mockito.ArgumentCaptor.forClass(CardTransaction.class);
+        then(cardTransactionRepository).should().save(captor.capture());
+        CardTransaction saved = captor.getValue();
+        assertThat(saved.getCanceledAmount()).isEqualByComparingTo("10000");
+        assertThat(saved.isCancelAmountUncertain()).isFalse();
+    }
+
+    @Test
+    @DisplayName("롯데카드는 해외 부분취소면 취소금액이 불확실하다")
+    void lotteForeignPartialCancelIsUncertain() {
+        CardIssuer lotte = CardIssuer.seed("0311", "롯데카드", CodefValueType.TYPE2, CodefValueType.TYPE1, true, true);
+        CardConnection connection = connection(lotte);
+        Card card = card(connection);
+        CodefApprovalRecord foreignPartial = new CodefApprovalRecord("20260610", "103000", "4619****984*", "",
+                "가맹점", "50000", "USD", "11112222", "2", "", "", "", "2", "10000", "", "");
+        given(cardRepository.findByCardConnection_IdAndCardNumberMasked(CONNECTION_ID, "4619****984*"))
+                .willReturn(Optional.of(card));
+        given(cardTransactionRepository
+                .findByMember_IdAndCard_IdAndUsedDateAndUsedAtAndApprovalNo(any(), any(), any(), any(), any()))
+                .willReturn(Optional.empty());
+        given(merchantIdentityService.resolve(any(), any())).willReturn(MerchantIdentityResult.identified(20L, null));
+        given(categoryClassificationService.classify(any(), any())).willReturn(subscription());
+
+        collectionService.collect(member(), connection, lotte, foreignPartial);
+
+        var captor = org.mockito.ArgumentCaptor.forClass(CardTransaction.class);
+        then(cardTransactionRepository).should().save(captor.capture());
+        CardTransaction saved = captor.getValue();
+        assertThat(saved.getCanceledAmount()).isNull();
+        assertThat(saved.isCancelAmountUncertain()).isTrue();
     }
 
     @Test
