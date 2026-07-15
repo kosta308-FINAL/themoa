@@ -171,6 +171,32 @@ class CardTransactionCollectionServiceTest {
     }
 
     @Test
+    @DisplayName("Type 2 별도 음수 취소행은 status=CANCELED여도 canceled_amount를 채우지 않고 순액이 음수 그대로 유지된다")
+    void type2CancellationRowKeepsNegativeNetAmount() {
+        CardIssuer cardIssuer = issuer(CodefValueType.TYPE1, CodefValueType.TYPE1, false);
+        CardConnection connection = connection(cardIssuer);
+        Card card = card(connection);
+        CodefApprovalRecord type2CancelRow = new CodefApprovalRecord("20260610", "143500", "4619****984*", "",
+                "가맹점", "-30000", "KRW", "39259232", "", "택시", "", "", "1", "", "", "");
+        given(cardRepository.findByCardConnection_IdAndCardNumberMasked(CONNECTION_ID, "4619****984*"))
+                .willReturn(Optional.of(card));
+        given(cardTransactionRepository
+                .findByMember_IdAndCard_IdAndUsedDateAndUsedAtAndApprovalNo(any(), any(), any(), any(), any()))
+                .willReturn(Optional.empty());
+        given(merchantIdentityService.resolve(any(), any())).willReturn(MerchantIdentityResult.identified(20L, 30L));
+        given(categoryClassificationService.classify(any(), any())).willReturn(subscription());
+
+        collectionService.collect(member(), connection, cardIssuer, type2CancelRow);
+
+        var captor = org.mockito.ArgumentCaptor.forClass(CardTransaction.class);
+        then(cardTransactionRepository).should().save(captor.capture());
+        CardTransaction saved = captor.getValue();
+        assertThat(saved.getStatus()).isEqualTo(TransactionStatus.CANCELED);
+        assertThat(saved.getCanceledAmount()).isNull();
+        assertThat(saved.getNetAmount()).isEqualByComparingTo("-30000");
+    }
+
+    @Test
     @DisplayName("부분취소 금액이 부정확한 카드사는 취소금액을 비우고 uncertain 플래그만 세운다")
     void partialCancelWithUncertainIssuer() {
         CardIssuer cardIssuer = issuer(CodefValueType.TYPE1, CodefValueType.TYPE2, true);
