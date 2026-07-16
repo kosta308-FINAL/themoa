@@ -37,6 +37,7 @@ public enum ErrorCode {
     CARD_CONNECTION_COOLDOWN(HttpStatus.TOO_MANY_REQUESTS, "잠시 후 다시 시도해 주세요."),
     CARD_CONNECTION_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "카드사 로그인 정보가 올바르지 않습니다."),
     CARD_CONNECTION_LOCKED(HttpStatus.LOCKED, "카드사에서 계정이 잠겼습니다. 카드사 앱이나 고객센터에서 잠금을 해제한 후 다시 시도해 주세요."),
+    CARD_CONNECTION_BIRTHDATE_REQUIRED(HttpStatus.BAD_REQUEST, "본인 확인을 위해 생년월일(주민등록번호)을 입력한 뒤 다시 시도해 주세요."),
     CARD_CONNECTION_EXTERNAL_ERROR(HttpStatus.BAD_GATEWAY, "카드사 연결 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."),
 
     // 가맹점 신원
@@ -52,7 +53,17 @@ public enum ErrorCode {
     CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다."),
 
     // 카드 동기화
-    CARD_SYNC_RECOVERY_NOT_ELIGIBLE(HttpStatus.CONFLICT, "복귀 동기화 대상이 아닙니다.");
+    CARD_SYNC_RECOVERY_NOT_ELIGIBLE(HttpStatus.CONFLICT, "복귀 동기화 대상이 아닙니다."),
+
+    // 고정지출
+    FIXED_EXPENSE_CANDIDATE_NOT_FOUND(HttpStatus.NOT_FOUND, "고정지출 추천 후보를 찾을 수 없습니다."),
+    FIXED_EXPENSE_CANDIDATE_NOT_PENDING(HttpStatus.CONFLICT, "이미 응답한 추천 후보입니다."),
+    FIXED_EXPENSE_NOT_FOUND(HttpStatus.NOT_FOUND, "고정지출을 찾을 수 없습니다."),
+    FIXED_EXPENSE_MERCHANT_ALIAS_REQUIRED(HttpStatus.BAD_REQUEST, "카드형 고정지출은 가맹점을 선택해야 합니다."),
+    FIXED_EXPENSE_EXCHANGE_RATE_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "환율 정보를 구하지 못해 등록할 수 없습니다. 잠시 후 다시 시도해 주세요."),
+
+    // 알림
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;

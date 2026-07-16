@@ -47,13 +47,16 @@ public class CardTransactionSyncService {
     private final CardTransactionCollectionService cardTransactionCollectionService;
     private final CardSyncLockService cardSyncLockService;
 
-    /** 앱 열기(자동, 30분 쓰로틀) 또는 수동 새로고침(락만). §6 (A). */
+    /** 앱 열기(자동, 30분 쓰로틀) 또는 수동 새로고침(락만). §6 (A) — 새벽 배치와 동일하게 자동수집 OFF는 제외한다. */
     public SyncSummary syncOnDemand(Long memberId, boolean manual) {
         List<CardConnection> connections = cardConnectionRepository
-                .findByMember_IdAndStatus(memberId, ConnectionStatus.ACTIVE);
+                .findByMember_IdAndStatusAndMember_CardSyncEnabled(memberId, ConnectionStatus.ACTIVE, true);
         LocalDate end = LocalDate.now(ZONE_SEOUL);
         LocalDate start = end.minusDays(ON_DEMAND_WINDOW_DAYS);
-        return syncForMember(memberId, connections, start, end, !manual);
+        SyncSummary result = syncForMember(memberId, connections, start, end, !manual);
+        // 앱 열기·수동 새로고침도 "이용"이다 — last_active_at을 갱신해야 30일 초과 새벽배치 제외에서 빠지지 않는다(§6-B).
+        markMemberActive(memberId);
+        return result;
     }
 
     /** 새벽 저활동 시간대 1회. 마지막 이용 후 30일 이내 사용자만 대상이다. §6 (B). */
@@ -83,7 +86,7 @@ public class CardTransactionSyncService {
             throw new BusinessException(ErrorCode.CARD_SYNC_RECOVERY_NOT_ELIGIBLE);
         }
         List<CardConnection> connections = cardConnectionRepository
-                .findByMember_IdAndStatus(memberId, ConnectionStatus.ACTIVE);
+                .findByMember_IdAndStatusAndMember_CardSyncEnabled(memberId, ConnectionStatus.ACTIVE, true);
         LocalDate end = LocalDate.now(ZONE_SEOUL);
 
         if (!cardSyncLockService.tryAcquire(memberId)) {
@@ -156,7 +159,10 @@ public class CardTransactionSyncService {
                 skipped++;
             }
         }
-        markConnectionSynced(connection.getId());
+        if (skipped == 0) {
+            // 부분 실패(건별 예외·환율 미확보)가 있으면 last_successful_sync_at을 보존한다 — "전체 성공 후에만" 갱신(§6-C).
+            markConnectionSynced(connection.getId());
+        }
         return new SyncSummary(created, updated, skipped, false);
     }
 

@@ -43,6 +43,7 @@ class CardConnectionServiceTest {
     private static final Long MEMBER_ID = 1L;
     private static final String ORGANIZATION_SHINHAN = "0306";
     private static final String ORGANIZATION_HYUNDAI = "0302";
+    private static final String ORGANIZATION_WOORI = "0309";
 
     @Mock
     private MemberRepository memberRepository;
@@ -63,11 +64,15 @@ class CardConnectionServiceTest {
     private CardConnectionService cardConnectionService;
 
     private CardIssuer shinhan() {
-        return CardIssuer.seed(ORGANIZATION_SHINHAN, "신한카드", CodefValueType.TYPE1, CodefValueType.TYPE1, true);
+        return CardIssuer.seed(ORGANIZATION_SHINHAN, "신한카드", CodefValueType.TYPE1, CodefValueType.TYPE1, true, false);
     }
 
     private CardIssuer hyundai() {
-        return CardIssuer.seed(ORGANIZATION_HYUNDAI, "현대카드", CodefValueType.TYPE2, CodefValueType.TYPE1, false);
+        return CardIssuer.seed(ORGANIZATION_HYUNDAI, "현대카드", CodefValueType.TYPE2, CodefValueType.TYPE1, false, false);
+    }
+
+    private CardIssuer woori() {
+        return CardIssuer.seed(ORGANIZATION_WOORI, "우리카드", CodefValueType.TYPE2, CodefValueType.TYPE1, false, false);
     }
 
     private CardConnectionCreateRequest request(String organization) {
@@ -230,6 +235,24 @@ class CardConnectionServiceTest {
                 .extracting("errorCode").isEqualTo(ErrorCode.CARD_CONNECTION_LOCKED);
         then(cardConnectionLockService).should().markLocked(existing.getId());
         then(connectionAttemptService).should(never()).recordFailure(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("우리카드는 제한직전(userError=99)이어도 잠금 대신 생년월일 추가입력을 요구한다")
+    void requestsBirthDateForWooriInsteadOfLocking() {
+        CardIssuer cardIssuer = woori();
+        given(cardIssuerRepository.findById(ORGANIZATION_WOORI)).willReturn(Optional.of(cardIssuer));
+        given(cardConnectionRepository.findByMember_IdAndCardIssuer_Organization(MEMBER_ID, ORGANIZATION_WOORI))
+                .willReturn(Optional.empty());
+        given(connectionAttemptRepository.findByMember_IdAndCardIssuer_Organization(MEMBER_ID, ORGANIZATION_WOORI))
+                .willReturn(Optional.empty());
+        given(codefCardConnectionClient.createAccount(any()))
+                .willReturn(CodefAccountResult.failure("CF-12801", "비밀번호 오류", "99"));
+
+        assertThatThrownBy(() -> cardConnectionService.connect(MEMBER_ID, request(ORGANIZATION_WOORI)))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.CARD_CONNECTION_BIRTHDATE_REQUIRED);
+        then(cardConnectionLockService).should(never()).markLocked(any());
     }
 
     @Test

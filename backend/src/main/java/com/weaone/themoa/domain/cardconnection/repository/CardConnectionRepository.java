@@ -16,6 +16,12 @@ public interface CardConnectionRepository extends JpaRepository<CardConnection, 
 
     List<CardConnection> findByMember_IdAndStatus(Long memberId, ConnectionStatus status);
 
+    /** 온디맨드 수집 대상(cardtransaction.md §6): 새벽 배치와 동일하게 자동수집 OFF 회원은 제외한다. */
+    List<CardConnection> findByMember_IdAndStatusAndMember_CardSyncEnabled(
+            Long memberId, ConnectionStatus status, boolean cardSyncEnabled);
+
+    boolean existsByMember_IdAndStatus(Long memberId, ConnectionStatus status);
+
     /** 새벽 배치 대상(cardtransaction.md §6): 활성 커넥션 + 자동수집 ON + 마지막 이용 30일 이내. */
     @Query("select c from CardConnection c where c.status = :status "
             + "and c.member.cardSyncEnabled = true and c.member.lastActiveAt >= :activeSince")

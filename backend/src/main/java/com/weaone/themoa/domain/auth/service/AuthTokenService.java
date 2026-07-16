@@ -96,4 +96,14 @@ public class AuthTokenService {
         }
         refreshTokenRepository.deleteByTokenHash(refreshTokenGenerator.hash(refreshToken));
     }
+
+    /**
+     * 전체 기기 로그아웃·비밀번호 변경 전용(auth.md §7-3). 이 회원의 Refresh Token 행을 전부 지우고
+     * token_version을 올려 이미 발급된 Access Token까지 즉시 무효화한다.
+     */
+    @Transactional
+    public void revokeAll(Member member) {
+        refreshTokenRepository.deleteAllByMemberId(member.getId());
+        member.increaseTokenVersion();
+    }
 }

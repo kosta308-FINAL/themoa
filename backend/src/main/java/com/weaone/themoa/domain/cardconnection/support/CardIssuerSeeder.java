@@ -27,16 +27,17 @@ public class CardIssuerSeeder implements ApplicationRunner {
             return;
         }
         cardIssuerRepository.saveAll(List.of(
-                CardIssuer.seed("0301", "KB국민카드", CodefValueType.TYPE1, CodefValueType.TYPE2, false),
-                CardIssuer.seed("0302", "현대카드", CodefValueType.TYPE2, CodefValueType.TYPE1, false),
-                CardIssuer.seed("0303", "삼성카드", CodefValueType.TYPE1, CodefValueType.TYPE2, true),
-                CardIssuer.seed("0304", "NH농협카드", CodefValueType.TYPE1, CodefValueType.TYPE1, false),
-                CardIssuer.seed("0305", "BC카드", CodefValueType.TYPE1, CodefValueType.TYPE1, false),
-                CardIssuer.seed("0306", "신한카드", CodefValueType.TYPE1, CodefValueType.TYPE1, true),
-                CardIssuer.seed("0309", "우리카드", CodefValueType.TYPE2, CodefValueType.TYPE1, false),
-                CardIssuer.seed("0311", "롯데카드", CodefValueType.TYPE2, CodefValueType.TYPE1, true),
-                CardIssuer.seed("0313", "하나카드", CodefValueType.TYPE2, CodefValueType.TYPE1, false),
-                CardIssuer.seed("0315", "전북카드", CodefValueType.TYPE2, CodefValueType.TYPE1, false)
+                CardIssuer.seed("0301", "KB국민카드", CodefValueType.TYPE1, CodefValueType.TYPE2, false, false),
+                CardIssuer.seed("0302", "현대카드", CodefValueType.TYPE2, CodefValueType.TYPE1, false, false),
+                CardIssuer.seed("0303", "삼성카드", CodefValueType.TYPE1, CodefValueType.TYPE2, true, false),
+                CardIssuer.seed("0304", "NH농협카드", CodefValueType.TYPE1, CodefValueType.TYPE1, false, false),
+                CardIssuer.seed("0305", "BC카드", CodefValueType.TYPE1, CodefValueType.TYPE1, false, false),
+                CardIssuer.seed("0306", "신한카드", CodefValueType.TYPE1, CodefValueType.TYPE1, true, false),
+                CardIssuer.seed("0309", "우리카드", CodefValueType.TYPE2, CodefValueType.TYPE1, false, false),
+                // 롯데는 해외 부분취소만 금액 미제공(§3-4) — 국내 부분취소는 정확한 값을 준다.
+                CardIssuer.seed("0311", "롯데카드", CodefValueType.TYPE2, CodefValueType.TYPE1, true, true),
+                CardIssuer.seed("0313", "하나카드", CodefValueType.TYPE2, CodefValueType.TYPE1, false, false),
+                CardIssuer.seed("0315", "전북카드", CodefValueType.TYPE2, CodefValueType.TYPE1, false, false)
         ));
     }
 }

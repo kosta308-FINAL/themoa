@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.auth.service;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
+import com.weaone.themoa.domain.auth.dto.request.ChangePasswordRequest;
 import com.weaone.themoa.domain.auth.dto.request.LoginRequest;
 import com.weaone.themoa.domain.auth.dto.request.SignupRequest;
 import com.weaone.themoa.domain.auth.support.EmailNormalizer;
@@ -93,6 +94,33 @@ public class AuthService {
 
         member.recordLoginSuccess(now);
         return authTokenService.issue(member, now);
+    }
+
+    /**
+     * 비밀번호 변경(auth.md §7-3). 성공하면 이 회원의 Refresh Token을 전부 지우고 token_version을 올려
+     * 이 기기를 포함한 전 세션을 즉시 무효화한다 — 변경 직후에는 이 기기도 재로그인해야 한다.
+     */
+    @Transactional
+    public void changePassword(Long memberId, ChangePasswordRequest request) {
+        if (!request.newPassword().equals(request.newPasswordConfirm())) {
+            throw new BusinessException(ErrorCode.AUTH_PASSWORD_CONFIRM_MISMATCH);
+        }
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS));
+        if (member.getPassword() == null
+                || !passwordEncoder.matches(request.currentPassword(), member.getPassword())) {
+            throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS);
+        }
+        member.changePassword(passwordEncoder.encode(request.newPassword()));
+        authTokenService.revokeAll(member);
+    }
+
+    /** 전체 기기 로그아웃(auth.md §7-3). 계정 탈취 의심 등 사용자가 명시적으로 요청할 때 호출한다. */
+    @Transactional
+    public void logoutAllDevices(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS));
+        authTokenService.revokeAll(member);
     }
 
     private boolean isUnderage(LocalDate birthDate, LocalDate today) {

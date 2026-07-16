@@ -35,6 +35,9 @@ public class CardConnectionService {
     /** connection.md §3-1 — ID 로그인 파라미터상 카드번호+카드비밀번호가 필수인 카드사는 현대뿐이다. */
     private static final String ORGANIZATION_HYUNDAI = "0302";
 
+    /** connection.md §5-3 — 제한직전 응답이 하드락이 아니라 birthDate 추가입력으로 재개되는 유일한 카드사. */
+    private static final String ORGANIZATION_WOORI = "0309";
+
     private static final String RESULT_CODE_PASSWORD_INVALID = "CF-12801";
 
     /** connection.md §5-2 — 카드사 계정 잠금 임박/발생 신호. 우리 쿨다운과 별개이며 우리가 풀 수 없다. */
@@ -118,6 +121,10 @@ public class CardConnectionService {
     private void handleFailure(Long memberId, CardIssuer cardIssuer, CardConnection existing,
                                 CodefAccountResult result, LocalDateTime now) {
         if (USER_ERROR_LIMIT_IMMINENT.equals(result.userErrorCode())) {
+            if (ORGANIZATION_WOORI.equals(cardIssuer.getOrganization())) {
+                // 우리카드는 하드락이 아니라 본인확인용 birthDate 추가입력으로 연결을 재개한다(§5-3).
+                throw new BusinessException(ErrorCode.CARD_CONNECTION_BIRTHDATE_REQUIRED);
+            }
             if (existing != null) {
                 cardConnectionLockService.markLocked(existing.getId());
             }
