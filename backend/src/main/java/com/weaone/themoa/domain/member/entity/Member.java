@@ -12,6 +12,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -68,6 +69,18 @@ public class Member {
 
     @Column(name = "last_active_at")
     private LocalDateTime lastActiveAt;
+
+    /** 현재 월급 원본(dailyBudget.md §1). 소비 가이드 진입 시 지연 수집한다. 주기 스냅샷은 {@code budget.salary_amount}. */
+    @Column(name = "salary_amount", precision = 14, scale = 2)
+    private BigDecimal salaryAmount;
+
+    /** 월 저축 목표 원본. 미설정이면 예산 계산에서 0으로 본다. 주기 스냅샷은 {@code budget.savings_goal_amount}. */
+    @Column(name = "savings_target_amount", precision = 14, scale = 2)
+    private BigDecimal savingsTargetAmount;
+
+    /** 명목 월급일(1~31). 없는 날이면 말일로 당긴다. 소비가이드 최초 설정에서만 저장하고 MVP에서 일반 수정은 없다. */
+    @Column(name = "payday")
+    private Integer payday;
 
     private Member(String email, String password, String name, Gender gender, LocalDate birthDate) {
         this.email = email;
@@ -131,5 +144,34 @@ public class Member {
 
     public boolean isReturningAfterAbsence(LocalDateTime now, long absenceDays) {
         return lastActiveAt != null && lastActiveAt.isBefore(now.minusDays(absenceDays));
+    }
+
+    /**
+     * 소비 가이드 최초 설정(S-00A, MOA-S-BUD-BGT-01). 월급·급여일을 함께 저장한다. 급여일은 MVP에서
+     * 최초 설정 이후 일반 수정 대상이 아니므로(dailyBudget.md §1) 이 메서드로만 채워진다.
+     */
+    public void configureSpendingGuide(BigDecimal salaryAmount, Integer payday) {
+        this.salaryAmount = salaryAmount;
+        this.payday = payday;
+    }
+
+    /** 월급 원본 변경(MOA-S-BUD-BGT-08). 주기 스냅샷 반영 여부는 호출자가 적용 시점에 따라 결정한다. */
+    public void changeSalary(BigDecimal salaryAmount) {
+        this.salaryAmount = salaryAmount;
+    }
+
+    /** 월 저축 목표 원본 변경(MOA-S-BUD-BGT-03). */
+    public void changeSavingsTarget(BigDecimal savingsTargetAmount) {
+        this.savingsTargetAmount = savingsTargetAmount;
+    }
+
+    /** 소비 가이드는 월급·급여일 둘 다 있어야 진입 가능하다(dailyBudget.md §1). */
+    public boolean hasSpendingGuideSetup() {
+        return salaryAmount != null && payday != null;
+    }
+
+    /** 저축 목표 미설정은 0원으로 계산한다(dayguide.md §2.1). */
+    public BigDecimal getSavingsTargetOrZero() {
+        return savingsTargetAmount != null ? savingsTargetAmount : BigDecimal.ZERO;
     }
 }

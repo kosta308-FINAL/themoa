@@ -63,7 +63,10 @@ public enum ErrorCode {
     FIXED_EXPENSE_EXCHANGE_RATE_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "환율 정보를 구하지 못해 등록할 수 없습니다. 잠시 후 다시 시도해 주세요."),
 
     // 알림
-    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다.");
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
+
+    // 회원 · 소비 가이드 예산
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;
