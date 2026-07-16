@@ -9,10 +9,12 @@ import java.util.List;
 /** 카테고리별 소비 비중/내역(category.md §6·§7). */
 public record CategorySummaryListResponse(
         BigDecimal totalAmount,
+        BigDecimal canceledTotal,
         List<CategorySummaryResponse> items
 ) {
 
-    public static CategorySummaryListResponse from(List<CardTransactionRepository.CategorySummary> summaries) {
+    public static CategorySummaryListResponse from(List<CardTransactionRepository.CategorySummary> summaries,
+                                                     BigDecimal canceledTotal) {
         BigDecimal totalAmount = summaries.stream()
                 .map(CardTransactionRepository.CategorySummary::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -24,7 +26,7 @@ public record CategorySummaryListResponse(
                         summary.getTransactionCount(),
                         percentageOf(summary.getTotalAmount(), totalAmount)))
                 .toList();
-        return new CategorySummaryListResponse(totalAmount, items);
+        return new CategorySummaryListResponse(totalAmount, canceledTotal, items);
     }
 
     private static BigDecimal percentageOf(BigDecimal amount, BigDecimal total) {
