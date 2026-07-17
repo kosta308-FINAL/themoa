@@ -84,4 +84,55 @@ class MemberTest {
         assertThat(member.isCardSyncEnabled()).isTrue();
         assertThat(member.getTokenVersion()).isZero();
     }
+
+    @Test
+    @DisplayName("수기 모드에서 카드 연동을 시작하면 CARD로 전환되고 전환 시각이 남는다")
+    void startCardSyncTransitionsFromManual() {
+        Member member = member();
+
+        member.startCardSync(NOW);
+
+        assertThat(member.getEntryMode()).isEqualTo(EntryMode.CARD);
+        assertThat(member.getCardSyncStartedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    @DisplayName("이미 CARD면 다시 호출해도 전환 시각이 바뀌지 않는다 — 역전이도 재전환도 없다")
+    void startCardSyncIsNoOpWhenAlreadyCard() {
+        Member member = member();
+        member.startCardSync(NOW);
+
+        member.startCardSync(NOW.plusDays(1));
+
+        assertThat(member.getEntryMode()).isEqualTo(EntryMode.CARD);
+        assertThat(member.getCardSyncStartedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    @DisplayName("카드 자동수집 OFF/ON은 entry_mode를 건드리지 않는다")
+    void toggleCardSyncDoesNotChangeEntryMode() {
+        Member member = member();
+        member.startCardSync(NOW);
+
+        member.disableCardSync();
+        assertThat(member.isCardSyncEnabled()).isFalse();
+        assertThat(member.getEntryMode()).isEqualTo(EntryMode.CARD);
+
+        member.enableCardSync();
+        assertThat(member.isCardSyncEnabled()).isTrue();
+        assertThat(member.getEntryMode()).isEqualTo(EntryMode.CARD);
+    }
+
+    @Test
+    @DisplayName("결제수단=카드 수기 입력은 수기 모드이거나 자동수집이 꺼져 있을 때만 허용된다")
+    void manualCardEntryAllowedOnlyWhenSyncNotRunning() {
+        Member manualMember = member();
+        assertThat(manualMember.isManualCardEntryAllowed()).isTrue();
+
+        manualMember.startCardSync(NOW);
+        assertThat(manualMember.isManualCardEntryAllowed()).isFalse();
+
+        manualMember.disableCardSync();
+        assertThat(manualMember.isManualCardEntryAllowed()).isTrue();
+    }
 }
