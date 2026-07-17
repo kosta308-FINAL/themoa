@@ -1,6 +1,8 @@
 package com.weaone.themoa.domain.cardtransaction.repository;
 
 import com.weaone.themoa.domain.cardtransaction.entity.CardTransaction;
+import com.weaone.themoa.domain.cardtransaction.entity.PaymentMethod;
+import com.weaone.themoa.domain.cardtransaction.entity.TransactionSource;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -104,7 +106,7 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
     /**
      * 이번 급여주기 순지출 집계(dailyBudget.md §3): 고정지출 태그 제외 + 거절 제외 + 순액 합계.
      * Type 1 취소는 원 결제행 순액 소급 정정, Type 2 취소행은 음수 amount로 그 날짜에 반영된다.
-     * (수기 대체 행 제외 조건 replaced_at은 대체 기능 미구현이라 엔티티에 컬럼이 없어 생략 — 도입 시 함께 추가)
+     * (대체된 수기 건은 엔티티의 {@code @SQLRestriction("replaced_at is null")}이 이 쿼리를 포함해 전부 자동 제외한다)
      */
     @Query("select coalesce(sum(t.amount - coalesce(t.canceledAmount, 0)), 0) from CardTransaction t "
             + "where t.member.id = :memberId and t.fixedExpense is null and t.status <> :rejected "
@@ -113,6 +115,20 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
                            @Param("rejected") TransactionStatus rejected,
                            @Param("startDate") LocalDate startDate,
                            @Param("endDate") LocalDate endDate);
+
+    /**
+     * 대체 대상(entryMode.md §4/§4-1): 갭 구간의 결제수단=카드 수기 건. {@code @SQLRestriction}으로 이미
+     * 대체된 행은 조회 자체에서 빠지므로, 나오는 행은 전부 "아직 대체 안 된" 건이다.
+     */
+    List<CardTransaction> findByMember_IdAndSourceAndPaymentMethodAndUsedDateBetween(
+            Long memberId, TransactionSource source, PaymentMethod paymentMethod, LocalDate start, LocalDate end);
+
+    /**
+     * 대체 짝 탐색(entryMode.md §4-2): 같은 날짜·금액의 카드 수집 거래를 정확 일치로 찾는다(fuzzy 매칭 아님,
+     * §4). 짝을 못 찾으면 호출자가 NULL로 처리한다. 여러 건이면 먼저 저장된 것을 쓴다.
+     */
+    Optional<CardTransaction> findFirstByMember_IdAndSourceAndUsedDateAndAmountOrderByIdAsc(
+            Long memberId, TransactionSource source, LocalDate usedDate, BigDecimal amount);
 
     interface AliasGroupCount {
         Long getMerchantAliasId();
