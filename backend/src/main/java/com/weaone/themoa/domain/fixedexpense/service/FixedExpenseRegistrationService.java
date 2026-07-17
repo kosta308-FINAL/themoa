@@ -4,8 +4,6 @@ import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.category.entity.Category;
 import com.weaone.themoa.domain.category.repository.CategoryRepository;
-import com.weaone.themoa.domain.cardtransaction.service.ExchangeRateResult;
-import com.weaone.themoa.domain.cardtransaction.service.ExchangeRateService;
 import com.weaone.themoa.domain.cardtransaction.service.ExchangeRateUnavailableException;
 import com.weaone.themoa.domain.fixedexpense.dto.request.FixedExpenseCandidateRegisterRequest;
 import com.weaone.themoa.domain.fixedexpense.dto.request.FixedExpenseDirectRegisterRequest;
@@ -30,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -55,7 +52,7 @@ public class FixedExpenseRegistrationService {
     private final MerchantAliasRepository merchantAliasRepository;
     private final MerchantIdentityService merchantIdentityService;
     private final MemberRepository memberRepository;
-    private final ExchangeRateService exchangeRateService;
+    private final FixedExpenseKrwConverter krwConverter;
 
     @Transactional
     public FixedExpense registerFromCandidate(Long memberId, Long candidateId,
@@ -150,15 +147,11 @@ public class FixedExpenseRegistrationService {
     }
 
     private ConvertedKrwAmount convertToKrw(BigDecimal amount, String currency) {
-        if (CURRENCY_KRW.equals(currency)) {
-            return new ConvertedKrwAmount(amount, null, null);
-        }
         LocalDate today = LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL);
         try {
-            ExchangeRateResult rate = exchangeRateService.getRate(currency, today);
-            BigDecimal krwAmount = amount.multiply(rate.rate()).setScale(2, RoundingMode.HALF_UP);
-            return new ConvertedKrwAmount(krwAmount, today, rate.rate());
+            return krwConverter.convert(amount, currency, today);
         } catch (ExchangeRateUnavailableException e) {
+            // 등록 경로는 원화 스냅샷이 NOT NULL이라 환율을 못 구하면 등록 자체를 막는다(erd.md §5).
             throw new BusinessException(ErrorCode.FIXED_EXPENSE_EXCHANGE_RATE_UNAVAILABLE);
         }
     }

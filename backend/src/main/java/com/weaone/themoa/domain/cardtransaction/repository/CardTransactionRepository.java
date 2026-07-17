@@ -101,6 +101,19 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
                                   @Param("startDate") LocalDate startDate,
                                   @Param("endDate") LocalDate endDate);
 
+    /**
+     * 이번 급여주기 순지출 집계(dailyBudget.md §3): 고정지출 태그 제외 + 거절 제외 + 순액 합계.
+     * Type 1 취소는 원 결제행 순액 소급 정정, Type 2 취소행은 음수 amount로 그 날짜에 반영된다.
+     * (수기 대체 행 제외 조건 replaced_at은 대체 기능 미구현이라 엔티티에 컬럼이 없어 생략 — 도입 시 함께 추가)
+     */
+    @Query("select coalesce(sum(t.amount - coalesce(t.canceledAmount, 0)), 0) from CardTransaction t "
+            + "where t.member.id = :memberId and t.fixedExpense is null and t.status <> :rejected "
+            + "and t.usedDate between :startDate and :endDate")
+    BigDecimal sumNetSpend(@Param("memberId") Long memberId,
+                           @Param("rejected") TransactionStatus rejected,
+                           @Param("startDate") LocalDate startDate,
+                           @Param("endDate") LocalDate endDate);
+
     interface AliasGroupCount {
         Long getMerchantAliasId();
         long getTransactionCount();
