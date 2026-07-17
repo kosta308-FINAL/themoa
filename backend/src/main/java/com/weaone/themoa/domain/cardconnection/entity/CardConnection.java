@@ -47,6 +47,21 @@ public class CardConnection {
     @Column(name = "last_successful_sync_at")
     private LocalDateTime lastSuccessfulSyncAt;
 
+    /** 최초 3개월 백필의 영속 상태(entryMode.md §3). 커넥션마다 독립적으로 진행된다. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "initial_sync_status", nullable = false, length = 15)
+    private InitialSyncStatus initialSyncStatus;
+
+    @Column(name = "initial_sync_started_at")
+    private LocalDateTime initialSyncStartedAt;
+
+    @Column(name = "initial_sync_completed_at")
+    private LocalDateTime initialSyncCompletedAt;
+
+    /** 실패 상태의 화면 분기용 안정 코드. 자격증명·원문 오류 메시지는 저장하지 않는다. */
+    @Column(name = "initial_sync_error_code", length = 100)
+    private String initialSyncErrorCode;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 10)
     private ConnectionStatus status;
@@ -59,6 +74,7 @@ public class CardConnection {
         this.cardIssuer = cardIssuer;
         this.connectedId = connectedId;
         this.status = ConnectionStatus.ACTIVE;
+        this.initialSyncStatus = InitialSyncStatus.NOT_STARTED;
         this.createdAt = createdAt;
     }
 
@@ -80,5 +96,29 @@ public class CardConnection {
     /** CODEF 조회 + 저장 트랜잭션이 전체 성공했을 때만 호출한다(cardtransaction.md §6). 실패 시 앞당기지 않는다. */
     public void markSynced(LocalDateTime now) {
         this.lastSuccessfulSyncAt = now;
+    }
+
+    /** 백필 시작(entryMode.md §3). 재시도 시 새 시작시각으로 갱신하고 이전 실패코드·완료시각을 지운다. */
+    public void startInitialSync(LocalDateTime now) {
+        this.initialSyncStatus = InitialSyncStatus.FETCHING;
+        this.initialSyncStartedAt = now;
+        this.initialSyncCompletedAt = null;
+        this.initialSyncErrorCode = null;
+    }
+
+    /** 거래 저장이 끝나고 수기 건 대체(§4) 판정 단계로 넘어갈 때. */
+    public void markInitialSyncAnalyzing() {
+        this.initialSyncStatus = InitialSyncStatus.ANALYZING;
+    }
+
+    public void completeInitialSync(LocalDateTime now) {
+        this.initialSyncStatus = InitialSyncStatus.COMPLETED;
+        this.initialSyncCompletedAt = now;
+    }
+
+    /** 서버 재시작으로 FETCHING/ANALYZING이 오래 남는 경우도 이 경로로 정리한다(erd.md 카드사 커넥션 §비고). */
+    public void failInitialSync(String errorCode) {
+        this.initialSyncStatus = InitialSyncStatus.FAILED;
+        this.initialSyncErrorCode = errorCode;
     }
 }
