@@ -26,7 +26,7 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "fixed_expense_payment",
         uniqueConstraints = @UniqueConstraint(name = "uk_fixed_expense_payment_cycle",
-                columnNames = {"fixed_expense_id", "year_month"}))
+                columnNames = {"fixed_expense_id", "\"year_month\""}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class FixedExpensePayment {

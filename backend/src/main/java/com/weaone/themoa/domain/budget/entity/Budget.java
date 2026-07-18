@@ -30,7 +30,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "budget",
         uniqueConstraints = @UniqueConstraint(name = "uk_budget_member_cycle",
-                columnNames = {"member_id", "year_month"}))
+                columnNames = {"member_id", "\"year_month\""}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Budget {
