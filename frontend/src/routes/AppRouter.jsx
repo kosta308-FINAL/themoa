@@ -6,8 +6,8 @@ import Dashboard from '../features/dashboard/Dashboard'
 import ProductsPage from '../features/products/ProductsPage'
 import PolicyPage from '../features/policy/PolicyPage'
 import SpendingGuidePage from '../features/spending-guide/SpendingGuidePage'
-import LoanComparePage from '../features/loan-compare/LoanComparePage'
 import MyPage from '../features/mypage/MyPage'
+import SectionStub from '../components/common/SectionStub'
 
 function AppRouter() {
   return (
@@ -19,7 +19,7 @@ function AppRouter() {
       <Route path="/dashboard/products" element={<ProductsPage />} />
       <Route path="/dashboard/policy" element={<PolicyPage />} />
       <Route path="/dashboard/spending" element={<SpendingGuidePage />} />
-      <Route path="/dashboard/loan" element={<LoanComparePage />} />
+      <Route path="/dashboard/fixed-expenses" element={<SectionStub title="고정지출" description="매달 반복되는 지출을 관리합니다." />} />
       <Route path="/dashboard/mypage" element={<MyPage />} />
     </Routes>
   )
