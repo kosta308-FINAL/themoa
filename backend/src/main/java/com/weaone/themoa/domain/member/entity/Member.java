@@ -86,7 +86,11 @@ public class Member {
     @Column(name = "payday")
     private Integer payday;
 
-    private Member(String email, String password, String name, Gender gender, LocalDate birthDate) {
+    /** 가입일(dayguide.md §3.4·§8): 수기 모드 사용자의 카테고리 도넛 주기 이동 하한 계산에 쓰인다. */
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    private Member(String email, String password, String name, Gender gender, LocalDate birthDate, LocalDateTime now) {
         this.email = email;
         this.password = password;
         this.name = name;
@@ -96,11 +100,13 @@ public class Member {
         this.cardSyncEnabled = true;
         this.tokenVersion = 0;
         this.loginFailCount = 0;
+        this.createdAt = now;
     }
 
     /** 일반 가입 회원. 비밀번호는 해시만 받는다. */
-    public static Member signUp(String email, String passwordHash, String name, Gender gender, LocalDate birthDate) {
-        return new Member(email, passwordHash, name, gender, birthDate);
+    public static Member signUp(String email, String passwordHash, String name, Gender gender, LocalDate birthDate,
+                                 LocalDateTime now) {
+        return new Member(email, passwordHash, name, gender, birthDate, now);
     }
 
     public boolean isLocked(LocalDateTime now) {

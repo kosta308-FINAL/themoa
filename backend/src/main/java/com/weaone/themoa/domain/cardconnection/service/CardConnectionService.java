@@ -9,14 +9,19 @@ import com.weaone.themoa.domain.cardconnection.client.CodefCreateAccountCommand;
 import com.weaone.themoa.domain.cardconnection.dto.request.CardConnectionCreateRequest;
 import com.weaone.themoa.domain.cardconnection.dto.response.CardConnectionListResponse;
 import com.weaone.themoa.domain.cardconnection.dto.response.CardConnectionResponse;
+import com.weaone.themoa.domain.cardconnection.dto.response.InitialSyncStatusResponse;
 import com.weaone.themoa.domain.cardconnection.entity.CardConnection;
 import com.weaone.themoa.domain.cardconnection.entity.CardIssuer;
 import com.weaone.themoa.domain.cardconnection.entity.ConnectionStatus;
+import com.weaone.themoa.domain.cardconnection.entity.InitialSyncStatus;
 import com.weaone.themoa.domain.cardconnection.event.CardConnectionEstablishedEvent;
+import com.weaone.themoa.domain.cardconnection.event.CardConnectionRetryRequestedEvent;
 import com.weaone.themoa.domain.cardconnection.event.CardSyncResumedEvent;
 import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
 import com.weaone.themoa.domain.cardconnection.repository.CardIssuerRepository;
 import com.weaone.themoa.domain.cardconnection.repository.ConnectionAttemptRepository;
+import com.weaone.themoa.domain.cardconnection.support.CardIssuerPolicy;
+import com.weaone.themoa.domain.cardtransaction.service.RecoveryMode;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,9 +41,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class CardConnectionService {
-
-    /** connection.md §3-1 — ID 로그인 파라미터상 카드번호+카드비밀번호가 필수인 카드사는 현대뿐이다. */
-    private static final String ORGANIZATION_HYUNDAI = "0302";
 
     /** connection.md §5-3 — 제한직전 응답이 하드락이 아니라 birthDate 추가입력으로 재개되는 유일한 카드사. */
     private static final String ORGANIZATION_WOORI = "0309";
@@ -104,9 +106,9 @@ public class CardConnectionService {
         return new CardConnectionListResponse(member.isCardSyncEnabled(), connections);
     }
 
-    /** 카드 자동수집 ON/OFF(entryMode.md §2-1). false→true 전환 시에만 갭 백필(§4-1)을 트리거한다. */
+    /** 카드 자동수집 ON/OFF(entryMode.md §2-1, dayguide.md §8.1). false→true 전환 시에만 갭 백필(§4-1)을 트리거한다. */
     @Transactional
-    public void setCardSyncEnabled(Long memberId, boolean enabled) {
+    public void setCardSyncEnabled(Long memberId, boolean enabled, RecoveryMode recoveryMode) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
         boolean resuming = enabled && !member.isCardSyncEnabled();
@@ -116,8 +118,51 @@ public class CardConnectionService {
             member.disableCardSync();
         }
         if (resuming) {
-            eventPublisher.publishEvent(new CardSyncResumedEvent(memberId));
+            eventPublisher.publishEvent(new CardSyncResumedEvent(memberId, recoveryMode));
         }
+    }
+
+    /** 초기수집 상태 폴링(dayguide.md §8.1·§8.5). 커넥션이 하나도 없으면 전체 상태는 null이다. */
+    @Transactional(readOnly = true)
+    public InitialSyncStatusResponse getInitialSyncStatus(Long memberId) {
+        List<CardConnection> connections = cardConnectionRepository.findByMember_Id(memberId);
+        List<InitialSyncStatusResponse.ConnectionSyncStatus> items = connections.stream()
+                .map(c -> new InitialSyncStatusResponse.ConnectionSyncStatus(
+                        c.getId(), c.getCardIssuer().getOrganization(), c.getCardIssuer().getName(),
+                        c.getInitialSyncStatus().name(), c.getInitialSyncErrorCode()))
+                .toList();
+        InitialSyncStatus overall = computeOverallStatus(connections);
+        return new InitialSyncStatusResponse(overall == null ? null : overall.name(), items);
+    }
+
+    /** 하나라도 FAILED면 FAILED, 하나라도 진행 중이면 그 진행 상태, 전부 완료면 COMPLETED(§8.5). */
+    private InitialSyncStatus computeOverallStatus(List<CardConnection> connections) {
+        if (connections.isEmpty()) {
+            return null;
+        }
+        if (connections.stream().anyMatch(c -> c.getInitialSyncStatus() == InitialSyncStatus.FAILED)) {
+            return InitialSyncStatus.FAILED;
+        }
+        if (connections.stream().anyMatch(c -> c.getInitialSyncStatus() == InitialSyncStatus.FETCHING)) {
+            return InitialSyncStatus.FETCHING;
+        }
+        if (connections.stream().anyMatch(c -> c.getInitialSyncStatus() == InitialSyncStatus.ANALYZING)) {
+            return InitialSyncStatus.ANALYZING;
+        }
+        boolean allCompleted = connections.stream()
+                .allMatch(c -> c.getInitialSyncStatus() == InitialSyncStatus.COMPLETED);
+        return allCompleted ? InitialSyncStatus.COMPLETED : InitialSyncStatus.NOT_STARTED;
+    }
+
+    /** 초기수집 실패 재시도(dayguide.md §8.1). 본인 커넥션이며 FAILED일 때만 허용하고 실행은 비동기로 넘긴다. */
+    @Transactional
+    public void retryInitialSync(Long memberId, Long connectionId) {
+        CardConnection connection = cardConnectionRepository.findByIdAndMember_Id(connectionId, memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CARD_CONNECTION_NOT_FOUND));
+        if (connection.getInitialSyncStatus() != InitialSyncStatus.FAILED) {
+            throw new BusinessException(ErrorCode.CARD_CONNECTION_RETRY_NOT_ALLOWED);
+        }
+        eventPublisher.publishEvent(new CardConnectionRetryRequestedEvent(connectionId));
     }
 
     private void rejectIfCoolingDown(Long memberId, CardIssuer cardIssuer, LocalDateTime now) {
@@ -147,7 +192,7 @@ public class CardConnectionService {
     }
 
     private void validateIssuerSpecificFields(CardIssuer cardIssuer, CardConnectionCreateRequest request) {
-        if (ORGANIZATION_HYUNDAI.equals(cardIssuer.getOrganization())
+        if (CardIssuerPolicy.requiresCardCredentials(cardIssuer.getOrganization())
                 && (!StringUtils.hasText(request.cardNo()) || !StringUtils.hasText(request.cardPassword()))) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }

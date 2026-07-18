@@ -15,6 +15,9 @@ public interface CardConnectionRepository extends JpaRepository<CardConnection, 
 
     Optional<CardConnection> findByMember_IdAndCardIssuer_Organization(Long memberId, String organization);
 
+    /** 초기수집 재시도 소유권 검증(dayguide.md §8.1). */
+    Optional<CardConnection> findByIdAndMember_Id(Long id, Long memberId);
+
     /** S-01 "카드 관리" 팝업(entryMode.md §2-1): 연결된 카드사 전체 목록. */
     List<CardConnection> findByMember_Id(Long memberId);
 

@@ -4,18 +4,43 @@ import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionReposi
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 
-/** 카테고리별 소비 비중/내역(category.md §6·§7). */
+/**
+ * S-01 카테고리 도넛(dayguide.md §3.4·§8.3). {@code positiveNetTotal}·{@code items}는 순액이 0원보다 큰
+ * 실제 소비만 쓰고, {@code canceledTotal}은 이 주기 결제 중 취소된 금액을 별도로 안내한다.
+ * {@code completedCycleResult}는 진행 중인 현재 주기이거나 데이터가 일부만 있는 주기({@code partialCycle=true})면
+ * {@code null}이다.
+ */
 public record CategorySummaryListResponse(
-        BigDecimal totalAmount,
+        Long budgetId,
+        String yearMonth,
+        LocalDate cycleStartDate,
+        LocalDate cycleEndDate,
+        LocalDate dataStartDate,
+        boolean partialCycle,
+        boolean hasPrevious,
+        boolean hasNext,
+        BigDecimal positiveNetTotal,
         BigDecimal canceledTotal,
-        List<CategorySummaryResponse> items
+        List<CategorySummaryResponse> items,
+        CompletedCycleResult completedCycleResult
 ) {
 
-    public static CategorySummaryListResponse from(List<CardTransactionRepository.CategorySummary> summaries,
-                                                     BigDecimal canceledTotal) {
-        BigDecimal totalAmount = summaries.stream()
+    public record CompletedCycleResult(
+            BigDecimal budgetAmount,
+            BigDecimal spentAmount,
+            BigDecimal resultAmount,
+            String resultType
+    ) {
+    }
+
+    public static CategorySummaryListResponse of(Long budgetId, String yearMonth, LocalDate cycleStartDate,
+            LocalDate cycleEndDate, LocalDate dataStartDate, boolean partialCycle, boolean hasPrevious,
+            boolean hasNext, List<CardTransactionRepository.CategorySummary> summaries, BigDecimal canceledTotal,
+            CompletedCycleResult completedCycleResult) {
+        BigDecimal positiveNetTotal = summaries.stream()
                 .map(CardTransactionRepository.CategorySummary::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         List<CategorySummaryResponse> items = summaries.stream()
@@ -24,9 +49,10 @@ public record CategorySummaryListResponse(
                         summary.getCategoryName(),
                         summary.getTotalAmount(),
                         summary.getTransactionCount(),
-                        percentageOf(summary.getTotalAmount(), totalAmount)))
+                        percentageOf(summary.getTotalAmount(), positiveNetTotal)))
                 .toList();
-        return new CategorySummaryListResponse(totalAmount, canceledTotal, items);
+        return new CategorySummaryListResponse(budgetId, yearMonth, cycleStartDate, cycleEndDate, dataStartDate,
+                partialCycle, hasPrevious, hasNext, positiveNetTotal, canceledTotal, items, completedCycleResult);
     }
 
     private static BigDecimal percentageOf(BigDecimal amount, BigDecimal total) {

@@ -8,12 +8,15 @@ import java.time.LocalDateTime;
 
 public record CardTransactionResponse(
         Long id,
+        String source,
+        String paymentMethod,
         LocalDate usedDate,
         LocalDateTime usedAt,
         BigDecimal amount,
         BigDecimal netAmount,
         String currencyCode,
         BigDecimal originalAmount,
+        boolean amountUserCorrected,
         String status,
         Long categoryId,
         String categoryName,
@@ -22,18 +25,25 @@ public record CardTransactionResponse(
         String merchantDisplayName,
         BigDecimal canceledAmount,
         boolean cancelAmountUncertain,
+        boolean cancelAmountUserCorrected,
+        String cardOrganizationName,
+        String cardNumberMasked,
+        Short installmentMonths,
         String memo
 ) {
 
     public static CardTransactionResponse from(CardTransaction transaction) {
         return new CardTransactionResponse(
                 transaction.getId(),
+                transaction.getSource().name(),
+                transaction.getPaymentMethod().name(),
                 transaction.getUsedDate(),
                 transaction.getUsedAt(),
                 transaction.getAmount(),
                 transaction.getNetAmount(),
                 transaction.getCurrencyCode(),
                 transaction.getOriginalAmount(),
+                transaction.isAmountUserCorrected(),
                 transaction.getStatus().name(),
                 transaction.getCategory().getId(),
                 transaction.getCategory().getName(),
@@ -42,6 +52,10 @@ public record CardTransactionResponse(
                 resolveDisplayName(transaction),
                 transaction.getCanceledAmount(),
                 transaction.isCancelAmountUncertain(),
+                transaction.isCancelAmountUserCorrected(),
+                transaction.getCard() != null ? transaction.getCard().getCardConnection().getCardIssuer().getName() : null,
+                transaction.getCard() != null ? transaction.getCard().getCardNumberMasked() : null,
+                transaction.getInstallmentMonths(),
                 transaction.getMemo()
         );
     }

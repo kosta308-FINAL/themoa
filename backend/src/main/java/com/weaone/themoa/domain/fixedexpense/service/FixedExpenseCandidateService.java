@@ -31,7 +31,8 @@ public class FixedExpenseCandidateService {
 
     @Transactional(readOnly = true)
     public List<FixedExpenseCandidate> listPending(Long memberId) {
-        return fixedExpenseCandidateRepository.findByMember_IdAndStatus(memberId, FixedExpenseCandidateStatus.PENDING);
+        return fixedExpenseCandidateRepository
+                .findByMember_IdAndStatusOrderByScoreDescIdDesc(memberId, FixedExpenseCandidateStatus.PENDING);
     }
 
     /** 거절 — 영구. 같은 alias(또는 biller)는 preferences로 다시 추천하지 않는다(§3). */

@@ -57,7 +57,8 @@ public class AuthService {
                 passwordEncoder.encode(request.password()),
                 request.nickname(),
                 request.gender(),
-                request.birthDate()
+                request.birthDate(),
+                now
         );
         try {
             memberRepository.save(member);

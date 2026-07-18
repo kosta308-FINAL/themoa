@@ -1,6 +1,7 @@
 package com.weaone.themoa.domain.cardtransaction.service;
 
 import com.weaone.themoa.domain.cardconnection.event.CardConnectionEstablishedEvent;
+import com.weaone.themoa.domain.cardconnection.event.CardConnectionRetryRequestedEvent;
 import com.weaone.themoa.domain.cardconnection.event.CardSyncResumedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
@@ -28,6 +29,12 @@ public class CardConnectionBackfillListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onCardSyncResumed(CardSyncResumedEvent event) {
-        cardTransactionBackfillService.runGapBackfillForMember(event.memberId());
+        cardTransactionBackfillService.runGapBackfillForMember(event.memberId(), event.recoveryMode());
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onRetryRequested(CardConnectionRetryRequestedEvent event) {
+        cardTransactionBackfillService.retryInitialBackfill(event.connectionId());
     }
 }

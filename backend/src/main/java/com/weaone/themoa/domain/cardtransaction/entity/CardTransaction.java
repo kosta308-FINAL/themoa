@@ -218,6 +218,23 @@ public class CardTransaction {
         return transaction;
     }
 
+    /**
+     * 수기 거래 수정(entryMode.md §5, dayguide.md §4.1). {@code source=MANUAL} 행에만 호출한다 — 호출 전
+     * 소유권·source 검증은 서비스 계층 책임이다. 카테고리는 수기 입력과 동일하게 항상 사용자가 지정한 값을
+     * 그대로 확정한다.
+     */
+    public void updateManual(Category category, PaymentMethod paymentMethod, LocalDate usedDate,
+                              LocalDateTime usedAt, BigDecimal amount, String merchantNameRaw, String memo) {
+        this.category = category;
+        this.categoryUserCorrected = true;
+        this.paymentMethod = paymentMethod;
+        this.usedDate = usedDate;
+        this.usedAt = usedAt;
+        this.amount = amount;
+        this.merchantNameRaw = merchantNameRaw;
+        this.memo = memo;
+    }
+
     public void assignMerchant(Merchant merchant, MerchantAlias merchantAlias) {
         this.merchant = merchant;
         this.merchantAlias = merchantAlias;
