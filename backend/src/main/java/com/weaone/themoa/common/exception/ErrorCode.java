@@ -68,6 +68,9 @@ public enum ErrorCode {
     // 알림
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
 
+    // 습관성 지출 코칭
+    COACHING_CARD_NOT_FOUND(HttpStatus.NOT_FOUND, "코칭 카드를 찾을 수 없습니다."),
+
     // 회원 · 소비 가이드 예산
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다.");
 

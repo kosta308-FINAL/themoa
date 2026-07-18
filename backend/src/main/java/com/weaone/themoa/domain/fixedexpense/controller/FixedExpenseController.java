@@ -9,7 +9,6 @@ import com.weaone.themoa.domain.fixedexpense.dto.response.FixedExpenseListRespon
 import com.weaone.themoa.domain.fixedexpense.dto.response.FixedExpenseResponse;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
 import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseConfirmationService;
-import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseCyclePolicy;
 import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseDetectionService;
 import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseRegistrationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -107,7 +106,7 @@ public class FixedExpenseController {
     @PostMapping("/detect")
     public ResponseEntity<Void> detectNow(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId) {
-        fixedExpenseDetectionService.detectForMember(memberId, FixedExpenseCyclePolicy.currentYearMonth());
+        fixedExpenseDetectionService.detectForMember(memberId);
         return ResponseEntity.noContent().build();
     }
 

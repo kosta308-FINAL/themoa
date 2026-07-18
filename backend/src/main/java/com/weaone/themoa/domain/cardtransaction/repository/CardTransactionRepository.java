@@ -130,6 +130,38 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
     Optional<CardTransaction> findFirstByMember_IdAndSourceAndUsedDateAndAmountOrderByIdAsc(
             Long memberId, TransactionSource source, LocalDate usedDate, BigDecimal amount);
 
+    /**
+     * 습관 코칭 규칙 계층(habitExpense.md §3): 직전 급여주기 카드 자동수집 소비성 카테고리별 순액 집계.
+     * 고정지출 태그·거절 건 제외, Type 2 음수행도 포함(amount>0 필터 없음).
+     */
+    @Query("select t.category.id as categoryId, t.category.code as categoryCode, t.category.name as categoryName, "
+            + "count(t) as transactionCount, sum(t.amount - coalesce(t.canceledAmount, 0)) as netAmount "
+            + "from CardTransaction t where t.member.id = :memberId and t.source = :source "
+            + "and t.status <> :rejected and t.fixedExpense is null "
+            + "and t.usedDate between :startDate and :endDate and t.category.code in :categoryCodes "
+            + "group by t.category.id, t.category.code, t.category.name")
+    List<HabitCategoryAggregate> aggregateHabitByCategory(@Param("memberId") Long memberId,
+                                                            @Param("source") TransactionSource source,
+                                                            @Param("rejected") TransactionStatus rejected,
+                                                            @Param("startDate") LocalDate startDate,
+                                                            @Param("endDate") LocalDate endDate,
+                                                            @Param("categoryCodes") List<String> categoryCodes);
+
+    /** 위와 같은 조건의 가맹점 alias 단위 집계(habitExpense.md §3) — alias 표기 흔들림은 alias 레벨에서 이미 합산됨. */
+    @Query("select t.category.id as categoryId, t.merchantAlias.id as merchantAliasId, "
+            + "t.merchantAlias.canonicalServiceName as aliasName, "
+            + "count(t) as transactionCount, sum(t.amount - coalesce(t.canceledAmount, 0)) as netAmount "
+            + "from CardTransaction t where t.member.id = :memberId and t.source = :source "
+            + "and t.status <> :rejected and t.fixedExpense is null and t.merchantAlias is not null "
+            + "and t.usedDate between :startDate and :endDate and t.category.code in :categoryCodes "
+            + "group by t.category.id, t.merchantAlias.id, t.merchantAlias.canonicalServiceName")
+    List<HabitMerchantAliasAggregate> aggregateHabitByMerchantAlias(@Param("memberId") Long memberId,
+                                                                      @Param("source") TransactionSource source,
+                                                                      @Param("rejected") TransactionStatus rejected,
+                                                                      @Param("startDate") LocalDate startDate,
+                                                                      @Param("endDate") LocalDate endDate,
+                                                                      @Param("categoryCodes") List<String> categoryCodes);
+
     interface AliasGroupCount {
         Long getMerchantAliasId();
         long getTransactionCount();
@@ -145,5 +177,21 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
         String getCategoryName();
         BigDecimal getTotalAmount();
         long getTransactionCount();
+    }
+
+    interface HabitCategoryAggregate {
+        Long getCategoryId();
+        String getCategoryCode();
+        String getCategoryName();
+        long getTransactionCount();
+        BigDecimal getNetAmount();
+    }
+
+    interface HabitMerchantAliasAggregate {
+        Long getCategoryId();
+        Long getMerchantAliasId();
+        String getAliasName();
+        long getTransactionCount();
+        BigDecimal getNetAmount();
     }
 }

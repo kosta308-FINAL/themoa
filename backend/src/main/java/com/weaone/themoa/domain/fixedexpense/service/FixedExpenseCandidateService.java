@@ -46,7 +46,7 @@ public class FixedExpenseCandidateService {
     @Transactional
     public void snooze(Long memberId, Long candidateId) {
         FixedExpenseCandidate candidate = getOwnedCandidate(memberId, candidateId);
-        candidate.snooze(FixedExpenseCyclePolicy.currentYearMonth());
+        candidate.snooze(FixedExpenseCyclePolicy.currentYearMonth(candidate.getMember().getPayday()));
     }
 
     /** 습관적 소비로 분류 — 고정지출 아님으로 영구 재분류한다(§3). */

@@ -12,6 +12,7 @@ import com.weaone.themoa.domain.cardtransaction.client.CodefApprovalRecord;
 import com.weaone.themoa.domain.cardtransaction.entity.CardTransaction;
 import com.weaone.themoa.domain.cardtransaction.entity.PaymentMethod;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionSource;
+import com.weaone.themoa.domain.cardtransaction.event.InitialCardBackfillCompletedEvent;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
 import com.weaone.themoa.domain.cardtransaction.support.BackfillWindowPolicy;
 import com.weaone.themoa.domain.member.entity.Member;
@@ -19,6 +20,7 @@ import com.weaone.themoa.domain.notification.entity.NotificationType;
 import com.weaone.themoa.domain.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +52,7 @@ public class CardTransactionBackfillService {
     private final CodefApprovalListClient codefApprovalListClient;
     private final CardTransactionCollectionService cardTransactionCollectionService;
     private final NotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     /** 신규 커넥션 최초 백필(§3): 시작일 = (오늘이 속한 달의 1일) − BACKFILL_MONTHS. 커넥션마다 독립적으로 1회만 실행된다. */
     @Transactional
@@ -62,6 +65,10 @@ public class CardTransactionBackfillService {
         LocalDate end = LocalDate.now(ZONE_SEOUL);
         LocalDate start = BackfillWindowPolicy.calendarFloor(end);
         backfill(connection, start, end);
+        if (connection.getInitialSyncStatus() == InitialSyncStatus.COMPLETED) {
+            // 습관성 지출 코칭 최초 즉시 생성 트리거(habitExpense.md §3). 갭 백필에는 발행하지 않는다.
+            eventPublisher.publishEvent(new InitialCardBackfillCompletedEvent(connection.getMember().getId()));
+        }
     }
 
     /** 자동수집 재개(§2-1, §4-1) 시 회원의 활성 커넥션 전체를 갭 구간만큼 백필한다. */

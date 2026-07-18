@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import DashboardIcon from '../common/DashboardIcon'
-import { navItems } from '../../constants/mockDashboard'
+import { navItems } from '../../constants/dashboardNavigation'
 import { useAuth } from '../../hooks/useAuth'
 
 function DashboardTopNav() {
