@@ -41,6 +41,8 @@ dependencies {
     implementation 'org.json:json:20240303'
 
 //    implementation 'org.springframework.ai:spring-ai-starter-vector-store-qdrant' 나중에 qdrant세팅되면 주석해제
+    // 습관성 지출 코칭 LLM 문구 생성(habitExpense.md §4) — Google GenAI(Gemini) 채팅 모델
+    implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
