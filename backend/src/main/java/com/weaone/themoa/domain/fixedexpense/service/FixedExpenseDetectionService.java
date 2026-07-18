@@ -19,6 +19,7 @@ import com.weaone.themoa.domain.fixedexpense.repository.RecurringPaymentGroupRep
 import com.weaone.themoa.domain.fixedexpense.repository.RecurringPaymentGroupTransactionRepository;
 import com.weaone.themoa.domain.fixedexpense.repository.UserMerchantPreferenceRepository;
 import com.weaone.themoa.domain.member.entity.Member;
+import com.weaone.themoa.domain.member.repository.MemberRepository;
 import com.weaone.themoa.domain.merchant.entity.Merchant;
 import com.weaone.themoa.domain.merchant.entity.MerchantAlias;
 import lombok.RequiredArgsConstructor;
@@ -30,9 +31,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -52,6 +54,7 @@ public class FixedExpenseDetectionService {
     private static final long INACTIVITY_LIMIT_DAYS = 30;
 
     private final CardConnectionRepository cardConnectionRepository;
+    private final MemberRepository memberRepository;
     private final CardTransactionRepository cardTransactionRepository;
     private final RecurringPaymentGroupRepository recurringPaymentGroupRepository;
     private final RecurringPaymentGroupTransactionRepository recurringPaymentGroupTransactionRepository;
@@ -67,13 +70,19 @@ public class FixedExpenseDetectionService {
         LocalDateTime activeSince = LocalDateTime.now(FixedExpenseCyclePolicy.ZONE_SEOUL).minusDays(INACTIVITY_LIMIT_DAYS);
         List<CardConnection> connections = cardConnectionRepository
                 .findEligibleForNightlyBatch(ConnectionStatus.ACTIVE, activeSince);
-        Set<Long> memberIds = connections.stream()
-                .map(connection -> connection.getMember().getId())
-                .collect(Collectors.toSet());
-        String currentYearMonth = FixedExpenseCyclePolicy.currentYearMonth();
-        for (Long memberId : memberIds) {
-            detectForMember(memberId, currentYearMonth);
+        Map<Long, Member> membersById = connections.stream()
+                .map(CardConnection::getMember)
+                .collect(Collectors.toMap(Member::getId, member -> member, (a, b) -> a, LinkedHashMap::new));
+        for (Member member : membersById.values()) {
+            detectForMember(member.getId(), FixedExpenseCyclePolicy.currentYearMonth(member.getPayday()));
         }
+    }
+
+    /** 로그인 회원 본인 범위 즉시 실행(F-04 테스트용 트리거)용 진입점 — payday를 직접 조회해 배치와 같은 라벨을 계산한다. */
+    @Transactional
+    public void detectForMember(Long memberId) {
+        Member member = memberRepository.getReferenceById(memberId);
+        detectForMember(memberId, FixedExpenseCyclePolicy.currentYearMonth(member.getPayday()));
     }
 
     @Transactional

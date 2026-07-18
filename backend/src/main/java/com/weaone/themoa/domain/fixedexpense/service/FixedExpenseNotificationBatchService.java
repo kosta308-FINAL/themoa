@@ -43,12 +43,11 @@ public class FixedExpenseNotificationBatchService {
     public void runNightlyBatch() {
         LocalDate today = LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL);
         LocalDateTime now = LocalDateTime.now(FixedExpenseCyclePolicy.ZONE_SEOUL);
-        String yearMonth = FixedExpenseCyclePolicy.currentYearMonth();
 
         List<FixedExpense> activeFixedExpenses = fixedExpenseRepository.findByStatus(FixedExpenseStatus.ACTIVE);
         for (FixedExpense fixedExpense : activeFixedExpenses) {
             try {
-                evaluate(fixedExpense, today, now, yearMonth);
+                evaluate(fixedExpense, today, now);
             } catch (RuntimeException e) {
                 log.warn("고정지출 알림 판정 1건 실패, 다음 건으로 계속 진행합니다. fixedExpenseId={}", fixedExpense.getId(), e);
             }
@@ -56,11 +55,12 @@ public class FixedExpenseNotificationBatchService {
     }
 
     @Transactional
-    public void evaluate(FixedExpense fixedExpense, LocalDate today, LocalDateTime now, String yearMonth) {
+    public void evaluate(FixedExpense fixedExpense, LocalDate today, LocalDateTime now) {
         Member member = fixedExpense.getMember();
         if (member.isReturningAfterAbsence(now, INACTIVITY_LIMIT_DAYS) || fixedExpense.getExpectedPayDay() == null) {
             return;
         }
+        String yearMonth = FixedExpenseCyclePolicy.currentYearMonth(member.getPayday());
 
         boolean cardLinked = fixedExpense.getPaymentMethod() == FixedExpensePaymentMethod.CARD
                 && cardConnectionRepository.existsByMember_IdAndStatus(member.getId(), ConnectionStatus.ACTIVE);
