@@ -22,14 +22,15 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Check;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * 거래내역(erd.md "카드 연동" § 거래내역). 이번 구현 범위는 카드 수집(source=SYNC)뿐이다 — 수기 입력(MANUAL)
- * 생성 로직과 대체(replaced_at/replaced_by, entryMode.md 백필)는 별도 기능이라 이 엔티티에 아직 두지 않는다.
+ * 거래내역(erd.md "카드 연동" § 거래내역). 카드 수집(source=SYNC)과 수기 입력(source=MANUAL, entryMode.md
+ * §1-1)을 한 테이블에 함께 저장한다.
  */
 @Entity
 @Table(name = "card_transaction",
@@ -37,6 +38,7 @@ import java.time.LocalDateTime;
                 name = "uk_card_transaction_dedup",
                 columnNames = {"member_id", "card_id", "used_date", "used_at", "approval_no"}))
 @Check(constraints = "source <> 'SYNC' OR (card_id IS NOT NULL AND approval_no IS NOT NULL)")
+@SQLRestriction("replaced_at is null")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CardTransaction {
@@ -146,11 +148,21 @@ public class CardTransaction {
     @Column(name = "memo", columnDefinition = "TEXT")
     private String memo;
 
+    /** 카드 백필로 대체된 시각(entryMode.md §4-2). NULL = 살아있는 거래 — 모든 집계의 기본 필터(클래스의 {@code @SQLRestriction}). */
+    @Column(name = "replaced_at")
+    private LocalDateTime replacedAt;
+
+    /** 이 수기 건을 대체한 정본 카드 거래. 짝을 못 찾으면 NULL로 남아 미연동 카드 신호가 된다(entryMode.md §4-2). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "replaced_by_transaction_id")
+    private CardTransaction replacedByTransaction;
+
     private CardTransaction(Member member, Card card, Category category, String approvalNo,
                              LocalDate usedDate, LocalDateTime usedAt, BigDecimal amount,
                              BigDecimal originalAmount, String currencyCode, BigDecimal exchangeRate,
                              boolean exchangeRateEstimated, TransactionStatus status,
                              BigDecimal canceledAmount, boolean cancelAmountUncertain,
+                             TransactionSource source, PaymentMethod paymentMethod,
                              String merchantNameRaw, String merchantTypeRaw, String merchantCorpNoRaw,
                              String address, Short installmentMonths) {
         this.member = member;
@@ -167,8 +179,8 @@ public class CardTransaction {
         this.status = status;
         this.canceledAmount = canceledAmount;
         this.cancelAmountUncertain = cancelAmountUncertain;
-        this.source = TransactionSource.SYNC;
-        this.paymentMethod = PaymentMethod.CARD;
+        this.source = source;
+        this.paymentMethod = paymentMethod;
         this.merchantNameRaw = merchantNameRaw;
         this.merchantTypeRaw = merchantTypeRaw;
         this.merchantCorpNoRaw = merchantCorpNoRaw;
@@ -186,7 +198,24 @@ public class CardTransaction {
                                         String address, Short installmentMonths) {
         return new CardTransaction(member, card, category, approvalNo, usedDate, usedAt, amount, originalAmount,
                 currencyCode, exchangeRate, exchangeRateEstimated, status, canceledAmount, cancelAmountUncertain,
+                TransactionSource.SYNC, PaymentMethod.CARD,
                 merchantNameRaw, merchantTypeRaw, merchantCorpNoRaw, address, installmentMonths);
+    }
+
+    /**
+     * 수기 입력 생성(entryMode.md §5). 가맹점 신원·업종이 없어 분류 파이프라인을 우회하고 사용자가 지정한
+     * 카테고리를 그대로 확정한다({@code categoryUserCorrected=true}) — 새벽 재수집·관리자 소급 재분류 대상이 아니다.
+     * 결제수단=카드 허용 여부(§5-1)는 호출자(서비스 계층)가 회원 상태로 검증한다.
+     */
+    public static CardTransaction manual(Member member, Category category, PaymentMethod paymentMethod,
+                                          LocalDate usedDate, LocalDateTime usedAt, BigDecimal amount,
+                                          String merchantNameRaw, String memo) {
+        CardTransaction transaction = new CardTransaction(member, null, category, null, usedDate, usedAt, amount,
+                null, "KRW", null, false, TransactionStatus.APPROVED, null, false,
+                TransactionSource.MANUAL, paymentMethod, merchantNameRaw, null, null, null, null);
+        transaction.categoryUserCorrected = true;
+        transaction.memo = memo;
+        return transaction;
     }
 
     public void assignMerchant(Merchant merchant, MerchantAlias merchantAlias) {
@@ -249,6 +278,16 @@ public class CardTransaction {
     /** 메모 자유 입력(`MOA-S-CAT-CTG-06`). 재수집이 덮어쓰지 않는다(cardtransaction.md §6-3). */
     public void updateMemo(String memo) {
         this.memo = memo;
+    }
+
+    /**
+     * 카드 백필에 의한 대체(soft 보존, entryMode.md §4-2). 물리 삭제하지 않고 {@code replaced_at}만 세워
+     * 집계에서 제외한다(클래스의 {@code @SQLRestriction}). 짝이 되는 카드 거래를 못 찾으면
+     * {@code replacementTransaction}이 NULL로 남아 미연동 카드 신호가 된다.
+     */
+    public void replace(CardTransaction replacementTransaction, LocalDateTime now) {
+        this.replacedAt = now;
+        this.replacedByTransaction = replacementTransaction;
     }
 
     /** 실지출 = amount − COALESCE(canceled_amount, 0)(cardtransaction.md §3-3). */

@@ -6,14 +6,18 @@ import com.weaone.themoa.domain.cardconnection.client.CodefAccountResult;
 import com.weaone.themoa.domain.cardconnection.client.CodefCardConnectionClient;
 import com.weaone.themoa.domain.cardconnection.client.CodefClientException;
 import com.weaone.themoa.domain.cardconnection.dto.request.CardConnectionCreateRequest;
+import com.weaone.themoa.domain.cardconnection.dto.response.CardConnectionListResponse;
 import com.weaone.themoa.domain.cardconnection.dto.response.CardConnectionResponse;
 import com.weaone.themoa.domain.cardconnection.entity.CardConnection;
 import com.weaone.themoa.domain.cardconnection.entity.CardIssuer;
 import com.weaone.themoa.domain.cardconnection.entity.CodefValueType;
 import com.weaone.themoa.domain.cardconnection.entity.ConnectionAttempt;
+import com.weaone.themoa.domain.cardconnection.event.CardConnectionEstablishedEvent;
+import com.weaone.themoa.domain.cardconnection.event.CardSyncResumedEvent;
 import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
 import com.weaone.themoa.domain.cardconnection.repository.CardIssuerRepository;
 import com.weaone.themoa.domain.cardconnection.repository.ConnectionAttemptRepository;
+import com.weaone.themoa.domain.member.entity.EntryMode;
 import com.weaone.themoa.domain.member.entity.Gender;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
@@ -23,10 +27,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,6 +65,8 @@ class CardConnectionServiceTest {
     private CardConnectionLockService cardConnectionLockService;
     @Mock
     private CodefCardConnectionClient codefCardConnectionClient;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private CardConnectionService cardConnectionService;
@@ -153,6 +161,79 @@ class CardConnectionServiceTest {
         assertThat(response.organization()).isEqualTo(ORGANIZATION_SHINHAN);
         then(cardConnectionRepository).should().save(any(CardConnection.class));
         then(connectionAttemptService).should().reset(MEMBER_ID, ORGANIZATION_SHINHAN);
+        // 수기→카드 전환(entryMode.md §2)과 최초 백필 트리거(§3)가 함께 일어난다.
+        assertThat(member.getEntryMode()).isEqualTo(EntryMode.CARD);
+        then(eventPublisher).should().publishEvent(any(CardConnectionEstablishedEvent.class));
+    }
+
+    @Test
+    @DisplayName("재연결은 entry_mode 전환·백필 이벤트를 발행하지 않는다")
+    void reconnectDoesNotPublishEstablishedEvent() {
+        CardIssuer cardIssuer = shinhan();
+        CardConnection existing = CardConnection.connect(null, cardIssuer, "old-id", LocalDateTime.now());
+        existing.markLocked();
+        given(cardIssuerRepository.findById(ORGANIZATION_SHINHAN)).willReturn(Optional.of(cardIssuer));
+        given(cardConnectionRepository.findByMember_IdAndCardIssuer_Organization(MEMBER_ID, ORGANIZATION_SHINHAN))
+                .willReturn(Optional.of(existing));
+        given(connectionAttemptRepository.findByMember_IdAndCardIssuer_Organization(MEMBER_ID, ORGANIZATION_SHINHAN))
+                .willReturn(Optional.empty());
+        given(codefCardConnectionClient.createAccount(any()))
+                .willReturn(CodefAccountResult.success("new-id", "CF-00000", "정상"));
+
+        cardConnectionService.connect(MEMBER_ID, request(ORGANIZATION_SHINHAN));
+
+        then(eventPublisher).should(never()).publishEvent(any(CardConnectionEstablishedEvent.class));
+    }
+
+    @Test
+    @DisplayName("자동수집을 OFF에서 ON으로 바꾸면 갭 백필 이벤트를 발행한다")
+    void resumingCardSyncPublishesGapBackfillEvent() {
+        Member member = Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1));
+        member.disableCardSync();
+        given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member));
+
+        cardConnectionService.setCardSyncEnabled(MEMBER_ID, true);
+
+        assertThat(member.isCardSyncEnabled()).isTrue();
+        then(eventPublisher).should().publishEvent(any(CardSyncResumedEvent.class));
+    }
+
+    @Test
+    @DisplayName("이미 ON인 상태에서 다시 ON을 요청해도 갭 백필 이벤트를 중복 발행하지 않는다")
+    void enablingAlreadyEnabledSyncDoesNotPublishEvent() {
+        Member member = Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1));
+        given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member));
+
+        cardConnectionService.setCardSyncEnabled(MEMBER_ID, true);
+
+        then(eventPublisher).should(never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("자동수집 OFF는 백필 이벤트를 발행하지 않는다")
+    void disablingCardSyncDoesNotPublishEvent() {
+        Member member = Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1));
+        given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member));
+
+        cardConnectionService.setCardSyncEnabled(MEMBER_ID, false);
+
+        assertThat(member.isCardSyncEnabled()).isFalse();
+        then(eventPublisher).should(never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("카드 관리 목록은 자동수집 상태와 연결된 카드사 목록을 함께 반환한다")
+    void listsConnectionsWithCardSyncFlag() {
+        Member member = Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1));
+        given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member));
+        CardConnection connection = CardConnection.connect(member, shinhan(), "connected-id", LocalDateTime.now());
+        given(cardConnectionRepository.findByMember_Id(MEMBER_ID)).willReturn(List.of(connection));
+
+        CardConnectionListResponse response = cardConnectionService.list(MEMBER_ID);
+
+        assertThat(response.cardSyncEnabled()).isTrue();
+        assertThat(response.connections()).hasSize(1);
+        assertThat(response.connections().get(0).organization()).isEqualTo(ORGANIZATION_SHINHAN);
     }
 
     @Test

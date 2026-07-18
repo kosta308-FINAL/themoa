@@ -55,6 +55,9 @@ public enum ErrorCode {
     // 카드 동기화
     CARD_SYNC_RECOVERY_NOT_ELIGIBLE(HttpStatus.CONFLICT, "복귀 동기화 대상이 아닙니다."),
 
+    // 입력 모드 · 수기 입력
+    MANUAL_CARD_ENTRY_NOT_ALLOWED(HttpStatus.FORBIDDEN, "카드 자동수집이 켜져 있는 동안은 카드 결제를 직접 입력할 수 없습니다."),
+
     // 고정지출
     FIXED_EXPENSE_CANDIDATE_NOT_FOUND(HttpStatus.NOT_FOUND, "고정지출 추천 후보를 찾을 수 없습니다."),
     FIXED_EXPENSE_CANDIDATE_NOT_PENDING(HttpStatus.CONFLICT, "이미 응답한 추천 후보입니다."),

@@ -8,6 +8,8 @@ import com.weaone.themoa.domain.cardconnection.repository.CardConnectionReposito
 import com.weaone.themoa.domain.cardconnection.repository.CardIssuerRepository;
 import com.weaone.themoa.domain.cardconnection.repository.CardRepository;
 import com.weaone.themoa.domain.cardtransaction.entity.CardTransaction;
+import com.weaone.themoa.domain.cardtransaction.entity.PaymentMethod;
+import com.weaone.themoa.domain.cardtransaction.entity.TransactionSource;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import com.weaone.themoa.domain.category.entity.Category;
 import com.weaone.themoa.domain.category.entity.CategoryCode;
@@ -18,6 +20,7 @@ import com.weaone.themoa.domain.fixedexpense.repository.FixedExpenseRepository;
 import com.weaone.themoa.domain.member.entity.Gender;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +32,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -55,6 +59,8 @@ class CardTransactionRepositoryIntegrationTest {
     private CategoryRepository categoryRepository;
     @Autowired
     private FixedExpenseRepository fixedExpenseRepository;
+    @Autowired
+    private EntityManager entityManager;
 
     private Member persistMember(String email) {
         return memberRepository.save(
@@ -190,5 +196,83 @@ class CardTransactionRepositoryIntegrationTest {
         assertThat(transportSummary.getTransactionCount()).isEqualTo(1);
 
         assertThat(canceledTotal).isEqualByComparingTo(BigDecimal.valueOf(35000));
+    }
+
+    @Test
+    @DisplayName("대체된 수기 건은 @SQLRestriction으로 모든 조회에서 자동 제외된다 — 이중 계상 방지(entryMode.md §4-2)")
+    void replacedManualEntryIsExcludedFromAllQueries() {
+        Member member = persistMember("replace-restriction@example.com");
+        Category food = categoryRepository.findByCode(CategoryCode.FOOD.name())
+                .orElseThrow(() -> new IllegalStateException("식비 카테고리 시드가 없습니다."));
+
+        CardTransaction manualEntry = CardTransaction.manual(member, food, PaymentMethod.CARD,
+                LocalDate.of(2026, 6, 10), LocalDateTime.of(2026, 6, 10, 12, 0), BigDecimal.valueOf(9000),
+                "카드결제", null);
+        cardTransactionRepository.saveAndFlush(manualEntry);
+        Long manualEntryId = manualEntry.getId();
+
+        manualEntry.replace(null, LocalDateTime.now());
+        cardTransactionRepository.saveAndFlush(manualEntry);
+        // find-by-id는 1차 캐시를 먼저 보므로, 실제 SQL 재조회를 강제하려면 영속성 컨텍스트를 비워야 한다.
+        entityManager.clear();
+
+        assertThat(cardTransactionRepository.findByIdAndMember_Id(manualEntryId, member.getId())).isEmpty();
+        BigDecimal netSpend = cardTransactionRepository.sumNetSpend(member.getId(), TransactionStatus.REJECTED,
+                LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30));
+        assertThat(netSpend).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    @DisplayName("대체 대상 조회는 아직 대체 안 된 갭 구간의 카드 태그 수기 건만 반환한다")
+    void findsOnlyUnreplacedManualCardEntriesInWindow() {
+        Member member = persistMember("replace-candidates@example.com");
+        Category food = categoryRepository.findByCode(CategoryCode.FOOD.name())
+                .orElseThrow(() -> new IllegalStateException("식비 카테고리 시드가 없습니다."));
+
+        CardTransaction cardTagged = CardTransaction.manual(member, food, PaymentMethod.CARD,
+                LocalDate.of(2026, 6, 10), LocalDateTime.of(2026, 6, 10, 12, 0), BigDecimal.valueOf(9000),
+                "카드결제", null);
+        CardTransaction cashTagged = CardTransaction.manual(member, food, PaymentMethod.CASH,
+                LocalDate.of(2026, 6, 11), LocalDateTime.of(2026, 6, 11, 12, 0), BigDecimal.valueOf(5000),
+                "현금결제", null);
+        cardTransactionRepository.saveAndFlush(cardTagged);
+        cardTransactionRepository.saveAndFlush(cashTagged);
+
+        List<CardTransaction> candidates = cardTransactionRepository
+                .findByMember_IdAndSourceAndPaymentMethodAndUsedDateBetween(member.getId(), TransactionSource.MANUAL,
+                        PaymentMethod.CARD, LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30));
+
+        assertThat(candidates).extracting(CardTransaction::getId).containsExactly(cardTagged.getId());
+
+        cardTagged.replace(null, LocalDateTime.now());
+        cardTransactionRepository.saveAndFlush(cardTagged);
+        entityManager.clear();
+
+        List<CardTransaction> afterReplace = cardTransactionRepository
+                .findByMember_IdAndSourceAndPaymentMethodAndUsedDateBetween(member.getId(), TransactionSource.MANUAL,
+                        PaymentMethod.CARD, LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30));
+        assertThat(afterReplace).isEmpty();
+    }
+
+    @Test
+    @DisplayName("대체 짝 탐색은 같은 날짜·금액의 카드 수집 거래를 정확 일치로 찾는다")
+    void findsMatchingSyncTransactionByDateAndAmount() {
+        Member member = persistMember("replace-match@example.com");
+        CardConnection connection = persistConnection(member);
+        Card card = cardRepository.saveAndFlush(Card.observe(member, connection, "카드", "4619****986*"));
+        Category food = categoryRepository.findByCode(CategoryCode.FOOD.name())
+                .orElseThrow(() -> new IllegalStateException("식비 카테고리 시드가 없습니다."));
+
+        CardTransaction syncTx = CardTransaction.sync(member, card, food, "30000001",
+                LocalDate.of(2026, 6, 10), LocalDateTime.of(2026, 6, 10, 12, 5), BigDecimal.valueOf(9000),
+                null, "KRW", null, false, TransactionStatus.APPROVED, null, false, "김밥천국", "한식", null, null, null);
+        cardTransactionRepository.saveAndFlush(syncTx);
+
+        Optional<CardTransaction> match = cardTransactionRepository
+                .findFirstByMember_IdAndSourceAndUsedDateAndAmountOrderByIdAsc(member.getId(), TransactionSource.SYNC,
+                        LocalDate.of(2026, 6, 10), BigDecimal.valueOf(9000));
+
+        assertThat(match).isPresent();
+        assertThat(match.get().getId()).isEqualTo(syncTx.getId());
     }
 }

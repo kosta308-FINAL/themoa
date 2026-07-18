@@ -9,6 +9,8 @@ public record CardConnectionResponse(
         String organization,
         String organizationName,
         String status,
+        String initialSyncStatus,
+        LocalDateTime lastSuccessfulSyncAt,
         LocalDateTime createdAt
 ) {
 
@@ -18,6 +20,8 @@ public record CardConnectionResponse(
                 connection.getCardIssuer().getOrganization(),
                 connection.getCardIssuer().getName(),
                 connection.getStatus().name(),
+                connection.getInitialSyncStatus().name(),
+                connection.getLastSuccessfulSyncAt(),
                 connection.getCreatedAt()
         );
     }
