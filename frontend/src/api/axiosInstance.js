@@ -5,7 +5,22 @@ const axiosInstance = axios.create({
   withCredentials: true,
 })
 
+const PUBLIC_AUTH_PATHS = new Set([
+  '/api/auth/signup',
+  '/api/auth/login',
+  '/api/auth/refresh',
+  '/api/auth/logout',
+  '/api/auth/email/code',
+  '/api/auth/email/code/verify',
+])
+
+const isPublicAuthPath = (url = '') => PUBLIC_AUTH_PATHS.has(url.split('?')[0])
+
 axiosInstance.interceptors.request.use((config) => {
+  if (isPublicAuthPath(config.url)) {
+    return config
+  }
+
   const token = localStorage.getItem('accessToken')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -20,13 +35,11 @@ axiosInstance.interceptors.request.use((config) => {
  */
 let refreshPromise = null
 
-const isAuthPath = (url = '') => url.includes('/api/auth/')
-
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config
-    if (error.response?.status !== 401 || !original || original._retry || isAuthPath(original.url)) {
+    if (error.response?.status !== 401 || !original || original._retry || isPublicAuthPath(original.url)) {
       return Promise.reject(error)
     }
     original._retry = true
