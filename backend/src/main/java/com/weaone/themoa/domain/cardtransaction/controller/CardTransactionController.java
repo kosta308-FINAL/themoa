@@ -4,15 +4,18 @@ import com.weaone.themoa.common.response.ApiResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.request.AmountCorrectionRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.request.CancelAmountCorrectionRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.request.CategoryCorrectionRequest;
+import com.weaone.themoa.domain.cardtransaction.dto.request.ManualTransactionCreateRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.request.MemoUpdateRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.request.RecoveryRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionListResponse;
+import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CategorySummaryListResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.RecoveryStatusResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.SyncResponse;
 import com.weaone.themoa.domain.cardtransaction.service.CardTransactionCorrectionService;
 import com.weaone.themoa.domain.cardtransaction.service.CardTransactionQueryService;
 import com.weaone.themoa.domain.cardtransaction.service.CardTransactionSyncService;
+import com.weaone.themoa.domain.cardtransaction.service.ManualTransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
@@ -20,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,8 +39,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 
 /**
- * 거래 조회 + 건별 사용자 정정(category.md §2-④, cardtransaction.md §3-4·§4). 카드 수집 거래(source=SYNC)는
- * 삭제 API를 제공하지 않는다(§6-3) — 카드사 원장이 정본이라 삭제하면 롤링 윈도우 재수집이 되살린다.
+ * 거래 조회 + 건별 사용자 정정(category.md §2-④, cardtransaction.md §3-4·§4) + 수기 입력 생성(entryMode.md
+ * §5). 카드 수집 거래(source=SYNC)는 삭제 API를 제공하지 않는다(§6-3) — 카드사 원장이 정본이라 삭제하면
+ * 롤링 윈도우 재수집이 되살린다.
  */
 @RestController
 @RequestMapping("/api/card-transactions")
@@ -46,6 +51,7 @@ public class CardTransactionController {
     private final CardTransactionQueryService cardTransactionQueryService;
     private final CardTransactionCorrectionService cardTransactionCorrectionService;
     private final CardTransactionSyncService cardTransactionSyncService;
+    private final ManualTransactionService manualTransactionService;
 
     @Operation(summary = "카드 거래내역 조회",
             description = "로그인 사용자의 카드 거래내역을 최신순으로 페이지 조회합니다. 먼저 /api/auth/login으로 로그인하고, 필요하면 /api/card-transactions/sync로 거래내역을 동기화하세요.")
@@ -111,6 +117,17 @@ public class CardTransactionController {
             @Valid @RequestBody MemoUpdateRequest request) {
         cardTransactionCorrectionService.updateMemo(memberId, transactionId, request.memo());
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "수기 입력 생성",
+            description = "현금·계좌이체·(자동수집이 꺼져 있는 동안의) 카드 결제를 직접 입력합니다(entryMode.md §5). "
+                    + "카테고리는 자동 분류를 거치지 않고 요청에 지정한 값으로 확정됩니다.")
+    @PostMapping("/manual")
+    public ResponseEntity<ApiResponse<CardTransactionResponse>> createManual(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
+            @Valid @RequestBody ManualTransactionCreateRequest request) {
+        CardTransactionResponse response = manualTransactionService.create(memberId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
     /** 앱 열기(자동, manual=false → 30분 쓰로틀) / 수동 새로고침(manual=true → 쓰로틀 없이 락만, §6 (A)). */

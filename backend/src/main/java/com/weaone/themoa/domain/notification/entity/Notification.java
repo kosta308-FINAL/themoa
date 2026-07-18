@@ -41,7 +41,7 @@ public class Notification {
     private Member member;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 30)
     private NotificationType type;
 
     @Column(nullable = false, columnDefinition = "TEXT")

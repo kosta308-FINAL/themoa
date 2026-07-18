@@ -57,6 +57,10 @@ public class Member {
     @Column(name = "card_sync_enabled", nullable = false)
     private boolean cardSyncEnabled;
 
+    /** 수기→카드 전환 시점(백필 경계, entryMode.md §2-1·§3). MANUAL 상태로 남아 있는 동안은 NULL이다. */
+    @Column(name = "card_sync_started_at")
+    private LocalDateTime cardSyncStartedAt;
+
     /** 발급된 Access Token을 만료 전 무효화하는 기준값. 전체 기기 로그아웃·비밀번호 변경에만 올린다. */
     @Column(name = "token_version", nullable = false)
     private int tokenVersion;
@@ -173,5 +177,31 @@ public class Member {
     /** 저축 목표 미설정은 0원으로 계산한다(dayguide.md §2.1). */
     public BigDecimal getSavingsTargetOrZero() {
         return savingsTargetAmount != null ? savingsTargetAmount : BigDecimal.ZERO;
+    }
+
+    /**
+     * 수기→카드 전환(entryMode.md §2). MANUAL일 때만 CARD로 전이하고 시각을 남긴다. 이미 CARD면 아무 것도
+     * 하지 않는다 — 역전이도 재전환도 없어(§2-1) 이 메서드는 평생 최대 1번만 실제 효과를 낸다.
+     */
+    public void startCardSync(LocalDateTime now) {
+        if (entryMode == EntryMode.MANUAL) {
+            entryMode = EntryMode.CARD;
+            cardSyncStartedAt = now;
+        }
+    }
+
+    /** 카드 자동수집 재개(entryMode.md §2-1). entry_mode는 건드리지 않는다 — 되돌리는 대상은 이 플래그뿐이다. */
+    public void enableCardSync() {
+        cardSyncEnabled = true;
+    }
+
+    /** "수기로 돌아가기" 요청의 실제 구현(entryMode.md §2-1). entry_mode 역전이가 아니라 이 플래그로 표현한다. */
+    public void disableCardSync() {
+        cardSyncEnabled = false;
+    }
+
+    /** 결제수단=카드인 수기 입력 허용 조건(entryMode.md §5-1): 자동수집이 돌지 않는 동안만 허용한다. */
+    public boolean isManualCardEntryAllowed() {
+        return entryMode == EntryMode.MANUAL || !cardSyncEnabled;
     }
 }

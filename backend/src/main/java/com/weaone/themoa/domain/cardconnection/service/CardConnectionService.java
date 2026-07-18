@@ -7,10 +7,13 @@ import com.weaone.themoa.domain.cardconnection.client.CodefCardConnectionClient;
 import com.weaone.themoa.domain.cardconnection.client.CodefClientException;
 import com.weaone.themoa.domain.cardconnection.client.CodefCreateAccountCommand;
 import com.weaone.themoa.domain.cardconnection.dto.request.CardConnectionCreateRequest;
+import com.weaone.themoa.domain.cardconnection.dto.response.CardConnectionListResponse;
 import com.weaone.themoa.domain.cardconnection.dto.response.CardConnectionResponse;
 import com.weaone.themoa.domain.cardconnection.entity.CardConnection;
 import com.weaone.themoa.domain.cardconnection.entity.CardIssuer;
 import com.weaone.themoa.domain.cardconnection.entity.ConnectionStatus;
+import com.weaone.themoa.domain.cardconnection.event.CardConnectionEstablishedEvent;
+import com.weaone.themoa.domain.cardconnection.event.CardSyncResumedEvent;
 import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
 import com.weaone.themoa.domain.cardconnection.repository.CardIssuerRepository;
 import com.weaone.themoa.domain.cardconnection.repository.ConnectionAttemptRepository;
@@ -18,11 +21,13 @@ import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 카드사 커넥션(connectedId) 등록. 결제내역 수집 자체는 cardtransaction.md 소관이라 여기서 다루지 않는다.
@@ -50,6 +55,7 @@ public class CardConnectionService {
     private final ConnectionAttemptService connectionAttemptService;
     private final CardConnectionLockService cardConnectionLockService;
     private final CodefCardConnectionClient codefCardConnectionClient;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public CardConnectionResponse connect(Long memberId, CardConnectionCreateRequest request) {
@@ -79,9 +85,39 @@ public class CardConnectionService {
         }
 
         Member member = memberRepository.getReferenceById(memberId);
+        // 수기→카드 전환(entryMode.md §2). 이미 CARD면 아무 효과가 없다 — 역전이도 재전환도 없다(§2-1).
+        member.startCardSync(now);
         CardConnection connection = CardConnection.connect(member, cardIssuer, result.connectedId(), now);
         cardConnectionRepository.save(connection);
+        // 최초 3개월 백필 트리거(§3). 커밋 후 비동기로 실행되어 이 응답을 붙잡지 않는다.
+        eventPublisher.publishEvent(new CardConnectionEstablishedEvent(connection.getId()));
         return CardConnectionResponse.from(connection);
+    }
+
+    @Transactional(readOnly = true)
+    public CardConnectionListResponse list(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        List<CardConnectionResponse> connections = cardConnectionRepository.findByMember_Id(memberId).stream()
+                .map(CardConnectionResponse::from)
+                .toList();
+        return new CardConnectionListResponse(member.isCardSyncEnabled(), connections);
+    }
+
+    /** 카드 자동수집 ON/OFF(entryMode.md §2-1). false→true 전환 시에만 갭 백필(§4-1)을 트리거한다. */
+    @Transactional
+    public void setCardSyncEnabled(Long memberId, boolean enabled) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        boolean resuming = enabled && !member.isCardSyncEnabled();
+        if (enabled) {
+            member.enableCardSync();
+        } else {
+            member.disableCardSync();
+        }
+        if (resuming) {
+            eventPublisher.publishEvent(new CardSyncResumedEvent(memberId));
+        }
     }
 
     private void rejectIfCoolingDown(Long memberId, CardIssuer cardIssuer, LocalDateTime now) {
