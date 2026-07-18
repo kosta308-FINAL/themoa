@@ -1,9 +1,14 @@
 package com.weaone.themoa.domain.budget.service;
 
+import com.weaone.themoa.common.exception.BusinessException;
+import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.budget.dto.response.SpendingGuideSummaryResponse;
 import com.weaone.themoa.domain.budget.entity.Budget;
+import com.weaone.themoa.domain.budget.repository.BudgetRepository;
+import com.weaone.themoa.domain.cardtransaction.dto.response.CategorySummaryListResponse;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
+import com.weaone.themoa.domain.cardtransaction.support.BackfillWindowPolicy;
 import com.weaone.themoa.domain.member.entity.Gender;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
@@ -12,13 +17,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -33,16 +42,18 @@ class SpendingGuideServiceTest {
     @Mock
     private MemberRepository memberRepository;
     @Mock
+    private BudgetRepository budgetRepository;
+    @Mock
     private BudgetCycleService budgetCycleService;
     @Mock
     private CardTransactionRepository cardTransactionRepository;
 
     private SpendingGuideService service() {
-        return new SpendingGuideService(memberRepository, budgetCycleService, cardTransactionRepository);
+        return new SpendingGuideService(memberRepository, budgetRepository, budgetCycleService, cardTransactionRepository);
     }
 
     private Member member(BigDecimal salary, Integer payday, BigDecimal savingsTarget) {
-        Member member = Member.signUp("u@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1));
+        Member member = Member.signUp("u@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1), LocalDateTime.now());
         if (salary != null && payday != null) {
             member.configureSpendingGuide(salary, payday);
         }
@@ -126,6 +137,130 @@ class SpendingGuideServiceTest {
         assertThat(response.overCycleBudget()).isTrue();
         assertThat(response.cycleOverspentAmount()).isEqualByComparingTo("150000");
         assertThat(response.budgetUnaffordable()).isTrue();
+    }
+
+    @Test
+    @DisplayName("월급·급여일 미등록이면 오늘 거래 미리보기도 SPENDING_GUIDE_SETUP_REQUIRED로 거부한다")
+    void todayTransactionsRequiresSetup() {
+        given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member(null, null, null)));
+
+        assertThatThrownBy(() -> service().getTodayTransactions(MEMBER_ID, null))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.SPENDING_GUIDE_SETUP_REQUIRED);
+    }
+
+    @Test
+    @DisplayName("본인 소유가 아니거나 존재하지 않는 budgetId는 404로 거부한다")
+    void searchTransactionsRejectsUnknownBudget() {
+        given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member(new BigDecimal("1000000"), 5, null)));
+        given(budgetRepository.findByIdAndMember_Id(99L, MEMBER_ID)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service().searchTransactions(MEMBER_ID, 99L, null, null, PageRequest.of(0, 20)))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.BUDGET_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("아직 시작하지 않은 미래 급여 주기는 400으로 거부한다")
+    void searchTransactionsRejectsFutureCycle() {
+        LocalDate today = TODAY.value();
+        Member member = member(new BigDecimal("1000000"), 5, null);
+        Budget futureBudget = budget(member, today.plusDays(10), today.plusDays(39), "1000000", "0", "0");
+        given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member));
+        given(budgetRepository.findByIdAndMember_Id(7L, MEMBER_ID)).willReturn(Optional.of(futureBudget));
+
+        assertThatThrownBy(() -> service().searchTransactions(MEMBER_ID, 7L, null, null, PageRequest.of(0, 20)))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.BUDGET_FUTURE_CYCLE_NOT_ALLOWED);
+    }
+
+    @Test
+    @DisplayName("카드 연동 사용자의 현재 진행 중인 주기는 completedCycleResult가 없다")
+    void categorySummaryForCurrentCycleHasNoResult() {
+        LocalDate today = TODAY.value();
+        Member member = member(new BigDecimal("1000000"), 5, null);
+        member.startCardSync(today.minusMonths(4).atStartOfDay());
+        given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member));
+        Budget budget = budget(member, today.minusDays(5), today.plusDays(10), "1000000", "0", "0");
+        given(budgetRepository.findByIdAndMember_Id(31L, MEMBER_ID)).willReturn(Optional.of(budget));
+        given(cardTransactionRepository.summarizeByCategory(eq(MEMBER_ID), eq(TransactionStatus.REJECTED), any(), any()))
+                .willReturn(List.of());
+        given(cardTransactionRepository.sumCanceledAmount(eq(MEMBER_ID), eq(TransactionStatus.REJECTED), any(), any()))
+                .willReturn(BigDecimal.ZERO);
+
+        CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L);
+
+        assertThat(response.hasNext()).isFalse();
+        assertThat(response.completedCycleResult()).isNull();
+    }
+
+    @Test
+    @DisplayName("완료된 과거 주기는 예산·사용·결과 요약을 계산한다")
+    void categorySummaryForCompletedCycleComputesResult() {
+        LocalDate today = TODAY.value();
+        Member member = member(new BigDecimal("1000000"), 5, null);
+        member.startCardSync(today.minusMonths(6).atStartOfDay());
+        given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member));
+        LocalDate cycleStart = today.minusMonths(2);
+        LocalDate cycleEnd = today.minusMonths(1).minusDays(1);
+        Budget budget = budget(member, cycleStart, cycleEnd, "1000000", "0", "0");
+        given(budgetRepository.findByIdAndMember_Id(31L, MEMBER_ID)).willReturn(Optional.of(budget));
+        given(cardTransactionRepository.summarizeByCategory(eq(MEMBER_ID), eq(TransactionStatus.REJECTED), eq(cycleStart), eq(cycleEnd)))
+                .willReturn(List.of());
+        given(cardTransactionRepository.sumCanceledAmount(eq(MEMBER_ID), eq(TransactionStatus.REJECTED), eq(cycleStart), eq(cycleEnd)))
+                .willReturn(BigDecimal.ZERO);
+        given(cardTransactionRepository.sumNetSpend(eq(MEMBER_ID), eq(TransactionStatus.REJECTED), eq(cycleStart), eq(cycleEnd)))
+                .willReturn(new BigDecimal("300000"));
+
+        CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L);
+
+        assertThat(response.hasNext()).isTrue();
+        assertThat(response.completedCycleResult()).isNotNull();
+        assertThat(response.completedCycleResult().budgetAmount()).isEqualByComparingTo("1000000");
+        assertThat(response.completedCycleResult().spentAmount()).isEqualByComparingTo("300000");
+        assertThat(response.completedCycleResult().resultAmount()).isEqualByComparingTo("700000");
+        assertThat(response.completedCycleResult().resultType()).isEqualTo("REMAINED");
+    }
+
+    @Test
+    @DisplayName("데이터 보유 시작일보다 이전인 주기는 partialCycle이며 결과 요약을 만들지 않는다")
+    void categorySummaryMarksPartialCycle() {
+        LocalDate today = TODAY.value();
+        Member member = member(new BigDecimal("1000000"), 5, null);
+        LocalDate dataStartDate = today.withDayOfMonth(1).minusMonths(3);
+        member.startCardSync(today.atStartOfDay());
+        given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member));
+        LocalDate cycleStart = dataStartDate.minusMonths(1);
+        LocalDate cycleEnd = dataStartDate.minusDays(1);
+        Budget budget = budget(member, cycleStart, cycleEnd, "1000000", "0", "0");
+        given(budgetRepository.findByIdAndMember_Id(31L, MEMBER_ID)).willReturn(Optional.of(budget));
+        given(cardTransactionRepository.summarizeByCategory(any(), any(), any(), any())).willReturn(List.of());
+        given(cardTransactionRepository.sumCanceledAmount(any(), any(), any(), any())).willReturn(BigDecimal.ZERO);
+
+        CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L);
+
+        assertThat(response.partialCycle()).isTrue();
+        assertThat(response.completedCycleResult()).isNull();
+    }
+
+    @Test
+    @DisplayName("데이터 보유 시작일이 포함된 가장 이른 주기에서는 hasPrevious가 false다")
+    void categorySummaryHasPreviousFalseAtEarliestCycle() {
+        LocalDate today = TODAY.value();
+        Member member = member(new BigDecimal("1000000"), 5, null);
+        LocalDate cardSyncStartedAt = today.minusMonths(3);
+        member.startCardSync(cardSyncStartedAt.atStartOfDay());
+        given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member));
+        LocalDate dataStartDate = BackfillWindowPolicy.calendarFloor(cardSyncStartedAt);
+        BudgetCyclePolicy.BudgetCycle earliestCycle = BudgetCyclePolicy.cycleOf(5, dataStartDate);
+        Budget budget = budget(member, earliestCycle.cycleStartDate(), earliestCycle.cycleEndDate(), "1000000", "0", "0");
+        given(budgetRepository.findByIdAndMember_Id(31L, MEMBER_ID)).willReturn(Optional.of(budget));
+        given(cardTransactionRepository.summarizeByCategory(any(), any(), any(), any())).willReturn(List.of());
+        given(cardTransactionRepository.sumCanceledAmount(any(), any(), any(), any())).willReturn(BigDecimal.ZERO);
+
+        CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L);
+
+        assertThat(response.hasPrevious()).isFalse();
     }
 
     /** 테스트 시작 시각의 오늘(Asia/Seoul)을 한 번 고정해 예산 주기 경계 계산을 결정적으로 만든다. */

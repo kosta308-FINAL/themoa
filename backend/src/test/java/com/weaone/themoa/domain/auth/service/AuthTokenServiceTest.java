@@ -63,7 +63,7 @@ class AuthTokenServiceTest {
         authTokenService = new AuthTokenService(
                 jwtTokenProvider, refreshTokenRepository, memberRepository, generator, properties);
 
-        member = Member.signUp("user@example.com", "hashed", "닉네임", Gender.MALE, LocalDate.of(1996, 5, 20));
+        member = Member.signUp("user@example.com", "hashed", "닉네임", Gender.MALE, LocalDate.of(1996, 5, 20), LocalDateTime.now());
         ReflectionTestUtils.setField(member, "id", MEMBER_ID);
     }
 

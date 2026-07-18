@@ -13,7 +13,7 @@ class MemberTest {
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 7, 13, 10, 0);
 
     private Member member() {
-        return Member.signUp("user@example.com", "hashed", "닉네임", Gender.FEMALE, LocalDate.of(2000, 1, 1));
+        return Member.signUp("user@example.com", "hashed", "닉네임", Gender.FEMALE, LocalDate.of(2000, 1, 1), LocalDateTime.now());
     }
 
     @Test

@@ -64,7 +64,7 @@ class CardTransactionRepositoryIntegrationTest {
 
     private Member persistMember(String email) {
         return memberRepository.save(
-                Member.signUp(email, "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1)));
+                Member.signUp(email, "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1), LocalDateTime.now()));
     }
 
     private CardConnection persistConnection(Member member) {
