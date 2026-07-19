@@ -1,14 +1,14 @@
-import { spendingBreakdown } from '../../../constants/mockDashboard'
+import { spendingBreakdown } from "../../../constants/mockDashboard";
 
 function DonutChart({ categories }) {
-  const radius = 60
-  const circumference = 2 * Math.PI * radius
-  let offsetAcc = 0
+  const radius = 60;
+  const circumference = 2 * Math.PI * radius;
+  let offsetAcc = 0;
 
   return (
     <svg width="150" height="150" viewBox="0 0 150 150">
       {categories.map((cat) => {
-        const dash = (cat.percent / 100) * circumference
+        const dash = (cat.percent / 100) * circumference;
         const circle = (
           <circle
             key={cat.label}
@@ -22,12 +22,12 @@ function DonutChart({ categories }) {
             strokeDashoffset={-offsetAcc}
             transform="rotate(-90 75 75)"
           />
-        )
-        offsetAcc += dash
-        return circle
+        );
+        offsetAcc += dash;
+        return circle;
       })}
     </svg>
-  )
+  );
 }
 
 function SpendingAnalysis() {
@@ -57,7 +57,7 @@ function SpendingAnalysis() {
         </ul>
       </div>
     </div>
-  )
+  );
 }
 
-export default SpendingAnalysis
+export default SpendingAnalysis;

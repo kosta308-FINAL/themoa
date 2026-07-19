@@ -1,5 +1,5 @@
-import DashboardIcon from '../../../components/common/DashboardIcon'
-import { popularSearches } from '../../../constants/mockDashboard'
+import DashboardIcon from "../../../components/common/DashboardIcon";
+import { popularSearches } from "../../../constants/mockDashboard";
 
 function AiChatCard() {
   return (
@@ -26,7 +26,7 @@ function AiChatCard() {
         <span className="ai-search-mascot-bubble">?</span>
       </div>
     </div>
-  )
+  );
 }
 
-export default AiChatCard
+export default AiChatCard;
