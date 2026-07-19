@@ -86,6 +86,16 @@ export const getCategorySummary = (budgetId) =>
     })
     .then(responseData);
 
+export const getCategoryAnalysis = ({ budgetId, categoryId } = {}) =>
+  axiosInstance
+    .get("/api/card-transactions/category-analysis", {
+      params: {
+        ...(budgetId ? { budgetId } : {}),
+        ...(categoryId ? { categoryId } : {}),
+      },
+    })
+    .then(responseData);
+
 export const getFixedExpenseCandidates = () =>
   axiosInstance.get("/api/fixed-expense-candidates").then(responseData);
 
