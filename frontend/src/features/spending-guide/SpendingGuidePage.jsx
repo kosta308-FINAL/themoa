@@ -9,9 +9,11 @@ import {
   getCategorySummary,
   getCoachingCards,
   getFixedExpenseCandidates,
+  getInitialSyncStatus,
   getRecentDays,
   getSpendingGuideSummary,
   getTodayTransactions,
+  retryInitialSync,
   setupSpendingGuide,
 } from '../../api/spendingGuideApi'
 import DashboardIcon from '../../components/common/DashboardIcon'
@@ -35,6 +37,7 @@ const EMPTY_DATA = {
 }
 
 const WON = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 })
+const INITIAL_SYNC_IN_PROGRESS = new Set(['NOT_STARTED', 'FETCHING', 'ANALYZING'])
 
 const toNumber = (value) => Number(value ?? 0)
 const formatWon = (value) => `${WON.format(toNumber(value))}원`
@@ -75,6 +78,42 @@ function LoadingState({ label = '데이터를 불러오고 있어요.' }) {
   return <div className="spending-loading" role="status"><span className="spending-spinner" />{label}</div>
 }
 
+function InitialSyncLoading({ compact = false, title, description }) {
+  return <div className={`spending-initial-loading${compact ? ' compact' : ''}`} role="status"><span className="spending-spinner" /><strong>{title}</strong><p>{description}</p></div>
+}
+
+function InitialSyncView({ summary, syncState, retryingId, onRetry }) {
+  const failed = syncState?.overallStatus === 'FAILED'
+  const failedConnections = syncState?.connections?.filter((connection) => connection.initialSyncStatus === 'FAILED') || []
+  const analyzing = syncState?.overallStatus === 'ANALYZING'
+  const loadingDescription = analyzing ? '불러온 거래를 정리하고 분석하는 중이에요.' : '소비내역 수집이 끝나면 자동으로 표시돼요.'
+
+  return <>
+    {failed && <div className="spending-page-error spending-sync-error"><DashboardIcon name="info" size={19} /><span>카드 소비내역을 불러오지 못했어요. 다시 수집을 눌러 재시도해주세요.</span>{failedConnections.map((connection) => <button type="button" key={connection.connectionId} disabled={retryingId === connection.connectionId} onClick={() => onRetry(connection.connectionId)}>{retryingId === connection.connectionId ? '재시도 중...' : `${connection.organizationName} 다시 수집`}</button>)}</div>}
+    <section className="spending-hero spending-initial-sync" aria-label="카드 소비내역 초기 수집 상태">
+      <article className="spending-today-card">
+        <div className="spending-card-head"><div><h2>오늘의 소비 기준</h2><p>오늘 하루 동안 권장액은 유지돼요.</p></div><span className={`spending-status${failed ? ' warning' : ''}`}>{failed ? '수집 확인 필요' : '불러오는 중'}</span></div>
+        <InitialSyncLoading title={failed ? '소비 기준 계산을 기다리고 있어요' : '오늘 소비 기준을 계산하고 있어요'} description={failed ? '카드 내역을 다시 수집하면 자동으로 계산돼요.' : loadingDescription} />
+      </article>
+      <aside className="spending-cycle-card">
+        <span>이번 급여 주기</span>
+        <p>{formatDate(summary?.cycleStartDate)} ~ {formatDate(summary?.cycleEndDate)}</p>
+        <InitialSyncLoading compact title="남은 예산을 계산하고 있어요" description="소비내역 수집이 끝나면 자동으로 표시돼요." />
+      </aside>
+    </section>
+    <div className="spending-content-grid spending-initial-sync-grid">
+      <div className="spending-column">
+        <section className="spending-panel"><div className="spending-panel-head"><PanelTitle icon="receipt" title="오늘 거래" description="고정지출을 제외한 오늘의 거래를 보여드려요" /></div><InitialSyncLoading title="최근 소비내역을 불러오고 있어요" description="화면을 나가도 수집은 계속 진행돼요." /></section>
+        <section className="spending-panel"><div className="spending-panel-head"><PanelTitle icon="chart" title="최근 7일 소비 흐름" description="날짜별 순사용액과 하루 권장액을 비교해요" tone="blue" /></div><InitialSyncLoading title="최근 소비 흐름을 만들고 있어요" description="날짜별 순사용액을 정리하는 중이에요." /></section>
+      </div>
+      <div className="spending-column">
+        <section className="spending-panel"><div className="spending-panel-head"><PanelTitle icon="chart" title="카테고리별 소비" description="실제 소비 순액을 기준으로 보여드려요" tone="teal" /></div><InitialSyncLoading title="카테고리를 분석하고 있어요" description="불러온 거래를 카테고리별로 정리하는 중이에요." /></section>
+        <section className="spending-panel"><div className="spending-panel-head"><PanelTitle icon="sparkle" title="이번 달 이렇게 아껴봐요" description="지난 소비 습관을 바탕으로 알려드려요" tone="purple" /></div><InitialSyncLoading title="소비 습관을 분석하고 있어요" description="분석할 내역이 충분한지 함께 확인하고 있어요." /></section>
+      </div>
+    </div>
+  </>
+}
+
 function SectionError({ message }) {
   return <div className="spending-section-error"><DashboardIcon name="info" size={18} />{message}</div>
 }
@@ -88,7 +127,7 @@ function PanelTitle({ icon, title, description, tone = 'green' }) {
   )
 }
 
-function SetupView({ onComplete }) {
+function SetupView({ onComplete, onCardConnected }) {
   const [step, setStep] = useState(1)
   const [salaryAmount, setSalaryAmount] = useState('')
   const [payday, setPayday] = useState('')
@@ -151,7 +190,7 @@ function SetupView({ onComplete }) {
     setError('')
     setIsSubmitting(true)
     try {
-      await createCardConnection({
+      const connection = await createCardConnection({
         organization: cardForm.organization,
         loginId: cardForm.loginId,
         loginPassword: cardForm.loginPassword,
@@ -159,7 +198,7 @@ function SetupView({ onComplete }) {
         cardPassword: cardForm.cardPassword || null,
         birthDate: cardForm.birthDate || null,
       })
-      await onComplete()
+      await onCardConnected(connection)
     } catch (requestError) {
       if (requestError.response?.data?.code === 'CARD_CONNECTION_BIRTHDATE_REQUIRED') {
         setShowBirthDate(true)
@@ -310,6 +349,8 @@ function SpendingGuidePage() {
   const [detailId, setDetailId] = useState(null)
   const [editingTransaction, setEditingTransaction] = useState(null)
   const [pendingCoachId, setPendingCoachId] = useState(null)
+  const [initialSyncState, setInitialSyncState] = useState(null)
+  const [retryingConnectionId, setRetryingConnectionId] = useState(null)
 
   const loadGuide = useCallback(async () => {
     setIsLoading(true)
@@ -319,6 +360,14 @@ function SpendingGuidePage() {
       if (summary.setupRequired) {
         setData({ ...EMPTY_DATA, summary })
         setSectionErrors({})
+        setInitialSyncState(null)
+        return
+      }
+      const syncState = await getInitialSyncStatus()
+      if (INITIAL_SYNC_IN_PROGRESS.has(syncState?.overallStatus) || syncState?.overallStatus === 'FAILED') {
+        setData({ ...EMPTY_DATA, summary })
+        setSectionErrors({})
+        setInitialSyncState(syncState)
         return
       }
       const requests = {
@@ -341,6 +390,7 @@ function SpendingGuidePage() {
       })
       setData(nextData)
       setSectionErrors(nextErrors)
+      setInitialSyncState(syncState)
     } catch (error) {
       setPageError(errorMessage(error, '소비가이드를 불러오지 못했습니다.'))
     } finally {
@@ -349,6 +399,44 @@ function SpendingGuidePage() {
   }, [])
 
   useEffect(() => { loadGuide() }, [loadGuide])
+
+  useEffect(() => {
+    if (!INITIAL_SYNC_IN_PROGRESS.has(initialSyncState?.overallStatus)) return undefined
+    const intervalId = window.setInterval(async () => {
+      try {
+        const nextState = await getInitialSyncStatus()
+        if (nextState?.overallStatus === 'COMPLETED' || nextState?.overallStatus == null) {
+          window.clearInterval(intervalId)
+          await loadGuide()
+          return
+        }
+        setInitialSyncState(nextState)
+      } catch {
+        // 초기 수집은 백엔드에서 계속 진행되므로 다음 폴링에서 다시 확인한다.
+      }
+    }, 2000)
+    return () => window.clearInterval(intervalId)
+  }, [initialSyncState?.overallStatus, loadGuide])
+
+  const handleCardConnected = useCallback(async (connection) => {
+    setInitialSyncState({
+      overallStatus: connection?.initialSyncStatus || 'NOT_STARTED',
+      connections: connection ? [connection] : [],
+    })
+    await loadGuide()
+  }, [loadGuide])
+
+  const handleInitialSyncRetry = async (connectionId) => {
+    setRetryingConnectionId(connectionId)
+    try {
+      await retryInitialSync(connectionId)
+      setInitialSyncState((current) => ({ ...current, overallStatus: 'FETCHING' }))
+    } catch (error) {
+      setPageError(errorMessage(error, '카드 소비내역을 다시 수집하지 못했습니다.'))
+    } finally {
+      setRetryingConnectionId(null)
+    }
+  }
 
   const expandToday = async () => {
     try {
@@ -378,15 +466,17 @@ function SpendingGuidePage() {
   const todaySpent = toNumber(summary?.todayNetSpend)
   const useRate = dailyRecommended > 0 ? Math.max(0, Math.round((todaySpent / dailyRecommended) * 100)) : 0
   const cycleSpent = summary ? toNumber(summary.availableAmount) - toNumber(summary.remainingAmount) : 0
+  const showInitialSync = INITIAL_SYNC_IN_PROGRESS.has(initialSyncState?.overallStatus) || initialSyncState?.overallStatus === 'FAILED'
+  const showSetup = summary?.setupRequired && !showInitialSync
 
   return (
     <div className="dashboard spending-guide">
       <DashboardTopNav />
       <main className="spending-main">
-        <header className="spending-page-head"><div><h1>{summary?.setupRequired ? '소비가이드 설정' : '소비가이드'}</h1><p>{summary?.setupRequired ? '처음 한 번만 입력하면 매일 소비 기준을 계산해드려요.' : '오늘의 기준을 확인하고, 무리 없이 쓸 수 있는 금액을 관리해보세요.'}</p></div></header>
+        <header className="spending-page-head"><div><h1>{showSetup ? '소비가이드 설정' : '소비가이드'}</h1><p>{showSetup ? '처음 한 번만 입력하면 매일 소비 기준을 계산해드려요.' : '오늘의 기준을 확인하고, 무리 없이 쓸 수 있는 금액을 관리해보세요.'}</p></div></header>
 
         {pageError && <div className="spending-page-error"><DashboardIcon name="info" size={19} /><span>{pageError}</span><button type="button" onClick={loadGuide}>다시 시도</button></div>}
-        {isLoading && !summary ? <LoadingState label="소비가이드를 불러오고 있어요." /> : summary?.setupRequired ? <SetupView onComplete={loadGuide} /> : summary && <>
+        {isLoading && !summary ? <LoadingState label="소비가이드를 불러오고 있어요." /> : showInitialSync ? <InitialSyncView summary={summary} syncState={initialSyncState} retryingId={retryingConnectionId} onRetry={handleInitialSyncRetry} /> : showSetup ? <SetupView onComplete={loadGuide} onCardConnected={handleCardConnected} /> : summary && <>
           <section className="spending-hero" aria-label="소비 기준 요약">
             <article className="spending-today-card">
               <div className="spending-card-head"><div><h2>오늘의 소비 기준</h2><p>오늘 하루 동안 권장액은 유지돼요.</p></div><span className={`spending-status ${useRate > 100 ? 'warning' : ''}`}>{useRate > 100 ? '오늘 권장액 초과' : '안정적으로 사용 중'}</span></div>

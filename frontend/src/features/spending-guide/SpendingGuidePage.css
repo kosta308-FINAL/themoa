@@ -611,6 +611,52 @@
   font-size: 13px;
 }
 
+.spending-initial-sync .spending-today-card,
+.spending-initial-sync .spending-cycle-card {
+  min-height: 300px;
+}
+
+.spending-initial-sync-grid .spending-panel {
+  min-height: 320px;
+}
+
+.spending-initial-loading {
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--spending-muted);
+  text-align: center;
+}
+
+.spending-initial-loading.compact {
+  min-height: 190px;
+}
+
+.spending-initial-loading .spending-spinner {
+  width: 34px;
+  height: 34px;
+  border-width: 4px;
+}
+
+.spending-initial-loading strong {
+  margin-top: 14px;
+  color: var(--spending-text);
+  font-size: 13px;
+}
+
+.spending-initial-loading p {
+  margin-top: 7px;
+  color: #96a29b;
+  font-size: 11px;
+}
+
+.spending-sync-error button:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
 .spending-spinner {
   width: 21px;
   height: 21px;
