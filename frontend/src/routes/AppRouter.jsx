@@ -5,6 +5,7 @@ import SignupPage from "../features/auth/SignupPage";
 import Dashboard from "../features/dashboard/Dashboard";
 import ProductsPage from "../features/products/ProductsPage";
 import PolicyPage from "../features/policy/PolicyPage";
+import PolicyAdminPage from "../features/policy/admin/PolicyAdminPage";
 import SpendingGuidePage from "../features/spending-guide/SpendingGuidePage";
 import SpendingHistoryPage from "../features/spending-guide/SpendingHistoryPage";
 import MyPage from "../features/mypage/MyPage";
@@ -18,11 +19,14 @@ function AppRouter() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+
+      <Route path="/dashboard/policy" element={<PolicyPage />} />
+      <Route path="/dashboard/policy/admin" element={<PolicyAdminPage />} />
+
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="products" element={<ProductsPage />} />
-          <Route path="policy" element={<PolicyPage />} />
           <Route path="spending" element={<SpendingGuidePage />} />
           <Route
             path="spending/transactions"

@@ -1,0 +1,126 @@
+package com.weaone.themoa.domain.policy.rag.dto;
+
+import java.util.Set;
+
+public record PolicySearchCondition(
+        String province,
+        String city,
+        String district,
+        Integer age,
+        String employmentStatus,
+        Boolean studentStatus,
+        String careerStage,
+        String category,
+        Set<String> supportTypes,
+        Set<String> keywords,
+        Set<String> expandedKeywords,
+        String rawRegionText,
+        String regionResolutionStatus,
+        String regionLevel,
+        Set<String> regionCandidates,
+        boolean regionExplicit,
+        boolean ageExplicit,
+        boolean employmentExplicit,
+        boolean studentExplicit,
+        boolean categoryExplicit,
+        boolean supportTypeExplicit,
+        PolicySearchMode searchMode,
+        Integer resultSize,
+        Integer inferredAge,
+        String inferredAgeSource,
+        Integer inferredMinimumAge,
+        Integer inferredMaximumAge,
+        String workplaceProvince,
+        String workplaceCity,
+        String workplaceDistrict,
+        String workplaceRawRegionText,
+        String workplaceRegionResolutionStatus
+) {
+    public PolicySearchCondition(String province,
+                                 String city,
+                                 String district,
+                                 Integer age,
+                                 String employmentStatus,
+                                 Boolean studentStatus,
+                                 String careerStage,
+                                 String category,
+                                 Set<String> supportTypes,
+                                 Set<String> keywords,
+                                 Integer resultSize) {
+        this(province, city, district, age, employmentStatus, studentStatus, careerStage, category,
+                supportTypes, keywords, Set.of(), null, null, null, Set.of(), false, false, false, false, false, false,
+                PolicySearchMode.KEYWORD, resultSize, null, null, null, null, null, null, null, null, null);
+    }
+
+    public PolicySearchCondition(String province,
+                                 String city,
+                                 String district,
+                                 Integer age,
+                                 String employmentStatus,
+                                 Boolean studentStatus,
+                                 String careerStage,
+                                 String category,
+                                 Set<String> supportTypes,
+                                 Set<String> keywords,
+                                 Set<String> expandedKeywords,
+                                 String rawRegionText,
+                                 String regionResolutionStatus,
+                                 String regionLevel,
+                                 Set<String> regionCandidates,
+                                 boolean regionExplicit,
+                                 boolean ageExplicit,
+                                 boolean employmentExplicit,
+                                 boolean studentExplicit,
+                                 boolean categoryExplicit,
+                                 boolean supportTypeExplicit,
+                                 PolicySearchMode searchMode,
+                                 Integer resultSize) {
+        this(province, city, district, age, employmentStatus, studentStatus, careerStage, category,
+                supportTypes, keywords, expandedKeywords, rawRegionText, regionResolutionStatus, regionLevel,
+                regionCandidates, regionExplicit, ageExplicit, employmentExplicit, studentExplicit,
+                categoryExplicit, supportTypeExplicit, searchMode, resultSize, null, null, null, null,
+                null, null, null, null, null);
+    }
+
+    public PolicySearchCondition {
+        province = blankToNull(province);
+        city = blankToNull(city);
+        district = blankToNull(district);
+        employmentStatus = blankToNull(employmentStatus);
+        careerStage = blankToNull(careerStage);
+        category = blankToNull(category);
+        rawRegionText = blankToNull(rawRegionText);
+        regionResolutionStatus = blankToNull(regionResolutionStatus);
+        regionLevel = blankToNull(regionLevel);
+        inferredAgeSource = blankToNull(inferredAgeSource);
+        workplaceProvince = blankToNull(workplaceProvince);
+        workplaceCity = blankToNull(workplaceCity);
+        workplaceDistrict = blankToNull(workplaceDistrict);
+        workplaceRawRegionText = blankToNull(workplaceRawRegionText);
+        workplaceRegionResolutionStatus = blankToNull(workplaceRegionResolutionStatus);
+        if (age != null && age <= 0) {
+            age = null;
+        }
+        if (inferredAge != null && inferredAge <= 0) {
+            inferredAge = null;
+        }
+        if (inferredMinimumAge != null && inferredMinimumAge <= 0) {
+            inferredMinimumAge = null;
+        }
+        if (inferredMaximumAge != null && inferredMaximumAge <= 0) {
+            inferredMaximumAge = null;
+        }
+        if (Boolean.FALSE.equals(studentStatus)) {
+            studentStatus = null;
+        }
+        supportTypes = supportTypes == null ? Set.of() : Set.copyOf(supportTypes);
+        keywords = keywords == null ? Set.of() : Set.copyOf(keywords);
+        expandedKeywords = expandedKeywords == null ? Set.of() : Set.copyOf(expandedKeywords);
+        regionCandidates = regionCandidates == null ? Set.of() : Set.copyOf(regionCandidates);
+        searchMode = searchMode == null ? PolicySearchMode.KEYWORD : searchMode;
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+}
