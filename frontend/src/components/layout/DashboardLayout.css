@@ -1,0 +1,53 @@
+/* ── DashboardLayout: /dashboard/* 전체 공통 래퍼 ─────────
+   globals.css의 :root line-height·heading·font-family가
+   dayguide.html 디자인과 충돌하지 않도록 스코프 내부에서 리셋한다. */
+
+.dashboard-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f8fbf9;
+  color: #16241c;
+  font-family:
+    Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", Inter, system-ui,
+    sans-serif;
+  line-height: normal;
+  font-synthesis: none;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+}
+
+/* globals.css h1-h6 오버라이드 무효화 */
+.dashboard-shell h1,
+.dashboard-shell h2,
+.dashboard-shell h3,
+.dashboard-shell h4,
+.dashboard-shell h5,
+.dashboard-shell h6 {
+  font-family: inherit;
+  color: inherit;
+  line-height: normal;
+}
+
+/* dayguide.html: svg { display: block } */
+.dashboard-shell svg {
+  display: block;
+}
+
+/* 폰트 상속 보장 */
+.dashboard-shell button,
+.dashboard-shell input,
+.dashboard-shell select,
+.dashboard-shell textarea {
+  font: inherit;
+}
+
+/* focus-visible 통일 */
+.dashboard-shell button:focus-visible,
+.dashboard-shell a:focus-visible,
+.dashboard-shell input:focus-visible,
+.dashboard-shell select:focus-visible,
+.dashboard-shell textarea:focus-visible {
+  outline: 3px solid rgba(34, 197, 94, 0.22);
+  outline-offset: 2px;
+}

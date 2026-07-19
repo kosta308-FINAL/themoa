@@ -9,7 +9,8 @@
   --dash-text-primary: #16241c;
   --dash-text-secondary: #6b7a72;
   --dash-radius: 16px;
-  --dash-shadow: 0 4px 16px rgba(22, 101, 52, 0.06), 0 2px 8px rgba(0, 0, 0, 0.03);
+  --dash-shadow:
+    0 4px 16px rgba(22, 101, 52, 0.06), 0 2px 8px rgba(0, 0, 0, 0.03);
 
   /* accent palette for icon badges (kept off the primary green so icons read distinctly) */
   --c-blue: #3b82f6;
@@ -28,7 +29,12 @@
   min-height: 100vh;
   background: var(--dash-bg);
   color: var(--dash-text-primary);
-  font-family: 'Pretendard', 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    "Pretendard",
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 /* ─── Top nav (horizontal categories) ───────────────────── */
@@ -42,7 +48,7 @@
   gap: 28px;
   padding: 12px 40px;
   border-bottom: 1px solid var(--dash-border);
-  background: rgba(255, 255, 255, .96);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(14px);
 }
 
@@ -68,7 +74,7 @@
 .dash-logo-text {
   font-size: 16px;
   font-weight: 800;
-  letter-spacing: -.4px;
+  letter-spacing: -0.4px;
 }
 
 .dash-topnav-right {
@@ -129,7 +135,9 @@
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .dash-topnav .dash-nav-item:hover,
@@ -153,7 +161,9 @@
   font-size: 13px;
   font-family: inherit;
   white-space: nowrap;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .dash-topnav .dash-logout-btn:hover {
@@ -169,7 +179,6 @@
   flex-direction: column;
   gap: 24px;
 }
-
 
 .dash-topbar {
   display: flex;
@@ -225,7 +234,7 @@
 }
 
 .stats-item:not(:first-child)::before {
-  content: '';
+  content: "";
   position: absolute;
   left: -16px;
   top: 6px;
@@ -246,10 +255,22 @@
   justify-content: center;
 }
 
-.stats-item:nth-child(1) .stats-icon { background: var(--c-blue-light); color: var(--c-blue); }
-.stats-item:nth-child(2) .stats-icon { background: var(--c-orange-light); color: var(--c-orange); }
-.stats-item:nth-child(3) .stats-icon { background: var(--dash-accent-light); color: var(--dash-accent-dark); }
-.stats-item:nth-child(4) .stats-icon { background: var(--c-pink-light); color: var(--c-pink); }
+.stats-item:nth-child(1) .stats-icon {
+  background: var(--c-blue-light);
+  color: var(--c-blue);
+}
+.stats-item:nth-child(2) .stats-icon {
+  background: var(--c-orange-light);
+  color: var(--c-orange);
+}
+.stats-item:nth-child(3) .stats-icon {
+  background: var(--dash-accent-light);
+  color: var(--dash-accent-dark);
+}
+.stats-item:nth-child(4) .stats-icon {
+  background: var(--c-pink-light);
+  color: var(--c-pink);
+}
 
 .stats-label {
   display: block;
@@ -277,14 +298,26 @@
   border-radius: var(--dash-radius);
   padding: 20px;
   background:
-    radial-gradient(circle at 12% -15%, rgba(52, 211, 153, 0.24), transparent 50%),
-    radial-gradient(circle at 100% 0%, rgba(20, 184, 166, 0.14), transparent 45%),
-    radial-gradient(circle at 50% 120%, rgba(16, 145, 96, 0.10), transparent 55%),
+    radial-gradient(
+      circle at 12% -15%,
+      rgba(52, 211, 153, 0.24),
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(20, 184, 166, 0.14),
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 50% 120%,
+      rgba(16, 145, 96, 0.1),
+      transparent 55%
+    ),
     linear-gradient(160deg, #e3f9ec 0%, #eef9f2 35%, #f4fbf6 70%, #f7fbf9 100%);
 }
 
 .dash-hero-section::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -340,7 +373,6 @@
   flex-direction: column;
 }
 
-
 /* ─── Summary cards ──────────────────────────────────────── */
 .summary-cards {
   display: grid;
@@ -366,7 +398,9 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .summary-card:hover {
@@ -386,9 +420,18 @@
   margin-bottom: 4px;
 }
 
-.summary-cards .summary-card:nth-child(2) .summary-card-icon { background: var(--c-orange-light); color: var(--c-orange); }
-.summary-cards .summary-card:nth-child(3) .summary-card-icon { background: var(--c-purple-light); color: var(--c-purple); }
-.summary-cards .summary-card:nth-child(4) .summary-card-icon { background: var(--c-blue-light); color: var(--c-blue); }
+.summary-cards .summary-card:nth-child(2) .summary-card-icon {
+  background: var(--c-orange-light);
+  color: var(--c-orange);
+}
+.summary-cards .summary-card:nth-child(3) .summary-card-icon {
+  background: var(--c-purple-light);
+  color: var(--c-purple);
+}
+.summary-cards .summary-card:nth-child(4) .summary-card-icon {
+  background: var(--c-blue-light);
+  color: var(--c-blue);
+}
 
 .summary-card strong {
   font-size: 20px;
@@ -435,7 +478,11 @@
 .summary-card-progress-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--dash-accent), var(--dash-accent-dark));
+  background: linear-gradient(
+    90deg,
+    var(--dash-accent),
+    var(--dash-accent-dark)
+  );
 }
 
 .summary-card-highlight {
@@ -838,9 +885,18 @@
   justify-content: center;
 }
 
-.policy-list li:nth-child(1) .policy-icon { background: var(--c-blue-light); color: var(--c-blue); }
-.policy-list li:nth-child(2) .policy-icon { background: var(--c-purple-light); color: var(--c-purple); }
-.policy-list li:nth-child(3) .policy-icon { background: var(--dash-accent-light); color: var(--dash-accent-dark); }
+.policy-list li:nth-child(1) .policy-icon {
+  background: var(--c-blue-light);
+  color: var(--c-blue);
+}
+.policy-list li:nth-child(2) .policy-icon {
+  background: var(--c-purple-light);
+  color: var(--c-purple);
+}
+.policy-list li:nth-child(3) .policy-icon {
+  background: var(--dash-accent-light);
+  color: var(--dash-accent-dark);
+}
 
 .policy-info {
   display: flex;
@@ -895,8 +951,14 @@
   justify-content: center;
 }
 
-.activity-list li:nth-child(1) .activity-icon { background: var(--c-pink-light); color: var(--c-pink); }
-.activity-list li:nth-child(2) .activity-icon { background: var(--c-teal-light); color: var(--c-teal); }
+.activity-list li:nth-child(1) .activity-icon {
+  background: var(--c-pink-light);
+  color: var(--c-pink);
+}
+.activity-list li:nth-child(2) .activity-icon {
+  background: var(--c-teal-light);
+  color: var(--c-teal);
+}
 
 .activity-info {
   display: flex;
