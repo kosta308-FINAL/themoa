@@ -332,11 +332,27 @@ function FixedCandidates({ data, error }) {
   return <div className="spending-candidate-list">{data.slice(0, 3).map((candidate) => <div key={candidate.id}><span className="spending-candidate-icon"><DashboardIcon name="card" size={17} /></span><div><strong>{candidate.merchantAliasName}</strong><p>매달 약 {formatWon(candidate.avgAmount)} · {candidate.avgPayDay}일쯤</p></div><Link to="/dashboard/fixed-expenses">등록</Link></div>)}</div>
 }
 
-function CoachingCards({ data, error, onDismiss, pendingId }) {
+function CoachingCards({ data, error, onDismiss, pendingId, expanded }) {
   if (error) return <SectionError message={error} />
   if (!data) return <LoadingState />
   if (!data.items?.length) return <EmptyState icon="sparkle" title="아직 제공할 소비 코칭이 없어요" description={data.emptyReason === 'CARD_NOT_CONNECTED' ? '카드를 연결하면 소비 습관을 분석해드려요.' : '분석 가능한 소비내역이 쌓이면 맞춤 코칭을 보여드려요.'} />
-  return <div className="spending-coaching-list">{data.items.map((card) => <article key={card.id}><span className="spending-panel-icon purple"><DashboardIcon name="sparkle" size={17} /></span><h3>{card.title}</h3><p>{card.body}</p>{toNumber(card.estimatedSaving) > 0 && <strong>예상 절감액 {formatWon(card.estimatedSaving)}</strong>}<div><button type="button" disabled={pendingId === card.id} onClick={() => onDismiss(card.id, 'NOT_WASTE')}>필요한 소비</button><button type="button" disabled={pendingId === card.id} onClick={() => onDismiss(card.id, 'HIDE')}>그만 보기</button></div></article>)}</div>
+  return <div id="spending-coaching-list" className={`spending-coaching-list${expanded ? ' expanded' : ''}`}>{data.items.map((card, index) => <article className={index === 0 ? 'active' : ''} key={card.id}><span className="spending-panel-icon purple"><DashboardIcon name="sparkle" size={17} /></span><h3>{card.title}</h3><p>{card.body}</p>{toNumber(card.estimatedSaving) > 0 && <strong>예상 절감액 {formatWon(card.estimatedSaving)}</strong>}<div><button type="button" disabled={pendingId === card.id} onClick={() => onDismiss(card.id, 'NOT_WASTE')}>필요한 소비</button><button type="button" disabled={pendingId === card.id} onClick={() => onDismiss(card.id, 'HIDE')}>그만 보기</button></div></article>)}</div>
+}
+
+function CoachingPanel({ data, error, onDismiss, pendingId }) {
+  const [expanded, setExpanded] = useState(false)
+  const itemCount = data?.items?.length || 0
+  const isExpanded = expanded && itemCount > 1
+
+  return (
+    <section className="spending-panel spending-coaching-panel">
+      <div className="spending-panel-head">
+        <PanelTitle icon="sparkle" title="이번 달 이렇게 아껴봐요" description="지난 소비 습관을 바탕으로 알려드려요" tone="purple" />
+        {itemCount > 1 && <button type="button" className="spending-coach-expand" aria-expanded={isExpanded} aria-controls="spending-coaching-list" onClick={() => setExpanded((current) => !current)}>{isExpanded ? '접기' : `${itemCount}개 펼치기`}<span aria-hidden="true" /></button>}
+      </div>
+      <CoachingCards data={data} error={error} onDismiss={onDismiss} pendingId={pendingId} expanded={isExpanded} />
+    </section>
+  )
 }
 
 function SpendingGuidePage() {
@@ -494,7 +510,7 @@ function SpendingGuidePage() {
             <div className="spending-column">
               <section className="spending-panel spending-category-panel"><div className="spending-panel-head"><PanelTitle icon="chart" title="카테고리별 소비" description="실제 소비 순액을 기준으로 보여드려요" tone="teal" /></div><CategorySummary data={data.category} error={sectionErrors.category} /><div className="spending-panel-footer"><Link to="/dashboard/spending/transactions">카테고리 상세보기</Link></div></section>
               <section className="spending-panel"><div className="spending-panel-head"><PanelTitle icon="repeat" title="고정지출 후보" description="반복되는 결제를 찾아 알려드려요" tone="orange" />{data.candidates?.length > 3 && <Link className="spending-panel-link" to="/dashboard/fixed-expenses">나머지 {data.candidates.length - 3}개</Link>}</div><FixedCandidates data={data.candidates} error={sectionErrors.candidates} /></section>
-              <section className="spending-panel"><div className="spending-panel-head"><PanelTitle icon="sparkle" title="이번 달 이렇게 아껴봐요" description="지난 소비 습관을 바탕으로 알려드려요" tone="purple" /></div><CoachingCards data={data.coaching} error={sectionErrors.coaching} onDismiss={handleDismiss} pendingId={pendingCoachId} /></section>
+              <CoachingPanel data={data.coaching} error={sectionErrors.coaching} onDismiss={handleDismiss} pendingId={pendingCoachId} />
             </div>
           </div>
         </>}
