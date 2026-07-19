@@ -619,7 +619,7 @@
 }
 .spending-category-legend > div {
   display: grid;
-  grid-template-columns: 8px minmax(0, 1fr) auto;
+  grid-template-columns: 8px minmax(0, 1fr) auto auto;
   gap: 7px;
   align-items: center;
   font-size: 11px;
@@ -632,10 +632,14 @@
 .spending-category-legend strong {
   white-space: nowrap;
   font-size: 11px;
+  text-align: right;
 }
 .spending-category-legend small {
+  min-width: 36px;
   color: var(--spending-muted);
+  font-size: 11px;
   font-weight: 600;
+  text-align: right;
 }
 .spending-canceled-total {
   margin-top: 12px;
@@ -1459,7 +1463,7 @@
 }
 .spending-category-legend > a {
   display: grid;
-  grid-template-columns: 8px minmax(0, 1fr) auto;
+  grid-template-columns: 8px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 7px;
   padding: 3px;
@@ -1484,9 +1488,14 @@
 .spending-category-legend strong {
   font-size: 11px;
   white-space: nowrap;
+  text-align: right;
 }
 .spending-category-legend small {
+  min-width: 36px;
   color: var(--spending-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: right;
 }
 
 .spending-panel-link {
@@ -2654,7 +2663,7 @@
 }
 .spending-guide .spending-category-legend > a {
   display: grid;
-  grid-template-columns: 10px 1fr auto;
+  grid-template-columns: 10px 1fr auto auto;
   align-items: center;
   gap: 8px;
   padding: 2px;
@@ -2674,9 +2683,11 @@
   text-align: right;
 }
 .spending-guide .spending-category-legend small {
-  margin-left: 4px;
+  min-width: 36px;
   color: #96a29b;
+  font-size: 11px;
   font-weight: 600;
+  text-align: right;
 }
 .spending-guide .spending-category-footer {
   margin-top: auto;

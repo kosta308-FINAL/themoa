@@ -39,7 +39,7 @@
 .dashboard-shell input,
 .dashboard-shell select,
 .dashboard-shell textarea {
-  font: inherit;
+  font-family: inherit;
 }
 
 /* focus-visible 통일 */

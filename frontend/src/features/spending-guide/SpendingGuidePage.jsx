@@ -951,10 +951,8 @@ function CategorySummary({ data, error, onNavigate }) {
                 }}
               />
               <span>{item.categoryName}</span>
-              <strong>
-                {formatWon(item.amount)}{" "}
-                <small>{toNumber(item.percentage)}%</small>
-              </strong>
+              <strong>{formatWon(item.amount)}</strong>
+              <small>{toNumber(item.percentage)}%</small>
             </Link>
           ))}
         </div>
@@ -1636,7 +1634,7 @@ function SpendingGuidePage() {
                       <span />
                       <Link
                         className="spending-link-button"
-                        to={`/dashboard/spending/transactions${data.category?.budgetId ? `?budgetId=${data.category.budgetId}` : ""}`}
+                        to="/dashboard/spending/category-detail"
                       >
                         카테고리 상세보기{" "}
                         <DashboardIcon name="chevron-right" size={15} />

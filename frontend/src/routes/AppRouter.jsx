@@ -7,6 +7,7 @@ import ProductsPage from "../features/products/ProductsPage";
 import PolicyPage from "../features/policy/PolicyPage";
 import SpendingGuidePage from "../features/spending-guide/SpendingGuidePage";
 import SpendingHistoryPage from "../features/spending-guide/SpendingHistoryPage";
+import CategoryDetailPage from "../features/spending-guide/CategoryDetailPage";
 import MyPage from "../features/mypage/MyPage";
 import SectionStub from "../components/common/SectionStub";
 import ProtectedRoute from "./ProtectedRoute";
@@ -27,6 +28,10 @@ function AppRouter() {
           <Route
             path="spending/transactions"
             element={<SpendingHistoryPage />}
+          />
+          <Route
+            path="spending/category-detail"
+            element={<CategoryDetailPage />}
           />
           <Route
             path="fixed-expenses"

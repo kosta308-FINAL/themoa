@@ -31,4 +31,11 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
 
     Optional<Budget> findFirstByMember_IdAndCycleStartDateAfterOrderByCycleStartDateAsc(
             Long memberId, LocalDate cycleEndDate);
+
+    /**
+     * 카테고리 소비 상세 최근 추이(categoryDetail.md §6.5): 선택 주기를 포함해 최근 최대 4개 주기 후보를
+     * 최신순으로 가져온다. 호출자가 앞에서부터 날짜 연속성(끝일+1=다음 시작일)을 검증해 끊긴 지점에서 자른다.
+     */
+    List<Budget> findTop4ByMember_IdAndCycleStartDateLessThanEqualOrderByCycleStartDateDesc(
+            Long memberId, LocalDate cycleStartDate);
 }
