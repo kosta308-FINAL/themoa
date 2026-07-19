@@ -340,7 +340,6 @@
 .spending-flow-panel .spending-empty { min-height: 250px; }
 .spending-category-panel .spending-empty { min-height: 205px; }
 
-.spending-refresh,
 .spending-page-state button {
   min-height: 38px;
   padding: 0 14px;
@@ -352,9 +351,6 @@
   font-weight: 700;
 }
 
-.spending-refresh:disabled { opacity: .55; cursor: wait; }
-
-.spending-head-actions { display: flex; gap: 8px; }
 .spending-cycle-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .spending-cycle-top > span { color: var(--spending-muted); font-size: 12px; }
 .spending-cycle-top button { padding: 4px; color: var(--spending-green-dark); background: transparent; font-size: 11px; font-weight: 700; }
@@ -397,52 +393,6 @@
   background: #fff9ef;
   font-size: 12px;
 }
-
-.spending-setup-panel {
-  max-width: 700px;
-  margin: 36px auto;
-  padding: 38px;
-  border: 1px solid var(--spending-border);
-  border-radius: 20px;
-  background: #fff;
-  box-shadow: 0 8px 30px rgba(22, 101, 52, .06);
-  text-align: center;
-}
-
-.spending-setup-icon {
-  width: 58px;
-  height: 58px;
-  display: grid;
-  place-items: center;
-  margin: 0 auto 14px;
-  border-radius: 18px;
-  color: var(--spending-green-dark);
-  background: var(--spending-soft);
-}
-
-.spending-setup-panel h2 { font-size: 22px; }
-.spending-setup-panel > p { margin-top: 7px; color: var(--spending-muted); font-size: 13px; }
-.spending-missing-fields { color: #a96700 !important; font-weight: 700; }
-
-.spending-setup-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-top: 28px;
-  text-align: left;
-}
-
-.spending-setup-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.spending-setup-form label > span { font-size: 12px; font-weight: 700; }
-.spending-setup-form input,
-.spending-setup-form select { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid #d9e5dd; border-radius: 10px; background: #fff; font: inherit; font-size: 13px; }
-.spending-setup-form .spending-primary,
-.spending-setup-form .spending-form-error { grid-column: 1 / -1; }
 
 .spending-form-error {
   margin: 0;
@@ -640,7 +590,6 @@
 
 .spending-cycle-amount.negative { color: #dc4c4c; }
 
-.spending-refresh,
 .spending-list-more {
   min-height: 38px;
   padding: 0 14px;
@@ -651,8 +600,6 @@
   font-size: 12px;
   font-weight: 700;
 }
-
-.spending-refresh:disabled { opacity: .55; cursor: wait; }
 
 .spending-loading {
   min-height: 180px;
@@ -698,16 +645,32 @@
 .spending-section-error { min-height: 150px; justify-content: center; margin-top: 16px; padding: 20px; }
 .spending-form-error { padding: 11px 13px; }
 
-.spending-setup-card {
-  max-width: 650px;
-  margin: 50px auto;
-  padding: 38px;
+.spending-setup-shell {
+  max-width: 820px;
+  min-height: 470px;
+  margin: 28px auto;
+  padding: 26px;
   border: 1px solid var(--spending-border);
-  border-radius: 22px;
+  border-radius: 24px;
   background: #fff;
   box-shadow: 0 8px 30px rgba(22, 101, 52, .07);
-  text-align: center;
 }
+
+.spending-setup-progress {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 26px;
+}
+
+.spending-setup-progress span {
+  height: 5px;
+  flex: 1;
+  border-radius: 999px;
+  background: #edf2ef;
+}
+
+.spending-setup-progress span.active { background: var(--spending-green); }
+.spending-setup-copy { text-align: center; }
 
 .spending-setup-icon {
   width: 58px;
@@ -720,15 +683,75 @@
   background: var(--spending-soft);
 }
 
-.spending-setup-card h2 { font-size: 24px; }
-.spending-setup-card > p { margin-top: 8px; color: var(--spending-muted); font-size: 14px; }
-.spending-setup-card form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; text-align: left; }
-.spending-setup-card label { display: flex; flex-direction: column; gap: 7px; }
-.spending-setup-card label > span { font-size: 12px; font-weight: 700; }
-.spending-setup-card input,
-.spending-setup-card select { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid #d9e5dd; border-radius: 10px; background: #fff; font: inherit; font-size: 13px; }
-.spending-setup-card .spending-primary,
-.spending-setup-card .spending-form-error { grid-column: 1 / -1; min-height: 44px; }
+.spending-setup-copy h2 { color: var(--spending-text); font-size: 24px; letter-spacing: -.7px; }
+.spending-setup-copy p { max-width: 510px; margin: 8px auto 0; color: var(--spending-muted); font-size: 13px; line-height: 1.65; }
+
+.spending-setup-form,
+.spending-setup-card-form {
+  max-width: 510px;
+  margin: 25px auto 0;
+  display: grid;
+  gap: 12px;
+  text-align: left;
+}
+
+.spending-setup-form { grid-template-columns: minmax(0, 1fr) 150px; }
+.spending-setup-card-form { grid-template-columns: 1fr; }
+.spending-setup-form label,
+.spending-setup-card-form label { display: grid; gap: 7px; }
+.spending-setup-form label > span,
+.spending-setup-card-form label > span { color: #415148; font-size: 12px; font-weight: 750; }
+
+.spending-setup-form input,
+.spending-setup-card-form input,
+.spending-setup-card-form select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 13px;
+  border: 1px solid #d9e5dd;
+  border-radius: 11px;
+  color: var(--spending-text);
+  background: #fff;
+  outline: 0;
+  font: inherit;
+  font-size: 13px;
+}
+
+.spending-setup-form input:focus,
+.spending-setup-card-form input:focus,
+.spending-setup-card-form select:focus,
+.spending-payday-trigger:focus { border-color: #9ed4af; box-shadow: 0 0 0 3px rgba(34, 197, 94, .1); }
+
+.spending-input-suffix { position: relative; }
+.spending-input-suffix input { padding-right: 35px; text-align: right; font-weight: 700; }
+.spending-input-suffix em { position: absolute; right: 13px; top: 50%; transform: translateY(-50%); color: var(--spending-muted); font-size: 12px; font-style: normal; }
+.spending-payday-field { position: relative; }
+.spending-payday-trigger { width: 100%; min-height: 46px; padding: 0 13px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid #d9e5dd; border-radius: 11px; color: var(--spending-text); background: #fff; font-size: 13px; }
+.spending-payday-trigger strong { font-weight: 700; }
+.spending-payday-picker { position: absolute; z-index: 5; top: calc(100% + 8px); right: 0; width: 300px; padding: 16px; border: 1px solid var(--spending-border); border-radius: 14px; background: #fff; box-shadow: 0 16px 38px rgba(22, 101, 52, .15); }
+.spending-payday-picker > strong { display: block; margin-bottom: 12px; color: var(--spending-text); font-size: 12px; }
+.spending-payday-picker > div { display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px; }
+.spending-payday-picker button { aspect-ratio: 1; border-radius: 9px; color: var(--spending-muted); background: #f5f8f6; font-size: 11px; font-weight: 650; }
+.spending-payday-picker button:hover { color: var(--spending-green-dark); background: var(--spending-soft); }
+.spending-payday-picker button.selected { color: #fff; background: var(--spending-green); box-shadow: 0 5px 13px rgba(34, 197, 94, .22); }
+
+.spending-setup-wide { grid-column: 1 / -1; }
+.spending-setup-help { color: #8a9890; font-size: 10px; line-height: 1.5; }
+.spending-setup-notice { display: flex; align-items: center; gap: 12px; margin-top: 5px; padding: 13px 14px; border: 1px solid #cce9d6; border-radius: 13px; color: #3c664b; background: #f1fbf5; font-size: 12px; line-height: 1.5; }
+.spending-setup-notice > span { width: 32px; height: 32px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 10px; color: var(--spending-green-dark); background: #def7e8; }
+.spending-setup-card-form .spending-setup-notice { margin-top: 2px; }
+.spending-setup-card-form .spending-form-error,
+.spending-setup-wide .spending-form-error { margin-top: 10px; }
+.spending-setup-action { width: 100%; min-height: 48px; margin-top: 20px; border-radius: 12px; color: #fff; background: var(--spending-green); font-size: 13px; font-weight: 750; }
+.spending-setup-action:disabled { opacity: .55; cursor: wait; }
+.spending-setup-skip { width: 100%; min-height: 36px; color: var(--spending-green-dark); background: transparent; font-size: 12px; font-weight: 750; }
+
+.spending-method-cards { max-width: 630px; margin: 26px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.spending-method-cards > button { padding: 22px; border: 1px solid var(--spending-border); border-radius: 17px; color: var(--spending-text); background: #fff; text-align: left; }
+.spending-method-cards > button:hover { border-color: #a9d9b9; box-shadow: 0 8px 30px rgba(22, 101, 52, .07); }
+.spending-method-cards > button > span { width: 42px; height: 42px; display: grid; place-items: center; margin-bottom: 16px; border-radius: 13px; color: var(--spending-green-dark); background: var(--spending-soft); }
+.spending-method-cards strong { display: block; font-size: 15px; }
+.spending-method-cards p { margin-top: 6px; color: var(--spending-muted); font-size: 11px; line-height: 1.55; }
 
 .spending-transaction-list { display: grid; margin-top: 12px; }
 
@@ -885,13 +908,14 @@
   .spending-number-main { grid-column: 1 / -1; padding: 0 0 16px; border-right: 0; border-bottom: 1px solid var(--spending-border); }
   .spending-entry-form { grid-template-columns: 1fr; }
   .spending-entry-form .wide { grid-column: auto; }
-  .spending-setup-card form,
+  .spending-setup-form,
+  .spending-method-cards,
   .spending-card-connect-form { grid-template-columns: 1fr; }
-  .spending-setup-card .spending-primary,
-  .spending-setup-card .spending-form-error,
+  .spending-setup-wide,
   .spending-card-connect-form h3,
   .spending-card-connect-form .spending-form-error,
   .spending-card-connect-form .spending-primary { grid-column: auto; }
+  .spending-payday-picker { right: auto; left: 0; width: min(300px, calc(100vw - 72px)); }
 }
 
 @media (max-width: 560px) {

@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   dismissCoachingCard,
+  createCardConnection,
   getCardConnections,
+  getCardIssuers,
   getCategories,
   getCategorySummary,
   getCoachingCards,
@@ -11,13 +13,11 @@ import {
   getSpendingGuideSummary,
   getTodayTransactions,
   setupSpendingGuide,
-  syncCardTransactions,
 } from '../../api/spendingGuideApi'
 import DashboardIcon from '../../components/common/DashboardIcon'
 import DashboardTopNav from '../../components/layout/DashboardTopNav'
 import DashboardFooter from '../../components/layout/DashboardFooter'
 import BudgetSettingsModal from './BudgetSettingsModal'
-import CardManagementModal from './CardManagementModal'
 import ManualTransactionModal from './ManualTransactionModal'
 import TransactionDetailModal from './TransactionDetailModal'
 import '../dashboard/Dashboard.css'
@@ -89,17 +89,28 @@ function PanelTitle({ icon, title, description, tone = 'green' }) {
 }
 
 function SetupView({ onComplete }) {
+  const [step, setStep] = useState(1)
   const [salaryAmount, setSalaryAmount] = useState('')
   const [payday, setPayday] = useState('')
+  const [isPaydayOpen, setIsPaydayOpen] = useState(false)
+  const [issuers, setIssuers] = useState([])
+  const [isIssuerLoading, setIsIssuerLoading] = useState(false)
+  const [showBirthDate, setShowBirthDate] = useState(false)
+  const [cardForm, setCardForm] = useState({ organization: '', loginId: '', loginPassword: '', cardNo: '', cardPassword: '', birthDate: '' })
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const selectedIssuer = useMemo(
+    () => issuers.find((issuer) => issuer.organization === cardForm.organization),
+    [cardForm.organization, issuers],
+  )
 
   const handleSalaryChange = (event) => {
     const digits = event.target.value.replace(/\D/g, '').slice(0, 12)
     setSalaryAmount(digits ? WON.format(Number(digits)) : '')
   }
 
-  const handleSubmit = async (event) => {
+  const handleSalarySubmit = async (event) => {
     event.preventDefault()
     setError('')
     setIsSubmitting(true)
@@ -108,7 +119,7 @@ function SetupView({ onComplete }) {
         salaryAmount: Number(salaryAmount.replace(/,/g, '')),
         payday: Number(payday),
       })
-      await onComplete()
+      setStep(2)
     } catch (requestError) {
       setError(errorMessage(requestError, '소비가이드 설정을 저장하지 못했습니다.'))
     } finally {
@@ -116,17 +127,103 @@ function SetupView({ onComplete }) {
     }
   }
 
+  const openCardStep = async () => {
+    setStep(3)
+    setError('')
+    if (issuers.length) return
+    setIsIssuerLoading(true)
+    try {
+      setIssuers((await getCardIssuers()) || [])
+    } catch (requestError) {
+      setError(errorMessage(requestError, '지원 카드사를 불러오지 못했습니다.'))
+    } finally {
+      setIsIssuerLoading(false)
+    }
+  }
+
+  const updateCardForm = (key) => (event) => {
+    setCardForm((current) => ({ ...current, [key]: event.target.value }))
+    setError('')
+  }
+
+  const handleCardSubmit = async (event) => {
+    event.preventDefault()
+    setError('')
+    setIsSubmitting(true)
+    try {
+      await createCardConnection({
+        organization: cardForm.organization,
+        loginId: cardForm.loginId,
+        loginPassword: cardForm.loginPassword,
+        cardNo: cardForm.cardNo || null,
+        cardPassword: cardForm.cardPassword || null,
+        birthDate: cardForm.birthDate || null,
+      })
+      await onComplete()
+    } catch (requestError) {
+      if (requestError.response?.data?.code === 'CARD_CONNECTION_BIRTHDATE_REQUIRED') {
+        setShowBirthDate(true)
+      }
+      setError(errorMessage(requestError, '카드를 연결하지 못했습니다. 입력 정보를 확인해주세요.'))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
-    <section className="spending-setup-card">
-      <span className="spending-setup-icon"><DashboardIcon name="wallet" size={28} /></span>
-      <h2>소비가이드를 시작해 볼까요?</h2>
-      <p>월급과 급여일을 기준으로 매일 쓸 수 있는 금액을 계산해드려요.</p>
-      <form onSubmit={handleSubmit}>
-        <label><span>월 실수령액 *</span><div className="spending-input-suffix"><input inputMode="numeric" value={salaryAmount} onChange={handleSalaryChange} placeholder="0" required /><em>원</em></div></label>
-        <label><span>매월 급여일 *</span><select value={payday} onChange={(event) => setPayday(event.target.value)} required><option value="" disabled>급여일 선택</option>{Array.from({ length: 31 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}일</option>)}</select></label>
-        {error && <div className="spending-form-error"><DashboardIcon name="info" size={16} />{error}</div>}
-        <button className="spending-primary" type="submit" disabled={isSubmitting}>{isSubmitting ? '저장 중...' : '소비가이드 시작하기'}</button>
-      </form>
+    <section className="spending-setup-shell">
+      <div className="spending-setup-progress" aria-label={`설정 ${step}/3단계`}>
+        {[1, 2, 3].map((number) => <span className={number <= step ? 'active' : ''} key={number} />)}
+      </div>
+
+      {step === 1 && <>
+        <div className="spending-setup-copy">
+          <span className="spending-setup-icon"><DashboardIcon name="wallet" size={28} /></span>
+          <h2>소비 가이드를 시작해 볼까요?</h2>
+          <p>월급과 급여일을 기준으로 매일 쓸 수 있는 금액을 계산해드려요.</p>
+        </div>
+        <form className="spending-setup-form" onSubmit={handleSalarySubmit}>
+          <label><span>월 실수령액 *</span><div className="spending-input-suffix"><input inputMode="numeric" value={salaryAmount} onChange={handleSalaryChange} placeholder="0" required /><em>원</em></div></label>
+          <label className="spending-payday-field"><span>매월 급여일 *</span><button className="spending-payday-trigger" type="button" aria-expanded={isPaydayOpen} onClick={() => setIsPaydayOpen((open) => !open)}><strong>{payday ? `${payday}일` : '급여일 선택'}</strong><DashboardIcon name="calendar" size={18} /></button>{isPaydayOpen && <div className="spending-payday-picker"><strong>매월 급여일 선택</strong><div>{Array.from({ length: 31 }, (_, index) => { const day = index + 1; return <button className={Number(payday) === day ? 'selected' : ''} type="button" key={day} onClick={() => { setPayday(String(day)); setIsPaydayOpen(false) }}>{day}</button> })}</div></div>}</label>
+          <div className="spending-setup-wide">
+            <p className="spending-setup-help">29~31일이 없는 달에는 마지막 날을 기준으로 계산해요. 주말이나 공휴일로 실제 입금일이 달라져도 회사가 정한 급여일을 입력해주세요.</p>
+            <div className="spending-setup-notice"><span><DashboardIcon name="info" size={17} /></span>저축 목표는 나중에 설정할 수 있으며, 미설정 시 0원으로 계산돼요.</div>
+            {error && <div className="spending-form-error"><DashboardIcon name="info" size={16} />{error}</div>}
+            <button className="spending-setup-action" type="submit" disabled={isSubmitting || !salaryAmount || !payday}>{isSubmitting ? '저장 중...' : '다음'}</button>
+          </div>
+        </form>
+      </>}
+
+      {step === 2 && <>
+        <div className="spending-setup-copy">
+          <span className="spending-setup-icon"><DashboardIcon name="receipt" size={28} /></span>
+          <h2>소비내역을 어떻게 기록할까요?</h2>
+          <p>카드를 연결해도 현금과 계좌이체 지출은 언제든 직접 기록할 수 있어요.</p>
+        </div>
+        <div className="spending-method-cards">
+          <button type="button" onClick={openCardStep}><span><DashboardIcon name="card" size={24} /></span><strong>카드 내역 자동으로 불러오기</strong><p>카드 결제내역과 카테고리를 자동으로 정리해드려요.</p></button>
+          <button type="button" onClick={onComplete}><span><DashboardIcon name="receipt" size={24} /></span><strong>직접 입력해서 시작하기</strong><p>카드 연결 없이 현금·카드·계좌이체 내역을 직접 기록할 수 있어요.</p></button>
+        </div>
+      </>}
+
+      {step === 3 && <>
+        <div className="spending-setup-copy">
+          <span className="spending-setup-icon"><DashboardIcon name="card" size={28} /></span>
+          <h2>사용 중인 카드를 연결해주세요</h2>
+          <p>카드사 계정 하나를 연결하면 해당 계정의 카드를 모두 불러와요.</p>
+        </div>
+        <form className="spending-setup-card-form" onSubmit={handleCardSubmit}>
+          <label><span>카드사 *</span><select value={cardForm.organization} onChange={updateCardForm('organization')} disabled={isIssuerLoading} required><option value="" disabled>{isIssuerLoading ? '카드사를 불러오는 중...' : '카드사를 선택해주세요'}</option>{issuers.map((issuer) => <option value={issuer.organization} key={issuer.organization}>{issuer.name}</option>)}</select></label>
+          <label><span>카드사 로그인 아이디 *</span><input value={cardForm.loginId} onChange={updateCardForm('loginId')} autoComplete="username" placeholder="카드사 홈페이지 아이디" required /></label>
+          <label><span>카드사 로그인 비밀번호 *</span><input type="password" value={cardForm.loginPassword} onChange={updateCardForm('loginPassword')} autoComplete="current-password" placeholder="카드사 홈페이지 비밀번호" required /></label>
+          {selectedIssuer?.requiresCardCredentials && <><label><span>카드번호 *</span><input value={cardForm.cardNo} onChange={updateCardForm('cardNo')} inputMode="numeric" placeholder="카드번호" required /></label><label><span>카드 비밀번호 앞 2자리 *</span><input type="password" value={cardForm.cardPassword} onChange={updateCardForm('cardPassword')} inputMode="numeric" maxLength={2} placeholder="앞 2자리" required /></label></>}
+          {showBirthDate && <label><span>생년월일(주민등록번호) *</span><input value={cardForm.birthDate} onChange={updateCardForm('birthDate')} inputMode="numeric" placeholder="본인 확인을 위해 추가 정보가 필요해요" required /></label>}
+          <div className="spending-setup-notice"><span><DashboardIcon name="info" size={17} /></span>입력한 카드사 아이디와 비밀번호는 카드 연결에만 사용되며 저장되지 않아요.</div>
+          {error && <div className="spending-form-error"><DashboardIcon name="info" size={16} />{error}</div>}
+          <button className="spending-setup-action" type="submit" disabled={isSubmitting || isIssuerLoading}>{isSubmitting ? '카드사에 연결하고 있어요' : showBirthDate ? '다시 연결하기' : '카드 연결하기'}</button>
+          <button className="spending-setup-skip" type="button" onClick={onComplete}>우선 직접 입력하기</button>
+        </form>
+      </>}
     </section>
   )
 }
@@ -210,7 +307,6 @@ function SpendingGuidePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isEntryOpen, setIsEntryOpen] = useState(false)
   const [isBudgetOpen, setIsBudgetOpen] = useState(false)
-  const [isCardOpen, setIsCardOpen] = useState(false)
   const [detailId, setDetailId] = useState(null)
   const [editingTransaction, setEditingTransaction] = useState(null)
   const [pendingCoachId, setPendingCoachId] = useState(null)
@@ -263,20 +359,6 @@ function SpendingGuidePage() {
     }
   }
 
-  const refreshGuide = async () => {
-    setIsLoading(true)
-    let syncError = ''
-    if (data.connections?.connections?.length && data.connections.cardSyncEnabled) {
-      try {
-        await syncCardTransactions()
-      } catch (error) {
-        syncError = errorMessage(error, '카드 소비내역을 새로 불러오지 못했습니다.')
-      }
-    }
-    await loadGuide()
-    if (syncError) setPageError(syncError)
-  }
-
   const handleDismiss = async (cardId, dismissType) => {
     if (dismissType === 'HIDE' && !window.confirm('이 코칭 카드를 그만 볼까요?')) return
     setPendingCoachId(cardId)
@@ -301,7 +383,7 @@ function SpendingGuidePage() {
     <div className="dashboard spending-guide">
       <DashboardTopNav />
       <main className="spending-main">
-        <header className="spending-page-head"><div><h1>소비가이드</h1><p>오늘의 기준을 확인하고, 무리 없이 쓸 수 있는 금액을 관리해보세요.</p></div><div className="spending-head-actions"><button type="button" className="spending-refresh" onClick={() => setIsCardOpen(true)}>카드 관리</button><button type="button" className="spending-refresh" onClick={refreshGuide} disabled={isLoading}>새로고침</button></div></header>
+        <header className="spending-page-head"><div><h1>{summary?.setupRequired ? '소비가이드 설정' : '소비가이드'}</h1><p>{summary?.setupRequired ? '처음 한 번만 입력하면 매일 소비 기준을 계산해드려요.' : '오늘의 기준을 확인하고, 무리 없이 쓸 수 있는 금액을 관리해보세요.'}</p></div></header>
 
         {pageError && <div className="spending-page-error"><DashboardIcon name="info" size={19} /><span>{pageError}</span><button type="button" onClick={loadGuide}>다시 시도</button></div>}
         {isLoading && !summary ? <LoadingState label="소비가이드를 불러오고 있어요." /> : summary?.setupRequired ? <SetupView onComplete={loadGuide} /> : summary && <>
@@ -330,7 +412,6 @@ function SpendingGuidePage() {
       <DashboardFooter />
       {isEntryOpen && <ManualTransactionModal categories={data.categories} allowCard={Boolean(data.connections && (!data.connections.connections?.length || !data.connections.cardSyncEnabled))} onClose={() => setIsEntryOpen(false)} onSaved={loadGuide} />}
       {isBudgetOpen && summary && <BudgetSettingsModal summary={summary} onClose={() => setIsBudgetOpen(false)} onSaved={loadGuide} />}
-      {isCardOpen && <CardManagementModal onClose={() => setIsCardOpen(false)} onChanged={loadGuide} />}
       {detailId && <TransactionDetailModal transactionId={detailId} categories={data.categories} onClose={() => setDetailId(null)} onChanged={loadGuide} onEdit={(transaction) => { setDetailId(null); setEditingTransaction(transaction) }} />}
       {editingTransaction && <ManualTransactionModal transaction={editingTransaction} categories={data.categories} allowCard={Boolean(data.connections && (!data.connections.connections?.length || !data.connections.cardSyncEnabled))} onClose={() => setEditingTransaction(null)} onSaved={loadGuide} />}
     </div>
