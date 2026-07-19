@@ -86,6 +86,16 @@ export const getCategorySummary = (budgetId) =>
     })
     .then(responseData);
 
+export const getCategoryAnalysis = ({ budgetId, categoryId } = {}) =>
+  axiosInstance
+    .get("/api/card-transactions/category-analysis", {
+      params: {
+        ...(budgetId ? { budgetId } : {}),
+        ...(categoryId ? { categoryId } : {}),
+      },
+    })
+    .then(responseData);
+
 export const getFixedExpenseCandidates = () =>
   axiosInstance.get("/api/fixed-expense-candidates").then(responseData);
 
@@ -132,3 +142,13 @@ export const createCardConnection = (payload) =>
 
 export const updateCardSyncEnabled = (enabled) =>
   axiosInstance.patch("/api/card-connections/sync-enabled", { enabled });
+
+export const getSyncRecoveryStatus = () =>
+  axiosInstance
+    .get("/api/card-transactions/sync/recovery-status")
+    .then(responseData);
+
+export const recoverSync = (mode) =>
+  axiosInstance
+    .post("/api/card-transactions/sync/recovery", { mode })
+    .then(responseData);

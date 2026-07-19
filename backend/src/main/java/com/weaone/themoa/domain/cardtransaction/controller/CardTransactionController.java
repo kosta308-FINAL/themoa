@@ -9,12 +9,14 @@ import com.weaone.themoa.domain.cardtransaction.dto.request.MemoUpdateRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.request.RecoveryRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionListResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionResponse;
+import com.weaone.themoa.domain.cardtransaction.dto.response.CategoryAnalysisResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CategorySummaryListResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.RecoveryStatusResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.SyncResponse;
 import com.weaone.themoa.domain.cardtransaction.service.CardTransactionCorrectionService;
 import com.weaone.themoa.domain.cardtransaction.service.CardTransactionQueryService;
 import com.weaone.themoa.domain.cardtransaction.service.CardTransactionSyncService;
+import com.weaone.themoa.domain.cardtransaction.service.CategoryAnalysisService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
@@ -47,6 +49,7 @@ public class CardTransactionController {
     private final CardTransactionCorrectionService cardTransactionCorrectionService;
     private final CardTransactionSyncService cardTransactionSyncService;
     private final SpendingGuideService spendingGuideService;
+    private final CategoryAnalysisService categoryAnalysisService;
 
     @Operation(summary = "카드 거래내역 조회",
             description = "로그인 사용자의 카드 거래내역을 최신순으로 페이지 조회합니다. 먼저 /api/auth/login으로 로그인하고, 필요하면 /api/card-transactions/sync로 거래내역을 동기화하세요.")
@@ -76,6 +79,17 @@ public class CardTransactionController {
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
             @Parameter(description = "조회할 예산 주기 ID(생략 시 현재 주기)") @RequestParam(required = false) Long budgetId) {
         CategorySummaryListResponse response = spendingGuideService.getCategorySummary(memberId, budgetId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "카테고리 소비 상세 조회",
+            description = "선택 급여주기와 직전 급여주기의 카테고리별 소비 비교, 선택 카테고리의 최근 최대 4개 급여주기 추이, 초·중·후반·평일/주말 분포, 규칙 기반 인사이트를 반환합니다. budgetId 생략 시 현재 급여 주기를, categoryId 생략 시 소비액이 가장 큰 카테고리를 기본으로 조회합니다.")
+    @GetMapping("/category-analysis")
+    public ResponseEntity<ApiResponse<CategoryAnalysisResponse>> categoryAnalysis(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
+            @Parameter(description = "조회할 급여 주기 ID(생략 시 현재 주기)") @RequestParam(required = false) Long budgetId,
+            @Parameter(description = "상세 분석할 카테고리 ID(생략 시 서버가 기본 카테고리를 선택)") @RequestParam(required = false) Long categoryId) {
+        CategoryAnalysisResponse response = categoryAnalysisService.analyze(memberId, budgetId, categoryId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

@@ -120,6 +120,26 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
                            @Param("endDate") LocalDate endDate);
 
     /**
+     * 카테고리 소비 상세 초·중·후반/평일·주말 집계(categoryDetail.md §8.2): 선택 카테고리의 일자별 순액 합계.
+     * DB 전용 요일 함수를 쓰지 않고 서비스에서 {@code LocalDate#getDayOfWeek()}로 구간을 나눈다.
+     */
+    @Query("select t.usedDate as usedDate, "
+            + "sum(case when (t.amount - coalesce(t.canceledAmount, 0)) > 0 "
+            + "then (t.amount - coalesce(t.canceledAmount, 0)) else 0 end) as totalAmount "
+            + "from CardTransaction t where t.member.id = :memberId and t.category.id = :categoryId "
+            + "and t.status <> :rejected and t.fixedExpense is null "
+            + "and t.usedDate between :startDate and :endDate "
+            + "group by t.usedDate "
+            + "having sum(case when (t.amount - coalesce(t.canceledAmount, 0)) > 0 "
+            + "then (t.amount - coalesce(t.canceledAmount, 0)) else 0 end) > 0 "
+            + "order by t.usedDate asc")
+    List<DailyCategoryAmount> summarizeDailyByCategory(@Param("memberId") Long memberId,
+                                                         @Param("categoryId") Long categoryId,
+                                                         @Param("rejected") TransactionStatus rejected,
+                                                         @Param("startDate") LocalDate startDate,
+                                                         @Param("endDate") LocalDate endDate);
+
+    /**
      * S-01 오늘 거래 미리보기(dayguide.md §8.1): 고정지출 태그·거절 제외, 최신순. {@code pageable}로 미리보기
      * 개수를 제한하면서도 {@code Page.getTotalElements()}로 제한 전 전체 건수를 함께 얻는다.
      */
@@ -282,6 +302,11 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
         String getCategoryName();
         BigDecimal getTotalAmount();
         long getTransactionCount();
+    }
+
+    interface DailyCategoryAmount {
+        LocalDate getUsedDate();
+        BigDecimal getTotalAmount();
     }
 
     interface HabitCategoryAggregate {
