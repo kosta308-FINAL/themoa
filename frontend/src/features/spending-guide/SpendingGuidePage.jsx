@@ -37,6 +37,16 @@ const EMPTY_DATA = {
   connections: null,
 }
 
+// surplus_fund(erd.md §6) 합계를 반환하는 조회 API가 아직 없어 임시 mock.
+// 실제 연동 시 getSurplusSummary()로 교체(hasSavingsGoal은 member.savingsTargetAmount != null 기준).
+const MOCK_SURPLUS_SUMMARY = {
+  hasSavingsGoal: false,
+  savingsTargetAmount: 0,
+  completedCycleCount: 3,
+  totalSurplusAmount: 186000,
+  recentCycle: { yearMonth: '2026-06', amount: 62000 },
+}
+
 const WON = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 })
 const INITIAL_SYNC_IN_PROGRESS = new Set(['NOT_STARTED', 'FETCHING', 'ANALYZING'])
 
@@ -433,6 +443,50 @@ function CoachingPanel({ data, error, onDismiss, pendingId }) {
   )
 }
 
+function SurplusSummary({ data, onSetGoal }) {
+  const surplusTone = (amount) => (toNumber(amount) < 0 ? 'negative' : '')
+  const surplusSign = (amount) => (toNumber(amount) > 0 ? '+' : '')
+  const monthLabel = (yearMonth) => (yearMonth ? `${Number(yearMonth.slice(5, 7))}월` : '')
+
+  return (
+    <section className="spending-panel spending-surplus-panel" aria-label="잉여금 요약">
+      <div className="spending-panel-head">
+        <PanelTitle icon="wallet" title="잉여금" description="예산보다 덜 쓴 금액이 급여 주기마다 쌓여요" tone="teal" />
+        {data.hasSavingsGoal && <span className="spending-status">저축 목표 {formatWon(data.savingsTargetAmount)}</span>}
+      </div>
+
+      {data.completedCycleCount > 0 ? (
+        <div className="spending-surplus-body">
+          <div className="spending-surplus-main">
+            <span>누적 잉여금</span>
+            <strong className={surplusTone(data.totalSurplusAmount)}>{surplusSign(data.totalSurplusAmount)}{formatWon(data.totalSurplusAmount)}</strong>
+            <p>완료된 {data.completedCycleCount}개 주기 합산</p>
+          </div>
+          {data.recentCycle && (
+            <div className="spending-surplus-recent">
+              <span>{monthLabel(data.recentCycle.yearMonth)} 주기</span>
+              <strong className={surplusTone(data.recentCycle.amount)}>{surplusSign(data.recentCycle.amount)}{formatWon(data.recentCycle.amount)}</strong>
+              <p>{toNumber(data.recentCycle.amount) < 0 ? '예산을 초과했어요' : '예산보다 덜 썼어요'}</p>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="spending-surplus-body">
+          <EmptyState icon="wallet" title="아직 잉여금 데이터가 없어요" description="이번 급여 주기가 끝나면 잉여금이 계산돼요." />
+        </div>
+      )}
+
+      {!data.hasSavingsGoal && (
+        <div className="spending-surplus-goal-cta">
+          <span className="spending-surplus-goal-icon"><DashboardIcon name="target" size={17} /></span>
+          <div><strong>아직 저축 목표가 없어요</strong><p>목표를 정하면 잉여금을 목표 달성에 맞게 활용할 수 있어요.</p></div>
+          <button type="button" className="spending-primary" onClick={onSetGoal}>목표 정하기</button>
+        </div>
+      )}
+    </section>
+  )
+}
+
 function SpendingGuidePage() {
   const [data, setData] = useState(EMPTY_DATA)
   const [sectionErrors, setSectionErrors] = useState({})
@@ -613,6 +667,7 @@ function SpendingGuidePage() {
 
           <div className="spending-content-grid">
             <div className="spending-column">
+              <SurplusSummary data={MOCK_SURPLUS_SUMMARY} onSetGoal={() => setIsBudgetOpen(true)} />
               <section className="spending-panel spending-transactions-panel"><div className="spending-panel-head"><PanelTitle icon="receipt" title="오늘 거래" description="고정지출은 제외하고 보여드려요" /><div className="spending-panel-actions"><button type="button" className="spending-secondary spending-sync-button" onClick={handleManualSync} disabled={!canManualSync || isSyncing}><DashboardIcon name="repeat" size={15} />{isSyncing ? '동기화 중...' : '카드내역 동기화'}</button><button type="button" className="spending-secondary" onClick={() => setIsEntryOpen(true)} disabled={!data.categories?.length}><DashboardIcon name="plus" size={15} />지출 직접 입력</button></div></div><TodayTransactions data={data.today} error={sectionErrors.today} onExpand={expandToday} onSelect={setDetailId} /></section>
               <section className="spending-panel spending-flow-panel"><div className="spending-panel-head"><PanelTitle icon="chart" title="최근 7일 소비 흐름" description="날짜별 순사용액과 하루 권장액을 비교해요" tone="blue" /><Link className="spending-link-button" to={`/dashboard/spending/transactions?date=${todayDate()}`}>상세보기 <DashboardIcon name="chevron-right" size={15} /></Link></div><RecentFlow data={data.recent} error={sectionErrors.recent} /></section>
             </div>
