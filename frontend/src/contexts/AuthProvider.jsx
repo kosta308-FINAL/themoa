@@ -1,11 +1,18 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import AuthContext from './AuthContext'
 import { logout as requestLogout } from '../api/authApi'
+import { setSessionExpiredHandler } from '../api/axiosInstance'
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() =>
     Boolean(localStorage.getItem('accessToken'))
   )
+
+  /** Refresh Token까지 만료되어 axiosInstance가 세션을 강제 종료한 경우를 반영한다. */
+  useEffect(() => {
+    setSessionExpiredHandler(() => setIsAuthenticated(false))
+    return () => setSessionExpiredHandler(null)
+  }, [])
 
   /** 로그인·회원가입 성공 응답({ accessToken })으로 세션을 시작한다. */
   const login = useCallback(({ accessToken }) => {

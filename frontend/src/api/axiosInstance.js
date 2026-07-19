@@ -35,6 +35,16 @@ axiosInstance.interceptors.request.use((config) => {
  */
 let refreshPromise = null
 
+/**
+ * Refresh Token까지 만료·폐기된 경우(진짜 세션 종료) AuthProvider에 알린다.
+ * axios 인터셉터는 React 상태에 직접 접근할 수 없어 구독 방식으로 연결한다.
+ */
+let onSessionExpired = null
+
+export const setSessionExpiredHandler = (handler) => {
+  onSessionExpired = handler
+}
+
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -50,12 +60,15 @@ axiosInstance.interceptors.response.use(
       const res = await refreshPromise
       const accessToken = res.data?.data?.accessToken
       if (!accessToken) {
+        localStorage.removeItem('accessToken')
+        onSessionExpired?.()
         return Promise.reject(error)
       }
       localStorage.setItem('accessToken', accessToken)
       return axiosInstance(original)
     } catch {
       localStorage.removeItem('accessToken')
+      onSessionExpired?.()
       return Promise.reject(error)
     }
   }
