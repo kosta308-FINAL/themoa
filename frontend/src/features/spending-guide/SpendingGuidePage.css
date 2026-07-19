@@ -1,3 +1,7 @@
+/* ── globals.css 리셋 무효화 ───────────────────────────────
+   globals.css가 :root에 line-height:1.6, 헤딩 color/line-height,
+   font-family 등을 지정하는데 dayguide.html과 달라서 미묘한 차이가 남.
+   .spending-guide 스코프 안에서 dayguide.html과 동일하게 맞춘다. */
 .spending-guide {
   --spending-page: #f8fbf9;
   --spending-border: #e5ede8;
@@ -7,6 +11,45 @@
   --spending-green: #22c55e;
   --spending-green-dark: #15803d;
   background: var(--spending-page);
+  font-family: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", Inter, system-ui, sans-serif;
+  line-height: normal;
+  color: var(--spending-text);
+  font-synthesis: none;
+}
+
+/* globals.css h1-h6 오버라이드 무효화 */
+.spending-guide h1,
+.spending-guide h2,
+.spending-guide h3,
+.spending-guide h4,
+.spending-guide h5,
+.spending-guide h6 {
+  font-family: inherit;
+  color: inherit;
+  line-height: normal;
+}
+
+/* globals.css가 svg를 건드리지 않지만 dayguide.html은 svg { display: block } */
+.spending-guide svg {
+  display: block;
+}
+
+/* globals.css button 리셋과 동일하지만 font-family를 dayguide.html 것으로 고정 */
+.spending-guide button,
+.spending-guide input,
+.spending-guide select,
+.spending-guide textarea {
+  font: inherit;
+}
+
+/* focus-visible 스타일도 dayguide.html과 일치 */
+.spending-guide button:focus-visible,
+.spending-guide a:focus-visible,
+.spending-guide input:focus-visible,
+.spending-guide select:focus-visible,
+.spending-guide textarea:focus-visible {
+  outline: 3px solid rgba(34, 197, 94, .22);
+  outline-offset: 2px;
 }
 
 .spending-main {
