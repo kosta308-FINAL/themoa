@@ -13,6 +13,9 @@ import SectionStub from "../components/common/SectionStub";
 import ProtectedRoute from "./ProtectedRoute";
 import DashboardLayout from "../components/layout/DashboardLayout";
 
+const policyLocalToolsEnabled =
+  import.meta.env.DEV && import.meta.env.VITE_POLICY_LOCAL_TOOLS_ENABLED === "true";
+
 function AppRouter() {
   return (
     <Routes>
@@ -20,13 +23,15 @@ function AppRouter() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
 
-      <Route path="/dashboard/policy" element={<PolicyPage />} />
-      <Route path="/dashboard/policy/admin" element={<PolicyAdminPage />} />
+      {policyLocalToolsEnabled && (
+        <Route path="/dashboard/policy/admin" element={<PolicyAdminPage />} />
+      )}
 
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="products" element={<ProductsPage />} />
+          <Route path="policy" element={<PolicyPage />} />
           <Route path="spending" element={<SpendingGuidePage />} />
           <Route
             path="spending/transactions"

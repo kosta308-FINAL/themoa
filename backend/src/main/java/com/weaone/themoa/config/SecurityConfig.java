@@ -4,8 +4,11 @@ import com.weaone.themoa.security.handler.JwtAccessDeniedHandler;
 import com.weaone.themoa.security.handler.JwtAuthenticationEntryPoint;
 import com.weaone.themoa.security.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -13,6 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.List;
@@ -38,9 +42,17 @@ public class SecurityConfig {
             "/swagger-ui.html"
     };
 
+    private static final RegexRequestMatcher POLICY_DETAIL_ENDPOINT =
+            new RegexRequestMatcher("^/api/policies/[0-9]+$", HttpMethod.GET.name());
+    private static final RegexRequestMatcher POLICY_RAW_ENDPOINT =
+            new RegexRequestMatcher("^/api/policies/[0-9]+/raw$", HttpMethod.GET.name());
+    private static final RegexRequestMatcher POLICY_ADMIN_ENDPOINT =
+            new RegexRequestMatcher("^/api/policies/admin(/.*)?$", null);
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
+    private final Environment environment;
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -56,11 +68,17 @@ public class SecurityConfig {
                     return config;
                 }))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(DOCS_ENDPOINTS).permitAll()
-                        .anyRequest().authenticated()
-                )
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll();
+                    auth.requestMatchers(DOCS_ENDPOINTS).permitAll();
+                    if (isPolicyLocalToolsEnabled()) {
+                        auth.requestMatchers(HttpMethod.POST, "/api/policies/search").permitAll();
+                        auth.requestMatchers(POLICY_DETAIL_ENDPOINT).permitAll();
+                        auth.requestMatchers(POLICY_RAW_ENDPOINT).permitAll();
+                        auth.requestMatchers(POLICY_ADMIN_ENDPOINT).permitAll();
+                    }
+                    auth.anyRequest().authenticated();
+                })
                 .exceptionHandling(handler -> handler
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(jwtAccessDeniedHandler)
@@ -70,7 +88,20 @@ public class SecurityConfig {
     }
 
     @Bean
+    FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration() {
+        FilterRegistrationBean<JwtAuthenticationFilter> registration =
+                new FilterRegistrationBean<>(jwtAuthenticationFilter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
     BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    private boolean isPolicyLocalToolsEnabled() {
+        return environment.acceptsProfiles(Profiles.of("local"))
+                && environment.getProperty("app.policy.local-tools.enabled", Boolean.class, false);
     }
 }

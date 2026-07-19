@@ -8,12 +8,6 @@ spring:
     username: themoa
     password: local-db-password
 
-  sql:
-    init:
-      mode: always
-      schema-locations: classpath:schema-local.sql
-      continue-on-error: true
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -32,8 +26,10 @@ spring:
     google:
       genai:
         api-key: ${GEMINI_API_KEY:}
+
     openai:
       api-key: ${OPENAI_API_KEY:}
+
     vectorstore:
       qdrant:
         enabled: ${RAG_ENABLED:false}
@@ -61,7 +57,7 @@ app:
 
   policy:
     local-tools:
-      enabled: true
+      enabled: ${POLICY_LOCAL_TOOLS_ENABLED:false}
 
   youth-center:
     enabled: true

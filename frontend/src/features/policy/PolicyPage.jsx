@@ -16,6 +16,8 @@ const examples = [
 
 const dash = (value) => value || '-'
 const listText = (value) => Array.isArray(value) && value.length ? value.join(', ') : '-'
+const policyLocalToolsEnabled =
+  import.meta.env.DEV && import.meta.env.VITE_POLICY_LOCAL_TOOLS_ENABLED === 'true'
 
 const errorMessage = (error) => {
   const code = error?.response?.data?.code
@@ -85,7 +87,7 @@ function PolicyPage() {
               지역, 나이, 학생 여부, 취업 상태를 자연어로 입력하면 준비된 정책/RAG 인덱스에서 조건에 맞는 정책만 찾습니다.
             </p>
           </div>
-          {import.meta.env.DEV && (
+          {policyLocalToolsEnabled && (
             <Link className="policy-admin-link" to="/dashboard/policy/admin">
               정책 데이터 관리
               <DashboardIcon name="chevron-right" size={16} />
