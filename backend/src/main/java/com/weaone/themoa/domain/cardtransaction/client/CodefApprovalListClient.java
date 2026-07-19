@@ -84,8 +84,11 @@ public class CodefApprovalListClient {
         if (result == null) {
             throw new CodefClientException("CODEF 응답 형식이 올바르지 않습니다.", null);
         }
-        if (!RESULT_CODE_SUCCESS.equals(result.optString("code", ""))) {
-            throw new CodefClientException("CODEF 승인내역 조회가 실패했습니다.", null);
+        String code = result.optString("code", "");
+        if (!RESULT_CODE_SUCCESS.equals(code)) {
+            String message = result.optString("message", "");
+            throw new CodefClientException(
+                    "CODEF 승인내역 조회가 실패했습니다. code=" + code + ", message=" + message, null);
         }
 
         List<JSONObject> items = extractDataItems(json);
