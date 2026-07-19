@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
+  deleteManualTransaction,
   getTransactionDetail,
   updateTransactionCategory,
   updateTransactionMemo,
@@ -88,6 +89,20 @@ function TransactionDetailModal({ transactionId, categories, onClose, onChanged 
     if (saved) setMemoOpen(false)
   }
 
+  const handleDelete = async () => {
+    if (!window.confirm('이 지출 내역을 삭제할까요? 삭제하면 되돌릴 수 없습니다.')) return
+    setError('')
+    setPending('delete')
+    try {
+      await deleteManualTransaction(transactionId)
+      await onChanged()
+      onClose()
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || '지출 내역을 삭제하지 못했습니다.')
+      setPending('')
+    }
+  }
+
   return (
     <div className="spending-modal-backdrop spending-detail-backdrop" role="presentation" onMouseDown={onClose}>
       <section className="spending-modal spending-detail-modal" role="dialog" aria-modal="true" aria-labelledby="transaction-detail-title" onMouseDown={(event) => event.stopPropagation()}>
@@ -105,6 +120,7 @@ function TransactionDetailModal({ transactionId, categories, onClose, onChanged 
             <div className="spending-detail-row"><span>메모</span><strong>{transaction.memo || '메모 없음'}</strong><button type="button" onClick={() => setMemoOpen((open) => !open)}>{transaction.memo ? '수정' : '추가'}</button></div>
             <div className={`spending-detail-inline-edit${memoOpen ? ' open' : ''}`}><input value={memo} maxLength={100} onChange={(event) => setMemo(event.target.value)} placeholder="메모를 입력하세요" /><button type="button" className="spending-secondary" disabled={Boolean(pending)} onClick={handleMemoSave}>저장</button></div>
           </div>
+          {transaction.source === 'MANUAL' && <button type="button" className="spending-detail-delete" disabled={Boolean(pending)} onClick={handleDelete}>{pending === 'delete' ? '삭제 중...' : '이 지출 내역 삭제'}</button>}
         </div>}
       </section>
     </div>

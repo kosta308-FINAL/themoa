@@ -662,7 +662,22 @@ function SpendingGuidePage() {
               <div className="spending-progress-meta"><span>오늘 권장액 사용률</span><strong>{useRate}%</strong></div><div className="spending-progress"><i className={useRate > 100 ? 'over' : ''} style={{ width: `${Math.min(100, Math.max(0, useRate))}%` }} /></div>
               <div className={`spending-today-message${useRate > 100 ? ' warning' : ''}`}><DashboardIcon name={useRate > 100 ? 'info' : 'check'} size={15} />{useRate > 100 ? `오늘 권장액을 ${formatWon(todaySpent - dailyRecommended)} 초과했어요.` : '오늘 하루 동안 권장 범위 안에서 사용하고 있어요.'}</div>
             </article>
-            <aside className="spending-cycle-card"><div className="spending-cycle-top"><span>이번 급여 주기</span><button type="button" onClick={() => setIsBudgetOpen(true)}>예산 기준</button></div><h2>남은 예산</h2><strong className={summary.overCycleBudget ? 'spending-cycle-amount negative' : 'spending-cycle-amount'}>{formatWon(summary.remainingAmount)}</strong><p>{formatDate(summary.cycleStartDate)} ~ {formatDate(summary.cycleEndDate)}</p><div className="spending-cycle-bottom"><div><span>남은 기간</span><strong>{summary.remainingDays}일</strong></div><div><span>주기 순사용액</span><strong>{formatWon(cycleSpent)}</strong></div></div></aside>
+            <aside className="spending-cycle-card">
+              <div className="spending-cycle-top">
+                <span>이번 급여 주기</span>
+              </div>
+              <h2>남은 예산</h2><strong className={summary.overCycleBudget ? 'spending-cycle-amount negative' : 'spending-cycle-amount'}>{formatWon(summary.remainingAmount)}</strong>
+              <p>{formatDate(summary.cycleStartDate)} ~ {formatDate(summary.cycleEndDate)}</p>
+              <div className="spending-cycle-bottom">
+                <div>
+                  <span>남은 기간</span>
+                  <strong>{summary.remainingDays}일</strong>
+                </div>
+                <div>
+                  <span>주기 순사용액</span><strong>{formatWon(cycleSpent)}</strong>
+                </div>
+              </div>
+            </aside>
           </section>
 
           <div className="spending-content-grid">

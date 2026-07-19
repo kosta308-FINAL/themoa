@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../hooks/useAuth'
+import { Link } from 'react-router-dom'
+import DashboardTopNav from '../../components/layout/DashboardTopNav'
 import {
   createManualTransaction,
   getCardConnections,
@@ -9,15 +9,11 @@ import {
   getConsumptionHistoryTransactions,
   syncCardTransactions,
 } from '../../api/spendingGuideApi'
+import '../dashboard/Dashboard.css'
 import './SpendingHistoryPage.css'
 
 const ICONS = {
-  home: <><path d="m3 11 9-8 9 8" /><path d="M5 10v10h14V10M9 20v-6h6v6" /></>,
-  chart: <><path d="M4 19V9m6 10V5m6 14v-7m4 7H2" /></>,
   receipt: <><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" /><path d="M9 8h6m-6 4h6" /></>,
-  sparkle: <><path d="m12 3 1.4 4.1L17.5 8.5l-4.1 1.4L12 14l-1.4-4.1-4.1-1.4 4.1-1.4L12 3Z" /><path d="m18 15 .8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8L18 15Z" /></>,
-  building: <><path d="M4 21V8l8-5 8 5v13M2 21h20M8 10h2m4 0h2m-8 4h2m4 0h2m-8 4h2m4 0h2" /></>,
-  user: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
   'chevron-left': <path d="m15 18-6-6 6-6" />,
   'chevron-right': <path d="m9 18 6-6-6-6" />,
   'arrow-left': <path d="M19 12H5m6-6-6 6 6 6" />,
@@ -30,15 +26,6 @@ const ICONS = {
   card: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 10h18M7 15h4" /></>,
   car: <><path d="m5 17-2-2v-4l2-1 2-5h10l2 5 2 1v4l-2 2H5Z" /><path d="M7 14h.01M17 14h.01M6 17v2m12-2v2" /></>,
 }
-
-const NAV_ITEMS = [
-  ['home', '홈', '/dashboard'],
-  ['chart', '소비 가이드', '/dashboard/spending'],
-  ['receipt', '고정지출', '/dashboard/fixed-expenses'],
-  ['sparkle', '금융상품', '/dashboard/products'],
-  ['building', '정책 지원', '/dashboard/policy'],
-  ['user', '마이페이지', '/dashboard/mypage'],
-]
 
 const PAYMENT_METHOD_LABELS = { CASH: '현금', TRANSFER: '계좌이체', CARD: '카드' }
 
@@ -76,34 +63,6 @@ const nowLocalInputValue = () => {
 
 function HistoryIcon({ name, small = false }) {
   return <svg className={`icon${small ? ' icon-sm' : ''}`} viewBox="0 0 24 24" aria-hidden="true">{ICONS[name]}</svg>
-}
-
-function HistoryNav() {
-  const { logout } = useAuth()
-  const navigate = useNavigate()
-
-  const handleLogout = async () => {
-    await logout()
-    navigate('/')
-  }
-
-  return (
-    <header className="topnav">
-      <Link className="brand" to="/dashboard" aria-label="더모아 홈">
-        <span className="brand-mark">M</span><span className="brand-name">더모아</span>
-      </Link>
-      <div className="nav-right">
-        <nav className="nav-menu" aria-label="주요 메뉴">
-          {NAV_ITEMS.map(([icon, label, to], index) => (
-            <NavLink key={to} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to={to} end={index === 0}>
-              <HistoryIcon name={icon} /><span>{label}</span>
-            </NavLink>
-          ))}
-        </nav>
-        <button className="logout" type="button" onClick={handleLogout}>로그아웃</button>
-      </div>
-    </header>
-  )
 }
 
 function DailyChart({ daily, isCurrentCycle }) {
@@ -317,8 +276,8 @@ function SpendingHistoryPage() {
   const groups = useMemo(() => groupTransactions(transactionsData?.items ?? []), [transactionsData])
 
   return (
-    <div className="consume-history-page">
-      <HistoryNav />
+    <div className="dashboard consume-history-page">
+      <DashboardTopNav />
       <main className="page">
         <Link className="back-link" to="/dashboard/spending"><HistoryIcon name="arrow-left" />소비가이드로 돌아가기</Link>
 

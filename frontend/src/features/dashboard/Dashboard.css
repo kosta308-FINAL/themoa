@@ -33,15 +33,17 @@
 
 /* ─── Top nav (horizontal categories) ───────────────────── */
 .dash-topnav {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  padding: 14px 40px;
-  background: var(--dash-bg-card);
-  border-bottom: 1px solid var(--dash-border);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 40;
+  min-height: 65px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 12px 40px;
+  border-bottom: 1px solid var(--dash-border);
+  background: rgba(255, 255, 255, .96);
+  backdrop-filter: blur(14px);
 }
 
 .dash-topnav-logo {
@@ -52,26 +54,27 @@
 }
 
 .dash-logo-mark {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--dash-accent);
-  color: #fff;
+  width: 33px;
+  height: 33px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
+  border-radius: 9px;
+  color: #fff;
+  background: var(--dash-accent);
+  font-weight: 800;
 }
 
 .dash-logo-text {
-  font-weight: 700;
   font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -.4px;
 }
 
 .dash-topnav-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   margin-left: auto;
   min-width: 0;
 }
@@ -107,43 +110,47 @@
   align-items: center;
   gap: 4px;
   overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.dash-topnav-items::-webkit-scrollbar {
+  display: none;
 }
 
 .dash-nav-item {
+  min-height: 40px;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  padding: 0 13px;
   border-radius: 10px;
   color: var(--dash-text-secondary);
+  background: transparent;
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
-  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.dash-nav-item:hover {
+.dash-nav-item:hover,
+.dash-nav-item.active {
   background: var(--dash-accent-light);
   color: var(--dash-accent-dark);
-  transform: translateY(-1px);
   cursor: pointer;
 }
 
 .dash-nav-item.active {
-  background: var(--dash-accent-light);
-  color: var(--dash-accent-dark);
-  font-weight: 700;
+  font-weight: 750;
 }
 
 .dash-logout-btn {
   flex-shrink: 0;
-  padding: 8px 14px;
+  padding: 9px 13px;
   border-radius: 10px;
-  background: transparent;
+  background: #fff;
   border: 1px solid var(--dash-border);
   color: var(--dash-text-secondary);
   font-size: 13px;
-  font-weight: 500;
   font-family: inherit;
   white-space: nowrap;
   transition: background 0.15s ease, color 0.15s ease;

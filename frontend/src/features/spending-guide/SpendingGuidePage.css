@@ -949,8 +949,8 @@
 .spending-detail-row { display: grid; grid-template-columns: 105px 1fr auto; gap: 10px; align-items: center; min-height: 48px; border-bottom: 1px solid #eff3f0; font-size: 12px; }
 .spending-detail-row:last-child { border-bottom: 0; }
 .spending-detail-row > span:first-child { color: var(--spending-muted); }
-.spending-detail-row > strong { overflow-wrap: anywhere; text-align: right; font-size: 12px; }
-.spending-detail-row button { color: var(--spending-green-dark); background: transparent; font-size: 11px; font-weight: 750; }
+.spending-detail-row > strong { overflow-wrap: anywhere; text-align: right; font-size: 12px; line-height: 1.3; }
+.spending-detail-row button { display: inline-flex; align-items: center; color: var(--spending-green-dark); background: transparent; font-size: 11px; font-weight: 750; line-height: 1.3; }
 .spending-detail-category-picker { display: none; grid-template-columns: repeat(4, 1fr); gap: 7px; padding: 12px 0; }
 .spending-detail-category-picker.open { display: grid; }
 .spending-detail-category-picker button { min-height: 36px; border-radius: 9px; color: var(--spending-muted); background: #f3f6f4; font-size: 10px; }
@@ -960,6 +960,9 @@
 .spending-detail-inline-edit.open { display: grid; }
 .spending-detail-inline-edit input { min-width: 0; height: 39px; padding: 0 11px; border: 1px solid #d5e4da; border-radius: 9px; }
 .spending-detail-inline-edit .spending-secondary { min-height: 39px; }
+.spending-detail-delete { display: block; width: 100%; min-height: 42px; margin-top: 18px; border: 1px solid var(--red-light); border-radius: 10px; color: var(--red); background: #fff; font-size: 12px; font-weight: 750; }
+.spending-detail-delete:hover { background: var(--red-light); }
+.spending-detail-delete:disabled { cursor: not-allowed; opacity: .55; }
 
 @media (max-width: 1000px) {
   .spending-hero,
