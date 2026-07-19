@@ -7,8 +7,9 @@ import ProductsPage from "../features/products/ProductsPage";
 import PolicyPage from "../features/policy/PolicyPage";
 import SpendingGuidePage from "../features/spending-guide/SpendingGuidePage";
 import SpendingHistoryPage from "../features/spending-guide/SpendingHistoryPage";
+import CategoryDetailPage from "../features/spending-guide/CategoryDetailPage";
+import FixedExpensePage from "../features/fixed-expense/FixedExpensePage";
 import MyPage from "../features/mypage/MyPage";
-import SectionStub from "../components/common/SectionStub";
 import ProtectedRoute from "./ProtectedRoute";
 import DashboardLayout from "../components/layout/DashboardLayout";
 
@@ -29,14 +30,10 @@ function AppRouter() {
             element={<SpendingHistoryPage />}
           />
           <Route
-            path="fixed-expenses"
-            element={
-              <SectionStub
-                title="고정지출"
-                description="매달 반복되는 지출을 관리합니다."
-              />
-            }
+            path="spending/category-detail"
+            element={<CategoryDetailPage />}
           />
+          <Route path="fixed-expenses" element={<FixedExpensePage />} />
           <Route path="mypage" element={<MyPage />} />
         </Route>
       </Route>
