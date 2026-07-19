@@ -22,6 +22,8 @@ public record CategorySummaryListResponse(
         boolean partialCycle,
         boolean hasPrevious,
         boolean hasNext,
+        Long previousBudgetId,
+        Long nextBudgetId,
         BigDecimal positiveNetTotal,
         BigDecimal canceledTotal,
         List<CategorySummaryResponse> items,
@@ -38,7 +40,8 @@ public record CategorySummaryListResponse(
 
     public static CategorySummaryListResponse of(Long budgetId, String yearMonth, LocalDate cycleStartDate,
             LocalDate cycleEndDate, LocalDate dataStartDate, boolean partialCycle, boolean hasPrevious,
-            boolean hasNext, List<CardTransactionRepository.CategorySummary> summaries, BigDecimal canceledTotal,
+            boolean hasNext, Long previousBudgetId, Long nextBudgetId,
+            List<CardTransactionRepository.CategorySummary> summaries, BigDecimal canceledTotal,
             CompletedCycleResult completedCycleResult) {
         BigDecimal positiveNetTotal = summaries.stream()
                 .map(CardTransactionRepository.CategorySummary::getTotalAmount)
@@ -52,7 +55,8 @@ public record CategorySummaryListResponse(
                         percentageOf(summary.getTotalAmount(), positiveNetTotal)))
                 .toList();
         return new CategorySummaryListResponse(budgetId, yearMonth, cycleStartDate, cycleEndDate, dataStartDate,
-                partialCycle, hasPrevious, hasNext, positiveNetTotal, canceledTotal, items, completedCycleResult);
+                partialCycle, hasPrevious, hasNext, previousBudgetId, nextBudgetId, positiveNetTotal, canceledTotal,
+                items, completedCycleResult);
     }
 
     private static BigDecimal percentageOf(BigDecimal amount, BigDecimal total) {

@@ -358,7 +358,7 @@ function RecentFlow({ data, error }) {
   )
 }
 
-function CategorySummary({ data, error }) {
+function CategorySummary({ data, error, onNavigate }) {
   const gradient = useMemo(() => {
     if (!data?.items?.length) return '#edf2ef'
     const colors = ['#22c55e', '#14b8a6', '#60a5fa', '#f59e0b', '#a78bfa', '#f472b6']
@@ -370,7 +370,7 @@ function CategorySummary({ data, error }) {
   if (!data.items?.length) return <EmptyState icon="chart" title="분석할 카테고리 데이터가 없어요" description="소비내역이 연결되면 카테고리별 비중이 표시됩니다." />
   return (
     <>
-      <div className="spending-category-cycle"><button type="button" className="spending-cycle-arrow" disabled={!data.hasPrevious} aria-label="이전 급여주기"><DashboardIcon name="chevron-left" size={15} /></button><div><strong>{Number(data.yearMonth?.slice(5, 7))}월 급여주기</strong><span>{formatShortDate(data.cycleStartDate)} ~ {data.hasNext ? formatShortDate(data.cycleEndDate) : '오늘'} · {data.hasNext ? '완료' : '진행 중'}</span></div><button type="button" className="spending-cycle-arrow" disabled={!data.hasNext} aria-label="다음 급여주기"><DashboardIcon name="chevron-right" size={15} /></button></div>
+      <div className="spending-category-cycle"><button type="button" className="spending-cycle-arrow" disabled={!data.previousBudgetId} onClick={() => onNavigate(data.previousBudgetId)} aria-label="이전 급여주기"><DashboardIcon name="chevron-left" size={15} /></button><div><strong>{Number(data.yearMonth?.slice(5, 7))}월 급여주기</strong><span>{formatShortDate(data.cycleStartDate)} ~ {data.hasNext ? formatShortDate(data.cycleEndDate) : '오늘'} · {data.hasNext ? '완료' : '진행 중'}</span></div><button type="button" className="spending-cycle-arrow" disabled={!data.nextBudgetId} onClick={() => onNavigate(data.nextBudgetId)} aria-label="다음 급여주기"><DashboardIcon name="chevron-right" size={15} /></button></div>
       <div className="spending-category-layout">
         <Link className="spending-donut" style={{ background: gradient }} to={`/dashboard/spending/transactions?budgetId=${data.budgetId}`} aria-label="카테고리 소비 상세보기"><span><strong>{formatWon(data.positiveNetTotal)}</strong><small>양수 순사용액</small></span></Link>
         <div className="spending-category-legend">{data.items.map((item, index) => <Link to={`/dashboard/spending/transactions?budgetId=${data.budgetId}&categoryId=${item.categoryId}`} key={item.categoryId}><i style={{ background: ['#22c55e', '#14b8a6', '#60a5fa', '#f59e0b', '#a78bfa', '#f472b6'][index % 6] }} /><span>{item.categoryName}</span><strong>{formatWon(item.amount)} <small>{toNumber(item.percentage)}%</small></strong></Link>)}</div>
@@ -540,6 +540,17 @@ function SpendingGuidePage() {
     }
   }
 
+  const handleCategoryCycleChange = async (budgetId) => {
+    if (!budgetId) return
+    try {
+      const category = await getCategorySummary(budgetId)
+      setData((current) => ({ ...current, category }))
+      setSectionErrors((current) => ({ ...current, category: undefined }))
+    } catch (error) {
+      setSectionErrors((current) => ({ ...current, category: errorMessage(error, '카테고리 데이터를 불러오지 못했습니다.') }))
+    }
+  }
+
   const handleDismiss = async (cardId, dismissType) => {
     if (dismissType === 'HIDE' && !window.confirm('이 코칭 카드를 그만 볼까요?')) return
     setPendingCoachId(cardId)
@@ -586,7 +597,7 @@ function SpendingGuidePage() {
               <section className="spending-panel spending-flow-panel"><div className="spending-panel-head"><PanelTitle icon="chart" title="최근 7일 소비 흐름" description="날짜별 순사용액과 하루 권장액을 비교해요" tone="blue" /><Link className="spending-link-button" to={`/dashboard/spending/transactions?date=${todayDate()}`}>상세보기 <DashboardIcon name="chevron-right" size={15} /></Link></div><RecentFlow data={data.recent} error={sectionErrors.recent} /></section>
             </div>
             <div className="spending-column">
-              <section className="spending-panel spending-category-panel"><div className="spending-panel-head"><PanelTitle icon="target" title="카테고리별 소비" description="실제 소비 순액 기준" tone="teal" /></div><CategorySummary data={data.category} error={sectionErrors.category} /><div className="spending-list-footer spending-category-footer"><span /><Link className="spending-link-button" to={`/dashboard/spending/transactions${data.category?.budgetId ? `?budgetId=${data.category.budgetId}` : ''}`}>카테고리 상세보기 <DashboardIcon name="chevron-right" size={15} /></Link></div></section>
+              <section className="spending-panel spending-category-panel"><div className="spending-panel-head"><PanelTitle icon="target" title="카테고리별 소비" description="실제 소비 순액 기준" tone="teal" /></div><CategorySummary data={data.category} error={sectionErrors.category} onNavigate={handleCategoryCycleChange} /><div className="spending-list-footer spending-category-footer"><span /><Link className="spending-link-button" to={`/dashboard/spending/transactions${data.category?.budgetId ? `?budgetId=${data.category.budgetId}` : ''}`}>카테고리 상세보기 <DashboardIcon name="chevron-right" size={15} /></Link></div></section>
               <section className="spending-panel spending-fixed-candidate-panel"><div className="spending-panel-head"><PanelTitle icon="repeat" title="고정지출 후보" description={data.candidates?.length ? `${data.candidates.length}개 중 우선순위 높은 ${Math.min(3, data.candidates.length)}개예요` : '반복되는 결제를 찾아 알려드려요'} tone="orange" />{data.candidates?.length > 3 && <Link className="spending-link-button" to="/dashboard/fixed-expenses">나머지 {data.candidates.length - 3}개 <DashboardIcon name="chevron-right" size={15} /></Link>}</div><FixedCandidates data={data.candidates} error={sectionErrors.candidates} /></section>
               <CoachingPanel data={data.coaching} error={sectionErrors.coaching} onDismiss={handleDismiss} pendingId={pendingCoachId} />
             </div>

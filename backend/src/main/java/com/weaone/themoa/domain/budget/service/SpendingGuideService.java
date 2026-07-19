@@ -169,6 +169,14 @@ public class SpendingGuideService {
         boolean partialCycle = budget.getCycleStartDate().isBefore(dataStartDate);
         boolean hasPrevious = budget.getCycleStartDate().isAfter(earliestCycleStart);
         boolean hasNext = today.isAfter(budget.getCycleEndDate());
+        Long previousBudgetId = budgetRepository
+                .findFirstByMember_IdAndCycleStartDateLessThanOrderByCycleStartDateDesc(memberId, budget.getCycleStartDate())
+                .map(Budget::getId)
+                .orElse(null);
+        Long nextBudgetId = budgetRepository
+                .findFirstByMember_IdAndCycleStartDateGreaterThanOrderByCycleStartDateAsc(memberId, budget.getCycleStartDate())
+                .map(Budget::getId)
+                .orElse(null);
 
         List<CardTransactionRepository.CategorySummary> summaries = cardTransactionRepository
                 .summarizeByCategory(memberId, TransactionStatus.REJECTED, budget.getCycleStartDate(), budget.getCycleEndDate());
@@ -178,8 +186,8 @@ public class SpendingGuideService {
                 (hasNext && !partialCycle) ? completedCycleResult(memberId, budget) : null;
 
         return CategorySummaryListResponse.of(budget.getId(), budget.getYearMonth(), budget.getCycleStartDate(),
-                budget.getCycleEndDate(), dataStartDate, partialCycle, hasPrevious, hasNext, summaries, canceledTotal,
-                completedCycleResult);
+                budget.getCycleEndDate(), dataStartDate, partialCycle, hasPrevious, hasNext, previousBudgetId,
+                nextBudgetId, summaries, canceledTotal, completedCycleResult);
     }
 
     /** 완료된 과거 주기의 예산·사용·결과 한 줄 요약(§3.4). 사용액은 고정지출 태그 거래를 제외한 순지출이다. */

@@ -41,8 +41,8 @@ export const correctTransactionAmount = (transactionId, amount) =>
 export const getRecentDays = () =>
   axiosInstance.get('/api/spending-guide/recent-days', { params: { days: 7 } }).then(responseData)
 
-export const getCategorySummary = () =>
-  axiosInstance.get('/api/card-transactions/category-summary').then(responseData)
+export const getCategorySummary = (budgetId) =>
+  axiosInstance.get('/api/card-transactions/category-summary', { params: budgetId ? { budgetId } : {} }).then(responseData)
 
 export const getFixedExpenseCandidates = () =>
   axiosInstance.get('/api/fixed-expense-candidates').then(responseData)
