@@ -67,7 +67,7 @@ class CardTransactionCollectionServiceTest {
     private CardTransactionCollectionService collectionService;
 
     private Member member() {
-        Member member = Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1));
+        Member member = Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1), LocalDateTime.now());
         ReflectionTestUtils.setField(member, "id", MEMBER_ID);
         return member;
     }

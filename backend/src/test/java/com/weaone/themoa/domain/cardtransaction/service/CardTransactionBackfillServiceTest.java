@@ -66,7 +66,7 @@ class CardTransactionBackfillServiceTest {
     private CardTransactionBackfillService cardTransactionBackfillService;
 
     private Member member() {
-        Member member = Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1));
+        Member member = Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1), LocalDateTime.now());
         ReflectionTestUtils.setField(member, "id", MEMBER_ID);
         return member;
     }
@@ -218,7 +218,7 @@ class CardTransactionBackfillServiceTest {
         given(codefApprovalListClient.fetch(any())).willReturn(List.of());
         stubNoManualEntries();
 
-        cardTransactionBackfillService.runGapBackfillForMember(MEMBER_ID);
+        cardTransactionBackfillService.runGapBackfillForMember(MEMBER_ID, null);
 
         ArgumentCaptor<CodefApprovalListCommand> captor = ArgumentCaptor.forClass(CodefApprovalListCommand.class);
         then(codefApprovalListClient).should().fetch(captor.capture());

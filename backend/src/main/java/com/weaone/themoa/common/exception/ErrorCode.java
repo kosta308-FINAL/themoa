@@ -39,6 +39,8 @@ public enum ErrorCode {
     CARD_CONNECTION_LOCKED(HttpStatus.LOCKED, "카드사에서 계정이 잠겼습니다. 카드사 앱이나 고객센터에서 잠금을 해제한 후 다시 시도해 주세요."),
     CARD_CONNECTION_BIRTHDATE_REQUIRED(HttpStatus.BAD_REQUEST, "본인 확인을 위해 생년월일(주민등록번호)을 입력한 뒤 다시 시도해 주세요."),
     CARD_CONNECTION_EXTERNAL_ERROR(HttpStatus.BAD_GATEWAY, "카드사 연결 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."),
+    CARD_CONNECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "연결된 카드사를 찾을 수 없습니다."),
+    CARD_CONNECTION_RETRY_NOT_ALLOWED(HttpStatus.CONFLICT, "실패한 초기수집만 다시 시도할 수 있습니다."),
 
     // 가맹점 신원
     MERCHANT_ALIAS_NOT_FOUND(HttpStatus.NOT_FOUND, "가맹점 별칭을 찾을 수 없습니다."),
@@ -72,7 +74,10 @@ public enum ErrorCode {
     COACHING_CARD_NOT_FOUND(HttpStatus.NOT_FOUND, "코칭 카드를 찾을 수 없습니다."),
 
     // 회원 · 소비 가이드 예산
-    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다.");
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."),
+    SPENDING_GUIDE_SETUP_REQUIRED(HttpStatus.BAD_REQUEST, "월급과 급여일을 먼저 설정해 주세요."),
+    BUDGET_NOT_FOUND(HttpStatus.NOT_FOUND, "예산 주기를 찾을 수 없습니다."),
+    BUDGET_FUTURE_CYCLE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "아직 시작하지 않은 급여 주기입니다.");
 
     private final HttpStatus status;
     private final String message;

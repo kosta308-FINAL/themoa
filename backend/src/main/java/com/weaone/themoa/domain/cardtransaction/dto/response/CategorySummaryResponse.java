@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 public record CategorySummaryResponse(
         Long categoryId,
         String categoryName,
-        BigDecimal totalAmount,
+        BigDecimal amount,
         long transactionCount,
         BigDecimal percentage
 ) {

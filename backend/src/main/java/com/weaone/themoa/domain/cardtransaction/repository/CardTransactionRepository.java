@@ -24,6 +24,9 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
 
     Optional<CardTransaction> findByIdAndMember_Id(Long id, Long memberId);
 
+    /** 수기 거래 수정·삭제 소유권 검증(dayguide.md §8.1). {@code @SQLRestriction}이 이미 대체된 행을 걸러낸다. */
+    Optional<CardTransaction> findByIdAndMember_IdAndSource(Long id, Long memberId, TransactionSource source);
+
     Page<CardTransaction> findByMember_IdOrderByUsedAtDesc(Long memberId, Pageable pageable);
 
     /** 반복결제 탐지 1단계(fixedExpense.md §2): alias 레벨로 3회 이상 잡히는 그룹 후보. 취소 건 제외. */
@@ -117,6 +120,43 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
                            @Param("endDate") LocalDate endDate);
 
     /**
+     * S-01 오늘 거래 미리보기(dayguide.md §8.1): 고정지출 태그·거절 제외, 최신순. {@code pageable}로 미리보기
+     * 개수를 제한하면서도 {@code Page.getTotalElements()}로 제한 전 전체 건수를 함께 얻는다.
+     */
+    Page<CardTransaction> findByMember_IdAndFixedExpenseIsNullAndStatusNotAndUsedDateOrderByUsedAtDesc(
+            Long memberId, TransactionStatus rejected, LocalDate usedDate, Pageable pageable);
+
+    /**
+     * S-01 최근 N일 막대그래프(dayguide.md §3.3·§8.1): 날짜별 순사용액. 거래가 없는 날짜는 결과에서
+     * 빠지므로 호출자가 0원으로 채운다.
+     */
+    @Query("select t.usedDate as usedDate, sum(t.amount - coalesce(t.canceledAmount, 0)) as netAmount "
+            + "from CardTransaction t where t.member.id = :memberId and t.fixedExpense is null "
+            + "and t.status <> :rejected and t.usedDate between :startDate and :endDate "
+            + "group by t.usedDate")
+    List<DailyNetAmount> sumNetSpendByDate(@Param("memberId") Long memberId,
+                                            @Param("rejected") TransactionStatus rejected,
+                                            @Param("startDate") LocalDate startDate,
+                                            @Param("endDate") LocalDate endDate);
+
+    /**
+     * S-04 전체 소비내역(dayguide.md §8.1): 급여 주기 범위 + 선택적 날짜·카테고리 필터. 고정지출 태그·거절
+     * 제외, 최신순 페이지.
+     */
+    @Query("select t from CardTransaction t where t.member.id = :memberId and t.fixedExpense is null "
+            + "and t.status <> :rejected and t.usedDate between :cycleStart and :cycleEnd "
+            + "and (:date is null or t.usedDate = :date) "
+            + "and (:categoryId is null or t.category.id = :categoryId) "
+            + "order by t.usedAt desc")
+    Page<CardTransaction> searchForSpendingGuide(@Param("memberId") Long memberId,
+                                                  @Param("rejected") TransactionStatus rejected,
+                                                  @Param("cycleStart") LocalDate cycleStart,
+                                                  @Param("cycleEnd") LocalDate cycleEnd,
+                                                  @Param("date") LocalDate date,
+                                                  @Param("categoryId") Long categoryId,
+                                                  Pageable pageable);
+
+    /**
      * 대체 대상(entryMode.md §4/§4-1): 갭 구간의 결제수단=카드 수기 건. {@code @SQLRestriction}으로 이미
      * 대체된 행은 조회 자체에서 빠지므로, 나오는 행은 전부 "아직 대체 안 된" 건이다.
      */
@@ -170,6 +210,11 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
     interface MerchantGroupCount {
         Long getMerchantId();
         long getTransactionCount();
+    }
+
+    interface DailyNetAmount {
+        LocalDate getUsedDate();
+        BigDecimal getNetAmount();
     }
 
     interface CategorySummary {

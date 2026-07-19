@@ -27,7 +27,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "surplus_fund",
         uniqueConstraints = @UniqueConstraint(name = "uk_surplus_fund_member_cycle",
-                columnNames = {"member_id", "year_month"}))
+                columnNames = {"member_id", "\"year_month\""}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SurplusFund {

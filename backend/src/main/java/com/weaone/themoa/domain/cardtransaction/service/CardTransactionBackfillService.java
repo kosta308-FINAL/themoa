@@ -57,9 +57,19 @@ public class CardTransactionBackfillService {
     /** 신규 커넥션 최초 백필(§3): 시작일 = (오늘이 속한 달의 1일) − BACKFILL_MONTHS. 커넥션마다 독립적으로 1회만 실행된다. */
     @Transactional
     public void runInitialBackfill(Long connectionId) {
+        triggerInitialBackfill(connectionId, InitialSyncStatus.NOT_STARTED);
+    }
+
+    /** 초기수집 재시도(dayguide.md §8.1·§8.5): FAILED 상태에서만 FETCHING부터 다시 시작한다. */
+    @Transactional
+    public void retryInitialBackfill(Long connectionId) {
+        triggerInitialBackfill(connectionId, InitialSyncStatus.FAILED);
+    }
+
+    /** 이벤트 발행 시점과 처리 시점 사이 상태가 바뀔 수 있어 실행 직전 상태를 다시 검증한다(멱등 가드). */
+    private void triggerInitialBackfill(Long connectionId, InitialSyncStatus requiredStatus) {
         CardConnection connection = cardConnectionRepository.findById(connectionId).orElse(null);
-        if (connection == null || connection.getInitialSyncStatus() != InitialSyncStatus.NOT_STARTED) {
-            // 이미 진행/완료된 백필의 중복 트리거 방지(멱등). 실패 후 재시도는 별도 경로로 다룬다.
+        if (connection == null || connection.getInitialSyncStatus() != requiredStatus) {
             return;
         }
         LocalDate end = LocalDate.now(ZONE_SEOUL);
@@ -71,22 +81,30 @@ public class CardTransactionBackfillService {
         }
     }
 
-    /** 자동수집 재개(§2-1, §4-1) 시 회원의 활성 커넥션 전체를 갭 구간만큼 백필한다. */
+    /**
+     * 자동수집 재개(§2-1, §4-1) 시 회원의 활성 커넥션 전체를 갭 구간만큼 백필한다. {@code recoveryMode}가
+     * {@code null}이면 기존 자동 판단(RECOVER_RECENT와 동일)을 그대로 쓴다(dayguide.md §8.1).
+     */
     @Transactional
-    public void runGapBackfillForMember(Long memberId) {
+    public void runGapBackfillForMember(Long memberId, RecoveryMode recoveryMode) {
         LocalDate end = LocalDate.now(ZONE_SEOUL);
         List<CardConnection> connections = cardConnectionRepository
                 .findByMember_IdAndStatus(memberId, ConnectionStatus.ACTIVE);
         for (CardConnection connection : connections) {
-            backfill(connection, resolveGapStart(connection, end), end);
+            backfill(connection, resolveGapStart(connection, end, recoveryMode), end);
         }
     }
 
     /**
-     * 갭 시작 = last_successful_sync_at(§4-1). 갭이 3개월을 넘으면 cardtransaction.md §6-(C) 복귀 상한과
-     * 같은 계산식으로 캡을 씌운다 — 별도 상수를 두지 않는다(entryMode.md §3 각주).
+     * 갭 시작(§4-1): {@code recoveryMode=CURRENT_MONTH}면 복귀일이 속한 달의 1일부터(과거 공백은 채우지
+     * 않음, cardtransaction.md §6-C와 동일 정의). 그 외(RECOVER_RECENT 또는 미지정)는
+     * {@code last_successful_sync_at} 기준으로, 갭이 3개월을 넘으면 §6-(C) 복귀 상한과 같은 계산식으로
+     * 캡을 씌운다 — 별도 상수를 두지 않는다(entryMode.md §3 각주).
      */
-    private LocalDate resolveGapStart(CardConnection connection, LocalDate end) {
+    private LocalDate resolveGapStart(CardConnection connection, LocalDate end, RecoveryMode recoveryMode) {
+        if (recoveryMode == RecoveryMode.CURRENT_MONTH) {
+            return end.withDayOfMonth(1);
+        }
         LocalDate calendarCap = BackfillWindowPolicy.calendarFloor(end);
         LocalDateTime lastSuccessfulSyncAt = connection.getLastSuccessfulSyncAt();
         if (lastSuccessfulSyncAt == null) {

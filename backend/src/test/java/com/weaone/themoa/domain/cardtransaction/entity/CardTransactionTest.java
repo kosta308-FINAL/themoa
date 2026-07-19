@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CardTransactionTest {
 
     private Member member() {
-        return Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1));
+        return Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1), LocalDateTime.now());
     }
 
     private Category category(CategoryCode code) {

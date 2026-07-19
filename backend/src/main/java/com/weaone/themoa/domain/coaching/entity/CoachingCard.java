@@ -31,7 +31,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "coaching_card",
         uniqueConstraints = @UniqueConstraint(name = "uk_coaching_card_display_order",
-                columnNames = {"member_id", "year_month", "display_order"}))
+                columnNames = {"member_id", "\"year_month\"", "display_order"}))
 @Check(constraints = "(category_id is not null) <> (merchant_alias_id is not null)")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -45,8 +45,11 @@ public class CoachingCard {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    /** 분석 대상이 된 급여 주기 라벨(코칭 카드가 만들어진 근거 주기). 배치 멱등성 키의 일부다. */
-    @Column(name = "year_month", nullable = false, length = 7)
+    /**
+     * 분석 대상이 된 급여 주기 라벨(코칭 카드가 만들어진 근거 주기). 배치 멱등성 키의 일부다.
+     * {@code year_month}는 MySQL 예약어라 인용한다.
+     */
+    @Column(name = "\"year_month\"", nullable = false, length = 7)
     private String yearMonth;
 
     /** 문장은 전부 AI(또는 폴백 템플릿)가 쓴다. */

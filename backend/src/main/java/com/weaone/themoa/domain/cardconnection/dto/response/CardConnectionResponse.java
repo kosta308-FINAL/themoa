@@ -5,13 +5,14 @@ import com.weaone.themoa.domain.cardconnection.entity.CardConnection;
 import java.time.LocalDateTime;
 
 public record CardConnectionResponse(
-        Long id,
+        Long connectionId,
         String organization,
         String organizationName,
-        String status,
+        String connectionStatus,
+        String entryMode,
         String initialSyncStatus,
         LocalDateTime lastSuccessfulSyncAt,
-        LocalDateTime createdAt
+        LocalDateTime connectedAt
 ) {
 
     public static CardConnectionResponse from(CardConnection connection) {
@@ -20,6 +21,7 @@ public record CardConnectionResponse(
                 connection.getCardIssuer().getOrganization(),
                 connection.getCardIssuer().getName(),
                 connection.getStatus().name(),
+                connection.getMember().getEntryMode().name(),
                 connection.getInitialSyncStatus().name(),
                 connection.getLastSuccessfulSyncAt(),
                 connection.getCreatedAt()
