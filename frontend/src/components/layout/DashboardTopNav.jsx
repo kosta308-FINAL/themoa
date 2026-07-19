@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import DashboardIcon from "../common/DashboardIcon";
+import NotificationBell from "./NotificationBell";
 import { navItems } from "../../constants/dashboardNavigation";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -38,6 +39,7 @@ function DashboardTopNav() {
             </NavLink>
           ))}
         </div>
+        <NotificationBell />
         <button
           type="button"
           className="dash-logout-btn"

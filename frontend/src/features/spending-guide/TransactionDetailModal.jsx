@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  correctTransactionAmount,
+  correctTransactionCanceledAmount,
   deleteManualTransaction,
   getTransactionDetail,
   updateTransactionCategory,
@@ -10,6 +12,14 @@ import DashboardIcon from "../../components/common/DashboardIcon";
 const WON = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
 const toNumber = (value) => Number(value ?? 0);
 const formatWon = (value) => `${WON.format(Math.abs(toNumber(value)))}원`;
+const digits = (value) => value.replace(/\D/g, "").slice(0, 12);
+const formatForeign = (value, currencyCode) => {
+  if (value == null) return "—";
+  const amount = Number(value).toLocaleString("en-US", {
+    maximumFractionDigits: 2,
+  });
+  return [amount, currencyCode].filter(Boolean).join(" ");
+};
 const signedAmount = (value) => {
   const amount = toNumber(value);
   return `${amount > 0 ? "-" : amount < 0 ? "+" : ""}${formatWon(amount)}`;
@@ -53,14 +63,28 @@ function TransactionDetailModal({
   const [memo, setMemo] = useState("");
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [memoOpen, setMemoOpen] = useState(false);
+  const [canceledAmountOpen, setCanceledAmountOpen] = useState(false);
+  const [canceledAmountInput, setCanceledAmountInput] = useState("");
+  const [amountOpen, setAmountOpen] = useState(false);
+  const [amountInput, setAmountInput] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState("");
 
-  const load = useCallback(async () => {
-    const response = await getTransactionDetail(transactionId);
+  const applyResponse = (response) => {
     setTransaction(response);
     setCategoryId(String(response.categoryId || ""));
     setMemo(response.memo || "");
+    setCanceledAmountInput(
+      response.canceledAmount != null ? String(Number(response.canceledAmount)) : "",
+    );
+    setAmountInput(
+      response.amount != null ? String(Number(response.amount)) : "",
+    );
+  };
+
+  const load = useCallback(async () => {
+    const response = await getTransactionDetail(transactionId);
+    applyResponse(response);
   }, [transactionId]);
 
   useEffect(() => {
@@ -68,9 +92,7 @@ function TransactionDetailModal({
     getTransactionDetail(transactionId)
       .then((response) => {
         if (!active) return;
-        setTransaction(response);
-        setCategoryId(String(response.categoryId || ""));
-        setMemo(response.memo || "");
+        applyResponse(response);
       })
       .catch((requestError) => {
         if (active)
@@ -115,6 +137,23 @@ function TransactionDetailModal({
       updateTransactionMemo(transactionId, memo.trim() || null),
     );
     if (saved) setMemoOpen(false);
+  };
+
+  const handleCanceledAmountSave = async () => {
+    const saved = await save("canceledAmount", () =>
+      correctTransactionCanceledAmount(
+        transactionId,
+        Number(canceledAmountInput || 0),
+      ),
+    );
+    if (saved) setCanceledAmountOpen(false);
+  };
+
+  const handleAmountSave = async () => {
+    const saved = await save("amount", () =>
+      correctTransactionAmount(transactionId, Number(amountInput || 0)),
+    );
+    if (saved) setAmountOpen(false);
   };
 
   const handleDelete = async () => {
@@ -259,6 +298,96 @@ function TransactionDetailModal({
                   저장
                 </button>
               </div>
+              {transaction.cancelAmountUncertain && (
+                <>
+                  <div className="spending-detail-row">
+                    <span>취소금액</span>
+                    <strong>
+                      {transaction.canceledAmount != null
+                        ? formatWon(transaction.canceledAmount)
+                        : "확인 중"}
+                    </strong>
+                    <button
+                      type="button"
+                      onClick={() => setCanceledAmountOpen((open) => !open)}
+                    >
+                      정정
+                    </button>
+                  </div>
+                  <div
+                    className={`spending-detail-inline-edit${canceledAmountOpen ? " open" : ""}`}
+                  >
+                    <input
+                      inputMode="numeric"
+                      value={
+                        canceledAmountInput
+                          ? WON.format(Number(canceledAmountInput))
+                          : ""
+                      }
+                      onChange={(event) =>
+                        setCanceledAmountInput(digits(event.target.value))
+                      }
+                      placeholder="카드 명세서의 실제 취소금액을 입력하세요"
+                    />
+                    <button
+                      type="button"
+                      className="spending-secondary"
+                      disabled={Boolean(pending) || canceledAmountInput === ""}
+                      onClick={handleCanceledAmountSave}
+                    >
+                      저장
+                    </button>
+                  </div>
+                </>
+              )}
+              {transaction.originalAmount != null && (
+                <>
+                  <div className="spending-detail-row">
+                    <span>결제 원금</span>
+                    <strong>
+                      {formatForeign(
+                        transaction.originalAmount,
+                        transaction.currencyCode,
+                      )}
+                    </strong>
+                  </div>
+                  <div className="spending-detail-row">
+                    <span>환산금액</span>
+                    <strong>
+                      {formatWon(transaction.amount)}
+                      {transaction.amountUserCorrected ? "" : " (추정)"}
+                    </strong>
+                    <button
+                      type="button"
+                      onClick={() => setAmountOpen((open) => !open)}
+                    >
+                      정정
+                    </button>
+                  </div>
+                  <div
+                    className={`spending-detail-inline-edit${amountOpen ? " open" : ""}`}
+                  >
+                    <input
+                      inputMode="numeric"
+                      value={
+                        amountInput ? WON.format(Number(amountInput)) : ""
+                      }
+                      onChange={(event) =>
+                        setAmountInput(digits(event.target.value))
+                      }
+                      placeholder="카드 명세서의 실제 청구 원화를 입력하세요"
+                    />
+                    <button
+                      type="button"
+                      className="spending-secondary"
+                      disabled={Boolean(pending) || !amountInput}
+                      onClick={handleAmountSave}
+                    >
+                      저장
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
             {transaction.source === "MANUAL" && (
               <button
