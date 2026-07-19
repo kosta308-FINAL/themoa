@@ -2983,6 +2983,7 @@
   font-size: 11px;
 }
 .spending-surplus-panel .spending-empty {
+  width: 100%;
   min-height: 90px;
   padding: 10px 0 0;
 }

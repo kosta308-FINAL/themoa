@@ -23,16 +23,6 @@ import {
 import TransactionDetailModal from "./TransactionDetailModal";
 import "./SpendingGuidePage.css";
 
-// surplus_fund(erd.md §6) 합계를 반환하는 조회 API가 아직 없어 임시 mock.
-// 실제 연동 시 getSurplusSummary()로 교체(hasSavingsGoal은 member.savingsTargetAmount != null 기준).
-const MOCK_SURPLUS_SUMMARY = {
-  hasSavingsGoal: false,
-  savingsTargetAmount: 0,
-  completedCycleCount: 3,
-  totalSurplusAmount: 186000,
-  recentCycle: { yearMonth: "2026-06", amount: 62000 },
-};
-
 function SpendingGuidePage() {
   const {
     data,
@@ -69,6 +59,15 @@ function SpendingGuidePage() {
   const cycleSpent = summary
     ? toNumber(summary.availableAmount) - toNumber(summary.remainingAmount)
     : 0;
+  // surplus_fund(erd.md §6) 합계를 반환하는 조회 API가 아직 없어 누적 잉여금·최근 주기는
+  // 빈 상태로 둔다(가짜 숫자 금지). 저축 목표 여부만 실제 summary.savingsGoalAmount로 판단한다.
+  const surplusSummary = {
+    hasSavingsGoal: toNumber(summary?.savingsGoalAmount) > 0,
+    savingsTargetAmount: toNumber(summary?.savingsGoalAmount),
+    completedCycleCount: 0,
+    totalSurplusAmount: 0,
+    recentCycle: null,
+  };
   const showInitialSync =
     INITIAL_SYNC_IN_PROGRESS.has(initialSyncState?.overallStatus) ||
     initialSyncState?.overallStatus === "FAILED";
@@ -222,7 +221,7 @@ function SpendingGuidePage() {
               <div className="spending-content-grid">
                 <div className="spending-column">
                   <SurplusSummary
-                    data={MOCK_SURPLUS_SUMMARY}
+                    data={surplusSummary}
                     onSetGoal={() => setIsBudgetOpen(true)}
                   />
                   <section className="spending-panel spending-transactions-panel">
