@@ -1,4 +1,4 @@
-import { recommendedProduct } from '../../../constants/mockDashboard'
+import { recommendedProduct } from "../../../constants/mockDashboard";
 
 function RecommendedProduct() {
   return (
@@ -19,10 +19,12 @@ function RecommendedProduct() {
           <span>{recommendedProduct.rateLabel}</span>
           <strong>{recommendedProduct.rate}</strong>
         </div>
-        <button type="button" className="product-cta">자세히 보기</button>
+        <button type="button" className="product-cta">
+          자세히 보기
+        </button>
       </div>
     </div>
-  )
+  );
 }
 
-export default RecommendedProduct
+export default RecommendedProduct;

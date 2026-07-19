@@ -10,6 +10,8 @@ import com.weaone.themoa.domain.budget.dto.response.SpendingGuideSummaryResponse
 import com.weaone.themoa.domain.budget.dto.response.TodayTransactionsResponse;
 import com.weaone.themoa.domain.budget.entity.Budget;
 import com.weaone.themoa.domain.budget.repository.BudgetRepository;
+import com.weaone.themoa.domain.cardconnection.entity.InitialSyncStatus;
+import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionListResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CategorySummaryListResponse;
@@ -55,13 +57,23 @@ public class SpendingGuideService {
     private final BudgetRepository budgetRepository;
     private final BudgetCycleService budgetCycleService;
     private final CardTransactionRepository cardTransactionRepository;
+    private final CardConnectionRepository cardConnectionRepository;
 
-    /** S-00A 최초 설정. 월급·급여일을 저장하고 현재 주기 예산을 없으면 생성한 뒤 요약을 돌려준다. */
+    /**
+     * S-00A 최초 설정. 월급·급여일을 저장하고 현재 주기 예산을 없으면 생성한 뒤 요약을 돌려준다.
+     *
+     * <p>카드 연동이 이 설정보다 먼저 끝나 있었다면({@code member.payday}가 없어 {@link
+     * BudgetCycleBackfillListener}가 소급 생성을 건너뛴 경우) 여기서 과거 급여주기 budget row 소급 생성을
+     * 다시 시도한다 — 최초 사용자가 설정 직후 바로 "이전 주기 조회"를 쓸 수 있게 한다.
+     */
     @Transactional
     public SpendingGuideSummaryResponse setup(Long memberId, SpendingGuideSetupRequest request) {
         Member member = getMember(memberId);
         member.configureSpendingGuide(request.salaryAmount(), request.payday());
         LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
+        if (cardConnectionRepository.existsByMember_IdAndInitialSyncStatus(memberId, InitialSyncStatus.COMPLETED)) {
+            budgetCycleService.backfillPastCycles(member, today);
+        }
         Budget budget = budgetCycleService.getOrCreateCurrentBudget(member, today);
         return buildSummary(memberId, budget, today);
     }

@@ -3,6 +3,7 @@ package com.weaone.themoa.domain.budget.service;
 import com.weaone.themoa.domain.budget.entity.Budget;
 import com.weaone.themoa.domain.budget.repository.BudgetRepository;
 import com.weaone.themoa.domain.cardtransaction.service.ExchangeRateUnavailableException;
+import com.weaone.themoa.domain.cardtransaction.support.BackfillWindowPolicy;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpenseStatus;
 import com.weaone.themoa.domain.fixedexpense.repository.FixedExpensePaymentRepository;
@@ -13,6 +14,7 @@ import com.weaone.themoa.domain.member.entity.Member;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -42,6 +44,29 @@ public class BudgetCycleService {
     /** 현재 주기 예산을 조회하고 없으면 생성한다. 호출 전 {@code member.hasSpendingGuideSetup()}이 참이어야 한다. */
     public Budget getOrCreateCurrentBudget(Member member, LocalDate today) {
         BudgetCyclePolicy.BudgetCycle cycle = BudgetCyclePolicy.cycleOf(member.getPayday(), today);
+        return getOrCreateCycle(member, cycle, today);
+    }
+
+    /**
+     * 최초 카드 백필 완료 시(또는 그 이후 소비 가이드 최초 설정 시) 과거 급여주기의 budget row를 소급
+     * 생성한다 — {@code card_transaction}은 최초 연동 시 과거 3개월치가 한번에 채워지는데 {@code budget}은
+     * 지연 생성이라 최초 사용자는 이전 주기 조회가 항상 막히는 문제를 해소한다. 카드 백필 상한과 같은
+     * {@link BackfillWindowPolicy}를 사용해 두 데이터의 소급 범위를 맞춘다. 과거 실제 월급·저축목표는 알 수
+     * 없으므로 소비 가이드 최초 설정 시점의 값을 그대로 각 과거 주기에 적용한다(근사치). 호출 전
+     * {@code member.hasSpendingGuideSetup()}이 참이어야 한다.
+     */
+    @Transactional
+    public void backfillPastCycles(Member member, LocalDate today) {
+        BudgetCyclePolicy.BudgetCycle currentCycle = BudgetCyclePolicy.cycleOf(member.getPayday(), today);
+        LocalDate windowStart = BackfillWindowPolicy.calendarFloor(today);
+        BudgetCyclePolicy.BudgetCycle cursor = BudgetCyclePolicy.cycleOf(member.getPayday(), windowStart);
+        while (cursor.cycleStartDate().isBefore(currentCycle.cycleStartDate())) {
+            getOrCreateCycle(member, cursor, today);
+            cursor = BudgetCyclePolicy.cycleOf(member.getPayday(), cursor.cycleEndDate().plusDays(1));
+        }
+    }
+
+    private Budget getOrCreateCycle(Member member, BudgetCyclePolicy.BudgetCycle cycle, LocalDate today) {
         return budgetRepository.findByMember_IdAndYearMonth(member.getId(), cycle.yearMonth())
                 .orElseGet(() -> createCycle(member, cycle, today));
     }

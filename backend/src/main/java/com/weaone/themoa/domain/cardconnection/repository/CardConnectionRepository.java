@@ -33,6 +33,9 @@ public interface CardConnectionRepository extends JpaRepository<CardConnection, 
 
     boolean existsByMember_IdAndStatus(Long memberId, ConnectionStatus status);
 
+    /** 소비 가이드 최초 설정 시 과거 주기 budget 소급 생성 여부 판단(budget 도메인, dailyBudget.md). */
+    boolean existsByMember_IdAndInitialSyncStatus(Long memberId, InitialSyncStatus initialSyncStatus);
+
     /** 새벽 배치 대상(cardtransaction.md §6): 활성 커넥션 + 자동수집 ON + 마지막 이용 30일 이내. */
     @Query("select c from CardConnection c where c.status = :status "
             + "and c.member.cardSyncEnabled = true and c.member.lastActiveAt >= :activeSince")

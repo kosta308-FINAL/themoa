@@ -20,12 +20,18 @@ import com.weaone.themoa.domain.fixedexpense.repository.FixedExpenseRepository;
 import com.weaone.themoa.domain.member.entity.Gender;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
+import com.weaone.themoa.domain.merchant.entity.Merchant;
+import com.weaone.themoa.domain.merchant.entity.MerchantAlias;
+import com.weaone.themoa.domain.merchant.repository.MerchantAliasRepository;
+import com.weaone.themoa.domain.merchant.repository.MerchantRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -59,6 +65,10 @@ class CardTransactionRepositoryIntegrationTest {
     private CategoryRepository categoryRepository;
     @Autowired
     private FixedExpenseRepository fixedExpenseRepository;
+    @Autowired
+    private MerchantRepository merchantRepository;
+    @Autowired
+    private MerchantAliasRepository merchantAliasRepository;
     @Autowired
     private EntityManager entityManager;
 
@@ -274,5 +284,123 @@ class CardTransactionRepositoryIntegrationTest {
 
         assertThat(match).isPresent();
         assertThat(match.get().getId()).isEqualTo(syncTx.getId());
+    }
+
+    @Test
+    @DisplayName("전체 소비내역 상세 결제내역 페이지는 usedAt DESC, id DESC로 정렬되고 고정지출·거절 거래를 제외한다")
+    void findConsumptionHistoryPageOrdersAndFilters() {
+        Member member = persistMember("history-page@example.com");
+        CardConnection connection = persistConnection(member);
+        Card card = cardRepository.saveAndFlush(Card.observe(member, connection, "카드", "4619****988*"));
+        Category food = categoryRepository.findByCode(CategoryCode.FOOD.name())
+                .orElseThrow(() -> new IllegalStateException("식비 카테고리 시드가 없습니다."));
+
+        FixedExpense fixedExpense = fixedExpenseRepository.save(FixedExpense.registerDirect(member, "웨이브",
+                food, null, FixedExpensePaymentMethod.TRANSFER, (short) 5, BigDecimal.valueOf(10900), "KRW",
+                BigDecimal.valueOf(10900), null, null));
+
+        CardTransaction earliest = CardTransaction.manual(member, food, PaymentMethod.CASH,
+                LocalDate.of(2026, 7, 10), LocalDateTime.of(2026, 7, 10, 9, 0), BigDecimal.valueOf(5000), "김밥", null);
+        CardTransaction sameInstantSmallerId = CardTransaction.manual(member, food, PaymentMethod.CASH,
+                LocalDate.of(2026, 7, 10), LocalDateTime.of(2026, 7, 10, 12, 0), BigDecimal.valueOf(6000), "라면", null);
+        CardTransaction sameInstantLargerId = CardTransaction.manual(member, food, PaymentMethod.CASH,
+                LocalDate.of(2026, 7, 10), LocalDateTime.of(2026, 7, 10, 12, 0), BigDecimal.valueOf(7000), "국밥", null);
+        CardTransaction latest = CardTransaction.manual(member, food, PaymentMethod.CASH,
+                LocalDate.of(2026, 7, 11), LocalDateTime.of(2026, 7, 11, 9, 0), BigDecimal.valueOf(8000), "닭갈비", null);
+        cardTransactionRepository.saveAndFlush(earliest);
+        cardTransactionRepository.saveAndFlush(sameInstantSmallerId);
+        cardTransactionRepository.saveAndFlush(sameInstantLargerId);
+        cardTransactionRepository.saveAndFlush(latest);
+
+        CardTransaction fixedTx = CardTransaction.manual(member, food, PaymentMethod.TRANSFER,
+                LocalDate.of(2026, 7, 12), LocalDateTime.of(2026, 7, 12, 9, 0), BigDecimal.valueOf(10900), "웨이브", null);
+        fixedTx.assignFixedExpense(fixedExpense);
+        cardTransactionRepository.saveAndFlush(fixedTx);
+
+        CardTransaction rejectedTx = CardTransaction.sync(member, card, food, "80000001",
+                LocalDate.of(2026, 7, 13), LocalDateTime.of(2026, 7, 13, 9, 0), BigDecimal.valueOf(9000),
+                null, "KRW", null, false, TransactionStatus.REJECTED, null, false,
+                "거절가맹점", "한식", null, null, null);
+        cardTransactionRepository.saveAndFlush(rejectedTx);
+
+        entityManager.clear();
+
+        Page<CardTransaction> page = cardTransactionRepository.findConsumptionHistoryPage(
+                member.getId(), TransactionStatus.REJECTED, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31),
+                PageRequest.of(0, 10));
+
+        assertThat(page.getContent()).extracting(CardTransaction::getId)
+                .containsExactly(latest.getId(), sameInstantLargerId.getId(), sameInstantSmallerId.getId(), earliest.getId());
+        assertThat(page.getContent()).extracting(CardTransaction::getId)
+                .doesNotContain(fixedTx.getId(), rejectedTx.getId());
+    }
+
+    @Test
+    @DisplayName("많이 쓴 곳 TOP5는 alias > merchant > 수기 원본명 우선순위로 묶고, 순액 0 이하 그룹은 제외한다")
+    void findMerchantTop5GroupsByPriorityAndExcludesNonPositive() {
+        Member member = persistMember("merchant-top5@example.com");
+        CardConnection connection = persistConnection(member);
+        Card card = cardRepository.saveAndFlush(Card.observe(member, connection, "카드", "4619****987*"));
+        Category cafe = categoryRepository.findByCode(CategoryCode.CAFE.name())
+                .orElseThrow(() -> new IllegalStateException("카페 카테고리 시드가 없습니다."));
+
+        MerchantAlias alias = merchantAliasRepository.save(MerchantAlias.create("스타벅스", cafe));
+        Merchant merchantWithAlias = merchantRepository.save(Merchant.observe("스타벅스 강남R점", alias));
+        Merchant merchantOnly = merchantRepository.save(Merchant.observe("이디야커피 역삼점", null));
+
+        // alias 그룹: 정확히 위치가 잡힌 두 건 합산 48000원, 2건
+        CardTransaction aliasTx1 = CardTransaction.sync(member, card, cafe, "70000001",
+                LocalDate.of(2026, 7, 5), LocalDateTime.of(2026, 7, 5, 9, 0), BigDecimal.valueOf(20000),
+                null, "KRW", null, false, TransactionStatus.APPROVED, null, false,
+                "스타벅스 강남R점", "커피전문점", null, null, null);
+        aliasTx1.assignMerchant(merchantWithAlias, alias);
+        CardTransaction aliasTx2 = CardTransaction.sync(member, card, cafe, "70000002",
+                LocalDate.of(2026, 7, 6), LocalDateTime.of(2026, 7, 6, 9, 0), BigDecimal.valueOf(28000),
+                null, "KRW", null, false, TransactionStatus.APPROVED, null, false,
+                "스타벅스 강남R점", "커피전문점", null, null, null);
+        aliasTx2.assignMerchant(merchantWithAlias, alias);
+        cardTransactionRepository.saveAndFlush(aliasTx1);
+        cardTransactionRepository.saveAndFlush(aliasTx2);
+
+        // merchant만 있는 그룹(alias 없음): 15000원, 1건
+        CardTransaction merchantTx = CardTransaction.sync(member, card, cafe, "70000003",
+                LocalDate.of(2026, 7, 7), LocalDateTime.of(2026, 7, 7, 9, 0), BigDecimal.valueOf(15000),
+                null, "KRW", null, false, TransactionStatus.APPROVED, null, false,
+                "이디야커피 역삼점", "커피전문점", null, null, null);
+        merchantTx.assignMerchant(merchantOnly, null);
+        cardTransactionRepository.saveAndFlush(merchantTx);
+
+        // 수기 그룹(둘 다 없음, 대소문자/공백만 다름 → 같은 그룹): 3000 + 2000 = 5000원, 2건
+        CardTransaction manualTx1 = CardTransaction.manual(member, cafe, PaymentMethod.CASH,
+                LocalDate.of(2026, 7, 8), LocalDateTime.of(2026, 7, 8, 9, 0), BigDecimal.valueOf(3000), "동네카페", null);
+        CardTransaction manualTx2 = CardTransaction.manual(member, cafe, PaymentMethod.CASH,
+                LocalDate.of(2026, 7, 9), LocalDateTime.of(2026, 7, 9, 9, 0), BigDecimal.valueOf(2000), " 동네카페 ", null);
+        cardTransactionRepository.saveAndFlush(manualTx1);
+        cardTransactionRepository.saveAndFlush(manualTx2);
+
+        // 전액취소로 순액 0 이하가 되는 그룹(TOP5에서 제외돼야 함)
+        CardTransaction canceledOut = CardTransaction.sync(member, card, cafe, "70000004",
+                LocalDate.of(2026, 7, 10), LocalDateTime.of(2026, 7, 10, 9, 0), BigDecimal.valueOf(4000),
+                null, "KRW", null, false, TransactionStatus.CANCELED, BigDecimal.valueOf(4000), false,
+                "빽다방 신논현점", "커피전문점", null, null, null);
+        cardTransactionRepository.saveAndFlush(canceledOut);
+
+        List<CardTransactionRepository.MerchantTop5Row> top5 = cardTransactionRepository.findMerchantTop5(
+                member.getId(), TransactionStatus.REJECTED.name(), LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31));
+
+        assertThat(top5).extracting(CardTransactionRepository.MerchantTop5Row::getMerchantKey)
+                .containsExactly("ALIAS:" + alias.getId(), "MERCHANT:" + merchantOnly.getId(), "MANUAL:동네카페");
+
+        CardTransactionRepository.MerchantTop5Row aliasRow = top5.get(0);
+        assertThat(aliasRow.getDisplayName()).isEqualTo("스타벅스");
+        assertThat(aliasRow.getNetAmount()).isEqualByComparingTo(BigDecimal.valueOf(48000));
+        assertThat(aliasRow.getTransactionCount()).isEqualTo(2);
+
+        CardTransactionRepository.MerchantTop5Row manualRow = top5.get(2);
+        assertThat(manualRow.getNetAmount()).isEqualByComparingTo(BigDecimal.valueOf(5000));
+        assertThat(manualRow.getTransactionCount()).isEqualTo(2);
+
+        assertThat(top5).extracting(CardTransactionRepository.MerchantTop5Row::getMerchantKey)
+                .doesNotContain("MANUAL:빽다방 신논현점");
     }
 }

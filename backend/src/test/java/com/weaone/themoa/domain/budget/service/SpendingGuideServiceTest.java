@@ -7,6 +7,7 @@ import com.weaone.themoa.domain.budget.entity.Budget;
 import com.weaone.themoa.domain.budget.repository.BudgetRepository;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CategorySummaryListResponse;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
+import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
 import com.weaone.themoa.domain.cardtransaction.support.BackfillWindowPolicy;
 import com.weaone.themoa.domain.member.entity.Gender;
@@ -47,9 +48,11 @@ class SpendingGuideServiceTest {
     private BudgetCycleService budgetCycleService;
     @Mock
     private CardTransactionRepository cardTransactionRepository;
+    @Mock
+    private CardConnectionRepository cardConnectionRepository;
 
     private SpendingGuideService service() {
-        return new SpendingGuideService(memberRepository, budgetRepository, budgetCycleService, cardTransactionRepository);
+        return new SpendingGuideService(memberRepository, budgetRepository, budgetCycleService, cardTransactionRepository, cardConnectionRepository);
     }
 
     private Member member(BigDecimal salary, Integer payday, BigDecimal savingsTarget) {

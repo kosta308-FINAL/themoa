@@ -1,5 +1,5 @@
-import DashboardIcon from '../../../components/common/DashboardIcon'
-import { recentActivity } from '../../../constants/mockDashboard'
+import DashboardIcon from "../../../components/common/DashboardIcon";
+import { recentActivity } from "../../../constants/mockDashboard";
 
 function RecentActivity() {
   return (
@@ -19,7 +19,13 @@ function RecentActivity() {
               <span>{item.category}</span>
             </div>
             <div className="activity-amount-col">
-              <span className={item.negative ? 'activity-amount-negative' : 'activity-amount-positive'}>
+              <span
+                className={
+                  item.negative
+                    ? "activity-amount-negative"
+                    : "activity-amount-positive"
+                }
+              >
                 {item.amount}
               </span>
               <span className="activity-time">{item.time}</span>
@@ -28,7 +34,7 @@ function RecentActivity() {
         ))}
       </ul>
     </div>
-  )
+  );
 }
 
-export default RecentActivity
+export default RecentActivity;
