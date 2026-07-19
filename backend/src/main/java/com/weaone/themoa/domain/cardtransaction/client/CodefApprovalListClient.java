@@ -63,7 +63,7 @@ public class CodefApprovalListClient {
     private String callWithTimeout(Callable<String> call) {
         Future<String> future = codefExecutor.submit(call);
         try {
-            return future.get(codefProperties.callTimeout().toMillis(), TimeUnit.MILLISECONDS);
+            return future.get(codefProperties.approvalListTimeout().toMillis(), TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             future.cancel(true);
             throw new CodefClientException("CODEF 응답이 지연되고 있습니다.", e);
