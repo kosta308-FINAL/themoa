@@ -40,3 +40,4 @@ application.yaml
 .env
 externalApiTest
 sql
+src/main/resources/application-local.yml

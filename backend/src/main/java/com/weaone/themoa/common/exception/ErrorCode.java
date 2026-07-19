@@ -77,8 +77,19 @@ public enum ErrorCode {
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."),
     SPENDING_GUIDE_SETUP_REQUIRED(HttpStatus.BAD_REQUEST, "월급과 급여일을 먼저 설정해 주세요."),
     BUDGET_NOT_FOUND(HttpStatus.NOT_FOUND, "예산 주기를 찾을 수 없습니다."),
-    BUDGET_FUTURE_CYCLE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "아직 시작하지 않은 급여 주기입니다.");
+    BUDGET_FUTURE_CYCLE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "아직 시작하지 않은 급여 주기입니다."),
 
+    // Policy
+    POLICY_NOT_FOUND(HttpStatus.NOT_FOUND, "정책을 찾을 수 없습니다."),
+    POLICY_SEARCH_NOT_READY(HttpStatus.CONFLICT, "정책 검색 데이터가 준비되지 않았습니다."),
+    POLICY_JOB_ALREADY_RUNNING(HttpStatus.CONFLICT, "이미 실행 중인 정책 작업이 있습니다."),
+    POLICY_COLLECTION_DISABLED(HttpStatus.CONFLICT, "정책 수집 기능이 비활성화되어 있습니다."),
+    POLICY_EXTERNAL_API_KEY_REQUIRED(HttpStatus.CONFLICT, "정책 외부 API 키 설정이 필요합니다."),
+    POLICY_EXTERNAL_API_ERROR(HttpStatus.BAD_GATEWAY, "정책 외부 API 요청을 처리하지 못했습니다."),
+    POLICY_EXTERNAL_RESPONSE_PARSE_ERROR(HttpStatus.BAD_GATEWAY, "정책 외부 API 응답을 해석하지 못했습니다."),
+    POLICY_REGION_SYNC_CONFIG_REQUIRED(HttpStatus.CONFLICT, "SGIS 지역 동기화 설정이 필요합니다."),
+    POLICY_EMBEDDING_CONFIG_REQUIRED(HttpStatus.CONFLICT, "정책 임베딩 설정이 필요합니다."),
+    POLICY_QDRANT_ERROR(HttpStatus.BAD_GATEWAY, "정책 벡터 저장소 요청을 처리하지 못했습니다.");
     private final HttpStatus status;
     private final String message;
 
