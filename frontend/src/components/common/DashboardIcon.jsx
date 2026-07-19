@@ -1,6 +1,6 @@
 const PATHS = {
   home: 'M4 11.5 12 4l8 7.5M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9',
-  sparkle: 'M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18',
+  sparkle: 'm12 3 1.5 4.2L18 9l-4.5 1.8L12 15l-1.5-4.2L6 9l4.5-1.8L12 3Zm7 12 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z',
   building: 'M4 21V9l8-5 8 5v12M9 21v-6h6v6M4 21h16',
   chart: 'M4 20V10M10 20V4M16 20v-7M4 20h16',
   check: 'M20 6 9 17l-5-5',
@@ -14,6 +14,10 @@ const PATHS = {
   info: 'M12 11v5M12 8h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
   repeat: 'm17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3',
   card: 'M3 6h18v13H3V6ZM3 10h18M7 15h4',
+  coffee: 'M4 8h13v6a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6V8Zm13 2h2a3 3 0 0 1 0 6h-2M7 4v1m4-2v2m4-1v1',
+  utensils: 'M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M17 3v18m0-18c-3 2-4 7 0 10',
+  car: 'm5 11 2-5h10l2 5M3 12h18v6H3v-6Zm4 5h.01M17 17h.01',
+  bag: 'M5 8h14l1 13H4L5 8Zm4 0a3 3 0 0 1 6 0',
 }
 
 function DashboardIcon({ name, size = 18 }) {
