@@ -18,12 +18,9 @@ import {
   syncCardTransactions,
 } from '../../api/spendingGuideApi'
 import DashboardIcon from '../../components/common/DashboardIcon'
-import DashboardTopNav from '../../components/layout/DashboardTopNav'
-import DashboardFooter from '../../components/layout/DashboardFooter'
 import BudgetSettingsModal from './BudgetSettingsModal'
 import ManualTransactionModal from './ManualTransactionModal'
 import TransactionDetailModal from './TransactionDetailModal'
-import '../dashboard/Dashboard.css'
 import './SpendingGuidePage.css'
 
 const EMPTY_DATA = {
@@ -648,8 +645,7 @@ function SpendingGuidePage() {
   const canManualSync = Boolean(data.connections?.cardSyncEnabled && data.connections.connections?.some((connection) => connection.connectionStatus === 'ACTIVE'))
 
   return (
-    <div className="dashboard spending-guide">
-      <DashboardTopNav />
+    <div className="spending-guide">
       <main className="spending-main">
         <header className="spending-page-head"><div><h1>{showSetup ? '소비가이드 설정' : '소비가이드'}</h1><p>{showSetup ? '처음 한 번만 입력하면 매일 소비 기준을 계산해드려요.' : '오늘의 기준을 확인하고, 무리 없이 쓸 수 있는 금액을 관리해보세요.'}</p></div></header>
 
@@ -694,7 +690,6 @@ function SpendingGuidePage() {
           </div>
         </>}
       </main>
-      <DashboardFooter />
       {isEntryOpen && <ManualTransactionModal categories={data.categories} allowCard={Boolean(data.connections && (!data.connections.connections?.length || !data.connections.cardSyncEnabled))} onClose={() => setIsEntryOpen(false)} onSaved={loadGuide} />}
       {isBudgetOpen && summary && <BudgetSettingsModal summary={summary} onClose={() => setIsBudgetOpen(false)} onSaved={loadGuide} />}
       {detailId && <TransactionDetailModal transactionId={detailId} categories={data.categories} onClose={() => setDetailId(null)} onChanged={loadGuide} onEdit={(transaction) => { setDetailId(null); setEditingTransaction(transaction) }} />}

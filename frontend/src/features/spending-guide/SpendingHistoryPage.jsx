@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import DashboardTopNav from '../../components/layout/DashboardTopNav'
 import {
   createManualTransaction,
   getCardConnections,
@@ -9,7 +8,6 @@ import {
   getConsumptionHistoryTransactions,
   syncCardTransactions,
 } from '../../api/spendingGuideApi'
-import '../dashboard/Dashboard.css'
 import './SpendingHistoryPage.css'
 
 const ICONS = {
@@ -276,8 +274,7 @@ function SpendingHistoryPage() {
   const groups = useMemo(() => groupTransactions(transactionsData?.items ?? []), [transactionsData])
 
   return (
-    <div className="dashboard consume-history-page">
-      <DashboardTopNav />
+    <div className="consume-history-page">
       <main className="page">
         <Link className="back-link" to="/dashboard/spending"><HistoryIcon name="arrow-left" />소비가이드로 돌아가기</Link>
 
