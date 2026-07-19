@@ -17,7 +17,8 @@ const PUBLIC_AUTH_PATHS = new Set([
 const isPublicAuthPath = (url = "") => PUBLIC_AUTH_PATHS.has(url.split("?")[0]);
 
 axiosInstance.interceptors.request.use((config) => {
-  if (isPublicAuthPath(config.url)) {
+  if (isPublicAuthPath(config.url) || config.skipAuth) {
+    delete config.headers?.Authorization;
     return config;
   }
 
@@ -53,6 +54,7 @@ axiosInstance.interceptors.response.use(
       error.response?.status !== 401 ||
       !original ||
       original._retry ||
+      original.skipAuth ||
       isPublicAuthPath(original.url)
     ) {
       return Promise.reject(error);
