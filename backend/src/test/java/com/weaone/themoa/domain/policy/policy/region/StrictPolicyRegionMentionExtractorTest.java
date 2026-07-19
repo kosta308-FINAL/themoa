@@ -19,7 +19,7 @@ class StrictPolicyRegionMentionExtractorTest {
     private final StrictPolicyRegionMentionExtractor extractor = new StrictPolicyRegionMentionExtractor(catalog, aliasGenerator, normalizer);
 
     StrictPolicyRegionMentionExtractorTest() {
-        var regions = FakeRegionData.regions();
+        java.util.List<com.weaone.themoa.domain.policy.policy.domain.RegionCode> regions = FakeRegionData.regions();
         when(repository.findAll()).thenReturn(regions);
         regions.forEach(region -> when(repository.findByRegionCode(region.getRegionCode())).thenReturn(Optional.of(region)));
     }

@@ -7,6 +7,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.util.UriBuilder;
 
 import java.util.List;
 
@@ -51,7 +52,7 @@ public class SgisRegionClient {
             String token = tokenManager.accessToken();
             return client.get()
                     .uri(uriBuilder -> {
-                        var builder = uriBuilder.path("/OpenAPI3/addr/stage.json")
+                        UriBuilder builder = uriBuilder.path("/OpenAPI3/addr/stage.json")
                                 .queryParam("accessToken", token)
                                 .queryParam("pg_yn", "0");
                         if (StringUtils.hasText(cd)) {

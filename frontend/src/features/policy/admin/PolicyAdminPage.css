@@ -1,3 +1,31 @@
+.policy-admin-page {
+  --dash-accent: var(--green);
+  --dash-accent-dark: #16a34a;
+  --dash-accent-light: var(--green-light);
+  --dash-bg: var(--bg-card);
+  --dash-bg-card: var(--bg-card);
+  --dash-border: var(--border);
+  --dash-text-primary: var(--text-primary);
+  --dash-text-secondary: var(--text-secondary);
+  --dash-radius: var(--radius-md);
+  --dash-shadow: var(--shadow-md);
+  --c-blue: var(--accent);
+  --c-blue-light: var(--accent-light);
+  --c-purple: var(--violet);
+  --c-purple-light: var(--violet-light);
+  --c-orange: var(--orange);
+  --c-orange-light: var(--orange-light);
+  --c-pink: #ec4899;
+  --c-pink-light: #fce7f3;
+  --c-teal: #14b8a6;
+  --c-teal-light: #ccfbf1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
 .policy-admin-main {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;

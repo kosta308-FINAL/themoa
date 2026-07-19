@@ -3,6 +3,7 @@ package com.weaone.themoa.domain.policy.admin.service;
 import com.weaone.themoa.domain.policy.admin.dto.RegionAnomalyResponse;
 import com.weaone.themoa.domain.policy.policy.domain.Policy;
 import com.weaone.themoa.domain.policy.policy.region.RegionCatalog;
+import com.weaone.themoa.domain.policy.policy.region.PolicyRegionResolution;
 import com.weaone.themoa.domain.policy.policy.region.PolicyRegionResolver;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import org.springframework.data.domain.PageRequest;
@@ -35,7 +36,7 @@ public class AdminRegionDiagnosticsService {
     }
 
     private RegionAnomalyResponse anomaly(Policy policy) {
-        var resolved = resolver.resolve(fields(policy));
+        PolicyRegionResolution resolved = resolver.resolve(fields(policy));
         List<String> current = policy.getRegions().stream().map(region -> region.getRegion().displayName()).sorted().toList();
         List<String> next = resolved.regionNames().stream().sorted().toList();
         boolean currentlyNationwide = current.contains("전국");

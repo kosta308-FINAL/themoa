@@ -17,6 +17,9 @@ import com.weaone.themoa.domain.policy.rag.dto.CandidateSource;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchCondition;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchMode;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchRequest;
+import com.weaone.themoa.domain.policy.rag.dto.PolicySearchResponse;
+import com.weaone.themoa.domain.policy.rag.dto.PolicySearchResultItem;
+import com.weaone.themoa.domain.policy.rag.dto.SearchReadinessResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.ObjectProvider;
@@ -48,12 +51,15 @@ class PolicyRagSearchServicePipelineTest {
 
         PolicyRagSearchService service = service(List.of(gyeonggiInterview, suwonFood, seoulInterview, nationwideJob));
 
-        var response = service.search(new PolicySearchRequest("수원 사는 27살 취준생 정책", 10));
+        PolicySearchResponse response = service.search(new PolicySearchRequest("수원 사는 27살 취준생 정책", 10));
 
         assertThat(response.results()).extracting("policyId").contains(1, 4).doesNotContain(3);
         assertThat(response.results()).extracting("policyId").doesNotContain(2);
         assertThat(response.results().get(0).policyId()).isEqualTo(1);
-        var gyeonggi = response.results().stream().filter(item -> item.policyId().equals(1)).findFirst().orElseThrow();
+        PolicySearchResultItem gyeonggi = response.results().stream()
+                .filter(item -> item.policyId().equals(1))
+                .findFirst()
+                .orElseThrow();
         assertThat(gyeonggi.regionCompatibility()).isEqualTo("PARENT_SIDO");
         assertThat(gyeonggi.ageMatchStatus()).isEqualTo("MATCH");
         assertThat(gyeonggi.employmentMatchStatus()).isEqualTo("UNKNOWN");
@@ -115,7 +121,8 @@ class PolicyRagSearchServicePipelineTest {
                 new PolicySearchExplainService(domainClassifier),
                 new PolicySearchRuntimeSupport(repository, regionMatchEvaluator, new PolicySearchIntentBuilder(),
                         targetAudienceClassifier, employmentAudienceClassifier, new UserEmploymentStatusDetector(),
-                        new RegionCoverageResultSelector()));
+                        new RegionCoverageResultSelector()),
+                readySearchReadinessService());
     }
 
     private PolicySearchCondition condition() {
@@ -144,11 +151,17 @@ class PolicyRagSearchServicePipelineTest {
 
     private RegionCodeRepository regionRepository() {
         RegionCodeRepository repo = mock(RegionCodeRepository.class);
-        var regions = FakeRegionData.regions();
+        List<RegionCode> regions = FakeRegionData.regions();
         when(repo.findAll()).thenReturn(regions);
         for (RegionCode region : regions) {
             when(repo.findByRegionCode(region.getRegionCode())).thenReturn(Optional.of(region));
         }
         return repo;
+    }
+
+    private SearchReadinessService readySearchReadinessService() {
+        SearchReadinessService readinessService = mock(SearchReadinessService.class);
+        when(readinessService.readiness()).thenReturn(new SearchReadinessResponse(true, 1, 1, 1, 1, List.of()));
+        return readinessService;
     }
 }

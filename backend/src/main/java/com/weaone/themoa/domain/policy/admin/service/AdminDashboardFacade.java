@@ -2,13 +2,13 @@ package com.weaone.themoa.domain.policy.admin.service;
 
 import com.weaone.themoa.domain.policy.admin.dto.AdminJobStatus;
 import com.weaone.themoa.domain.policy.admin.dto.dashboard.AdminDashboardResponse;
+import com.weaone.themoa.domain.policy.admin.dto.response.AdminSearchIndexSummaryResponse;
+import com.weaone.themoa.domain.policy.rag.dto.SearchReadinessResponse;
 import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndexBuilder;
 import com.weaone.themoa.domain.policy.rag.service.PolicySearchProjectionService;
+import com.weaone.themoa.domain.policy.rag.service.SearchReadinessService;
 import com.weaone.themoa.domain.policy.policy.repository.PolicySearchProjectionRepository;
 import org.springframework.stereotype.Service;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * 관리자 운영 화면에 필요한 읽기 전용 상태를 조합한다.
@@ -42,21 +42,23 @@ public class AdminDashboardFacade {
 
     public AdminDashboardResponse dashboard() {
         AdminJobStatus currentJob = jobService.latest().orElse(null);
-        var readiness = readinessService.readiness();
-        var builtAt = lexicalIndexBuilder.cachedBuiltAt();
-        var lastProjectionUpdatedAt = projectionRepository.findLastUpdatedAtByProjectionVersion(PolicySearchProjectionService.VERSION);
-        Map<String, Object> searchIndex = new LinkedHashMap<>();
-        searchIndex.put("ready", readiness.ready());
-        searchIndex.put("documentCount", readiness.lexicalIndexDocumentCount());
-        searchIndex.put("projectionVersion", PolicySearchProjectionService.VERSION);
-        searchIndex.put("projectionCount", readiness.projectionCount());
-        searchIndex.put("missingSnapshotCount", projectionRepository.countByMissingSnapshotTrue());
-        searchIndex.put("builtAt", builtAt == null ? null : builtAt.toString());
-        searchIndex.put("lastProjectionBuiltAt", lastProjectionUpdatedAt == null ? null : lastProjectionUpdatedAt.toString());
-        searchIndex.put("missingSteps", readiness.missingSteps());
-        searchIndex.put("projectionIndexMismatch", readiness.projectionCount() > 0
-                && readiness.lexicalIndexDocumentCount() > 0
-                && readiness.projectionCount() != readiness.lexicalIndexDocumentCount());
+        SearchReadinessResponse readiness = readinessService.readiness();
+        java.time.Instant builtAt = lexicalIndexBuilder.cachedBuiltAt();
+        java.time.LocalDateTime lastProjectionUpdatedAt =
+                projectionRepository.findLastUpdatedAtByProjectionVersion(PolicySearchProjectionService.VERSION);
+        AdminSearchIndexSummaryResponse searchIndex = new AdminSearchIndexSummaryResponse(
+                readiness.ready(),
+                readiness.lexicalIndexDocumentCount(),
+                PolicySearchProjectionService.VERSION,
+                readiness.projectionCount(),
+                projectionRepository.countByMissingSnapshotTrue(),
+                builtAt == null ? null : builtAt.toString(),
+                lastProjectionUpdatedAt == null ? null : lastProjectionUpdatedAt.toString(),
+                readiness.missingSteps(),
+                readiness.projectionCount() > 0
+                        && readiness.lexicalIndexDocumentCount() > 0
+                        && readiness.projectionCount() != readiness.lexicalIndexDocumentCount()
+        );
         return new AdminDashboardResponse(statusService.status(), searchIndex, readiness, currentJob);
     }
 }

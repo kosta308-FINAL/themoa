@@ -1,7 +1,10 @@
 package com.weaone.themoa.domain.policy.policy.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.weaone.themoa.domain.policy.admin.service.JobProgressUpdate;
+import com.weaone.themoa.common.exception.BusinessException;
+import com.weaone.themoa.common.exception.ErrorCode;
+import com.weaone.themoa.domain.policy.common.dto.JobProgressUpdate;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyCollectionError;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyCollectionRun;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyRawData;
@@ -113,7 +116,7 @@ public class YouthCenterPolicyCollectionService {
             if ("RUNNING".equals(run.getStatus())) {
                 run.complete("COMPLETED_MAX_PAGES");
             }
-        } catch (Exception ex) {
+        } catch (RuntimeException ex) {
             run.fail(requestedPages + 1, ex.getMessage());
         }
         runRepository.save(run);
@@ -127,10 +130,9 @@ public class YouthCenterPolicyCollectionService {
         }
     }
 
-    private PageFetchResult fetchPageWithRetries(int page, int pageSize) throws Exception {
+    private PageFetchResult fetchPageWithRetries(int page, int pageSize) {
         int maxRetries = Math.max(0, properties.getCollection().getMaxRetries());
         RuntimeException lastRuntimeException = null;
-        Exception lastException = null;
         int apiRequestCount = 0;
 
         for (int attempt = 0; attempt <= maxRetries; attempt++) {
@@ -157,10 +159,10 @@ public class YouthCenterPolicyCollectionService {
                     throw ex;
                 }
                 sleepQuietly(retryDelayMillis(attempt));
-            } catch (Exception ex) {
-                lastException = ex;
+            } catch (JsonProcessingException ex) {
+                lastRuntimeException = new BusinessException(ErrorCode.POLICY_DATA_SERIALIZATION_FAILED);
                 if (attempt >= maxRetries) {
-                    throw ex;
+                    throw lastRuntimeException;
                 }
                 sleepQuietly(retryDelayMillis(attempt));
             }
@@ -168,7 +170,7 @@ public class YouthCenterPolicyCollectionService {
         if (lastRuntimeException != null) {
             throw lastRuntimeException;
         }
-        throw lastException == null ? new IllegalStateException("페이지 수집에 실패했습니다.") : lastException;
+        throw new BusinessException(ErrorCode.POLICY_EXTERNAL_API_ERROR);
     }
 
     private long retryDelayMillis(int attempt) {

@@ -297,7 +297,8 @@ public class PolicyEligibilityEvaluator {
             return new ApplicantAudienceMatch(ConditionMatchStatus.MATCH, "정책명 정확 검색은 신청 주체 필터를 우회합니다.");
         }
         UserApplicantType userType = userApplicantType(plan);
-        var classification = applicantAudienceClassifier.classifyWithEvidence(policy);
+        PolicyApplicantAudienceClassifier.ApplicantAudienceClassification classification =
+                applicantAudienceClassifier.classifyWithEvidence(policy);
         PolicyApplicantAudience policyAudience = classification.audience();
         String evidence = String.join(", ", classification.evidence());
         if (userType == UserApplicantType.INDIVIDUAL && policyAudience == PolicyApplicantAudience.ORGANIZATION_ONLY) {

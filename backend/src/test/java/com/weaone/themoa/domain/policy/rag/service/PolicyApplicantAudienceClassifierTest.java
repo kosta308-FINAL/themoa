@@ -28,7 +28,8 @@ class PolicyApplicantAudienceClassifierTest {
                 "채용수요가 있는 벤처기업들이 합동으로 취업포털 사이트에 취업 공고를 게시하고 "
                         + "채용박람회를 통해 벤처기업의 우수 인재채용을 지원");
 
-        var result = policyClassifier.classifyWithEvidence(policy);
+        PolicyApplicantAudienceClassifier.ApplicantAudienceClassification result =
+                policyClassifier.classifyWithEvidence(policy);
 
         assertThat(result.audience()).isEqualTo(PolicyApplicantAudience.ORGANIZATION_ONLY);
         assertThat(result.evidence()).contains("기업 신청 주체 근거", "기업 채용 행동 근거");

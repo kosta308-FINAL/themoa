@@ -1,5 +1,7 @@
 package com.weaone.themoa.domain.policy.youthcenter.parser;
 
+import com.weaone.themoa.common.exception.BusinessException;
+import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.policy.common.exception.YouthCenterApiResponseException;
 import com.weaone.themoa.domain.policy.youthcenter.client.ExternalApiResponse;
 import com.weaone.themoa.domain.policy.youthcenter.dto.parsed.ParsedPolicyDetail;
@@ -20,8 +22,11 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -123,12 +128,7 @@ public class YouthCenterResponseParser {
             throw responseException("온통청년 API 오류 응답입니다. " + error.message(), response,
                     ResponseType.JSON, error.code(), error.message());
         }
-        DetailNode detail;
-        try {
-            detail = findCurrentPolicyDetail(root);
-        } catch (IllegalStateException ex) {
-            throw responseException(ex.getMessage(), response, ResponseType.JSON, null, null);
-        }
+        DetailNode detail = findCurrentPolicyDetail(root);
         if (detail.node() == null) {
             throw responseException("상세 응답에서 $.result.youthPolicyList[0] 정책 데이터를 찾지 못했습니다.",
                     response, ResponseType.JSON, null, null);
@@ -182,7 +182,7 @@ public class YouthCenterResponseParser {
         JsonNode list = root.path("result").path("youthPolicyList");
         if (list.isArray()) {
             if (list.isEmpty()) {
-                throw new IllegalStateException("상세 응답의 $.result.youthPolicyList가 빈 배열입니다.");
+                throw new BusinessException(ErrorCode.POLICY_EXTERNAL_RESPONSE_PARSE_ERROR);
             }
             if (list.size() > 1) {
                 warnings.add("상세 응답에 정책이 여러 건 포함되어 첫 번째 정책을 사용했습니다.");
@@ -242,7 +242,7 @@ public class YouthCenterResponseParser {
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             factory.setExpandEntityReferences(false);
             return factory.newDocumentBuilder().parse(new InputSource(new StringReader(response.body())));
-        } catch (Exception ex) {
+        } catch (ParserConfigurationException | SAXException | IOException ex) {
             throw responseException("XML 파싱 오류가 발생했습니다.", response, ResponseType.XML, null, ex.getMessage());
         }
     }

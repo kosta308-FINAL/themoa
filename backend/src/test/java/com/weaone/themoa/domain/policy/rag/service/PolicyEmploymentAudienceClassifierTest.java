@@ -4,6 +4,7 @@ import com.weaone.themoa.domain.policy.policy.domain.Policy;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyCategory;
 import com.weaone.themoa.domain.policy.policy.domain.PolicySearchProjection;
 import com.weaone.themoa.domain.policy.policy.repository.PolicySearchProjectionRepository;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyEmploymentAudience;
 import com.weaone.themoa.domain.policy.rag.dto.UserEmploymentStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -17,7 +18,7 @@ class PolicyEmploymentAudienceClassifierTest {
 
     @Test
     void classifiesUnemployedOnlyPolicy() {
-        var result = classifier.classify(projection("지원 대상: 미취업 청년", ""));
+        PolicyEmploymentAudience result = classifier.classify(projection("지원 대상: 미취업 청년", ""));
 
         assertThat(result.allowedStatuses()).containsExactly(UserEmploymentStatus.UNEMPLOYED);
         assertThat(result.exclusive()).isTrue();
@@ -25,7 +26,7 @@ class PolicyEmploymentAudienceClassifierTest {
 
     @Test
     void classifiesUnemployedOnlyFromQualification() {
-        var result = classifier.classify(projection("", "신청 자격: 현재 재직 중이지 않은 자"));
+        PolicyEmploymentAudience result = classifier.classify(projection("", "신청 자격: 현재 재직 중이지 않은 자"));
 
         assertThat(result.allowedStatuses()).containsExactly(UserEmploymentStatus.UNEMPLOYED);
         assertThat(result.exclusive()).isTrue();
@@ -33,7 +34,7 @@ class PolicyEmploymentAudienceClassifierTest {
 
     @Test
     void classifiesEmployedOnlyPolicy() {
-        var result = classifier.classify(projection("지원 대상: 중소기업 재직 청년", ""));
+        PolicyEmploymentAudience result = classifier.classify(projection("지원 대상: 중소기업 재직 청년", ""));
 
         assertThat(result.allowedStatuses()).containsExactly(UserEmploymentStatus.EMPLOYED);
         assertThat(result.exclusive()).isTrue();
@@ -41,7 +42,7 @@ class PolicyEmploymentAudienceClassifierTest {
 
     @Test
     void generalYouthIsNotExclusiveEmploymentAudience() {
-        var result = classifier.classify(projection("지원 대상: 19세~39세 청년 누구나", ""));
+        PolicyEmploymentAudience result = classifier.classify(projection("지원 대상: 19세~39세 청년 누구나", ""));
 
         assertThat(result.allowedStatuses()).containsExactly(UserEmploymentStatus.UNKNOWN);
         assertThat(result.exclusive()).isFalse();
@@ -49,7 +50,7 @@ class PolicyEmploymentAudienceClassifierTest {
 
     @Test
     void explicitEmploymentIrrelevantAllowsBothStatuses() {
-        var result = classifier.classify(projection("지원 대상: 19세~39세 청년 누구나", "취업 여부 무관"));
+        PolicyEmploymentAudience result = classifier.classify(projection("지원 대상: 19세~39세 청년 누구나", "취업 여부 무관"));
 
         assertThat(result.allowedStatuses()).contains(UserEmploymentStatus.EMPLOYED, UserEmploymentStatus.UNEMPLOYED);
         assertThat(result.exclusive()).isFalse();
@@ -57,7 +58,7 @@ class PolicyEmploymentAudienceClassifierTest {
 
     @Test
     void qualificationRestrictionBeatsGeneralTarget() {
-        var result = classifier.classify(projection("지원 대상: 19~39세 청년", "추가 자격: 현재 미취업자"));
+        PolicyEmploymentAudience result = classifier.classify(projection("지원 대상: 19~39세 청년", "추가 자격: 현재 미취업자"));
 
         assertThat(result.allowedStatuses()).containsExactly(UserEmploymentStatus.UNEMPLOYED);
         assertThat(result.exclusive()).isTrue();
@@ -65,7 +66,7 @@ class PolicyEmploymentAudienceClassifierTest {
 
     @Test
     void internshipTitleAloneDoesNotBecomeUnemployedOnly() {
-        var result = classifier.classify(projectionWithTitle("청년 인턴십", "지원 대상: 19세~39세 청년", ""));
+        PolicyEmploymentAudience result = classifier.classify(projectionWithTitle("청년 인턴십", "지원 대상: 19세~39세 청년", ""));
 
         assertThat(result.allowedStatuses().size() == 1
                 && result.allowedStatuses().contains(UserEmploymentStatus.UNEMPLOYED)).isFalse();
@@ -74,7 +75,7 @@ class PolicyEmploymentAudienceClassifierTest {
 
     @Test
     void missingTargetIsUnknown() {
-        var result = classifier.classify(projection("", ""));
+        PolicyEmploymentAudience result = classifier.classify(projection("", ""));
 
         assertThat(result.allowedStatuses()).containsExactly(UserEmploymentStatus.UNKNOWN);
         assertThat(result.exclusive()).isFalse();

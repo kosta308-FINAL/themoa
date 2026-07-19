@@ -3,6 +3,7 @@ package com.weaone.themoa.domain.policy.rag.service;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyQuerySemantics;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchCondition;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchMode;
+import com.weaone.themoa.domain.policy.rag.dto.PolicySearchPlan;
 import com.weaone.themoa.domain.policy.rag.dto.SearchDomain;
 import com.weaone.themoa.domain.policy.rag.dto.SupportIntent;
 import com.weaone.themoa.domain.policy.rag.dto.BenefitGroup;
@@ -29,7 +30,7 @@ class PolicySearchPlanServiceTest {
         stub("지원금", condition(null, Set.of("CASH", "ALLOWANCE", "SUBSIDY")),
                 semantics(Set.of(), Set.of("지원금")));
 
-        var plan = service.build("지원금", 20).plan();
+        PolicySearchPlan plan = service.build("지원금", 20).plan();
 
         assertThat(plan.desiredSupportIntents()).contains(SupportIntent.CASH_ASSISTANCE, SupportIntent.ALLOWANCE);
         assertThat(plan.benefitGroups()).contains(BenefitGroup.ECONOMIC_SUPPORT);
@@ -39,7 +40,7 @@ class PolicySearchPlanServiceTest {
     void genericGrantDoesNotForceFinanceDomain() {
         stub("지원금 알려줘", condition(null, Set.of("CASH")), semantics(Set.of(SearchDomain.FINANCE), Set.of("지원금")));
 
-        var plan = service.build("지원금 알려줘", 20).plan();
+        PolicySearchPlan plan = service.build("지원금 알려줘", 20).plan();
 
         assertThat(plan.desiredDomains()).doesNotContain(SearchDomain.FINANCE);
         assertThat(plan.desiredSupportIntents()).contains(SupportIntent.CASH_ASSISTANCE);
@@ -75,7 +76,7 @@ class PolicySearchPlanServiceTest {
                 Set.of("금융", "대출"),
                 true));
 
-        var plan = service.build(query, 20).plan();
+        PolicySearchPlan plan = service.build(query, 20).plan();
 
         assertThat(plan.desiredDomains()).contains(SearchDomain.CULTURE, SearchDomain.WELFARE);
         assertThat(plan.excludedDomains()).contains(SearchDomain.FINANCE);

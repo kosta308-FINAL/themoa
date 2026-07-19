@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PolicySearchConditionTest {
     @Test
     void normalizesOpenAiEmptyDefaults() {
-        var condition = new PolicySearchCondition(" 제주도 ", "", " ", 0,
+        PolicySearchCondition condition = new PolicySearchCondition(" 제주도 ", "", " ", 0,
                 "", false, "", "청년", Set.of(), Set.of("월세"), 10);
 
         assertThat(condition.province()).isEqualTo("제주도");

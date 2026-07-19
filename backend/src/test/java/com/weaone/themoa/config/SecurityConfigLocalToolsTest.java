@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import testsupport.SecurityTestController;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -27,7 +28,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         JwtAuthenticationEntryPoint.class,
         JwtAccessDeniedHandler.class,
         SecurityErrorResponder.class,
-        SecurityConfigTest.SecurityTestBeans.class
+        SecurityConfigTest.SecurityTestBeans.class,
+        SecurityTestController.class
 })
 class SecurityConfigLocalToolsTest {
 
@@ -51,11 +53,11 @@ class SecurityConfigLocalToolsTest {
     }
 
     @Test
-    @DisplayName("local tools enabled면 인증 없이 정책 원문 API에 접근 가능하다")
-    void policyRawIsPublicWhenLocalToolsEnabled() throws Exception {
+    @DisplayName("local tools enabled여도 일반 사용자 정책 원문 API는 공개하지 않는다")
+    void policyRawIsNotPublicWhenLocalToolsEnabled() throws Exception {
         mockMvc.perform(get("/api/policies/1/raw"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").value("raw"));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTH_INVALID_ACCESS_TOKEN"));
     }
 
     @Test

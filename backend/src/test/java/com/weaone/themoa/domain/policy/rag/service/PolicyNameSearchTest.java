@@ -59,7 +59,7 @@ class PolicyNameSearchTest {
                 mock(RegionEligiblePolicyCandidateService.class), projectionRepository);
 
         for (String query : List.of("K-패스", "K패스", "k 패스", "k-패스")) {
-            var collection = retriever.retrieve(plan(query), intent(query), null, 0, 10, 10);
+            PolicyCandidateCollection collection = retriever.retrieve(plan(query), intent(query), null, 0, 10, 10);
 
             assertThat(collection.policies()).extracting(Policy::getTitle).containsExactly("K-패스(K패스)");
             assertThat(collection.metrics().titleSearchMode()).isEqualTo("EXACT_TITLE");

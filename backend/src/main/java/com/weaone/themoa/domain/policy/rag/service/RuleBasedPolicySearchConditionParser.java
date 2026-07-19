@@ -2,7 +2,9 @@ package com.weaone.themoa.domain.policy.rag.service;
 
 import com.weaone.themoa.domain.policy.policy.region.UserRegionTextResolver;
 import com.weaone.themoa.domain.policy.policy.region.UserRegionContext;
+import com.weaone.themoa.domain.policy.policy.region.UserRegionResolution;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchCondition;
+import com.weaone.themoa.domain.policy.rag.dto.UserEmploymentStatusResult;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
@@ -33,7 +35,7 @@ public class RuleBasedPolicySearchConditionParser {
         String rawRegionText = null;
         String regionResolutionStatus = null;
         UserRegionContext regionContext = userRegionTextResolver.resolveContext(text);
-        var region = regionContext.residence();
+        UserRegionResolution region = regionContext.residence();
         if (region.resolved()) {
             province = region.province();
             city = region.city();
@@ -57,14 +59,14 @@ public class RuleBasedPolicySearchConditionParser {
             inferredMinimumAge = 17;
             inferredMaximumAge = 18;
         }
-        var detectedEmployment = employmentStatusDetector.detect(text);
+        UserEmploymentStatusResult detectedEmployment = employmentStatusDetector.detect(text);
         String employment = detectedEmployment.explicit() ? detectedEmployment.status().name() : null;
         Boolean student = null;
         if (containsAny(text, "대학생", "재학생", "휴학생", "고3", "고등학생", "고교생")) {
             student = true;
         }
         String category = null;
-        var polarity = polarityDetector.detect(text);
+        PolicyIntentPolarityDetector.IntentPolarityResult polarity = polarityDetector.detect(text);
         String positiveText = polarity.excludedDomains().isEmpty()
                 ? text
                 : String.join(" ", polarity.positiveTerms());

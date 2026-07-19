@@ -7,6 +7,7 @@ import com.weaone.themoa.domain.policy.policy.region.RegionCatalog;
 import com.weaone.themoa.domain.policy.policy.region.RegionNormalizer;
 import com.weaone.themoa.domain.policy.policy.region.UserRegionTextResolver;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
+import com.weaone.themoa.domain.policy.rag.dto.PolicySearchCondition;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.ObjectProvider;
@@ -39,7 +40,7 @@ class CompositePolicySearchConditionParserTest {
         CompositePolicySearchConditionParser parser = parser(openAi(null, "서울특별시", null, null,
                 null, "UNKNOWN", null));
 
-        var parsed = parser.parse(query, 20).condition();
+        PolicySearchCondition parsed = parser.parse(query, 20).condition();
 
         assertThat(parsed.province()).isEqualTo("경기도");
         assertThat(parsed.city()).isEqualTo("수원시");
@@ -52,7 +53,7 @@ class CompositePolicySearchConditionParserTest {
     void openAiPathKeepsHighSchoolInferredAgeAndUnemployedSlang() {
         CompositePolicySearchConditionParser highSchoolParser = parser(openAi(null, "경기도", null, null,
                 null, "UNKNOWN", null));
-        var highSchool = highSchoolParser.parse("경기도에 사는 고3인데 취업 관련 지원이 궁금해", 20).condition();
+        PolicySearchCondition highSchool = highSchoolParser.parse("경기도에 사는 고3인데 취업 관련 지원이 궁금해", 20).condition();
 
         assertThat(highSchool.province()).isEqualTo("경기도");
         assertThat(highSchool.ageExplicit()).isFalse();
@@ -61,7 +62,7 @@ class CompositePolicySearchConditionParserTest {
 
         CompositePolicySearchConditionParser unemployedParser = parser(openAi(null, null, null, null,
                 null, "UNKNOWN", null));
-        var unemployed = unemployedParser.parse("나 지금 백수인데 서울에서 받을 수 있는 지원금 있어?", 20).condition();
+        PolicySearchCondition unemployed = unemployedParser.parse("나 지금 백수인데 서울에서 받을 수 있는 지원금 있어?", 20).condition();
 
         assertThat(unemployed.province()).isEqualTo("서울특별시");
         assertThat(unemployed.employmentStatus()).isEqualTo("UNEMPLOYED");
@@ -73,7 +74,7 @@ class CompositePolicySearchConditionParserTest {
         CompositePolicySearchConditionParser parser = parser(openAi(null, "서울특별시", null, null,
                 null, null, null));
 
-        var condition = parser.parse("서울에서 일하고 있지만 사는 곳은 인천이야. 지역 지원 정책을 찾아줘.", 20).condition();
+        PolicySearchCondition condition = parser.parse("서울에서 일하고 있지만 사는 곳은 인천이야. 지역 지원 정책을 찾아줘.", 20).condition();
 
         assertThat(condition.province()).isEqualTo("인천광역시");
         assertThat(condition.workplaceProvince()).isEqualTo("서울특별시");

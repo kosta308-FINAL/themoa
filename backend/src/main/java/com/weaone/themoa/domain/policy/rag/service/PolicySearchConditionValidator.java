@@ -5,8 +5,11 @@ import com.weaone.themoa.domain.policy.rag.dto.PolicySearchMode;
 import com.weaone.themoa.domain.policy.policy.region.UserRegionContext;
 import com.weaone.themoa.domain.policy.policy.region.UserRegionResolution;
 import com.weaone.themoa.domain.policy.policy.region.UserRegionTextResolver;
+import com.weaone.themoa.domain.policy.rag.dto.UserEmploymentStatusResult;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+
+import java.util.Set;
 
 @Component
 public class PolicySearchConditionValidator {
@@ -30,12 +33,12 @@ public class PolicySearchConditionValidator {
         UserRegionResolution resolvedRegion = resolveRegion(query, parsed, regionContext);
         boolean regionExplicit = resolvedRegion.resolved();
         boolean ageExplicit = explicitDetector.ageExplicit(query);
-        var detectedEmployment = employmentStatusDetector.detect(query);
+        UserEmploymentStatusResult detectedEmployment = employmentStatusDetector.detect(query);
         boolean employmentExplicit = detectedEmployment.explicit();
         boolean studentExplicit = explicitDetector.studentExplicit(query);
         boolean categoryExplicit = explicitDetector.categoryExplicit(query);
         boolean supportTypeExplicit = explicitDetector.supportTypeExplicit(query);
-        var keywords = keywordExtractor.extract(query, parsed == null ? null : parsed.keywords());
+        PolicyKeywordExtractor.KeywordSet keywords = keywordExtractor.extract(query, parsed == null ? null : parsed.keywords());
 
         String province = regionExplicit ? resolvedRegion.province() : null;
         String city = regionExplicit ? resolvedRegion.city() : null;
@@ -46,7 +49,7 @@ public class PolicySearchConditionValidator {
                 : employmentFromParsedWithEvidence(query, parsed);
         Boolean student = studentExplicit && parsed != null ? parsed.studentStatus() : null;
         String category = parsed == null ? null : parsed.category();
-        var supportTypes = parsed == null ? java.util.Set.<String>of() : parsed.supportTypes();
+        Set<String> supportTypes = parsed == null ? java.util.Set.<String>of() : parsed.supportTypes();
         PolicySearchMode mode = mode(regionExplicit, ageExplicit, employmentExplicit, studentExplicit,
                 StringUtils.hasText(category) || !supportTypes.isEmpty(), !keywords.coreKeywords().isEmpty());
         return new PolicySearchCondition(province, city, district, age, employment, student,
@@ -71,7 +74,7 @@ public class PolicySearchConditionValidator {
         if (parsed == null || !StringUtils.hasText(parsed.employmentStatus())) {
             return null;
         }
-        var detected = employmentStatusDetector.detect(query);
+        UserEmploymentStatusResult detected = employmentStatusDetector.detect(query);
         if (detected.explicit()) {
             return detected.status().name();
         }

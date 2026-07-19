@@ -1,6 +1,7 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
 import com.weaone.themoa.domain.policy.rag.dto.EducationStage;
+import com.weaone.themoa.domain.policy.rag.dto.UserEducationStageCondition;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -10,7 +11,7 @@ class UserEducationStageDetectorTest {
 
     @Test
     void detectsUniversityWhenUserSaysCollegeStudentJobSeeker() {
-        var result = detector.detect("대학생 취준생이 받을 수 있는 혜택");
+        UserEducationStageCondition result = detector.detect("대학생 취준생이 받을 수 있는 혜택");
 
         assertThat(result.explicit()).isTrue();
         assertThat(result.stages()).contains(EducationStage.UNIVERSITY);
@@ -18,7 +19,7 @@ class UserEducationStageDetectorTest {
 
     @Test
     void doesNotInferEducationStageFromAgeAndJobSeeker() {
-        var result = detector.detect("22살 취준생");
+        UserEducationStageCondition result = detector.detect("22살 취준생");
 
         assertThat(result.explicit()).isFalse();
         assertThat(result.stages()).containsExactly(EducationStage.UNKNOWN);
@@ -26,7 +27,7 @@ class UserEducationStageDetectorTest {
 
     @Test
     void detectsHighSchoolStudent() {
-        var result = detector.detect("고등학생 취업 지원");
+        UserEducationStageCondition result = detector.detect("고등학생 취업 지원");
 
         assertThat(result.explicit()).isTrue();
         assertThat(result.stages()).contains(EducationStage.HIGH_SCHOOL);
@@ -34,7 +35,7 @@ class UserEducationStageDetectorTest {
 
     @Test
     void detectsHighSchoolThirdGrade() {
-        var result = detector.detect("경기도에 사는 고3인데 직업교육 지원 정책이 궁금해");
+        UserEducationStageCondition result = detector.detect("경기도에 사는 고3인데 직업교육 지원 정책이 궁금해");
 
         assertThat(result.explicit()).isTrue();
         assertThat(result.stages()).contains(EducationStage.HIGH_SCHOOL);
@@ -42,7 +43,7 @@ class UserEducationStageDetectorTest {
 
     @Test
     void universityGraduationIsNotCurrentUniversityStudent() {
-        var result = detector.detect("대학교 졸업 후 취준 중");
+        UserEducationStageCondition result = detector.detect("대학교 졸업 후 취준 중");
 
         assertThat(result.explicit()).isFalse();
         assertThat(result.stages()).containsExactly(EducationStage.UNKNOWN);

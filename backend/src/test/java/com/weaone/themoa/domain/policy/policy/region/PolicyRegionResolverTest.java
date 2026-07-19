@@ -24,7 +24,7 @@ class PolicyRegionResolverTest {
 
     @Test
     void noRegionEvidenceIsUnknown() {
-        var result = resolver.resolve(Map.of("plcyNm", "청년 자립 지원"));
+        PolicyRegionResolution result = resolver.resolve(Map.of("plcyNm", "청년 자립 지원"));
 
         assertThat(result.scope()).isEqualTo(RegionScope.UNKNOWN);
         assertThat(result.regionCodes()).isEmpty();
@@ -52,7 +52,7 @@ class PolicyRegionResolverTest {
 
     @Test
     void titleRegionWinsOverLowerPriorityContent() {
-        var result = resolver.resolve(Map.of(
+        PolicyRegionResolution result = resolver.resolve(Map.of(
                 "plcyNm", "미추홀구 청년 면접수당",
                 "plcySprtCn", "경기도 사례를 참고한 청년 지원 사업"
         ));
@@ -80,7 +80,7 @@ class PolicyRegionResolverTest {
 
     private RegionCodeRepository repository() {
         RegionCodeRepository repo = mock(RegionCodeRepository.class);
-        var regions = FakeRegionData.regions();
+        List<RegionCode> regions = FakeRegionData.regions();
         when(repo.findAll()).thenReturn(regions);
         for (RegionCode region : regions) {
             when(repo.findByRegionCode(region.getRegionCode())).thenReturn(Optional.of(region));

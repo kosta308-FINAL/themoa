@@ -1,11 +1,11 @@
-package com.weaone.themoa.domain.policy.admin.service;
+package com.weaone.themoa.domain.policy.rag.service;
 
 import com.weaone.themoa.domain.policy.policy.repository.PolicyEmbeddingSyncRepository;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import com.weaone.themoa.domain.policy.policy.repository.PolicySearchProjectionRepository;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
 import com.weaone.themoa.domain.policy.rag.config.RagProperties;
-import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndexBuilder;
+import com.weaone.themoa.domain.policy.rag.dto.SearchReadinessResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.ObjectProvider;
@@ -34,7 +34,7 @@ class SearchReadinessServiceTest {
         when(embeddingRepository.countBySyncStatus("SYNCED")).thenReturn(2650L);
         when(vectorStoreProvider.getIfAvailable()).thenReturn(mock(VectorStore.class));
 
-        var readiness = service().readiness();
+        SearchReadinessResponse readiness = service().readiness();
 
         assertThat(readiness.ready()).isFalse();
         assertThat(readiness.missingSteps()).contains("SEARCH_PROJECTION_REBUILD", "SEARCH_INDEX_REFRESH");
@@ -50,7 +50,7 @@ class SearchReadinessServiceTest {
         when(embeddingRepository.countBySyncStatus("SYNCED")).thenReturn(2650L);
         when(vectorStoreProvider.getIfAvailable()).thenReturn(mock(VectorStore.class));
 
-        var readiness = service().readiness();
+        SearchReadinessResponse readiness = service().readiness();
 
         assertThat(readiness.ready()).isTrue();
         assertThat(readiness.missingSteps()).isEmpty();

@@ -1,6 +1,7 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weaone.themoa.domain.policy.policy.domain.Policy;
 import com.weaone.themoa.domain.policy.policy.domain.PolicySearchProjection;
@@ -170,7 +171,7 @@ public class PolicyApplicantAudienceClassifier {
                     text(fields, "plcyAplyMthdCn"),
                     text(fields, "plcySprtCn"),
                     text(fields, "plcyExplnCn"));
-        } catch (Exception ignored) {
+        } catch (JsonProcessingException ignored) {
             return snapshot.getRawPolicyJson();
         }
     }

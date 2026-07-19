@@ -156,7 +156,8 @@ public class PolicySearchCandidateRetriever {
         int generalVectorCandidateCount = collectGeneralBenefitVectorCandidates(plan, vectorStore, vectorCache, semanticScores,
                 candidateSources, sourceEvidence, generalVectorCounts);
 
-        var lexical = lexicalSearchService.search(condition, intent, properties.getSearch().getRetryTopK());
+        PolicyLexicalSearchService.LexicalSearchResult lexical =
+                lexicalSearchService.search(condition, intent, properties.getSearch().getRetryTopK());
         Map<Integer, Double> lexicalScores = new LinkedHashMap<>(lexical.lexicalScores());
         Map<Integer, Double> titleExactScores = new LinkedHashMap<>(lexical.titleExactScores());
         for (int i = 0; i < lexical.policyIds().size(); i++) {
@@ -413,7 +414,7 @@ public class PolicySearchCandidateRetriever {
 
     private Map<Integer, Double> semanticScores(Map<CandidateSource, List<Document>> documentsBySource) {
         Map<Integer, Double> scores = new LinkedHashMap<>();
-        for (var entry : documentsBySource.entrySet()) {
+        for (Map.Entry<CandidateSource, List<Document>> entry : documentsBySource.entrySet()) {
             double weight = switch (entry.getKey()) {
                 case VECTOR_ORIGINAL_QUERY -> 1.0;
                 case VECTOR_NORMALIZED_QUERY -> 0.95;
@@ -457,7 +458,7 @@ public class PolicySearchCandidateRetriever {
 
     private Map<Integer, Set<CandidateSource>> candidateSources(Map<CandidateSource, List<Document>> documentsBySource) {
         Map<Integer, Set<CandidateSource>> sources = new LinkedHashMap<>();
-        for (var entry : documentsBySource.entrySet()) {
+        for (Map.Entry<CandidateSource, List<Document>> entry : documentsBySource.entrySet()) {
             for (Document document : entry.getValue()) {
                 Integer policyId = policyId(document);
                 if (policyId != null) {
@@ -471,7 +472,7 @@ public class PolicySearchCandidateRetriever {
     private Map<Integer, List<CandidateSourceEvidence>> sourceEvidence(Map<CandidateSource, List<Document>> documentsBySource,
                                                                        Map<CandidateSource, String> variantsBySource) {
         Map<Integer, List<CandidateSourceEvidence>> evidence = new LinkedHashMap<>();
-        for (var entry : documentsBySource.entrySet()) {
+        for (Map.Entry<CandidateSource, List<Document>> entry : documentsBySource.entrySet()) {
             List<Document> documents = entry.getValue();
             for (int i = 0; i < documents.size(); i++) {
                 Document document = documents.get(i);
@@ -561,7 +562,8 @@ public class PolicySearchCandidateRetriever {
         for (EconomicSubQuery query : economicSubQueries(plan)) {
             PolicySearchIntent subIntent = new PolicySearchIntent(plan.originalQuery(), Set.of(), Set.of(query.label()),
                     Set.copyOf(query.terms()), query.query(), String.join(" ", query.terms()));
-            var result = lexicalSearchService.search(condition, subIntent, Math.min(50, properties.getSearch().getRetryTopK()));
+            PolicyLexicalSearchService.LexicalSearchResult result =
+                    lexicalSearchService.search(condition, subIntent, Math.min(50, properties.getSearch().getRetryTopK()));
             total += result.policyIds().size();
             for (int i = 0; i < result.policyIds().size(); i++) {
                 Integer policyId = result.policyIds().get(i);
@@ -623,7 +625,7 @@ public class PolicySearchCandidateRetriever {
         for (GeneralBenefitSubQuery query : generalBenefitSubQueries()) {
             PolicySearchIntent subIntent = new PolicySearchIntent(plan.originalQuery(), Set.of(), Set.of(query.label()),
                     Set.copyOf(query.terms()), query.query(), String.join(" ", query.terms()));
-            var result = lexicalSearchService.search(condition, subIntent, 20);
+            PolicyLexicalSearchService.LexicalSearchResult result = lexicalSearchService.search(condition, subIntent, 20);
             counts.put(query.name(), result.policyIds().size());
             total += result.policyIds().size();
             for (int i = 0; i < result.policyIds().size(); i++) {

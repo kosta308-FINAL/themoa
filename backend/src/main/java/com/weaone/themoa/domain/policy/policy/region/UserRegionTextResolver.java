@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
@@ -104,7 +105,7 @@ public class UserRegionTextResolver {
     private UserRegionResolution firstMatch(String text, List<Pattern> patterns, UserRegionRole role,
                                             List<UserRegionMention> mentions) {
         for (Pattern pattern : patterns) {
-            var matcher = pattern.matcher(text);
+            Matcher matcher = pattern.matcher(text);
             while (matcher.find()) {
                 String evidence = matcher.group(1);
                 UserRegionResolution resolution = resolve(evidence);

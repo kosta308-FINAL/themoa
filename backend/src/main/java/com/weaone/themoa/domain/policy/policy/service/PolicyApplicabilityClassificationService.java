@@ -1,6 +1,7 @@
 package com.weaone.themoa.domain.policy.policy.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weaone.themoa.domain.policy.policy.domain.Policy;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyEmbeddingSync;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 정책의 신청 가능 지역을 판정하는 단일 진입점이다.
@@ -57,7 +59,7 @@ public class PolicyApplicabilityClassificationService {
                                                                 boolean enqueueChangedPolicy) {
         PolicyRegionClassificationResult classification = geographyClassifier.classify(fields);
         classificationStore.save(policy, classification);
-        var syncResult = regionSyncService.syncRegions(policy, classification.toResolution());
+        PolicyRegionSyncService.RegionSyncResult syncResult = regionSyncService.syncRegions(policy, classification.toResolution());
         boolean queued = syncResult.changed() && enqueueChangedPolicy && queueEmbedding(policy);
         return new ApplicabilityClassificationResult(classification, syncResult.changed(),
                 syncResult.addedCount(), syncResult.removedCount(), queued, false, false);
@@ -86,13 +88,14 @@ public class PolicyApplicabilityClassificationService {
     }
 
     private FieldSource fields(Policy policy) {
-        var snapshot = snapshotRepository.findByPolicyId(policy.getId());
+        Optional<com.weaone.themoa.domain.policy.policy.domain.PolicySourceSnapshot> snapshot =
+                snapshotRepository.findByPolicyId(policy.getId());
         if (snapshot.isPresent()) {
             try {
                 Map<String, Object> fields = objectMapper.readValue(snapshot.get().getRawPolicyJson(), new TypeReference<>() {
                 });
                 return new FieldSource(fields, true, false);
-            } catch (Exception ex) {
+            } catch (JsonProcessingException ex) {
                 log.warn("Policy source snapshot parse failed. policyId={}", policy.getId(), ex);
             }
         }

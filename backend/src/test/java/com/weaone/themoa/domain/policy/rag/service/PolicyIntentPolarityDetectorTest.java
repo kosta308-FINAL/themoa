@@ -10,7 +10,7 @@ class PolicyIntentPolarityDetectorTest {
 
     @Test
     void detectsEmploymentExclusionWithoutTreatingItAsDesiredEmployment() {
-        var result = detector.detect("""
+        PolicyIntentPolarityDetector.IntentPolarityResult result = detector.detect("""
                 난 수원에 살고 있고 22살 대학생이야.
                 현재 대학교 근로소득은 없는데 내가 받을 수 있는 정책 혜택이 있을까?
                 단 취업 생각은 아직 없어.
@@ -24,7 +24,7 @@ class PolicyIntentPolarityDetectorTest {
 
     @Test
     void keepsPositiveEmploymentRequestSeparateFromEmploymentStateNegation() {
-        var result = detector.detect("현재 취업은 안 했지만 취업 지원 정책을 찾고 있어.");
+        PolicyIntentPolarityDetector.IntentPolarityResult result = detector.detect("현재 취업은 안 했지만 취업 지원 정책을 찾고 있어.");
 
         assertThat(result.desiredDomains()).contains(SearchDomain.EMPLOYMENT);
         assertThat(result.excludedDomains()).doesNotContain(SearchDomain.EMPLOYMENT);
@@ -32,7 +32,7 @@ class PolicyIntentPolarityDetectorTest {
 
     @Test
     void detectsDomainReplacement() {
-        var result = detector.detect("취업 정책 말고 대학생 월세 정책을 찾아줘.");
+        PolicyIntentPolarityDetector.IntentPolarityResult result = detector.detect("취업 정책 말고 대학생 월세 정책을 찾아줘.");
 
         assertThat(result.excludedDomains()).contains(SearchDomain.EMPLOYMENT);
         assertThat(result.desiredDomains()).contains(SearchDomain.HOUSING);

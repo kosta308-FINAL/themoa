@@ -1,13 +1,11 @@
-package com.weaone.themoa.domain.policy.admin.service;
+package com.weaone.themoa.domain.policy.rag.service;
 
-import com.weaone.themoa.domain.policy.admin.dto.SearchReadinessResponse;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyEmbeddingSyncRepository;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import com.weaone.themoa.domain.policy.policy.repository.PolicySearchProjectionRepository;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
 import com.weaone.themoa.domain.policy.rag.config.RagProperties;
-import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndexBuilder;
-import com.weaone.themoa.domain.policy.rag.service.PolicySearchProjectionService;
+import com.weaone.themoa.domain.policy.rag.dto.SearchReadinessResponse;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;

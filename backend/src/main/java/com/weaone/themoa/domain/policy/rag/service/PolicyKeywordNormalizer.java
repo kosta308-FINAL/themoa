@@ -6,6 +6,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
@@ -32,7 +33,7 @@ public class PolicyKeywordNormalizer {
             aliases.add(canonical.replace("-", ""));
             aliases.add(canonical.replaceAll("\\s+", ""));
         }
-        var matcher = PARENTHESIS.matcher(displayTitle);
+        Matcher matcher = PARENTHESIS.matcher(displayTitle);
         while (matcher.find()) {
             for (int i = 1; i <= matcher.groupCount(); i++) {
                 String alias = matcher.group(i);

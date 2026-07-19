@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,14 +38,14 @@ class SgisRegionClientTest {
         server.enqueue(json("""
                 {"errCd":"0","errMsg":"Success","result":[{"cd":"47850","addr_name":"칠곡군","full_addr":"경상북도 칠곡군"}]}
                 """));
-        var properties = properties();
-        var retryExecutor = new SgisRetryExecutor(properties);
-        var authClient = new SgisAuthenticationClient(properties, retryExecutor);
-        var tokenManager = new SgisAccessTokenManager(authClient);
-        var regionClient = new SgisRegionClient(properties, tokenManager, retryExecutor);
+        RegionSyncProperties properties = properties();
+        SgisRetryExecutor retryExecutor = new SgisRetryExecutor(properties);
+        SgisAuthenticationClient authClient = new SgisAuthenticationClient(properties, retryExecutor);
+        SgisAccessTokenManager tokenManager = new SgisAccessTokenManager(authClient);
+        SgisRegionClient regionClient = new SgisRegionClient(properties, tokenManager, retryExecutor);
 
-        var provinces = regionClient.fetchProvinces();
-        var children = regionClient.fetchChildren("47");
+        List<com.weaone.themoa.domain.policy.region.sgis.dto.SgisRegionItem> provinces = regionClient.fetchProvinces();
+        List<com.weaone.themoa.domain.policy.region.sgis.dto.SgisRegionItem> children = regionClient.fetchChildren("47");
 
         assertThat(provinces).extracting("cd").containsExactly("47");
         assertThat(children).extracting("addrName").containsExactly("칠곡군");
@@ -62,9 +63,9 @@ class SgisRegionClientTest {
         server.enqueue(json("""
                 {"errCd":"-1","errMsg":"SGIS error","result":[]}
                 """));
-        var properties = properties();
-        var retryExecutor = new SgisRetryExecutor(properties);
-        var regionClient = new SgisRegionClient(properties,
+        RegionSyncProperties properties = properties();
+        SgisRetryExecutor retryExecutor = new SgisRetryExecutor(properties);
+        SgisRegionClient regionClient = new SgisRegionClient(properties,
                 new SgisAccessTokenManager(new SgisAuthenticationClient(properties, retryExecutor)), retryExecutor);
 
         assertThatThrownBy(regionClient::fetchProvinces)

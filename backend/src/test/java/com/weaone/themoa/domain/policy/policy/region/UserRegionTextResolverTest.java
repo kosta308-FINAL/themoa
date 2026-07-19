@@ -29,7 +29,7 @@ class UserRegionTextResolverTest {
     void distinguishesAmbiguousShortNames() {
         assertThat(resolver.resolve("광주").status()).isEqualTo(UserRegionResolutionStatus.AMBIGUOUS);
         assertThat(resolver.resolve("광주광역시").province()).isEqualTo("광주광역시");
-        var gyeonggiGwangju = resolver.resolve("경기도 광주");
+        UserRegionResolution gyeonggiGwangju = resolver.resolve("경기도 광주");
         assertThat(gyeonggiGwangju.status()).isEqualTo(UserRegionResolutionStatus.EXACT);
         assertThat(gyeonggiGwangju.province()).isEqualTo("경기도");
         assertThat(gyeonggiGwangju.city()).isEqualTo("광주시");
@@ -37,22 +37,22 @@ class UserRegionTextResolverTest {
 
     @Test
     void separatesResidenceAndWorkplaceRegions() {
-        var commute = resolver.resolveContext("수원에 살고 서울로 출근하는 29살 직장인이야");
+        UserRegionContext commute = resolver.resolveContext("수원에 살고 서울로 출근하는 29살 직장인이야");
         assertThat(commute.residence().province()).isEqualTo("경기도");
         assertThat(commute.residence().city()).isEqualTo("수원시");
         assertThat(commute.workplace().province()).isEqualTo("서울특별시");
 
-        var livingInIncheon = resolver.resolveContext("서울에서 일하고 있지만 사는 곳은 인천이야");
+        UserRegionContext livingInIncheon = resolver.resolveContext("서울에서 일하고 있지만 사는 곳은 인천이야");
         assertThat(livingInIncheon.residence().province()).isEqualTo("인천광역시");
         assertThat(livingInIncheon.workplace().province()).isEqualTo("서울특별시");
 
-        var workplaceOnly = resolver.resolveContext("서울 회사에 다니고 있어");
+        UserRegionContext workplaceOnly = resolver.resolveContext("서울 회사에 다니고 있어");
         assertThat(workplaceOnly.residence().resolved()).isFalse();
         assertThat(workplaceOnly.workplace().province()).isEqualTo("서울특별시");
     }
 
     private void assertResolved(String query, String province, String city) {
-        var result = resolver.resolve(query);
+        UserRegionResolution result = resolver.resolve(query);
         assertThat(result.resolved()).isTrue();
         assertThat(result.province()).isEqualTo(province);
         assertThat(result.city()).isEqualTo(city);

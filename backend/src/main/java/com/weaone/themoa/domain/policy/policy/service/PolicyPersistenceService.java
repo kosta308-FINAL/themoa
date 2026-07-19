@@ -1,5 +1,7 @@
 package com.weaone.themoa.domain.policy.policy.service;
 
+import com.weaone.themoa.common.exception.BusinessException;
+import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.policy.policy.domain.Policy;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyCondition;
 import com.weaone.themoa.domain.policy.policy.domain.PolicySource;
@@ -40,7 +42,7 @@ public class PolicyPersistenceService {
         Map<String, Object> fields = item.fields();
         String sourcePolicyId = firstText(item.policyNumber(), normalizer.text(fields, "plcyNo"));
         if (!StringUtils.hasText(sourcePolicyId)) {
-            throw new IllegalArgumentException("온통청년 정책 번호(plcyNo)가 없습니다.");
+            throw new BusinessException(ErrorCode.POLICY_EXTERNAL_RESPONSE_PARSE_ERROR);
         }
 
         Policy policy = policyRepository.findBySourceTypeAndSourcePolicyId(PolicySource.YOUTH_CENTER.name(), sourcePolicyId)

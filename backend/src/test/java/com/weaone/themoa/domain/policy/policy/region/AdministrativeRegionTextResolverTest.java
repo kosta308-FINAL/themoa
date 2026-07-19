@@ -32,7 +32,7 @@ class AdministrativeRegionTextResolverTest {
 
     @Test
     void doesNotResolveSidoAliasAsChildDistrict() {
-        var result = resolver.resolve("서울에 사는 청년");
+        UserRegionResolution result = resolver.resolve("서울에 사는 청년");
 
         assertThat(result.resolved()).isTrue();
         assertThat(result.regionLevel()).isEqualTo(SearchRegionLevel.SIDO);
@@ -42,7 +42,7 @@ class AdministrativeRegionTextResolverTest {
 
     @Test
     void resolvesNationwideExpressionAsNationwideScope() {
-        var result = resolver.resolve("전국 청년 지원 정책");
+        UserRegionResolution result = resolver.resolve("전국 청년 지원 정책");
 
         assertThat(result.resolved()).isTrue();
         assertThat(result.regionLevel()).isEqualTo(SearchRegionLevel.NATIONWIDE);
@@ -64,7 +64,7 @@ class AdministrativeRegionTextResolverTest {
 
     @Test
     void normalizesGeneralCityDistrictToParentCity() {
-        var result = resolver.resolve("영통구에 사는 청년");
+        UserRegionResolution result = resolver.resolve("영통구에 사는 청년");
 
         assertThat(result.resolved()).isTrue();
         assertThat(result.regionLevel()).isEqualTo(SearchRegionLevel.SIGUNGU);
@@ -74,7 +74,7 @@ class AdministrativeRegionTextResolverTest {
 
     @Test
     void keepsMetropolitanAutonomousDistrictAsSigungu() {
-        var result = resolver.resolve("강남구 청년");
+        UserRegionResolution result = resolver.resolve("강남구 청년");
 
         assertThat(result.resolved()).isTrue();
         assertThat(result.regionLevel()).isEqualTo(SearchRegionLevel.SIGUNGU);
@@ -92,7 +92,7 @@ class AdministrativeRegionTextResolverTest {
 
     @Test
     void oneLetterAliasesAreNotGenerated() {
-        var result = resolver.resolve("남");
+        UserRegionResolution result = resolver.resolve("남");
 
         assertThat(result.status()).isEqualTo(UserRegionResolutionStatus.NOT_FOUND);
     }
@@ -112,7 +112,7 @@ class AdministrativeRegionTextResolverTest {
     }
 
     private void assertSido(String query, String province) {
-        var result = resolver.resolve(query);
+        UserRegionResolution result = resolver.resolve(query);
         assertThat(result.resolved()).as(query + " -> " + result).isTrue();
         assertThat(result.regionLevel()).as(query).isEqualTo(SearchRegionLevel.SIDO);
         assertThat(result.province()).as(query).isEqualTo(province);
@@ -120,7 +120,7 @@ class AdministrativeRegionTextResolverTest {
     }
 
     private void assertSigungu(String query, String province, String city) {
-        var result = resolver.resolve(query);
+        UserRegionResolution result = resolver.resolve(query);
         assertThat(result.resolved()).as(query + " -> " + result).isTrue();
         assertThat(result.regionLevel()).as(query).isEqualTo(SearchRegionLevel.SIGUNGU);
         assertThat(result.province()).as(query).isEqualTo(province);

@@ -2,8 +2,11 @@ package com.weaone.themoa.domain.policy.admin.service;
 
 import com.weaone.themoa.domain.policy.admin.dto.embedding.AdminEmbeddingItemResponse;
 import com.weaone.themoa.domain.policy.admin.dto.embedding.AdminEmbeddingPageResponse;
+import com.weaone.themoa.domain.policy.policy.domain.Policy;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyEmbeddingSync;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyEmbeddingSyncRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -31,8 +34,8 @@ public class AdminEmbeddingReadService {
         String normalizedKeyword = StringUtils.hasText(keyword) ? keyword.trim() : null;
         int resolvedPage = Math.max(0, page);
         int resolvedSize = Math.max(1, Math.min(100, size));
-        var pageable = PageRequest.of(resolvedPage, resolvedSize, Sort.by(Sort.Direction.DESC, "requestedAt"));
-        var result = repository.searchForAdmin(normalizedStatus, normalizedKeyword, pageable);
+        Pageable pageable = PageRequest.of(resolvedPage, resolvedSize, Sort.by(Sort.Direction.DESC, "requestedAt"));
+        Page<PolicyEmbeddingSync> result = repository.searchForAdmin(normalizedStatus, normalizedKeyword, pageable);
         return new AdminEmbeddingPageResponse(
                 result.getContent().stream().map(this::toItem).toList(),
                 result.getNumber(),
@@ -44,7 +47,7 @@ public class AdminEmbeddingReadService {
     }
 
     private AdminEmbeddingItemResponse toItem(PolicyEmbeddingSync sync) {
-        var policy = sync.getPolicy();
+        Policy policy = sync.getPolicy();
         return new AdminEmbeddingItemResponse(
                 sync.getId(),
                 policy.getId(),

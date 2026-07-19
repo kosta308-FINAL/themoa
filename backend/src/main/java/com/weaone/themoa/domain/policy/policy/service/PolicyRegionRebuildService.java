@@ -1,6 +1,8 @@
 package com.weaone.themoa.domain.policy.policy.service;
 
-import com.weaone.themoa.domain.policy.admin.service.JobProgressUpdate;
+import com.weaone.themoa.common.exception.BusinessException;
+import com.weaone.themoa.common.exception.ErrorCode;
+import com.weaone.themoa.domain.policy.common.dto.JobProgressUpdate;
 import com.weaone.themoa.domain.policy.policy.domain.Policy;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import org.slf4j.Logger;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Set;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -52,7 +55,7 @@ public class PolicyRegionRebuildService {
         int page = 0;
         int totalBatches = (int) Math.ceil((double) total / Math.max(1, properties.getBatchSize()));
         while (true) {
-            var ids = policyRepository.findActivePolicyIds(PageRequest.of(page++, Math.max(1, properties.getBatchSize())));
+            List<Integer> ids = policyRepository.findActivePolicyIds(PageRequest.of(page++, Math.max(1, properties.getBatchSize())));
             if (ids.isEmpty()) {
                 break;
             }
@@ -90,13 +93,16 @@ public class PolicyRegionRebuildService {
     private RebuildOneResult rebuildOne(Integer policyId) {
         return transactionTemplate.execute(status -> {
             Policy policy = policyRepository.findWithRelationsByIdIn(java.util.List.of(policyId)).stream()
-                    .findFirst().orElseThrow();
+                    .findFirst()
+                    .orElseThrow(() -> new BusinessException(ErrorCode.POLICY_NOT_FOUND));
             Set<String> before = policy.getRegions().stream()
                     .map(region -> region.getRegion().getRegionCode())
                     .collect(Collectors.toSet());
             boolean wasNationwide = before.contains("KR");
-            var result = applicabilityClassificationService.classifyFromSnapshot(policy, properties.isEnqueueChangedPolicies());
-            var resolution = result.classification().toResolution();
+            PolicyApplicabilityClassificationService.ApplicabilityClassificationResult result =
+                    applicabilityClassificationService.classifyFromSnapshot(policy, properties.isEnqueueChangedPolicies());
+            com.weaone.themoa.domain.policy.policy.region.PolicyRegionResolution resolution =
+                    result.classification().toResolution();
             return new RebuildOneResult(result.changed(), wasNationwide,
                     resolution.scope() == com.weaone.themoa.domain.policy.policy.region.RegionScope.UNKNOWN,
                     !resolution.regionCodes().isEmpty() && !resolution.regionCodes().contains("KR"), result.embeddingQueued(),

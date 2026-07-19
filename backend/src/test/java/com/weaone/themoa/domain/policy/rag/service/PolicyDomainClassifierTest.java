@@ -5,6 +5,7 @@ import com.weaone.themoa.domain.policy.policy.domain.PolicyCategory;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyCondition;
 import com.weaone.themoa.domain.policy.rag.dto.SearchDomain;
 import com.weaone.themoa.domain.policy.rag.dto.SupportIntent;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyDomainClassification;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -18,7 +19,7 @@ class PolicyDomainClassifierTest {
         Policy policy = policy("취업 역량 강화 교육", "채용 연계 직업훈련과 면접 교육",
                 PolicyCategory.교육, "신청 자격 제한 없음");
 
-        var result = classifier.classify(policy);
+        PolicyDomainClassification result = classifier.classify(policy);
 
         assertThat(result.primaryDomain()).isEqualTo(SearchDomain.EDUCATION);
         assertThat(result.secondaryDomains()).contains(SearchDomain.EMPLOYMENT);
@@ -30,7 +31,7 @@ class PolicyDomainClassifierTest {
         Policy policy = policy("청년 생활비 지원", "생활 안정 지원금",
                 PolicyCategory.복지, "취업 시 지원 종료");
 
-        var result = classifier.classify(policy);
+        PolicyDomainClassification result = classifier.classify(policy);
 
         assertThat(result.primaryDomain()).isEqualTo(SearchDomain.WELFARE);
         assertThat(result.supportIntents()).doesNotContain(SupportIntent.EMPLOYMENT_SUPPORT);

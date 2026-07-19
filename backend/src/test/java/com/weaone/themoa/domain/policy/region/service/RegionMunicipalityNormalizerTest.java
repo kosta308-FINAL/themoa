@@ -31,13 +31,13 @@ class RegionMunicipalityNormalizerTest {
     @Test
     void mergesEmdTextToMunicipalityWhenPresentAndIgnoresStandaloneEmd() {
         assertSupported("경상북도", "47850250", "칠곡군 왜관읍", "칠곡군");
-        var standalone = normalizer.normalize("경상북도", "47850250", "왜관읍", "경상북도 칠곡군 왜관읍");
+        NormalizedMunicipality standalone = normalizer.normalize("경상북도", "47850250", "왜관읍", "경상북도 칠곡군 왜관읍");
         assertThat(standalone.supported()).isFalse();
         assertThat(standalone.ignoredReason()).isEqualTo("EMD_NOT_SUPPORTED");
     }
 
     private void assertSupported(String province, String code, String childName, String expectedMunicipality) {
-        var result = normalizer.normalize(province, code, childName, province + " " + childName);
+        NormalizedMunicipality result = normalizer.normalize(province, code, childName, province + " " + childName);
         assertThat(result.supported()).isTrue();
         assertThat(result.provinceName()).isEqualTo(province);
         assertThat(result.municipalityName()).isEqualTo(expectedMunicipality);

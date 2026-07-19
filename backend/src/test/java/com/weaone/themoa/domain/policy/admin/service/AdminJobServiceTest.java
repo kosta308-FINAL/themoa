@@ -1,6 +1,8 @@
 package com.weaone.themoa.domain.policy.admin.service;
 
-import com.weaone.themoa.domain.policy.admin.dto.SearchReadinessResponse;
+import com.weaone.themoa.domain.policy.admin.dto.AdminJobStatus;
+import com.weaone.themoa.domain.policy.rag.dto.SearchReadinessResponse;
+import com.weaone.themoa.domain.policy.rag.service.SearchReadinessService;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
 import com.weaone.themoa.domain.policy.policy.service.PolicyCollectionResult;
 import com.weaone.themoa.domain.policy.policy.service.PolicyRegionRebuildResult;
@@ -48,7 +50,7 @@ class AdminJobServiceTest {
         PolicyLexicalIndex index = index(2650);
         when(lexicalIndexBuilder.refresh()).thenReturn(index);
 
-        var status = service().start("SEARCH_PROJECTION_REBUILD");
+        AdminJobStatus status = service().start("SEARCH_PROJECTION_REBUILD");
 
         assertThat(status.status()).isEqualTo("COMPLETED");
         assertThat(status.message()).contains("projectionCount=2650", "indexDocumentCount=2650");
@@ -61,7 +63,7 @@ class AdminJobServiceTest {
         PolicyLexicalIndex index = index(2650);
         when(lexicalIndexBuilder.refresh()).thenReturn(index);
 
-        var status = service().start("SEARCH_INDEX_REFRESH");
+        AdminJobStatus status = service().start("SEARCH_INDEX_REFRESH");
 
         assertThat(status.status()).isEqualTo("COMPLETED");
         assertThat(status.message()).contains("documentCount=2650");
@@ -84,7 +86,7 @@ class AdminJobServiceTest {
                 .thenReturn(new EmbeddingProcessResult(2650, 2650, 0, 0, "COMPLETED"));
         when(readinessService.readiness()).thenReturn(new SearchReadinessResponse(true, 2650, 2650, 2650, 2650, List.of()));
 
-        var status = service().start("FULL_REINDEX");
+        AdminJobStatus status = service().start("FULL_REINDEX");
 
         assertThat(status.status()).isEqualTo("COMPLETED");
         InOrder order = inOrder(collectionService, regionRebuildService, projectionService, lexicalIndexBuilder,
@@ -104,10 +106,10 @@ class AdminJobServiceTest {
         when(collectionService.collectAll(any())).thenReturn(collectionResult("COMPLETED"));
         when(regionRebuildService.rebuildAll(any())).thenReturn(regionResult(2650, 1));
 
-        var status = service().start("FULL_REINDEX");
+        AdminJobStatus status = service().start("FULL_REINDEX");
 
         assertThat(status.status()).isEqualTo("FAILED");
-        assertThat(status.message()).contains("POLICY_REGION_REBUILD_FAILED");
+        assertThat(status.message()).contains("정책 지역 재분류를 완료하지 못했습니다.");
     }
 
     private AdminJobService service() {

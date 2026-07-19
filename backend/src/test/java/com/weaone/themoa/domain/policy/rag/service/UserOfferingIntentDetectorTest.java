@@ -1,6 +1,7 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
 import com.weaone.themoa.domain.policy.rag.dto.PolicyOfferingType;
+import com.weaone.themoa.domain.policy.rag.dto.UserOfferingIntent;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -10,7 +11,7 @@ class UserOfferingIntentDetectorTest {
 
     @Test
     void detectsBroadBenefitIntent() {
-        var intent = detector.detect("직장인이 받을 수 있는 혜택");
+        UserOfferingIntent intent = detector.detect("직장인이 받을 수 있는 혜택");
 
         assertThat(intent.broadBenefitIntent()).isTrue();
         assertThat(intent.explicitProgramIntent()).isFalse();
@@ -25,7 +26,7 @@ class UserOfferingIntentDetectorTest {
 
     @Test
     void broadPolicySearchHasNoOfferingType() {
-        var intent = detector.detect("서울 청년 정책");
+        UserOfferingIntent intent = detector.detect("서울 청년 정책");
 
         assertThat(intent.broadBenefitIntent()).isFalse();
         assertThat(intent.explicitProgramIntent()).isFalse();

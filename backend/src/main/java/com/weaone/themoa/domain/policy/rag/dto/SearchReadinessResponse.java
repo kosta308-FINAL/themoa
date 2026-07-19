@@ -1,4 +1,4 @@
-package com.weaone.themoa.domain.policy.admin.dto;
+package com.weaone.themoa.domain.policy.rag.dto;
 
 import java.util.List;
 

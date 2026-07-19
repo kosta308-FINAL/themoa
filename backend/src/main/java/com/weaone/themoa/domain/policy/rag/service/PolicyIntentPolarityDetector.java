@@ -52,7 +52,7 @@ public class PolicyIntentPolarityDetector {
         }
 
         for (String clause : clauses(text)) {
-            for (var entry : DOMAIN_TERMS.entrySet()) {
+            for (Map.Entry<SearchDomain, List<String>> entry : DOMAIN_TERMS.entrySet()) {
                 List<String> matchedTerms = entry.getValue().stream().filter(clause::contains).toList();
                 if (matchedTerms.isEmpty()) continue;
                 boolean excluded = isExclusionClause(clause, matchedTerms);

@@ -1,5 +1,6 @@
 package com.weaone.themoa.domain.policy.admin.service;
 
+import com.weaone.themoa.domain.policy.admin.dto.AdminStatusResponse;
 import com.weaone.themoa.domain.policy.common.config.LocalSecretConfigurationStatus;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyEmbeddingSyncRepository;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
@@ -11,6 +12,7 @@ import com.weaone.themoa.domain.policy.rag.config.RagProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.dao.DataAccessResourceFailureException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -36,7 +38,7 @@ class AdminStatusServiceTest {
         when(syncRepository.countBySyncStatus("SYNCED")).thenReturn(1L);
         when(syncRepository.countBySyncStatus("FAILED")).thenReturn(0L);
 
-        var response = new AdminStatusService(policyRepository, syncRepository, vectorStoreProvider,
+        AdminStatusResponse response = new AdminStatusService(policyRepository, syncRepository, vectorStoreProvider,
                 ragProperties, configurationStatus, regionCodeRepository, snapshotRepository, regionSyncProperties(), new RegionSynchronizationState()).status();
 
         assertThat(response.youthCenterApiKeyConfigured()).isTrue();
@@ -56,9 +58,9 @@ class AdminStatusServiceTest {
         ObjectProvider<VectorStore> vectorStoreProvider = mock(ObjectProvider.class);
         RagProperties ragProperties = new RagProperties();
         LocalSecretConfigurationStatus configurationStatus = new LocalSecretConfigurationStatus("", "", "none", "none", false);
-        when(policyRepository.count()).thenThrow(new IllegalStateException("db down"));
+        when(policyRepository.count()).thenThrow(new DataAccessResourceFailureException("db down"));
 
-        var response = new AdminStatusService(policyRepository, syncRepository, vectorStoreProvider,
+        AdminStatusResponse response = new AdminStatusService(policyRepository, syncRepository, vectorStoreProvider,
                 ragProperties, configurationStatus, regionCodeRepository, snapshotRepository, regionSyncProperties(), new RegionSynchronizationState()).status();
 
         assertThat(response.mysqlAvailable()).isFalse();

@@ -1,6 +1,7 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchCondition;
+import com.weaone.themoa.domain.policy.rag.dto.PolicySearchIntent;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchMode;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyQuerySemantics;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchPlan;
@@ -23,7 +24,7 @@ class PolicySearchIntentBuilderTest {
                 "수원", "EXACT", "SIGUNGU", Set.of(), true, true, true, false, true, false,
                 PolicySearchMode.HYBRID, 20);
 
-        var intent = builder.build("수원 사는 27살 취준생 정책", condition);
+        PolicySearchIntent intent = builder.build("수원 사는 27살 취준생 정책", condition);
 
         assertThat(intent.conditionTerms()).contains("수원", "27살", "취준생");
         assertThat(intent.intentTerms()).contains("청년", "취업 지원", "구직 지원", "취업 준비");
@@ -39,7 +40,7 @@ class PolicySearchIntentBuilderTest {
                 Set.of("사회 초년생"), "수원", "EXACT", "SIGUNGU", Set.of(), true, true, false, false,
                 true, false, PolicySearchMode.HYBRID, 20);
 
-        var intent = builder.build("수원 사는 27살 사회 초년생이 금융적으로 지원 받을 수 있는 정책", condition);
+        PolicySearchIntent intent = builder.build("수원 사는 27살 사회 초년생이 금융적으로 지원 받을 수 있는 정책", condition);
 
         assertThat(intent.conditionTerms()).contains("수원", "27살");
         assertThat(intent.intentTerms()).contains("청년", "금융 지원", "생활비 지원");
@@ -54,7 +55,7 @@ class PolicySearchIntentBuilderTest {
                 Set.of("지원금"), "수원", "EXACT", "SIGUNGU", Set.of(), true, true, true, false,
                 false, true, PolicySearchMode.HYBRID, 20);
 
-        var intent = builder.build("수원에 사는 27살 무직 청년인데 받을 수 있는 지원금이 있을까?", condition);
+        PolicySearchIntent intent = builder.build("수원에 사는 27살 무직 청년인데 받을 수 있는 지원금이 있을까?", condition);
 
         assertThat(intent.intentTerms()).contains("경제·금전 지원");
         assertThat(intent.expandedIntentTerms()).contains("지원금", "저축", "대출", "주거비", "교통비", "바우처", "환급");
@@ -70,7 +71,7 @@ class PolicySearchIntentBuilderTest {
         PolicyQuerySemantics semantics = new PolicyQuerySemantics("대학생이 신청 가능한 청년 지원 정책",
                 Set.of(), Set.of(SearchDomain.EMPLOYMENT), Set.of("대학생", "청년"), Set.of("취업", "구직", "일자리", "면접"), true);
 
-        var intent = builder.build("수원 22살 대학생이고 취업 생각은 없어", condition, semantics);
+        PolicySearchIntent intent = builder.build("수원 22살 대학생이고 취업 생각은 없어", condition, semantics);
 
         assertThat(intent.conditionTerms()).contains("수원", "22살");
         assertThat(intent.intentTerms()).doesNotContain("취업 지원", "구직 지원", "취업 준비");
@@ -99,7 +100,7 @@ class PolicySearchIntentBuilderTest {
                 true,
                 "TEST");
 
-        var intent = builder.build(plan);
+        PolicySearchIntent intent = builder.build(plan);
 
         assertThat(intent.originalQuery()).doesNotContain("대출");
         assertThat(intent.expandedIntentTerms()).doesNotContain("대출", "융자", "저축", "계좌", "통장");

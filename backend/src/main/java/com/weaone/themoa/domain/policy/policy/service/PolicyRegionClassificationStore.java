@@ -2,6 +2,8 @@ package com.weaone.themoa.domain.policy.policy.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.weaone.themoa.common.exception.BusinessException;
+import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.policy.policy.domain.Policy;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyRegionClassification;
 import com.weaone.themoa.domain.policy.policy.region.PolicyRegionClassificationResult;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Optional;
 
 @Service
 public class PolicyRegionClassificationStore {
@@ -29,7 +32,7 @@ public class PolicyRegionClassificationStore {
     public void save(Policy policy, PolicyRegionClassificationResult result) {
         String evidenceJson = evidenceJson(result);
         BigDecimal confidence = BigDecimal.valueOf(result.confidence()).setScale(4, RoundingMode.HALF_UP);
-        var existing = repository.findById(policy.getId());
+        Optional<PolicyRegionClassification> existing = repository.findById(policy.getId());
         PolicyRegionClassification classification = existing
                 .orElseGet(() -> new PolicyRegionClassification(policy, result.scope().name(), confidence,
                         evidenceJson, result.classifierVersion(), result.needsReview()));
@@ -47,7 +50,7 @@ public class PolicyRegionClassificationStore {
                     "conflictingEvidence", result.conflictingEvidence()
             ));
         } catch (JsonProcessingException ex) {
-            throw new IllegalStateException("Policy region classification evidence serialization failed", ex);
+            throw new BusinessException(ErrorCode.POLICY_DATA_SERIALIZATION_FAILED);
         }
     }
 }

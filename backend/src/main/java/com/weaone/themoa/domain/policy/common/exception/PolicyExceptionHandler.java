@@ -9,11 +9,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice(basePackages = "com.weaone.themoa.domain.policy")
 public class PolicyExceptionHandler {
 
-    @ExceptionHandler(SearchDataNotReadyException.class)
-    ResponseEntity<ApiResponse<Void>> handleSearchDataNotReady(SearchDataNotReadyException exception) {
-        return error(ErrorCode.POLICY_SEARCH_NOT_READY);
-    }
-
     @ExceptionHandler(YouthCenterApiResponseException.class)
     ResponseEntity<ApiResponse<Void>> handleYouthCenterApiResponse(YouthCenterApiResponseException exception) {
         return error(ErrorCode.POLICY_EXTERNAL_RESPONSE_PARSE_ERROR);

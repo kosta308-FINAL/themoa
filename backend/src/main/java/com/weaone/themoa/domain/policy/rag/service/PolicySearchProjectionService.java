@@ -1,6 +1,7 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weaone.themoa.domain.policy.policy.domain.Policy;
 import com.weaone.themoa.domain.policy.policy.domain.PolicySearchProjection;
@@ -20,6 +21,7 @@ import org.springframework.util.StringUtils;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -68,7 +70,7 @@ public class PolicySearchProjectionService {
         int page = 0;
         int batchSize = 200;
         while (true) {
-            var ids = policyRepository.findActivePolicyIds(PageRequest.of(page++, batchSize));
+            List<Integer> ids = policyRepository.findActivePolicyIds(PageRequest.of(page++, batchSize));
             if (ids.isEmpty()) break;
             ProjectionBatchResult result = transactionTemplate.execute(status -> rebuildBatch(ids));
             processed += result.processed();
@@ -88,7 +90,7 @@ public class PolicySearchProjectionService {
     }
 
     public ProjectionBatchResult rebuildBatch(List<Integer> ids) {
-        var policies = policyRepository.findWithRelationsByIdIn(ids);
+        List<Policy> policies = policyRepository.findWithRelationsByIdIn(ids);
         Map<Integer, com.weaone.themoa.domain.policy.policy.domain.PolicySourceSnapshot> snapshots =
                 snapshotRepository.findByPolicyIdIn(ids).stream()
                         .collect(Collectors.toMap(snapshot -> snapshot.getPolicy().getId(), Function.identity()));
@@ -111,7 +113,7 @@ public class PolicySearchProjectionService {
                 Map<String, Object> fields = objectMapper.readValue(snapshot.getRawPolicyJson(), new TypeReference<>() {
                 });
                 return new ProjectionSource(fields, false);
-            } catch (Exception ex) {
+            } catch (JsonProcessingException ex) {
                 log.warn("Policy snapshot parse failed for search projection. policyId={}", policy.getId(), ex);
             }
         }
@@ -127,7 +129,7 @@ public class PolicySearchProjectionService {
     }
 
     private void upsert(Policy policy, Map<String, Object> fields, boolean missingSnapshot) {
-        var existing = projectionRepository.findByPolicyId(policy.getId());
+        Optional<PolicySearchProjection> existing = projectionRepository.findByPolicyId(policy.getId());
         String title = mostCompleteTitle(text(fields, "plcyNm", "title", "policyName"),
                 policy.getTitle(),
                 existing.map(PolicySearchProjection::getTitleText).orElse(null));

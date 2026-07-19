@@ -2,6 +2,8 @@ package com.weaone.themoa.domain.policy.youthcenter.parser;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weaone.themoa.domain.policy.youthcenter.client.ExternalApiResponse;
+import com.weaone.themoa.domain.policy.youthcenter.dto.parsed.ParsedPolicyDetail;
+import com.weaone.themoa.domain.policy.youthcenter.dto.parsed.ParsedPolicyList;
 import com.weaone.themoa.domain.policy.youthcenter.mapper.YouthPolicyMapper;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +35,7 @@ class YouthCenterResponseParserTest {
                 }
                 """;
 
-        var parsed = parser.parseList(response(body));
+        ParsedPolicyList parsed = parser.parseList(response(body));
 
         assertThat(parsed.listNodePath()).isEqualTo("$.result.youthPolicyList");
         assertThat(parsed.totalCount()).isEqualTo(3);
@@ -56,7 +58,7 @@ class YouthCenterResponseParserTest {
                 }
                 """;
 
-        var parsed = parser.parseDetail(response(body));
+        ParsedPolicyDetail parsed = parser.parseDetail(response(body));
 
         assertThat(parsed.policy().policyNumber()).isEqualTo("P001");
         assertThat(parsed.policy().policyName()).isEqualTo("청년 취업 지원");

@@ -33,11 +33,11 @@ class RegionSynchronizationServiceTest {
                 .thenReturn(new RegionProvincePersistenceService.PersistedRegion(county, 1, 0, 0));
         RegionSyncRunRepository runRepository = mock(RegionSyncRunRepository.class);
         when(runRepository.save(any(RegionSyncRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        var service = new RegionSynchronizationService(properties(), client, catalog, new RegionSynchronizationState(),
+        RegionSynchronizationService service = new RegionSynchronizationService(properties(), client, catalog, new RegionSynchronizationState(),
                 new MunicipalityHierarchyResolver(new RegionMunicipalityNormalizer(new RegionAdministrativeLevelResolver())),
                 persistenceService, runRepository, mock(RegionSyncErrorRepository.class), mock(RegionExternalCodeRepository.class));
 
-        var result = service.synchronize();
+        RegionSynchronizationResult result = service.synchronize();
 
         assertThat(result.provinceReceivedCount()).isEqualTo(1);
         assertThat(result.childReceivedCount()).isEqualTo(1);

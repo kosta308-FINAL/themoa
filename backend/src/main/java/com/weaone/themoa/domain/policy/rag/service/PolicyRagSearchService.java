@@ -1,5 +1,7 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
+import com.weaone.themoa.common.exception.BusinessException;
+import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.policy.common.exception.YouthCenterApiException;
 import com.weaone.themoa.domain.policy.policy.region.ResolvedUserRegion;
 import com.weaone.themoa.domain.policy.policy.domain.Policy;
@@ -12,6 +14,7 @@ import com.weaone.themoa.domain.policy.rag.dto.PolicySearchRequest;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchResponse;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchResultItem;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyTargetAudienceClassification;
+import com.weaone.themoa.domain.policy.rag.dto.SearchReadinessResponse;
 import com.weaone.themoa.domain.policy.rag.dto.SearchQueryType;
 import com.weaone.themoa.domain.policy.rag.dto.UserEmploymentStatusResult;
 import org.springframework.stereotype.Service;
@@ -52,6 +55,7 @@ public class PolicyRagSearchService {
     private final PolicySearchDiagnosticsFactory diagnosticsFactory;
     private final PolicySearchExplainService explainService;
     private final PolicySearchRuntimeSupport runtimeSupport;
+    private final SearchReadinessService readinessService;
 
     public PolicyRagSearchService(RagProperties properties,
                                   PolicySearchPlanService planService,
@@ -61,7 +65,8 @@ public class PolicyRagSearchService {
                                   PolicySearchResultAssembler resultAssembler,
                                   PolicySearchDiagnosticsFactory diagnosticsFactory,
                                   PolicySearchExplainService explainService,
-                                  PolicySearchRuntimeSupport runtimeSupport) {
+                                  PolicySearchRuntimeSupport runtimeSupport,
+                                  SearchReadinessService readinessService) {
         this.properties = properties;
         this.planService = planService;
         this.candidateRetriever = candidateRetriever;
@@ -71,9 +76,14 @@ public class PolicyRagSearchService {
         this.diagnosticsFactory = diagnosticsFactory;
         this.explainService = explainService;
         this.runtimeSupport = runtimeSupport;
+        this.readinessService = readinessService;
     }
 
     public PolicySearchResponse search(PolicySearchRequest request) {
+        SearchReadinessResponse readiness = readinessService.readiness();
+        if (!readiness.ready()) {
+            throw new BusinessException(ErrorCode.POLICY_SEARCH_NOT_READY);
+        }
         return execute(request).response();
     }
 

@@ -6,6 +6,7 @@ import com.weaone.themoa.domain.policy.rag.dto.PolicySearchPlan;
 import com.weaone.themoa.domain.policy.rag.dto.SearchDomain;
 import com.weaone.themoa.domain.policy.rag.dto.SearchQueryType;
 import com.weaone.themoa.domain.policy.rag.dto.SupportIntent;
+import com.weaone.themoa.domain.policy.rag.dto.UserEducationStageCondition;
 import org.springframework.stereotype.Service;
 
 import java.util.EnumSet;
@@ -64,7 +65,7 @@ public class PolicySearchPlanService {
                 supportIntents(desiredDomains, detectedSupportIntent.intents()), excludedSupportIntents);
         BenefitGroupDetector.Detection detectedBenefitGroup = benefitGroupDetector.detect(
                 positiveSearchText, condition.supportTypes(), semantics.positiveKeywords(), desiredSupportIntents, desiredDomains);
-        var educationStage = educationStageDetector.detect(query);
+        UserEducationStageCondition educationStage = educationStageDetector.detect(query);
         String mode = parsed.parserMode()
                 + (parsed.fallback() ? ":fallback" : "")
                 + (parsed.fallbackReason() == null ? "" : ":" + parsed.fallbackReason());

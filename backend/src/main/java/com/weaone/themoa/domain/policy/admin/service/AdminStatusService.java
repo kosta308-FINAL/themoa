@@ -2,6 +2,8 @@ package com.weaone.themoa.domain.policy.admin.service;
 
 import com.weaone.themoa.domain.policy.admin.dto.AdminStatusResponse;
 import com.weaone.themoa.domain.policy.common.config.LocalSecretConfigurationStatus;
+import com.weaone.themoa.domain.policy.policy.domain.Policy;
+import com.weaone.themoa.domain.policy.policy.domain.PolicyRegion;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyEmbeddingSyncRepository;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
@@ -12,7 +14,11 @@ import com.weaone.themoa.domain.policy.region.service.RegionSynchronizationState
 import com.weaone.themoa.domain.policy.rag.config.RagProperties;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Set;
 
 @Service
 public class AdminStatusService {
@@ -137,9 +143,9 @@ public class AdminStatusService {
         ScopeCounts counts = new ScopeCounts();
         int page = 0;
         while (true) {
-            var ids = policyRepository.findActivePolicyIds(org.springframework.data.domain.PageRequest.of(page++, 500));
+            List<Integer> ids = policyRepository.findActivePolicyIds(PageRequest.of(page++, 500));
             if (ids.isEmpty()) break;
-            for (var policy : policyRepository.findWithRelationsByIdIn(ids)) {
+            for (Policy policy : policyRepository.findWithRelationsByIdIn(ids)) {
                 switch (scope(policy)) {
                     case NATIONWIDE -> counts.nationwide++;
                     case PROVINCE -> counts.province++;
@@ -153,8 +159,8 @@ public class AdminStatusService {
         return counts;
     }
 
-    private RegionScope scope(com.weaone.themoa.domain.policy.policy.domain.Policy policy) {
-        var regions = policy.getRegions();
+    private RegionScope scope(Policy policy) {
+        Set<PolicyRegion> regions = policy.getRegions();
         if (regions.isEmpty()) return RegionScope.UNKNOWN;
         if (regions.stream().anyMatch(region -> "KR".equals(region.getRegion().getRegionCode()))) return RegionScope.NATIONWIDE;
         if (regions.size() > 1) return RegionScope.MULTIPLE;

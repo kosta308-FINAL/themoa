@@ -1,12 +1,14 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
+import com.weaone.themoa.common.exception.BusinessException;
+import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.policy.policy.domain.Policy;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyEmbeddingSync;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyEmbeddingSyncRepository;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import com.weaone.themoa.domain.policy.rag.config.RagProperties;
 import com.weaone.themoa.domain.policy.common.config.LocalSecretConfigurationStatus;
-import com.weaone.themoa.domain.policy.admin.service.JobProgressUpdate;
+import com.weaone.themoa.domain.policy.common.dto.JobProgressUpdate;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -176,7 +178,8 @@ public class PolicyEmbeddingService {
                 if (policy == null) {
                     continue;
                 }
-                PolicyEmbeddingSync sync = syncRepository.findByPolicyId(policy.getId()).orElseThrow();
+                PolicyEmbeddingSync sync = syncRepository.findByPolicyId(policy.getId())
+                        .orElseThrow(() -> new BusinessException(ErrorCode.POLICY_EMBEDDING_SYNC_NOT_FOUND));
                 sync.queue(documentBuilder.build(policy).contentHash());
                 count++;
             }
@@ -187,15 +190,18 @@ public class PolicyEmbeddingService {
     private PolicyDocumentBuilder.BuiltPolicyDocument markProcessingAndBuild(Integer policyId) {
         return transactionTemplate.execute(status -> {
             Policy policy = policyRepository.findWithRelationsByIdIn(List.of(policyId)).stream().findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("정책을 찾을 수 없습니다: " + policyId));
-            PolicyEmbeddingSync sync = syncRepository.findByPolicyId(policy.getId()).orElseThrow();
+                    .orElseThrow(() -> new BusinessException(ErrorCode.POLICY_NOT_FOUND));
+            PolicyEmbeddingSync sync = syncRepository.findByPolicyId(policy.getId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.POLICY_EMBEDDING_SYNC_NOT_FOUND));
             sync.processing();
             return documentBuilder.build(policy);
         });
     }
 
     private void markSynced(Integer policyId) {
-        transactionTemplate.executeWithoutResult(status -> syncRepository.findByPolicyId(policyId).orElseThrow().synced());
+        transactionTemplate.executeWithoutResult(status -> syncRepository.findByPolicyId(policyId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.POLICY_EMBEDDING_SYNC_NOT_FOUND))
+                .synced());
     }
 
     private void markSyncedByDocument(Document document) {
@@ -203,7 +209,9 @@ public class PolicyEmbeddingService {
     }
 
     private void markFailed(Integer policyId, RuntimeException ex) {
-        transactionTemplate.executeWithoutResult(status -> syncRepository.findByPolicyId(policyId).orElseThrow().failed(ex.getMessage()));
+        transactionTemplate.executeWithoutResult(status -> syncRepository.findByPolicyId(policyId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.POLICY_EMBEDDING_SYNC_NOT_FOUND))
+                .failed(ex.getMessage()));
     }
 
     private void markFailedByDocument(Document document, RuntimeException ex) {

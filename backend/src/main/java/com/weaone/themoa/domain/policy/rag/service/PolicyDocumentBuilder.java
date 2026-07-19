@@ -1,5 +1,7 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
+import com.weaone.themoa.common.exception.BusinessException;
+import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.policy.policy.domain.Policy;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyCondition;
 import com.weaone.themoa.domain.policy.policy.domain.PolicySearchProjection;
@@ -33,7 +35,7 @@ public class PolicyDocumentBuilder {
     public BuiltPolicyDocument build(Policy policy) {
         String text = documentText(policy);
         String preliminaryHash = sha256(text);
-        var metadata = metadataBuilder.metadata(policy, preliminaryHash);
+        java.util.Map<String, Object> metadata = metadataBuilder.metadata(policy, preliminaryHash);
         String hash = sha256(text + "\n" + metadata.entrySet().stream()
                 .filter(entry -> !"contentHash".equals(entry.getKey()))
                 .map(entry -> entry.getKey() + "=" + entry.getValue())
@@ -131,7 +133,7 @@ public class PolicyDocumentBuilder {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(digest.digest(text.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException ex) {
-            throw new IllegalStateException(ex);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR);
         }
     }
 

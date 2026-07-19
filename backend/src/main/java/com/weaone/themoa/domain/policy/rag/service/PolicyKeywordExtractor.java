@@ -4,6 +4,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Component
@@ -22,7 +24,7 @@ public class PolicyKeywordExtractor {
         String normalizedQuery = normalizer.normalize(query);
         addIfPresent(query, normalizedQuery, core, expanded, "청년");
         addIfPresent(query, normalizedQuery, core, expanded, "대학생");
-        for (var entry : synonymCatalog.synonyms().entrySet()) {
+        for (Map.Entry<String, List<String>> entry : synonymCatalog.synonyms().entrySet()) {
             boolean matched = entry.getValue().stream()
                     .anyMatch(term -> contains(query, term) || normalizedQuery.contains(normalizer.normalize(term)));
             if ("지원금".equals(entry.getKey()) && core.contains("면접수당")

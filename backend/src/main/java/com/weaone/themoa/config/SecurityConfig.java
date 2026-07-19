@@ -44,8 +44,6 @@ public class SecurityConfig {
 
     private static final RegexRequestMatcher POLICY_DETAIL_ENDPOINT =
             new RegexRequestMatcher("^/api/policies/[0-9]+$", HttpMethod.GET.name());
-    private static final RegexRequestMatcher POLICY_RAW_ENDPOINT =
-            new RegexRequestMatcher("^/api/policies/[0-9]+/raw$", HttpMethod.GET.name());
     private static final RegexRequestMatcher POLICY_ADMIN_ENDPOINT =
             new RegexRequestMatcher("^/api/policies/admin(/.*)?$", null);
 
@@ -71,12 +69,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll();
                     auth.requestMatchers(DOCS_ENDPOINTS).permitAll();
-                    if (isPolicyLocalToolsEnabled()) {
-                        auth.requestMatchers(HttpMethod.POST, "/api/policies/search").permitAll();
-                        auth.requestMatchers(POLICY_DETAIL_ENDPOINT).permitAll();
-                        auth.requestMatchers(POLICY_RAW_ENDPOINT).permitAll();
-                        auth.requestMatchers(POLICY_ADMIN_ENDPOINT).permitAll();
-                    }
+        if (isPolicyLocalToolsEnabled()) {
+            auth.requestMatchers(HttpMethod.POST, "/api/policies/search").permitAll();
+            auth.requestMatchers(POLICY_DETAIL_ENDPOINT).permitAll();
+            auth.requestMatchers(POLICY_ADMIN_ENDPOINT).permitAll();
+        }
                     auth.anyRequest().authenticated();
                 })
                 .exceptionHandling(handler -> handler

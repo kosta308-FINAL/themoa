@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.policy.policy.service;
 
 import com.weaone.themoa.domain.policy.policy.domain.RegionCode;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
+import com.weaone.themoa.domain.policy.policy.region.PolicyRegionResolution;
 import com.weaone.themoa.domain.policy.policy.region.PolicyRegionResolver;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +20,7 @@ public class RegionResolver {
     }
 
     public Set<RegionCode> resolve(Map<String, Object> fields) {
-        var resolution = policyRegionResolver.resolve(fields);
+        PolicyRegionResolution resolution = policyRegionResolver.resolve(fields);
         return resolution.regionIds().stream()
                 .map(regionCodeRepository::findById)
                 .flatMap(java.util.Optional::stream)

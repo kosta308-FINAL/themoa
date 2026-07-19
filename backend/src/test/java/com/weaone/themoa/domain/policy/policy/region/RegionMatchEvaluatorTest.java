@@ -105,7 +105,7 @@ class RegionMatchEvaluatorTest {
 
     private RegionCodeRepository repository() {
         RegionCodeRepository repo = mock(RegionCodeRepository.class);
-        var regions = FakeRegionData.regions();
+        java.util.List<com.weaone.themoa.domain.policy.policy.domain.RegionCode> regions = FakeRegionData.regions();
         when(repo.findAll()).thenReturn(regions);
         for (RegionCode region : regions) {
             when(repo.findByRegionCode(region.getRegionCode())).thenReturn(Optional.of(region));

@@ -30,10 +30,10 @@ class PolicySearchConditionValidatorTest {
 
     @Test
     void keywordQueryDoesNotCreateHardConditions() {
-        var parsed = new PolicySearchCondition(null, null, null, 19, "UNEMPLOYED", null,
+        PolicySearchCondition parsed = new PolicySearchCondition(null, null, null, 19, "UNEMPLOYED", null,
                 null, "일자리", Set.of(), Set.of("청년", "면접", "수당"), 20);
 
-        var condition = validator.validate("청년 면접 수당", parsed, 20);
+        PolicySearchCondition condition = validator.validate("청년 면접 수당", parsed, 20);
 
         assertThat(condition.searchMode()).isEqualTo(PolicySearchMode.KEYWORD);
         assertThat(condition.regionExplicit()).isFalse();
@@ -47,10 +47,10 @@ class PolicySearchConditionValidatorTest {
 
     @Test
     void regionAndKeywordQueryIsHybrid() {
-        var parsed = new PolicySearchCondition("경기도", null, null, null, null, null,
+        PolicySearchCondition parsed = new PolicySearchCondition("경기도", null, null, null, null, null,
                 null, "일자리", Set.of(), Set.of("청년", "면접", "수당"), 20);
 
-        var condition = validator.validate("경기도 청년 면접 수당", parsed, 20);
+        PolicySearchCondition condition = validator.validate("경기도 청년 면접 수당", parsed, 20);
 
         assertThat(condition.searchMode()).isEqualTo(PolicySearchMode.HYBRID);
         assertThat(condition.regionExplicit()).isTrue();
@@ -60,10 +60,10 @@ class PolicySearchConditionValidatorTest {
 
     @Test
     void interviewAllowanceDoesNotExpandToGenericGrantOnlyBecauseItContainsAllowance() {
-        var parsed = new PolicySearchCondition(null, null, null, null, null, null,
+        PolicySearchCondition parsed = new PolicySearchCondition(null, null, null, null, null, null,
                 null, null, Set.of(), Set.of(), 10);
 
-        var condition = validator.validate("면접수당", parsed, 10);
+        PolicySearchCondition condition = validator.validate("면접수당", parsed, 10);
 
         assertThat(condition.keywords()).contains("면접수당");
         assertThat(condition.keywords()).doesNotContain("지원금");
@@ -73,10 +73,10 @@ class PolicySearchConditionValidatorTest {
 
     @Test
     void situationQueryKeepsExplicitConditions() {
-        var parsed = new PolicySearchCondition("경기도", "수원시", null, 27, "UNEMPLOYED", null,
+        PolicySearchCondition parsed = new PolicySearchCondition("경기도", "수원시", null, 27, "UNEMPLOYED", null,
                 null, "금융", Set.of("CASH"), Set.of("청년", "지원금"), 20);
 
-        var condition = validator.validate("수원 사는 27살 무직 청년 지원금", parsed, 20);
+        PolicySearchCondition condition = validator.validate("수원 사는 27살 무직 청년 지원금", parsed, 20);
 
         assertThat(condition.searchMode()).isEqualTo(PolicySearchMode.HYBRID);
         assertThat(condition.regionExplicit()).isTrue();
@@ -88,10 +88,10 @@ class PolicySearchConditionValidatorTest {
 
     @Test
     void preservesDynamicCountyRegionFromQuery() {
-        var parsed = new PolicySearchCondition(null, null, null, 30, null, null,
+        PolicySearchCondition parsed = new PolicySearchCondition(null, null, null, 30, null, null,
                 null, "일자리", Set.of(), Set.of("청년", "취업"), 10);
 
-        var condition = validator.validate("칠곡에 살고 있는 30살 청년이 받을 수 있는 취업 관련 정책", parsed, 10);
+        PolicySearchCondition condition = validator.validate("칠곡에 살고 있는 30살 청년이 받을 수 있는 취업 관련 정책", parsed, 10);
 
         assertThat(condition.regionExplicit()).isTrue();
         assertThat(condition.province()).isEqualTo("경상북도");
@@ -101,10 +101,10 @@ class PolicySearchConditionValidatorTest {
 
     @Test
     void workplaceOnlyRegionDoesNotBecomeResidence() {
-        var parsed = new PolicySearchCondition("서울특별시", null, null, null, "EMPLOYED", null,
+        PolicySearchCondition parsed = new PolicySearchCondition("서울특별시", null, null, null, "EMPLOYED", null,
                 null, "일자리", Set.of(), Set.of("이직"), 10);
 
-        var condition = validator.validate("서울 회사에 다니고 있지만 다른 직장으로 옮기려고 해", parsed, 10);
+        PolicySearchCondition condition = validator.validate("서울 회사에 다니고 있지만 다른 직장으로 옮기려고 해", parsed, 10);
 
         assertThat(condition.regionExplicit()).isFalse();
         assertThat(condition.province()).isNull();
@@ -113,10 +113,10 @@ class PolicySearchConditionValidatorTest {
 
     @Test
     void residenceOverridesWorkplaceRegion() {
-        var parsed = new PolicySearchCondition("서울특별시", null, null, null, null, null,
+        PolicySearchCondition parsed = new PolicySearchCondition("서울특별시", null, null, null, null, null,
                 null, "일자리", Set.of(), Set.of("지역"), 10);
 
-        var condition = validator.validate("서울에서 일하고 있지만 사는 곳은 인천이야", parsed, 10);
+        PolicySearchCondition condition = validator.validate("서울에서 일하고 있지만 사는 곳은 인천이야", parsed, 10);
 
         assertThat(condition.regionExplicit()).isTrue();
         assertThat(condition.province()).isEqualTo("인천광역시");

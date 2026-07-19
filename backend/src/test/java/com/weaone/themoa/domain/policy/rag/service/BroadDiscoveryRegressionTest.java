@@ -17,7 +17,9 @@ import com.weaone.themoa.domain.policy.rag.dto.PolicySearchIntent;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchMode;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchPlan;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchRequest;
+import com.weaone.themoa.domain.policy.rag.dto.PolicySearchResponse;
 import com.weaone.themoa.domain.policy.rag.dto.RecommendationTier;
+import com.weaone.themoa.domain.policy.rag.dto.SearchReadinessResponse;
 import com.weaone.themoa.domain.policy.rag.dto.SearchDomain;
 import com.weaone.themoa.domain.policy.rag.dto.SearchQueryType;
 import com.weaone.themoa.domain.policy.rag.dto.SupportIntent;
@@ -128,9 +130,10 @@ class BroadDiscoveryRegressionTest {
 
         PolicyRagSearchService service = new PolicyRagSearchService(properties(), planService, retriever,
                 eligibilityEvaluator, rankingService(), new PolicySearchResultAssembler(new PolicyDomainClassifier()),
-                new PolicySearchDiagnosticsFactory(), new PolicySearchExplainService(new PolicyDomainClassifier()), runtime);
+                new PolicySearchDiagnosticsFactory(), new PolicySearchExplainService(new PolicyDomainClassifier()), runtime,
+                readySearchReadinessService());
 
-        var response = service.search(new PolicySearchRequest(QUERY, 10));
+        PolicySearchResponse response = service.search(new PolicySearchRequest(QUERY, 10));
 
         assertThat(response.results()).extracting("policyId").contains(100);
         assertThat(response.diagnostics().rankingFallbackExecuted()).isTrue();
@@ -155,6 +158,12 @@ class BroadDiscoveryRegressionTest {
 
     private PolicyRankingService rankingService() {
         return new PolicyRankingService(properties(), new PolicyDomainClassifier(), new SearchDomainIntentPolicy());
+    }
+
+    private SearchReadinessService readySearchReadinessService() {
+        SearchReadinessService readinessService = mock(SearchReadinessService.class);
+        when(readinessService.readiness()).thenReturn(new SearchReadinessResponse(true, 1, 1, 1, 1, List.of()));
+        return readinessService;
     }
 
     private RagProperties properties() {

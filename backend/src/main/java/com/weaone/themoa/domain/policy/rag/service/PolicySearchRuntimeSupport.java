@@ -1,5 +1,7 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
+import com.weaone.themoa.common.exception.BusinessException;
+import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.policy.policy.domain.Policy;
 import com.weaone.themoa.domain.policy.policy.region.RegionMatchEvaluator;
 import com.weaone.themoa.domain.policy.policy.region.ResolvedUserRegion;
@@ -82,8 +84,8 @@ public class PolicySearchRuntimeSupport {
 
     Policy findPolicy(Integer policyId, String sourcePolicyId) {
         return policyId != null
-                ? policyRepository.findById(policyId).orElseThrow(() -> new IllegalArgumentException("정책을 찾을 수 없습니다."))
-                : policyRepository.findBySourcePolicyId(sourcePolicyId).orElseThrow(() -> new IllegalArgumentException("정책을 찾을 수 없습니다."));
+                ? policyRepository.findById(policyId).orElseThrow(() -> new BusinessException(ErrorCode.POLICY_NOT_FOUND))
+                : policyRepository.findBySourcePolicyId(sourcePolicyId).orElseThrow(() -> new BusinessException(ErrorCode.POLICY_NOT_FOUND));
     }
 
     com.weaone.themoa.domain.policy.policy.region.RegionMatchResult evaluateRegion(Policy policy, ResolvedUserRegion userRegion) {

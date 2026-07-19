@@ -1,6 +1,9 @@
 package com.weaone.themoa.domain.policy.admin.service;
 
+import com.weaone.themoa.common.exception.BusinessException;
+import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.policy.admin.dto.AdminJobStatus;
+import com.weaone.themoa.domain.policy.common.dto.JobProgressUpdate;
 import com.weaone.themoa.domain.policy.policy.service.PolicyCollectionResult;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
 import com.weaone.themoa.domain.policy.policy.service.PolicyRegionRebuildResult;
@@ -9,11 +12,14 @@ import com.weaone.themoa.domain.policy.policy.service.YouthCenterPolicyCollectio
 import com.weaone.themoa.domain.policy.rag.service.EmbeddingProcessResult;
 import com.weaone.themoa.domain.policy.rag.service.EmbeddingQueueResult;
 import com.weaone.themoa.domain.policy.rag.service.PolicyEmbeddingService;
+import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndex;
 import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndexBuilder;
 import com.weaone.themoa.domain.policy.rag.service.PolicySearchProjectionService;
+import com.weaone.themoa.domain.policy.rag.dto.SearchReadinessResponse;
 import com.weaone.themoa.domain.policy.region.config.RegionSyncProperties;
 import com.weaone.themoa.domain.policy.region.service.RegionSynchronizationResult;
 import com.weaone.themoa.domain.policy.region.service.RegionSynchronizationService;
+import com.weaone.themoa.domain.policy.rag.service.SearchReadinessService;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
@@ -64,7 +70,7 @@ public class AdminJobService {
 
     public AdminJobStatus start(String type) {
         if (jobs.values().stream().anyMatch(job -> job.type.equals(type) && "RUNNING".equals(job.status))) {
-            throw new IllegalStateException("JOB_ALREADY_RUNNING");
+            throw new BusinessException(ErrorCode.POLICY_JOB_ALREADY_RUNNING);
         }
         MutableJob job = new MutableJob(UUID.randomUUID().toString(), type);
         jobs.put(job.id, job);
@@ -116,7 +122,7 @@ public class AdminJobService {
                     job.remaining = result.pendingCountAfter();
                     job.message = result.message();
                     if (initialPending > 0 && result.processedCount() == 0 && !"COMPLETED".equals(result.message())) {
-                        throw new IllegalStateException(result.message());
+                        throw new BusinessException(ErrorCode.POLICY_VECTOR_STORE_NOT_READY);
                     }
                 }
                 case "EMBEDDING_RETRY_FAILED" -> {
@@ -126,7 +132,7 @@ public class AdminJobService {
                 }
                 case "POLICY_REGION_REBUILD" -> {
                     if (regionCodeRepository.count() <= 0) {
-                        throw new IllegalStateException("REGION_CATALOG_EMPTY: 전국 행정지역 동기화를 먼저 실행하세요.");
+                        throw new BusinessException(ErrorCode.POLICY_REGION_CATALOG_NOT_READY);
                     }
                     job.update(new JobProgressUpdate("REBUILDING", "지역 재계산 중", 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, "정책 지역을 다시 계산합니다."));
                     PolicyRegionRebuildResult result = regionRebuildService.rebuildAll(job::update);
@@ -175,7 +181,7 @@ public class AdminJobService {
                 case "FULL_REINDEX" -> {
                     runFullReindex(job);
                 }
-                default -> throw new IllegalArgumentException("UNSUPPORTED_JOB_TYPE: " + job.type);
+                default -> throw new BusinessException(ErrorCode.POLICY_ADMIN_OPERATION_NOT_SUPPORTED);
             }
             if ("RUNNING".equals(job.status)) {
                 job.status = job.failed > 0 ? "COMPLETED_WITH_ERRORS" : "COMPLETED";
@@ -191,14 +197,14 @@ public class AdminJobService {
     private void runSearchProjectionRebuild(MutableJob job) {
         job.update(new JobProgressUpdate("SEARCH_PROJECTION_REBUILDING", "Search Projection 생성 중",
                 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, "활성 정책 Search Projection을 다시 생성합니다."));
-        var result = projectionService.rebuildAll(progress -> job.update(new JobProgressUpdate(
+        PolicySearchProjectionService.ProjectionRebuildResult result = projectionService.rebuildAll(progress -> job.update(new JobProgressUpdate(
                 "SEARCH_PROJECTION_REBUILDING", "Search Projection 생성 중",
                 progress.total(), progress.processed(), progress.processed(), 0, 0, 0,
                 0, 0, null, 0, 0, "Search Projection 생성 중")));
         job.update(new JobProgressUpdate("SEARCH_INDEX_REFRESHING", "검색 인덱스 생성 중",
                 result.total(), result.processed(), result.processed(), 0, 0, 0, 0, 0, null, 0, 0,
                 "Projection 생성 후 검색 인덱스를 갱신합니다."));
-        var index = lexicalIndexBuilder.refresh();
+        PolicyLexicalIndex index = lexicalIndexBuilder.refresh();
         job.total = result.total();
         job.processed = result.processed();
         job.success = result.processed();
@@ -213,7 +219,7 @@ public class AdminJobService {
         job.update(new JobProgressUpdate("SEARCH_INDEX_REFRESHING", "검색 인덱스 생성 중",
                 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0,
                 "활성 Search Projection으로 검색 인덱스를 다시 생성합니다."));
-        var index = lexicalIndexBuilder.refresh();
+        PolicyLexicalIndex index = lexicalIndexBuilder.refresh();
         job.total = index.size();
         job.processed = index.size();
         job.success = index.size();
@@ -232,23 +238,23 @@ public class AdminJobService {
         PolicyCollectionResult collection = collectionService.collectAll(job::update);
         lexicalIndexBuilder.invalidate();
         if ("FAILED".equals(collection.status())) {
-            throw new IllegalStateException("POLICY_COLLECTION_FAILED");
+            throw new BusinessException(ErrorCode.POLICY_EXTERNAL_API_ERROR);
         }
 
         updateFullReindexStage(job, 3, "POLICY_REGION_REBUILD", "정책 지역 계산 중", "저장된 지역 코드를 기준으로 정책 대상 지역을 재분류합니다.");
         PolicyRegionRebuildResult region = regionRebuildService.rebuildAll(job::update);
         if (region.failedCount() > 0) {
-            throw new IllegalStateException("POLICY_REGION_REBUILD_FAILED failed=" + region.failedCount());
+            throw new BusinessException(ErrorCode.POLICY_REGION_REBUILD_FAILED);
         }
 
         updateFullReindexStage(job, 4, "SEARCH_PROJECTION_REBUILD", "Search Projection 생성 중", "Search Projection 전체 재생성을 실행합니다.");
-        var projection = projectionService.rebuildAll(progress -> job.update(new JobProgressUpdate(
+        PolicySearchProjectionService.ProjectionRebuildResult projection = projectionService.rebuildAll(progress -> job.update(new JobProgressUpdate(
                 "SEARCH_PROJECTION_REBUILD", "Search Projection 생성 중",
                 progress.total(), progress.processed(), progress.processed(), 0, 0, 0,
                 0, 0, null, 0, 0, "Search Projection 생성 중")));
 
         updateFullReindexStage(job, 5, "SEARCH_INDEX_REFRESH", "검색 인덱스 생성 중", "Lexical Index를 갱신합니다.");
-        var index = lexicalIndexBuilder.refresh();
+        PolicyLexicalIndex index = lexicalIndexBuilder.refresh();
 
         updateFullReindexStage(job, 6, "EMBEDDING_QUEUE", "Embedding 대기열 등록 중", "전체 정책 Embedding 대기열을 등록합니다.");
         EmbeddingQueueResult queue = embeddingService.queueAll(true, job::update);
@@ -263,16 +269,16 @@ public class AdminJobService {
                 Math.min(totalBatches, (int) Math.ceil((double) progress.processedCount() / batchSize)),
                 totalBatches, null, 0, 0, "Embedding 처리 중")));
         if (process.failedCount() > 0) {
-            throw new IllegalStateException("EMBEDDING_PROCESS_FAILED failed=" + process.failedCount());
+            throw new BusinessException(ErrorCode.POLICY_VECTOR_STORE_NOT_READY);
         }
         if (initialPending > 0 && process.processedCount() == 0 && !"COMPLETED".equals(process.message())) {
-            throw new IllegalStateException(process.message());
+            throw new BusinessException(ErrorCode.POLICY_VECTOR_STORE_NOT_READY);
         }
 
         updateFullReindexStage(job, 8, "SEARCH_READINESS_CHECK", "검색 준비 상태 확인 중", "최종 검색 준비 상태를 확인합니다.");
-        var readiness = readinessService.readiness();
+        SearchReadinessResponse readiness = readinessService.readiness();
         if (!readiness.ready()) {
-            throw new IllegalStateException("SEARCH_DATA_NOT_READY missingSteps=" + readiness.missingSteps());
+            throw new BusinessException(ErrorCode.POLICY_SEARCH_NOT_READY);
         }
 
         job.total = queue.activePolicyCount();
@@ -291,15 +297,14 @@ public class AdminJobService {
             return;
         }
         if (!regionSyncProperties.enabled() || !regionSyncProperties.credentialsConfigured()) {
-            throw new IllegalStateException("REGION_CATALOG_EMPTY: SGIS_REGION_SYNC_ENABLED와 SGIS 인증 정보를 확인하세요.");
+            throw new BusinessException(ErrorCode.POLICY_REGION_SYNC_CONFIG_REQUIRED);
         }
         job.update(new JobProgressUpdate("REGION_CATALOG_SYNC", "전국 행정지역 동기화 중",
                 8, 1, 1, 0, 0, 0, 0, 0, null, 0, 0,
                 "지역 카탈로그가 비어 있어 먼저 전국 행정지역을 동기화합니다."));
         RegionSynchronizationResult result = regionSynchronizationService.synchronize(job::update);
         if (result.failedCount() > 0 || regionCodeRepository.count() <= 0) {
-            throw new IllegalStateException("REGION_CATALOG_SYNC_FAILED failed=" + result.failedCount()
-                    + ", failedProvinceCodes=" + result.failedProvinceCodes());
+            throw new BusinessException(ErrorCode.POLICY_REGION_SYNC_FAILED);
         }
     }
 

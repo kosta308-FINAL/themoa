@@ -7,6 +7,7 @@ import com.weaone.themoa.domain.policy.policy.region.RegionCatalog;
 import com.weaone.themoa.domain.policy.policy.region.RegionNormalizer;
 import com.weaone.themoa.domain.policy.policy.region.UserRegionTextResolver;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
+import com.weaone.themoa.domain.policy.rag.dto.PolicySearchCondition;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -22,7 +23,7 @@ class RuleBasedPolicySearchConditionParserTest {
 
     @Test
     void extractsRegionAgeEmploymentAndKeywords() {
-        var condition = parser.parseCondition("수원 사는 27살 무직 청년 지원금", 20);
+        PolicySearchCondition condition = parser.parseCondition("수원 사는 27살 무직 청년 지원금", 20);
 
         assertThat(condition.province()).isEqualTo("경기도");
         assertThat(condition.city()).isEqualTo("수원시");
@@ -34,7 +35,7 @@ class RuleBasedPolicySearchConditionParserTest {
 
     @Test
     void extractsJejuProvince() {
-        var condition = parser.parseCondition("제주도 청년 월세 지원", 10);
+        PolicySearchCondition condition = parser.parseCondition("제주도 청년 월세 지원", 10);
 
         assertThat(condition.province()).isEqualTo("제주특별자치도");
         assertThat(condition.city()).isNull();
@@ -43,7 +44,7 @@ class RuleBasedPolicySearchConditionParserTest {
 
     @Test
     void extractsSyncedCountyFromDynamicCatalog() {
-        var condition = parser.parseCondition("칠곡에 살고 있는 30살 청년이 받을 수 있는 취업 관련 정책", 10);
+        PolicySearchCondition condition = parser.parseCondition("칠곡에 살고 있는 30살 청년이 받을 수 있는 취업 관련 정책", 10);
 
         assertThat(condition.province()).isEqualTo("경상북도");
         assertThat(condition.city()).isEqualTo("칠곡군");
@@ -52,7 +53,7 @@ class RuleBasedPolicySearchConditionParserTest {
 
     @Test
     void keepsWorkplaceOutOfResidenceAndStoresWorkplaceDiagnostics() {
-        var condition = parser.parseCondition("서울 회사에 다니고 있지만 다른 직장으로 옮기려고 해", 20);
+        PolicySearchCondition condition = parser.parseCondition("서울 회사에 다니고 있지만 다른 직장으로 옮기려고 해", 20);
 
         assertThat(condition.province()).isNull();
         assertThat(condition.workplaceProvince()).isEqualTo("서울특별시");
@@ -60,12 +61,12 @@ class RuleBasedPolicySearchConditionParserTest {
 
     @Test
     void separatesResidenceWorkplaceAndInfersHighSchoolThirdGradeAgeForDisplayOnly() {
-        var commute = parser.parseCondition("수원에 살고 서울로 출근하는 29살 직장인이야", 20);
+        PolicySearchCondition commute = parser.parseCondition("수원에 살고 서울로 출근하는 29살 직장인이야", 20);
         assertThat(commute.province()).isEqualTo("경기도");
         assertThat(commute.city()).isEqualTo("수원시");
         assertThat(commute.workplaceProvince()).isEqualTo("서울특별시");
 
-        var highSchool = parser.parseCondition("경기도에 사는 고3인데 취업이나 직업교육 관련 지원 정책이 궁금해", 20);
+        PolicySearchCondition highSchool = parser.parseCondition("경기도에 사는 고3인데 취업이나 직업교육 관련 지원 정책이 궁금해", 20);
         assertThat(highSchool.province()).isEqualTo("경기도");
         assertThat(highSchool.age()).isNull();
         assertThat(highSchool.inferredAge()).isEqualTo(18);

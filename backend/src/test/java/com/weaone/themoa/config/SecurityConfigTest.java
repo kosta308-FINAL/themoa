@@ -2,7 +2,6 @@ package com.weaone.themoa.config;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
-import com.weaone.themoa.common.response.ApiResponse;
 import com.weaone.themoa.security.handler.JwtAccessDeniedHandler;
 import com.weaone.themoa.security.handler.JwtAuthenticationEntryPoint;
 import com.weaone.themoa.security.handler.SecurityErrorResponder;
@@ -21,13 +20,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
+import testsupport.SecurityTestController;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.not;
@@ -52,7 +48,8 @@ import java.util.Optional;
         JwtAuthenticationEntryPoint.class,
         JwtAccessDeniedHandler.class,
         SecurityErrorResponder.class,
-        SecurityConfigTest.SecurityTestBeans.class
+        SecurityConfigTest.SecurityTestBeans.class,
+        SecurityTestController.class
 })
 class SecurityConfigTest {
 
@@ -146,43 +143,5 @@ class SecurityConfigTest {
             return mock(TokenVersionCache.class);
         }
     }
-}
 
-@RestController
-class SecurityTestController {
-
-    @PostMapping("/api/auth/login")
-    ApiResponse<String> login() {
-        return ApiResponse.success("login");
-    }
-
-    @GetMapping("/api/protected")
-    ApiResponse<String> protectedApi(Authentication authentication) {
-        return ApiResponse.success(String.valueOf(authentication.getPrincipal()));
-    }
-
-    @PostMapping("/api/policies/search")
-    ApiResponse<String> policySearch() {
-        return ApiResponse.success("search");
-    }
-
-    @GetMapping("/api/policies/1")
-    ApiResponse<String> policyDetail() {
-        return ApiResponse.success("detail");
-    }
-
-    @GetMapping("/api/policies/1/raw")
-    ApiResponse<String> policyRaw() {
-        return ApiResponse.success("raw");
-    }
-
-    @GetMapping("/api/policies/admin/status")
-    ApiResponse<String> policyAdmin() {
-        return ApiResponse.success("admin");
-    }
-
-    @GetMapping("/api/policies/bookmarks/1")
-    ApiResponse<String> policyBookmark() {
-        return ApiResponse.success("bookmark");
-    }
 }

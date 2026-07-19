@@ -3,6 +3,7 @@ package com.weaone.themoa.domain.policy.rag.service;
 import com.weaone.themoa.domain.policy.rag.dto.ConditionMatchStatus;
 import com.weaone.themoa.domain.policy.rag.dto.EducationStage;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyTargetAudienceClassification;
+import com.weaone.themoa.domain.policy.rag.dto.TargetStageMatchResult;
 import com.weaone.themoa.domain.policy.rag.dto.UserEducationStageCondition;
 import org.junit.jupiter.api.Test;
 
@@ -17,35 +18,35 @@ class PolicyTargetEligibilityFilterTest {
 
     @Test
     void universityUserMismatchesHighSchoolOnlyPolicy() {
-        var result = filter.match(university, target(Set.of(EducationStage.HIGH_SCHOOL), true));
+        TargetStageMatchResult result = filter.match(university, target(Set.of(EducationStage.HIGH_SCHOOL), true));
 
         assertThat(result.status()).isEqualTo(ConditionMatchStatus.MISMATCH);
     }
 
     @Test
     void universityUserMatchesUniversityPolicy() {
-        var result = filter.match(university, target(Set.of(EducationStage.UNIVERSITY), true));
+        TargetStageMatchResult result = filter.match(university, target(Set.of(EducationStage.UNIVERSITY), true));
 
         assertThat(result.status()).isEqualTo(ConditionMatchStatus.MATCH);
     }
 
     @Test
     void universityUserMatchesGeneralYouthPolicy() {
-        var result = filter.match(university, target(Set.of(EducationStage.GENERAL_YOUTH), false));
+        TargetStageMatchResult result = filter.match(university, target(Set.of(EducationStage.GENERAL_YOUTH), false));
 
         assertThat(result.status()).isEqualTo(ConditionMatchStatus.MATCH);
     }
 
     @Test
     void universityUserMatchesMixedHighSchoolUniversityPolicy() {
-        var result = filter.match(university, target(Set.of(EducationStage.HIGH_SCHOOL, EducationStage.UNIVERSITY), true));
+        TargetStageMatchResult result = filter.match(university, target(Set.of(EducationStage.HIGH_SCHOOL, EducationStage.UNIVERSITY), true));
 
         assertThat(result.status()).isEqualTo(ConditionMatchStatus.MATCH);
     }
 
     @Test
     void unknownPolicyTargetIsKeptAsUnknown() {
-        var result = filter.match(university, target(Set.of(EducationStage.UNKNOWN), false));
+        TargetStageMatchResult result = filter.match(university, target(Set.of(EducationStage.UNKNOWN), false));
 
         assertThat(result.status()).isEqualTo(ConditionMatchStatus.UNKNOWN);
     }

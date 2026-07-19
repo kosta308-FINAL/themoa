@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * 사용자 원문에서 현재 취업 상태를 판정한다.
@@ -31,7 +32,7 @@ public class UserEmploymentStatusDetector {
             return UserEmploymentStatusResult.unknown();
         }
         String text = query.replaceAll("\\s+", " ");
-        var unemployed = UNEMPLOYED.matcher(text);
+        Matcher unemployed = UNEMPLOYED.matcher(text);
         if (unemployed.find()) {
             return new UserEmploymentStatusResult(UserEmploymentStatus.UNEMPLOYED, true, 0.95,
                     List.of("RULE_EXPLICIT: " + unemployed.group()));
@@ -39,7 +40,7 @@ public class UserEmploymentStatusDetector {
         if (FUTURE_OR_WISH.matcher(text).find()) {
             return UserEmploymentStatusResult.unknown();
         }
-        var employed = EMPLOYED.matcher(text);
+        Matcher employed = EMPLOYED.matcher(text);
         if (employed.find()) {
             return new UserEmploymentStatusResult(UserEmploymentStatus.EMPLOYED, true, 0.95,
                     List.of("RULE_EXPLICIT: " + employed.group()));

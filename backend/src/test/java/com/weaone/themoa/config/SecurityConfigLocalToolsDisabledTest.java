@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import testsupport.SecurityTestController;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -27,7 +28,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         JwtAuthenticationEntryPoint.class,
         JwtAccessDeniedHandler.class,
         SecurityErrorResponder.class,
-        SecurityConfigTest.SecurityTestBeans.class
+        SecurityConfigTest.SecurityTestBeans.class,
+        SecurityTestController.class
 })
 class SecurityConfigLocalToolsDisabledTest {
 

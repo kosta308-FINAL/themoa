@@ -1,9 +1,11 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weaone.themoa.domain.policy.policy.domain.PolicySearchProjection;
 import com.weaone.themoa.domain.policy.policy.domain.PolicySourceSnapshot;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyTitleIdentity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -65,7 +67,7 @@ public class PolicyDisplayTitleResolver {
             Map<String, Object> fields = objectMapper.readValue(snapshot.getRawPolicyJson(), new TypeReference<>() {
             });
             return text(fields, "plcyNm", "title", "policyName");
-        } catch (Exception ignored) {
+        } catch (JsonProcessingException ignored) {
             return null;
         }
     }
@@ -97,7 +99,7 @@ public class PolicyDisplayTitleResolver {
     }
 
     private boolean aliasRelationship(String current, String candidate) {
-        var identity = normalizer.titleIdentity(candidate);
+        PolicyTitleIdentity identity = normalizer.titleIdentity(candidate);
         String normalizedCurrent = normalizer.normalize(current);
         return StringUtils.hasText(normalizedCurrent)
                 && identity.normalizedAliases().contains(normalizedCurrent);

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,7 +41,7 @@ public class PolicyRegionSyncService {
         int removed = 0;
         int added = 0;
         if (!removedIds.isEmpty()) {
-            var removedRegions = existing.entrySet().stream()
+            List<PolicyRegion> removedRegions = existing.entrySet().stream()
                     .filter(entry -> removedIds.contains(entry.getKey()))
                     .map(Map.Entry::getValue)
                     .toList();

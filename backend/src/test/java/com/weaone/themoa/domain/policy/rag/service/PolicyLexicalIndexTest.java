@@ -28,7 +28,7 @@ class PolicyLexicalIndexTest {
         PolicySearchIntent intent = new PolicySearchIntent("사회초년생 자산형성 정책", Set.of(), Set.of("자산형성"),
                 Set.of("자산형성", "계좌", "통장", "저축"), "청년 자산형성 저축 계좌 통장 금융 지원 정책", "자산형성 계좌 통장 저축");
 
-        var result = index.search(condition, intent, 10);
+        List<PolicyLexicalCandidate> result = index.search(condition, intent, 10);
 
         assertThat(result).isNotEmpty();
         assertThat(result.get(0).policyId()).isEqualTo(1);

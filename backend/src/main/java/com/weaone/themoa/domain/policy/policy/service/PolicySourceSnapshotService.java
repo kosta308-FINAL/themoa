@@ -2,6 +2,8 @@ package com.weaone.themoa.domain.policy.policy.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.weaone.themoa.common.exception.BusinessException;
+import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.policy.policy.domain.Policy;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyRawData;
 import com.weaone.themoa.domain.policy.policy.domain.PolicySource;
@@ -29,7 +31,8 @@ public class PolicySourceSnapshotService {
     }
 
     public void upsert(Integer policyId, String sourcePolicyId, PolicyRawData rawData, Map<String, Object> fields) {
-        Policy policy = policyRepository.findById(policyId).orElseThrow();
+        Policy policy = policyRepository.findById(policyId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.POLICY_NOT_FOUND));
         String rawJson = writeJson(fields);
         String hash = DigestUtils.md5DigestAsHex(rawJson.getBytes(StandardCharsets.UTF_8));
         repository.findByPolicyId(policyId)
@@ -42,7 +45,7 @@ public class PolicySourceSnapshotService {
         try {
             return objectMapper.writeValueAsString(fields == null ? Map.of() : fields);
         } catch (JsonProcessingException ex) {
-            throw new IllegalArgumentException("정책 원본 JSON 직렬화에 실패했습니다.", ex);
+            throw new BusinessException(ErrorCode.POLICY_DATA_SERIALIZATION_FAILED);
         }
     }
 }

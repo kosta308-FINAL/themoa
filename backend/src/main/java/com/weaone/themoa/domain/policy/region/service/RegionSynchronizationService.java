@@ -7,7 +7,7 @@ import com.weaone.themoa.domain.policy.policy.region.RegionCatalog;
 import com.weaone.themoa.domain.policy.policy.repository.RegionExternalCodeRepository;
 import com.weaone.themoa.domain.policy.policy.repository.RegionSyncErrorRepository;
 import com.weaone.themoa.domain.policy.policy.repository.RegionSyncRunRepository;
-import com.weaone.themoa.domain.policy.admin.service.JobProgressUpdate;
+import com.weaone.themoa.domain.policy.common.dto.JobProgressUpdate;
 import com.weaone.themoa.domain.policy.region.config.RegionSyncProperties;
 import com.weaone.themoa.domain.policy.region.sgis.SgisApiException;
 import com.weaone.themoa.domain.policy.region.sgis.SgisRegionClient;
@@ -91,7 +91,8 @@ public class RegionSynchronizationService {
             }
             RegionCode savedProvince;
             try {
-                var persisted = persistenceService.upsertProvince(province.cd(), province.addrName());
+                RegionProvincePersistenceService.PersistedRegion persisted =
+                        persistenceService.upsertProvince(province.cd(), province.addrName());
                 savedProvince = persisted.region();
                 counter.add(persisted);
             } catch (RuntimeException ex) {
@@ -117,7 +118,8 @@ public class RegionSynchronizationService {
                     if (!normalized.supported()) {
                         continue;
                     }
-                    var persisted = persistenceService.upsertMunicipality(savedProvince, normalized);
+                    RegionProvincePersistenceService.PersistedRegion persisted =
+                            persistenceService.upsertMunicipality(savedProvince, normalized);
                     counter.add(persisted);
                 }
             } catch (RuntimeException ex) {
