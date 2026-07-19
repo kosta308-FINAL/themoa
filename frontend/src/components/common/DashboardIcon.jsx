@@ -21,6 +21,7 @@ const PATHS = {
   target: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM17 12a5 5 0 1 1-10 0 5 5 0 0 1 10 0ZM12 12h.01',
   'chevron-right': 'm9 18 6-6-6-6',
   'chevron-left': 'm15 18-6-6 6-6',
+  x: 'm6 6 12 12M18 6 6 18',
 }
 
 function DashboardIcon({ name, size = 18 }) {

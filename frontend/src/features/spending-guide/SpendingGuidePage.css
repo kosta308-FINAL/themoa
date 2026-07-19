@@ -1052,7 +1052,7 @@
 .spending-guide .spending-guide-line { position: absolute; z-index: 2; left: 38px; right: 0; bottom: auto; border-top: 1px dashed #f59e0b; pointer-events: none; }
 .spending-guide .spending-guide-line span { position: absolute; right: 2px; top: -20px; bottom: auto; padding: 2px 6px; border-radius: 5px; color: #9a6004; background: #fff7df; font-size: 9px; font-weight: 700; }
 .spending-guide .spending-bars { position: absolute; inset: 12px 0 0 38px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: initial; }
-.spending-guide .spending-bar-item { height: 100%; display: grid; grid-template-rows: minmax(0, 1fr) 26px 32px; align-items: stretch; justify-items: center; gap: 0; color: #96a29b; background: transparent; font-size: 10px; }
+.spending-guide .spending-bar-item { height: 100%; display: grid; grid-template-rows: minmax(0, 1fr) 26px 32px; align-items: stretch; justify-content: stretch; justify-items: center; gap: 0; color: #96a29b; background: transparent; font-size: 10px; }
 .spending-guide .spending-bar-space { grid-row: 1; width: 100%; height: auto; display: flex; align-items: flex-end; justify-content: center; }
 .spending-guide .spending-bar-space.negative-space { grid-row: 2; align-items: flex-start; }
 .spending-guide .spending-bar-space i { position: relative; width: min(30px, 58%); min-height: 5px; border-radius: 7px 7px 3px 3px; background: #9ee5b6; transition: transform .15s ease, background .15s ease; }
@@ -1098,6 +1098,124 @@
 .spending-guide .spending-coaching-list article.active,
 .spending-guide .spending-coaching-list.expanded article { max-height: 240px; }
 
+/* dayguide.html manual transaction modal parity */
+.spending-manual-backdrop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 28, 20, .42);
+  backdrop-filter: blur(4px);
+}
+
+.spending-manual-modal {
+  width: min(100%, 510px);
+  max-height: min(760px, calc(100vh - 40px));
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, .7);
+  border-radius: 20px;
+  box-shadow: 0 22px 70px rgba(14, 40, 23, .22);
+}
+
+.spending-manual-modal .spending-modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  align-items: center;
+  gap: 15px;
+  padding: 19px 21px 15px;
+  background: rgba(255, 255, 255, .96);
+  backdrop-filter: blur(10px);
+}
+
+.spending-manual-modal .spending-modal-head h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.spending-manual-modal .spending-modal-close {
+  display: grid;
+  place-items: center;
+  color: var(--spending-muted);
+  background: #f2f5f3;
+  font-size: inherit;
+}
+
+.spending-manual-modal .spending-entry-form {
+  grid-template-columns: minmax(0, 1fr) 150px;
+  gap: 12px;
+  padding: 20px 21px 22px;
+}
+
+.spending-manual-modal .spending-entry-form label {
+  gap: 7px;
+}
+
+.spending-manual-modal .spending-entry-form label > span {
+  color: #415148;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.spending-manual-modal .spending-entry-form input,
+.spending-manual-modal .spending-entry-form select,
+.spending-manual-modal .spending-entry-form textarea {
+  min-height: 46px;
+  padding: 0 13px;
+  border: 1px solid #d5e4da;
+  border-radius: 11px;
+  font-size: 13px;
+}
+
+.spending-manual-modal .spending-entry-form textarea {
+  min-height: 78px;
+  padding-top: 12px;
+}
+
+.spending-manual-modal .spending-input-suffix input {
+  padding-right: 35px;
+  text-align: right;
+  font-weight: 700;
+}
+
+.spending-manual-modal .spending-input-suffix em {
+  right: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+}
+
+.spending-manual-modal .spending-form-notice {
+  align-items: center;
+  gap: 11px;
+  margin-top: 4px;
+  padding: 13px 15px;
+  border: 1px solid #ccebd7;
+  border-radius: 14px;
+  color: #4f6b59;
+  background: #f1fbf5;
+  font-size: 13px;
+  line-height: normal;
+}
+
+.spending-manual-modal .spending-form-notice-icon {
+  width: 31px;
+  height: 31px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--spending-green-dark);
+  background: #dff6e7;
+}
+
+.spending-manual-modal .spending-primary {
+  min-height: 48px;
+  margin-top: 8px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 750;
+}
+
 @media (max-width: 1180px) {
   .spending-guide .spending-main { padding-inline: 24px; }
   .spending-guide .spending-content-grid { grid-template-columns: 1fr; }
@@ -1123,6 +1241,10 @@
   .spending-guide .spending-category-layout { grid-template-columns: 1fr; justify-items: center; }
   .spending-guide .spending-category-legend { width: 100%; }
   .spending-guide .spending-fixed-candidate-panel { padding: 17px; }
+  .spending-manual-backdrop { align-items: flex-end; padding: 0; }
+  .spending-manual-modal { width: 100%; max-height: 94vh; border-radius: 20px 20px 0 0; }
+  .spending-manual-modal .spending-entry-form { grid-template-columns: 1fr; }
+  .spending-manual-modal .spending-entry-form .wide { grid-column: auto; }
 }
 
 @media (max-width: 560px) {
