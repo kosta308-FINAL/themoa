@@ -507,7 +507,7 @@ function SpendingGuidePage() {
       } catch {
         // 초기 수집은 백엔드에서 계속 진행되므로 다음 폴링에서 다시 확인한다.
       }
-    }, 2000)
+    }, 5000)
     return () => window.clearInterval(intervalId)
   }, [initialSyncState?.overallStatus, loadGuide])
 
