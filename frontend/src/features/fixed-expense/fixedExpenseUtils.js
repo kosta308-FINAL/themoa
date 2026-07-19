@@ -55,6 +55,16 @@ const scheduleBadge = (daysLeft) => {
   return { label: `D-${daysLeft}`, tone: "" };
 };
 
+/** 서버가 계산한 이번 주기 이행 상태(view/fixedExpense.md §4). 카드 미연동·이체형은 null(배지 없음). */
+const PAYMENT_STATUS_BADGE = {
+  PAID: { label: "정상", tone: "paid" },
+  DUE_SOON: { label: "결제예정", tone: "today" },
+  MISSED: { label: "미납", tone: "missed" },
+};
+
+const paymentStatusBadge = (paymentStatus) =>
+  PAYMENT_STATUS_BADGE[paymentStatus] || null;
+
 const formatMonthDay = (date) =>
   date ? `${date.getMonth() + 1}월 ${date.getDate()}일` : "—";
 
@@ -79,6 +89,7 @@ export {
   METHOD_LABEL,
   nextPayDate,
   paymentSchedule,
+  paymentStatusBadge,
   scheduleBadge,
   serviceInitial,
   toneForId,

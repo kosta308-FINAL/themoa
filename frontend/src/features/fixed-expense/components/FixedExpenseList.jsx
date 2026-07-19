@@ -3,6 +3,7 @@ import {
   formatAmount,
   METHOD_LABEL,
   paymentSchedule,
+  paymentStatusBadge,
   scheduleBadge,
   serviceInitial,
   toneForId,
@@ -96,7 +97,11 @@ function FixedExpenseList({ items, filter, onFilterChange, sort, onSortChange, o
       {sorted.length ? (
         <div className="fx-expense-list">
           {sorted.map(({ item, schedule }) => {
-            const badge = schedule ? scheduleBadge(schedule.daysUntil) : null;
+            const badge = item.paymentStatus
+              ? paymentStatusBadge(item.paymentStatus)
+              : schedule
+                ? scheduleBadge(schedule.daysUntil)
+                : null;
             return (
               <button
                 type="button"

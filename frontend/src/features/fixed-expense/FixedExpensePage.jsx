@@ -9,6 +9,7 @@ import {
 } from "../../api/spendingGuideApi";
 import {
   getFixedExpenses,
+  reclassifyFixedExpenseCandidateAsHabit,
   rejectFixedExpenseCandidate,
   snoozeFixedExpenseCandidate,
 } from "../../api/fixedExpenseApi";
@@ -104,6 +105,19 @@ function FixedExpensePage() {
       await rejectFixedExpenseCandidate(candidateId);
       await reloadCandidates();
       showToast("앞으로 이 항목은 다시 추천하지 않을게요.");
+    } catch (error) {
+      showToast(getApiErrorMessage(error, "요청을 처리하지 못했어요."));
+    } finally {
+      setPendingCandidateId(null);
+    }
+  };
+
+  const handleCandidateReclassifyHabit = async (candidateId) => {
+    setPendingCandidateId(candidateId);
+    try {
+      await reclassifyFixedExpenseCandidateAsHabit(candidateId);
+      await reloadCandidates();
+      showToast("습관적 소비로 분류했어요.");
     } catch (error) {
       showToast(getApiErrorMessage(error, "요청을 처리하지 못했어요."));
     } finally {
@@ -236,6 +250,7 @@ function FixedExpensePage() {
               onRegister={(candidate) => setRegisterState({ candidate })}
               onSnooze={handleCandidateSnooze}
               onReject={handleCandidateReject}
+              onReclassifyHabit={handleCandidateReclassifyHabit}
             />
 
             <div className="fx-content-grid">

@@ -447,13 +447,19 @@
 
 .fx-suggestion-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 7px;
   margin-top: auto;
 }
 
 .fx-suggestion-actions .fx-primary-button {
-  flex: 1;
+  flex: 1 1 100%;
+}
+
+.fx-suggestion-actions .fx-ghost-button {
+  flex: 1 1 auto;
+  white-space: nowrap;
 }
 
 .fx-more-button {
@@ -580,9 +586,15 @@
   background: var(--fx-orange-soft);
 }
 
-.fx-status-chip.soon {
+.fx-status-chip.soon,
+.fx-status-chip.missed {
   color: var(--fx-red);
   background: var(--fx-red-soft);
+}
+
+.fx-status-chip.paid {
+  color: var(--fx-green-dark);
+  background: var(--fx-green-soft);
 }
 
 .fx-expense-amount {
@@ -844,6 +856,62 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 90px;
   gap: 8px;
+}
+
+.fx-field input[readonly] {
+  color: var(--fx-muted);
+  background: var(--fx-page);
+}
+
+.fx-merchant-picker {
+  position: relative;
+}
+
+.fx-merchant-picker-list {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid var(--fx-border-strong);
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}
+
+.fx-merchant-picker-list li + li {
+  margin-top: 2px;
+}
+
+.fx-merchant-picker-list button {
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fx-text);
+  font-size: 13px;
+  text-align: left;
+}
+
+.fx-merchant-picker-list button:hover {
+  background: var(--fx-green-pale);
+}
+
+.fx-merchant-picker-new {
+  color: var(--fx-green-dark);
+  font-weight: 700;
+}
+
+.fx-merchant-picker-empty {
+  padding: 9px 10px;
+  color: var(--fx-muted);
+  font-size: 12px;
 }
 
 .fx-form-notice {

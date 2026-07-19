@@ -5,6 +5,7 @@ import {
   registerFixedExpenseDirect,
   registerFixedExpenseFromCandidate,
 } from "../../../api/fixedExpenseApi";
+import MerchantAliasPicker from "./MerchantAliasPicker";
 
 const PAY_DAYS = Array.from({ length: 31 }, (_, index) => index + 1);
 const WON = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
@@ -13,6 +14,7 @@ function RegisterExpenseModal({ candidate = null, categories, onClose, onSaved }
   const [form, setForm] = useState({
     name: candidate?.merchantAliasName || "",
     method: "CARD",
+    merchantAliasId: null,
     merchantName: candidate?.merchantAliasName || "",
     categoryId: candidate?.recommendedCategoryId
       ? String(candidate.recommendedCategoryId)
@@ -55,8 +57,9 @@ function RegisterExpenseModal({ candidate = null, categories, onClose, onSaved }
           name: form.name.trim(),
           categoryId: Number(form.categoryId),
           paymentMethod: form.method,
-          merchantAliasId: null,
-          newMerchantAliasName: isCard ? form.merchantName.trim() : null,
+          merchantAliasId: isCard ? form.merchantAliasId : null,
+          newMerchantAliasName:
+            isCard && !form.merchantAliasId ? form.merchantName.trim() : null,
           expectedAmount: Number(form.amount),
           expectedCurrency: form.currency,
           expectedPayDay: Number(form.payDay),
@@ -144,14 +147,21 @@ function RegisterExpenseModal({ candidate = null, categories, onClose, onSaved }
               </div>
               {isCard && (
                 <div className="fx-field full">
-                  <label htmlFor="fx-merchant-name">서비스/가맹점 *</label>
-                  <input
-                    id="fx-merchant-name"
-                    value={form.merchantName}
-                    onChange={update("merchantName")}
-                    required
-                    placeholder="새 서비스 이름을 입력하세요"
-                  />
+                  <span className="fx-field-label">서비스/가맹점 *</span>
+                  {candidate ? (
+                    <input value={form.merchantName} readOnly />
+                  ) : (
+                    <MerchantAliasPicker
+                      initialName={form.merchantName}
+                      onChange={({ merchantAliasId, name }) =>
+                        setForm((current) => ({
+                          ...current,
+                          merchantAliasId,
+                          merchantName: name,
+                        }))
+                      }
+                    />
+                  )}
                 </div>
               )}
               <div className="fx-field">

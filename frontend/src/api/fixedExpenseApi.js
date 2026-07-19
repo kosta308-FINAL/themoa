@@ -34,3 +34,8 @@ export const rejectFixedExpenseCandidate = (candidateId) =>
 
 export const snoozeFixedExpenseCandidate = (candidateId) =>
   axiosInstance.post(`/api/fixed-expense-candidates/${candidateId}/snooze`);
+
+export const reclassifyFixedExpenseCandidateAsHabit = (candidateId) =>
+  axiosInstance.post(
+    `/api/fixed-expense-candidates/${candidateId}/reclassify-habit`,
+  );

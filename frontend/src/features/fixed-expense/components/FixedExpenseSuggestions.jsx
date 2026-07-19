@@ -17,6 +17,7 @@ function FixedExpenseSuggestions({
   onRegister,
   onSnooze,
   onReject,
+  onReclassifyHabit,
 }) {
   if (!candidates?.length) return null;
 
@@ -70,6 +71,14 @@ function FixedExpenseSuggestions({
                 onClick={() => onSnooze(candidate.id)}
               >
                 나중에
+              </button>
+              <button
+                type="button"
+                className="fx-ghost-button"
+                disabled={pendingId === candidate.id}
+                onClick={() => onReclassifyHabit(candidate.id)}
+              >
+                습관적 소비로 분류
               </button>
               <button
                 type="button"

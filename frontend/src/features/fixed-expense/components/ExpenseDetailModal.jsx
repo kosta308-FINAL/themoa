@@ -11,6 +11,7 @@ import {
   formatAmount,
   formatWon,
   METHOD_LABEL,
+  paymentStatusBadge,
   serviceInitial,
   toneForId,
 } from "../fixedExpenseUtils";
@@ -241,6 +242,18 @@ function ExpenseDetailModal({ expense, onClose, onChanged }) {
                   <span>결제일</span>
                   <strong>매월 {expense.expectedPayDay}일</strong>
                 </div>
+                {expense.paymentStatus && (
+                  <div className="fx-detail-row">
+                    <span>이번 달 이행 상태</span>
+                    <strong>
+                      <span
+                        className={`fx-status-chip ${paymentStatusBadge(expense.paymentStatus)?.tone || ""}`}
+                      >
+                        {paymentStatusBadge(expense.paymentStatus)?.label}
+                      </span>
+                    </strong>
+                  </div>
+                )}
               </div>
 
               {expense.paymentMethod === "CARD" && (
