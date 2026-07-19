@@ -20,6 +20,18 @@ export const getTodayTransactions = (limit = 5) =>
 export const getSpendingTransactions = (params) =>
   axiosInstance.get('/api/spending-guide/transactions', { params }).then(responseData)
 
+export const getConsumptionHistorySummary = (budgetId) =>
+  axiosInstance
+    .get('/api/spending-guide/consumption-history/summary', { params: budgetId ? { budgetId } : {} })
+    .then(responseData)
+
+export const getConsumptionHistoryTransactions = ({ budgetId, page = 0, size = 10 } = {}) =>
+  axiosInstance
+    .get('/api/spending-guide/consumption-history/transactions', {
+      params: { ...(budgetId ? { budgetId } : {}), page, size },
+    })
+    .then(responseData)
+
 export const getTransactionDetail = (transactionId) =>
   axiosInstance.get(`/api/card-transactions/${transactionId}`).then(responseData)
 
