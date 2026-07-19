@@ -19,6 +19,7 @@ import com.weaone.themoa.domain.cardconnection.event.CardSyncResumedEvent;
 import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
 import com.weaone.themoa.domain.cardconnection.repository.CardIssuerRepository;
 import com.weaone.themoa.domain.cardconnection.repository.ConnectionAttemptRepository;
+import com.weaone.themoa.domain.cardconnection.support.CardIssuerNameCache;
 import com.weaone.themoa.domain.member.entity.EntryMode;
 import com.weaone.themoa.domain.member.entity.Gender;
 import com.weaone.themoa.domain.member.entity.Member;
@@ -69,6 +70,8 @@ class CardConnectionServiceTest {
     private CodefCardConnectionClient codefCardConnectionClient;
     @Mock
     private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private CardIssuerNameCache cardIssuerNameCache;
 
     @InjectMocks
     private CardConnectionService cardConnectionService;

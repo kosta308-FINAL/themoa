@@ -20,6 +20,7 @@ import com.weaone.themoa.domain.cardconnection.event.CardSyncResumedEvent;
 import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
 import com.weaone.themoa.domain.cardconnection.repository.CardIssuerRepository;
 import com.weaone.themoa.domain.cardconnection.repository.ConnectionAttemptRepository;
+import com.weaone.themoa.domain.cardconnection.support.CardIssuerNameCache;
 import com.weaone.themoa.domain.cardconnection.support.CardIssuerPolicy;
 import com.weaone.themoa.domain.cardtransaction.service.RecoveryMode;
 import com.weaone.themoa.domain.member.entity.Member;
@@ -58,6 +59,7 @@ public class CardConnectionService {
     private final CardConnectionLockService cardConnectionLockService;
     private final CodefCardConnectionClient codefCardConnectionClient;
     private final ApplicationEventPublisher eventPublisher;
+    private final CardIssuerNameCache cardIssuerNameCache;
 
     @Transactional
     public CardConnectionResponse connect(Long memberId, CardConnectionCreateRequest request) {
@@ -127,9 +129,14 @@ public class CardConnectionService {
     public InitialSyncStatusResponse getInitialSyncStatus(Long memberId) {
         List<CardConnection> connections = cardConnectionRepository.findByMember_Id(memberId);
         List<InitialSyncStatusResponse.ConnectionSyncStatus> items = connections.stream()
-                .map(c -> new InitialSyncStatusResponse.ConnectionSyncStatus(
-                        c.getId(), c.getCardIssuer().getOrganization(), c.getCardIssuer().getName(),
-                        c.getInitialSyncStatus().name(), c.getInitialSyncErrorCode()))
+                .map(c -> {
+                    // getOrganization()은 CardIssuer의 @Id라 lazy 프록시 초기화(추가 SELECT) 없이 읽힌다.
+                    String organization = c.getCardIssuer().getOrganization();
+                    String organizationName = cardIssuerNameCache.findName(organization).orElse(null);
+                    return new InitialSyncStatusResponse.ConnectionSyncStatus(
+                            c.getId(), organization, organizationName,
+                            c.getInitialSyncStatus().name(), c.getInitialSyncErrorCode());
+                })
                 .toList();
         InitialSyncStatus overall = computeOverallStatus(connections);
         return new InitialSyncStatusResponse(overall == null ? null : overall.name(), items);
