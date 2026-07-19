@@ -20,4 +20,15 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
     Optional<Budget> findFirstByMember_IdAndCycleStartDateLessThanOrderByCycleStartDateDesc(Long memberId, LocalDate cycleStartDate);
 
     Optional<Budget> findFirstByMember_IdAndCycleStartDateGreaterThanOrderByCycleStartDateAsc(Long memberId, LocalDate cycleStartDate);
+
+    /**
+     * 전체 소비내역 상세 주기 이동(consumeHistoryDetail.md §4.1): 도넛과 달리 "가장 가까운 저장된 주기"가
+     * 아니라 "바로 연속된 주기"만 허용한다. 후보를 찾은 뒤 호출자가 날짜 연속성(끝일+1=시작일)을 검증해야
+     * 한다 — 중간 주기가 비어 있으면 더 오래된 주기를 직전 주기로 잘못 노출하지 않기 위해서다.
+     */
+    Optional<Budget> findFirstByMember_IdAndCycleEndDateBeforeOrderByCycleEndDateDesc(
+            Long memberId, LocalDate cycleStartDate);
+
+    Optional<Budget> findFirstByMember_IdAndCycleStartDateAfterOrderByCycleStartDateAsc(
+            Long memberId, LocalDate cycleEndDate);
 }

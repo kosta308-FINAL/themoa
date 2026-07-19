@@ -171,6 +171,59 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
             Long memberId, TransactionSource source, LocalDate usedDate, BigDecimal amount);
 
     /**
+     * 전체 소비내역 상세 결제내역(consumeHistoryDetail.md §3.2·§5·§7.2): 급여주기 범위 페이지, 정렬은
+     * usedAt DESC, id DESC로 고정한다. 목록 DTO 변환({@link com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionResponse#from})이
+     * category·merchantAlias·merchant·card 연관관계를 전부 읽으므로 N+1을 막기 위해 함께 fetch join한다.
+     * fetch join + Page이므로 count 쿼리를 별도로 준다.
+     */
+    @Query(value = "select t from CardTransaction t "
+            + "join fetch t.category "
+            + "left join fetch t.merchantAlias "
+            + "left join fetch t.merchant "
+            + "left join fetch t.card c "
+            + "left join fetch c.cardConnection cc "
+            + "left join fetch cc.cardIssuer "
+            + "where t.member.id = :memberId and t.status <> :rejected and t.fixedExpense is null "
+            + "and t.usedDate between :startDate and :endDate "
+            + "order by t.usedAt desc, t.id desc",
+            countQuery = "select count(t) from CardTransaction t "
+                    + "where t.member.id = :memberId and t.status <> :rejected and t.fixedExpense is null "
+                    + "and t.usedDate between :startDate and :endDate")
+    Page<CardTransaction> findConsumptionHistoryPage(@Param("memberId") Long memberId,
+                                                       @Param("rejected") TransactionStatus rejected,
+                                                       @Param("startDate") LocalDate startDate,
+                                                       @Param("endDate") LocalDate endDate,
+                                                       Pageable pageable);
+
+    /**
+     * 많이 쓴 곳 TOP 5(consumeHistoryDetail.md §4.4): alias -&gt; merchant -&gt; 수기 원본명(대문자·trim)
+     * 우선순위로 묶는다. Native Query라 공통 조건(§2.2)의 {@code replaced_at is null}을 직접 명시한다.
+     */
+    @Query(value = "select "
+            + "case when ct.merchant_alias_id is not null then concat('ALIAS:', ct.merchant_alias_id) "
+            + "     when ct.merchant_id is not null then concat('MERCHANT:', ct.merchant_id) "
+            + "     else concat('MANUAL:', upper(trim(ct.merchant_name_raw))) end as merchantKey, "
+            + "coalesce(max(ma.canonical_service_name), max(m.display_name), min(ct.merchant_name_raw)) as displayName, "
+            + "sum(ct.amount - coalesce(ct.canceled_amount, 0)) as netAmount, "
+            + "sum(case when (ct.amount - coalesce(ct.canceled_amount, 0)) > 0 then 1 else 0 end) as transactionCount "
+            + "from card_transaction ct "
+            + "left join merchant_alias ma on ma.id = ct.merchant_alias_id "
+            + "left join merchant m on m.id = ct.merchant_id "
+            + "where ct.member_id = :memberId and ct.status <> :rejectedStatus "
+            + "and ct.fixed_expense_id is null and ct.replaced_at is null "
+            + "and ct.used_date between :startDate and :endDate "
+            + "group by case when ct.merchant_alias_id is not null then concat('ALIAS:', ct.merchant_alias_id) "
+            + "     when ct.merchant_id is not null then concat('MERCHANT:', ct.merchant_id) "
+            + "     else concat('MANUAL:', upper(trim(ct.merchant_name_raw))) end "
+            + "having sum(ct.amount - coalesce(ct.canceled_amount, 0)) > 0 "
+            + "order by netAmount desc, merchantKey asc "
+            + "limit 5", nativeQuery = true)
+    List<MerchantTop5Row> findMerchantTop5(@Param("memberId") Long memberId,
+                                            @Param("rejectedStatus") String rejectedStatus,
+                                            @Param("startDate") LocalDate startDate,
+                                            @Param("endDate") LocalDate endDate);
+
+    /**
      * 습관 코칭 규칙 계층(habitExpense.md §3): 직전 급여주기 카드 자동수집 소비성 카테고리별 순액 집계.
      * 고정지출 태그·거절 건 제외, Type 2 음수행도 포함(amount>0 필터 없음).
      */
@@ -215,6 +268,13 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
     interface DailyNetAmount {
         LocalDate getUsedDate();
         BigDecimal getNetAmount();
+    }
+
+    interface MerchantTop5Row {
+        String getMerchantKey();
+        String getDisplayName();
+        BigDecimal getNetAmount();
+        long getTransactionCount();
     }
 
     interface CategorySummary {
