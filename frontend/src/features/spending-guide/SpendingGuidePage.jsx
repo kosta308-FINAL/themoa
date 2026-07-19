@@ -15,6 +15,7 @@ import {
   getTodayTransactions,
   retryInitialSync,
   setupSpendingGuide,
+  syncCardTransactions,
 } from '../../api/spendingGuideApi'
 import DashboardIcon from '../../components/common/DashboardIcon'
 import DashboardTopNav from '../../components/layout/DashboardTopNav'
@@ -444,6 +445,7 @@ function SpendingGuidePage() {
   const [pendingCoachId, setPendingCoachId] = useState(null)
   const [initialSyncState, setInitialSyncState] = useState(null)
   const [retryingConnectionId, setRetryingConnectionId] = useState(null)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   const loadGuide = useCallback(async () => {
     setIsLoading(true)
@@ -540,6 +542,23 @@ function SpendingGuidePage() {
     }
   }
 
+  const handleManualSync = async () => {
+    setIsSyncing(true)
+    setPageError('')
+    try {
+      const result = await syncCardTransactions()
+      if (result?.locked) {
+        setPageError('카드내역 동기화가 이미 진행 중이에요. 잠시 후 다시 시도해주세요.')
+        return
+      }
+      await loadGuide()
+    } catch (error) {
+      setPageError(errorMessage(error, '카드내역을 동기화하지 못했습니다.'))
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
   const handleCategoryCycleChange = async (budgetId) => {
     if (!budgetId) return
     try {
@@ -572,6 +591,7 @@ function SpendingGuidePage() {
   const cycleSpent = summary ? toNumber(summary.availableAmount) - toNumber(summary.remainingAmount) : 0
   const showInitialSync = INITIAL_SYNC_IN_PROGRESS.has(initialSyncState?.overallStatus) || initialSyncState?.overallStatus === 'FAILED'
   const showSetup = summary?.setupRequired && !showInitialSync
+  const canManualSync = Boolean(data.connections?.cardSyncEnabled && data.connections.connections?.some((connection) => connection.connectionStatus === 'ACTIVE'))
 
   return (
     <div className="dashboard spending-guide">
@@ -593,7 +613,7 @@ function SpendingGuidePage() {
 
           <div className="spending-content-grid">
             <div className="spending-column">
-              <section className="spending-panel spending-transactions-panel"><div className="spending-panel-head"><PanelTitle icon="receipt" title="오늘 거래" description="고정지출은 제외하고 보여드려요" /><button type="button" className="spending-secondary" onClick={() => setIsEntryOpen(true)} disabled={!data.categories?.length}><DashboardIcon name="plus" size={15} />지출 직접 입력</button></div><TodayTransactions data={data.today} error={sectionErrors.today} onExpand={expandToday} onSelect={setDetailId} /></section>
+              <section className="spending-panel spending-transactions-panel"><div className="spending-panel-head"><PanelTitle icon="receipt" title="오늘 거래" description="고정지출은 제외하고 보여드려요" /><div className="spending-panel-actions"><button type="button" className="spending-secondary spending-sync-button" onClick={handleManualSync} disabled={!canManualSync || isSyncing}><DashboardIcon name="repeat" size={15} />{isSyncing ? '동기화 중...' : '카드내역 동기화'}</button><button type="button" className="spending-secondary" onClick={() => setIsEntryOpen(true)} disabled={!data.categories?.length}><DashboardIcon name="plus" size={15} />지출 직접 입력</button></div></div><TodayTransactions data={data.today} error={sectionErrors.today} onExpand={expandToday} onSelect={setDetailId} /></section>
               <section className="spending-panel spending-flow-panel"><div className="spending-panel-head"><PanelTitle icon="chart" title="최근 7일 소비 흐름" description="날짜별 순사용액과 하루 권장액을 비교해요" tone="blue" /><Link className="spending-link-button" to={`/dashboard/spending/transactions?date=${todayDate()}`}>상세보기 <DashboardIcon name="chevron-right" size={15} /></Link></div><RecentFlow data={data.recent} error={sectionErrors.recent} /></section>
             </div>
             <div className="spending-column">

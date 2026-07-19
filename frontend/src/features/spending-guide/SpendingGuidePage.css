@@ -1019,7 +1019,10 @@
 .spending-guide .spending-panel-title { gap: 9px; }
 .spending-guide .spending-panel-title h2 { margin: 0; font-size: 16px; letter-spacing: -.35px; }
 .spending-guide .spending-panel-title p { margin: 3px 0 0; color: #96a29b; font-size: 11px; }
+.spending-guide .spending-panel-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .spending-guide .spending-secondary { min-height: 39px; padding: 0 15px; border-radius: 10px; font-size: 12px; font-weight: 750; }
+.spending-guide .spending-secondary:disabled { cursor: not-allowed; opacity: .55; }
+.spending-guide .spending-sync-button { color: #52635a; background: #f2f5f3; }
 .spending-guide .spending-link-button { display: inline-flex; align-items: center; gap: 4px; padding: 3px; color: var(--spending-green-dark); background: transparent; font-size: 12px; font-weight: 750; white-space: nowrap; text-decoration: none; }
 .spending-guide .spending-ghost-button { min-height: 39px; padding: 0 15px; border: 1px solid var(--spending-border); border-radius: 10px; color: var(--spending-muted); background: #fff; font-size: 12px; font-weight: 750; }
 .spending-guide .spending-list-footer { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; padding-top: 14px; border: 0; }
