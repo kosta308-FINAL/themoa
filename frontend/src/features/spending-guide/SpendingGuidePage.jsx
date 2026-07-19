@@ -47,6 +47,21 @@ const formatDate = (value) => {
   return `${month}월 ${day}일`
 }
 const formatTime = (value) => value?.slice(11, 16) || ''
+const formatDateWithWeekday = (value) => {
+  if (!value) return ''
+  const date = new Date(`${value}T00:00:00`)
+  return `${date.getMonth() + 1}월 ${date.getDate()}일 ${['일', '월', '화', '수', '목', '금', '토'][date.getDay()]}요일`
+}
+const formatShortDate = (value) => {
+  if (!value) return '—'
+  const [, month, day] = value.split('-').map(Number)
+  return `${month}.${day}`
+}
+const formatChartTick = (value) => {
+  if (value === 0) return '0'
+  if (value >= 10000) return `${WON.format(value / 10000).replace(/\.0$/, '')}만`
+  return WON.format(value)
+}
 const todayDate = () => {
   const now = new Date()
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
@@ -60,6 +75,15 @@ const paymentLabel = (transaction) => {
 const transactionAmount = (value) => {
   const amount = toNumber(value)
   return `${amount > 0 ? '-' : amount < 0 ? '+' : ''}${formatWon(Math.abs(amount))}`
+}
+const transactionVisual = (transaction) => {
+  const category = transaction.categoryName || ''
+  if (/카페|간식/.test(category)) return { icon: 'coffee', tone: '' }
+  if (/식비|배달|외식/.test(category)) return { icon: 'utensils', tone: 'orange' }
+  if (/교통|택시|주유|차량/.test(category)) return { icon: 'car', tone: 'blue' }
+  if (/편의점|마트|쇼핑/.test(category)) return { icon: 'bag', tone: 'orange' }
+  if (toNumber(transaction.netAmount) < 0) return { icon: 'card', tone: 'red' }
+  return { icon: transaction.paymentMethod === 'CARD' ? 'card' : 'receipt', tone: '' }
 }
 const errorMessage = (error, fallback) =>
   error?.response?.data?.message || (error?.response?.status === 401 ? '로그인이 필요합니다.' : fallback)
@@ -92,7 +116,7 @@ function InitialSyncView({ summary, syncState, retryingId, onRetry }) {
     {failed && <div className="spending-page-error spending-sync-error"><DashboardIcon name="info" size={19} /><span>카드 소비내역을 불러오지 못했어요. 다시 수집을 눌러 재시도해주세요.</span>{failedConnections.map((connection) => <button type="button" key={connection.connectionId} disabled={retryingId === connection.connectionId} onClick={() => onRetry(connection.connectionId)}>{retryingId === connection.connectionId ? '재시도 중...' : `${connection.organizationName} 다시 수집`}</button>)}</div>}
     <section className="spending-hero spending-initial-sync" aria-label="카드 소비내역 초기 수집 상태">
       <article className="spending-today-card">
-        <div className="spending-card-head"><div><h2>오늘의 소비 기준</h2><p>오늘 하루 동안 권장액은 유지돼요.</p></div><span className={`spending-status${failed ? ' warning' : ''}`}>{failed ? '수집 확인 필요' : '불러오는 중'}</span></div>
+        <div className="spending-card-head"><div><h2>오늘의 소비 기준</h2><p>{formatDateWithWeekday(todayDate())} · 오늘 하루 동안 권장액은 유지돼요</p></div><span className={`spending-status${failed ? ' warning' : ''}`}>{failed ? '수집 확인 필요' : '불러오는 중'}</span></div>
         <InitialSyncLoading title={failed ? '소비 기준 계산을 기다리고 있어요' : '오늘 소비 기준을 계산하고 있어요'} description={failed ? '카드 내역을 다시 수집하면 자동으로 계산돼요.' : loadingDescription} />
       </article>
       <aside className="spending-cycle-card">
@@ -268,42 +292,69 @@ function SetupView({ onComplete, onCardConnected }) {
 }
 
 function TodayTransactions({ data, error, onExpand, onSelect }) {
+  const [expanded, setExpanded] = useState(false)
   if (error) return <SectionError message={error} />
   if (!data) return <LoadingState />
   if (!data.items?.length) return <EmptyState icon="receipt" title="아직 표시할 소비내역이 없어요" description="소비내역이 생기면 오늘 거래가 여기에 표시됩니다." />
+  const visibleItems = data.items.slice(0, 5)
+  const moreItems = data.items.slice(5, 8)
+  const moreCount = Math.max(0, Math.min(8, toNumber(data.totalCount)) - 5)
+  const renderTransaction = (transaction) => {
+    const visual = transactionVisual(transaction)
+    const isRefund = toNumber(transaction.netAmount) < 0
+    const isManual = transaction.source === 'MANUAL'
+    return (
+      <button type="button" className="spending-transaction" key={transaction.id} onClick={() => onSelect(transaction.id)}>
+        <span className={`spending-transaction-icon${visual.tone ? ` ${visual.tone}` : ''}`}><DashboardIcon name={visual.icon} size={18} /></span>
+        <span className="spending-transaction-info"><span className="spending-transaction-name"><strong>{transaction.merchantDisplayName || transaction.merchantNameRaw}</strong>{transaction.canceledAmount > 0 && <em className="spending-tiny-badge cancel">일부 취소됨</em>}{isManual && <em className="spending-tiny-badge">직접 입력</em>}{isRefund && !transaction.canceledAmount && <em className="spending-tiny-badge">취소</em>}</span><span className="spending-transaction-meta">{[formatTime(transaction.usedAt), transaction.categoryName, paymentLabel(transaction)].filter(Boolean).join(' · ')}</span></span>
+        <span className={`spending-transaction-amount${isRefund ? ' refund' : ''}`}><strong>{transactionAmount(transaction.netAmount)}</strong><span>{isManual ? '직접 입력' : isRefund ? '취소행' : transaction.canceledAmount > 0 ? `원 결제 ${formatWon(toNumber(transaction.netAmount) + toNumber(transaction.canceledAmount))}` : '카드 자동수집'}</span></span>
+      </button>
+    )
+  }
+  const toggleExpanded = async () => {
+    if (expanded) {
+      setExpanded(false)
+      return
+    }
+    if (data.items.length < Math.min(8, data.totalCount)) await onExpand()
+    setExpanded(true)
+  }
   return (
     <>
       <div className="spending-transaction-list">
-        {data.items.map((transaction) => (
-          <button type="button" className="spending-transaction" key={transaction.id} onClick={() => onSelect(transaction.id)}>
-            <span className="spending-transaction-icon"><DashboardIcon name={transaction.paymentMethod === 'CARD' ? 'card' : 'receipt'} size={18} /></span>
-            <div><strong>{transaction.merchantDisplayName || transaction.merchantNameRaw}</strong><p>{[formatTime(transaction.usedAt), transaction.categoryName, paymentLabel(transaction)].filter(Boolean).join(' · ')}</p></div>
-            <span className={toNumber(transaction.netAmount) < 0 ? 'refund' : ''}><strong>{transactionAmount(transaction.netAmount)}</strong><small>{transaction.source === 'MANUAL' ? '직접 입력' : transaction.canceledAmount > 0 ? '취소 반영' : '카드 자동수집'}</small></span>
-          </button>
-        ))}
+        {visibleItems.map(renderTransaction)}
+        <div className={`spending-today-more${expanded ? ' expanded' : ''}`}>{moreItems.map(renderTransaction)}</div>
       </div>
-      {data.items.length < Math.min(8, data.totalCount) && <button type="button" className="spending-list-more" onClick={onExpand}>오늘 내역 {Math.min(8, data.totalCount) - data.items.length}건 더보기</button>}
-      {data.items.length >= 8 && data.totalCount > 8 && <Link className="spending-list-more" to={`/dashboard/spending/transactions?date=${todayDate()}`}>오늘 전체 {data.totalCount}건 보기</Link>}
+      <div className="spending-list-footer">{moreCount > 0 ? <button type="button" className="spending-ghost-button" aria-expanded={expanded} onClick={toggleExpanded}>{expanded ? '오늘 내역 접기' : `오늘 내역 ${moreCount}건 더보기`}</button> : <span />}<Link className="spending-link-button" to="/dashboard/spending/transactions">전체 소비내역 보기 <DashboardIcon name="chevron-right" size={15} /></Link></div>
     </>
   )
 }
 
 function RecentFlow({ data, error }) {
   const values = data?.days?.map((day) => Math.abs(toNumber(day.netAmount))) || []
-  const max = Math.max(toNumber(data?.guideLineAmount), ...values, 1)
+  const rawMax = Math.max(toNumber(data?.guideLineAmount), ...values, 1)
+  const axisStep = Math.max(10000, Math.ceil(rawMax / 4 / 10000) * 10000)
+  const axisMax = axisStep * 4
+  const ticks = Array.from({ length: 5 }, (_, index) => axisMax - (axisStep * index))
+  const targetTop = 12 + ((axisMax - Math.min(axisMax, toNumber(data?.guideLineAmount))) / axisMax) * 160
   if (error) return <SectionError message={error} />
   if (!data) return <LoadingState />
   if (!data.days?.length || data.days.every((day) => toNumber(day.netAmount) === 0)) return <EmptyState icon="chart" title="소비 흐름을 만들 데이터가 없어요" description="거래 데이터가 쌓이면 최근 7일 소비 흐름을 보여드려요." />
   return (
-    <div className="spending-chart">
-      <div className="spending-guide-line" style={{ bottom: `${Math.min(100, (toNumber(data.guideLineAmount) / max) * 100)}%` }}><span>권장 {formatWon(data.guideLineAmount)}</span></div>
-      <div className="spending-bars">
+    <>
+      <div className="spending-chart">
+        <div className="spending-chart-grid">{ticks.map((tick) => <div className="spending-chart-line" key={tick}><span>{formatChartTick(tick)}</span></div>)}</div>
+        <div className="spending-guide-line" style={{ top: `${targetTop}px` }}><span>오늘 권장 {formatWon(data.guideLineAmount)}</span></div>
+        <div className="spending-bars">
         {data.days.map((day) => {
           const amount = toNumber(day.netAmount)
-          return <Link className="spending-bar-item" to={`/dashboard/spending/transactions?date=${day.date}`} key={day.date}><span className="spending-bar-space"><i className={amount < 0 ? 'negative' : amount > toNumber(data.guideLineAmount) ? 'over' : ''} style={{ height: `${Math.max(4, (Math.abs(amount) / max) * 100)}%` }} /></span><strong>{formatDate(day.date).replace('월 ', '/').replace('일', '')}</strong></Link>
+          const isToday = day.date === todayDate()
+          return <Link className="spending-bar-item" to={`/dashboard/spending/transactions?date=${day.date}`} key={day.date}><span className={`spending-bar-space${amount < 0 ? ' negative-space' : ''}`}><i className={`${amount < 0 ? 'negative' : amount > toNumber(data.guideLineAmount) ? 'over' : ''}${isToday ? ' today' : ''}`} style={{ height: `${Math.max(5, (Math.abs(amount) / axisMax) * 100)}%` }} /></span><strong>{isToday ? '오늘' : `${Number(day.date.slice(8, 10))}일`}</strong></Link>
         })}
+        </div>
       </div>
-    </div>
+      <div className="spending-chart-legend"><i />하늘색 막대는 취소금액이 사용액보다 큰 날이에요</div>
+    </>
   )
 }
 
@@ -318,10 +369,13 @@ function CategorySummary({ data, error }) {
   if (!data) return <LoadingState />
   if (!data.items?.length) return <EmptyState icon="chart" title="분석할 카테고리 데이터가 없어요" description="소비내역이 연결되면 카테고리별 비중이 표시됩니다." />
   return (
-    <div className="spending-category-layout">
-      <div className="spending-donut" style={{ background: gradient }}><span><strong>{formatWon(data.positiveNetTotal)}</strong><small>순사용액</small></span></div>
-      <div className="spending-category-legend">{data.items.map((item, index) => <Link to={`/dashboard/spending/transactions?categoryId=${item.categoryId}`} key={item.categoryId}><i style={{ background: ['#22c55e', '#14b8a6', '#60a5fa', '#f59e0b', '#a78bfa', '#f472b6'][index % 6] }} /><span>{item.categoryName}</span><strong>{formatWon(item.amount)} <small>{toNumber(item.percentage)}%</small></strong></Link>)}</div>
-    </div>
+    <>
+      <div className="spending-category-cycle"><button type="button" className="spending-cycle-arrow" disabled={!data.hasPrevious} aria-label="이전 급여주기"><DashboardIcon name="chevron-left" size={15} /></button><div><strong>{Number(data.yearMonth?.slice(5, 7))}월 급여주기</strong><span>{formatShortDate(data.cycleStartDate)} ~ {data.hasNext ? formatShortDate(data.cycleEndDate) : '오늘'} · {data.hasNext ? '완료' : '진행 중'}</span></div><button type="button" className="spending-cycle-arrow" disabled={!data.hasNext} aria-label="다음 급여주기"><DashboardIcon name="chevron-right" size={15} /></button></div>
+      <div className="spending-category-layout">
+        <Link className="spending-donut" style={{ background: gradient }} to={`/dashboard/spending/transactions?budgetId=${data.budgetId}`} aria-label="카테고리 소비 상세보기"><span><strong>{formatWon(data.positiveNetTotal)}</strong><small>양수 순사용액</small></span></Link>
+        <div className="spending-category-legend">{data.items.map((item, index) => <Link to={`/dashboard/spending/transactions?budgetId=${data.budgetId}&categoryId=${item.categoryId}`} key={item.categoryId}><i style={{ background: ['#22c55e', '#14b8a6', '#60a5fa', '#f59e0b', '#a78bfa', '#f472b6'][index % 6] }} /><span>{item.categoryName}</span><strong>{formatWon(item.amount)} <small>{toNumber(item.percentage)}%</small></strong></Link>)}</div>
+      </div>
+    </>
   )
 }
 
@@ -518,21 +572,22 @@ function SpendingGuidePage() {
         {isLoading && !summary ? <LoadingState label="소비가이드를 불러오고 있어요." /> : showInitialSync ? <InitialSyncView summary={summary} syncState={initialSyncState} retryingId={retryingConnectionId} onRetry={handleInitialSyncRetry} /> : showSetup ? <SetupView onComplete={loadGuide} onCardConnected={handleCardConnected} /> : summary && <>
           <section className="spending-hero" aria-label="소비 기준 요약">
             <article className="spending-today-card">
-              <div className="spending-card-head"><div><h2>오늘의 소비 기준</h2><p>오늘 하루 동안 권장액은 유지돼요.</p></div><span className={`spending-status ${useRate > 100 ? 'warning' : ''}`}>{useRate > 100 ? '오늘 권장액 초과' : '안정적으로 사용 중'}</span></div>
-              <div className="spending-number-grid"><div className="spending-number-main"><span><DashboardIcon name="wallet" size={16} />오늘 사용 가능 금액</span><strong>{formatWon(summary.todayAvailableAmount)}</strong><p>{useRate > 100 ? `오늘 권장액을 ${formatWon(todaySpent - dailyRecommended)} 초과했어요.` : '오늘 남은 권장 금액이에요.'}</p></div><div className="spending-mini-stat"><span>하루 권장 소비액</span><strong>{formatWon(summary.dailyRecommendedAmount)}</strong><p>자정까지 고정</p></div><div className="spending-mini-stat"><span>오늘 순사용액</span><strong>{formatWon(summary.todayNetSpend)}</strong><p>취소 반영 금액</p></div></div>
-              <div className="spending-progress-meta"><span>오늘 권장액 사용률</span><strong>{useRate}%</strong></div><div className="spending-progress"><i style={{ width: `${Math.min(100, Math.max(0, useRate))}%` }} /></div>
+              <div className="spending-card-head"><div><h2>오늘의 소비 기준</h2><p>{formatDateWithWeekday(todayDate())} · 오늘 하루 동안 권장액은 유지돼요</p></div><span className={`spending-status ${useRate > 100 ? 'warning' : ''}`}>{useRate > 100 ? '오늘 권장액 초과' : '안정적으로 사용 중'}</span></div>
+              <div className="spending-number-grid"><div className="spending-number-main"><span><DashboardIcon name="wallet" size={16} />오늘 사용 가능 금액</span><strong>{formatWon(summary.todayAvailableAmount)}</strong><p>{toNumber(summary.todayAvailableAmount) <= 0 ? '오늘 권장액을 모두 사용했어요.' : '오늘 남은 권장 금액이에요.'}</p></div><div className="spending-mini-stat"><span>하루 권장 소비액</span><strong>{formatWon(summary.dailyRecommendedAmount)}</strong><p>자정까지 고정</p></div><div className="spending-mini-stat"><span>오늘 순사용액</span><strong>{formatWon(summary.todayNetSpend)}</strong><p>취소 반영 금액</p></div></div>
+              <div className="spending-progress-meta"><span>오늘 권장액 사용률</span><strong>{useRate}%</strong></div><div className="spending-progress"><i className={useRate > 100 ? 'over' : ''} style={{ width: `${Math.min(100, Math.max(0, useRate))}%` }} /></div>
+              <div className={`spending-today-message${useRate > 100 ? ' warning' : ''}`}><DashboardIcon name={useRate > 100 ? 'info' : 'check'} size={15} />{useRate > 100 ? `오늘 권장액을 ${formatWon(todaySpent - dailyRecommended)} 초과했어요.` : '오늘 하루 동안 권장 범위 안에서 사용하고 있어요.'}</div>
             </article>
             <aside className="spending-cycle-card"><div className="spending-cycle-top"><span>이번 급여 주기</span><button type="button" onClick={() => setIsBudgetOpen(true)}>예산 기준</button></div><h2>남은 예산</h2><strong className={summary.overCycleBudget ? 'spending-cycle-amount negative' : 'spending-cycle-amount'}>{formatWon(summary.remainingAmount)}</strong><p>{formatDate(summary.cycleStartDate)} ~ {formatDate(summary.cycleEndDate)}</p><div className="spending-cycle-bottom"><div><span>남은 기간</span><strong>{summary.remainingDays}일</strong></div><div><span>주기 순사용액</span><strong>{formatWon(cycleSpent)}</strong></div></div></aside>
           </section>
 
           <div className="spending-content-grid">
             <div className="spending-column">
-              <section className="spending-panel"><div className="spending-panel-head"><PanelTitle icon="receipt" title="오늘 거래" description="고정지출을 제외한 오늘의 거래를 보여드려요" /><button type="button" className="spending-secondary" onClick={() => setIsEntryOpen(true)} disabled={!data.categories?.length}><DashboardIcon name="plus" size={15} />지출 직접 입력</button></div><TodayTransactions data={data.today} error={sectionErrors.today} onExpand={expandToday} onSelect={setDetailId} /><div className="spending-panel-footer"><Link to="/dashboard/spending/transactions">전체 소비내역 보기</Link></div></section>
-              <section className="spending-panel spending-flow-panel"><div className="spending-panel-head"><PanelTitle icon="chart" title="최근 7일 소비 흐름" description="날짜별 순사용액과 하루 권장액을 비교해요" tone="blue" /></div><RecentFlow data={data.recent} error={sectionErrors.recent} /></section>
+              <section className="spending-panel spending-transactions-panel"><div className="spending-panel-head"><PanelTitle icon="receipt" title="오늘 거래" description="고정지출은 제외하고 보여드려요" /><button type="button" className="spending-secondary" onClick={() => setIsEntryOpen(true)} disabled={!data.categories?.length}><DashboardIcon name="plus" size={15} />지출 직접 입력</button></div><TodayTransactions data={data.today} error={sectionErrors.today} onExpand={expandToday} onSelect={setDetailId} /></section>
+              <section className="spending-panel spending-flow-panel"><div className="spending-panel-head"><PanelTitle icon="chart" title="최근 7일 소비 흐름" description="날짜별 순사용액과 하루 권장액을 비교해요" tone="blue" /><Link className="spending-link-button" to={`/dashboard/spending/transactions?date=${todayDate()}`}>상세보기 <DashboardIcon name="chevron-right" size={15} /></Link></div><RecentFlow data={data.recent} error={sectionErrors.recent} /></section>
             </div>
             <div className="spending-column">
-              <section className="spending-panel spending-category-panel"><div className="spending-panel-head"><PanelTitle icon="chart" title="카테고리별 소비" description="실제 소비 순액을 기준으로 보여드려요" tone="teal" /></div><CategorySummary data={data.category} error={sectionErrors.category} /><div className="spending-panel-footer"><Link to="/dashboard/spending/transactions">카테고리 상세보기</Link></div></section>
-              <section className="spending-panel"><div className="spending-panel-head"><PanelTitle icon="repeat" title="고정지출 후보" description="반복되는 결제를 찾아 알려드려요" tone="orange" />{data.candidates?.length > 3 && <Link className="spending-panel-link" to="/dashboard/fixed-expenses">나머지 {data.candidates.length - 3}개</Link>}</div><FixedCandidates data={data.candidates} error={sectionErrors.candidates} /></section>
+              <section className="spending-panel spending-category-panel"><div className="spending-panel-head"><PanelTitle icon="target" title="카테고리별 소비" description="실제 소비 순액 기준" tone="teal" /></div><CategorySummary data={data.category} error={sectionErrors.category} /><div className="spending-list-footer spending-category-footer"><span /><Link className="spending-link-button" to={`/dashboard/spending/transactions${data.category?.budgetId ? `?budgetId=${data.category.budgetId}` : ''}`}>카테고리 상세보기 <DashboardIcon name="chevron-right" size={15} /></Link></div></section>
+              <section className="spending-panel spending-fixed-candidate-panel"><div className="spending-panel-head"><PanelTitle icon="repeat" title="고정지출 후보" description={data.candidates?.length ? `${data.candidates.length}개 중 우선순위 높은 ${Math.min(3, data.candidates.length)}개예요` : '반복되는 결제를 찾아 알려드려요'} tone="orange" />{data.candidates?.length > 3 && <Link className="spending-link-button" to="/dashboard/fixed-expenses">나머지 {data.candidates.length - 3}개 <DashboardIcon name="chevron-right" size={15} /></Link>}</div><FixedCandidates data={data.candidates} error={sectionErrors.candidates} /></section>
               <CoachingPanel data={data.coaching} error={sectionErrors.coaching} onDismiss={handleDismiss} pendingId={pendingCoachId} />
             </div>
           </div>

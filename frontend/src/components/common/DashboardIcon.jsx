@@ -18,6 +18,9 @@ const PATHS = {
   utensils: 'M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M17 3v18m0-18c-3 2-4 7 0 10',
   car: 'm5 11 2-5h10l2 5M3 12h18v6H3v-6Zm4 5h.01M17 17h.01',
   bag: 'M5 8h14l1 13H4L5 8Zm4 0a3 3 0 0 1 6 0',
+  target: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM17 12a5 5 0 1 1-10 0 5 5 0 0 1 10 0ZM12 12h.01',
+  'chevron-right': 'm9 18 6-6-6-6',
+  'chevron-left': 'm15 18-6-6 6-6',
 }
 
 function DashboardIcon({ name, size = 18 }) {
