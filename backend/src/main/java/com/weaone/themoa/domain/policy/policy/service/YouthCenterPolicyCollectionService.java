@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
-import com.weaone.themoa.domain.policy.common.dto.JobProgressUpdate;
+import com.weaone.themoa.common.dto.JobProgressUpdate;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyCollectionError;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyCollectionRun;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyRawData;

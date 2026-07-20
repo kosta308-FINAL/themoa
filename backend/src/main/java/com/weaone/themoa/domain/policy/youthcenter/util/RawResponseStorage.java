@@ -1,6 +1,6 @@
 package com.weaone.themoa.domain.policy.youthcenter.util;
 
-import com.weaone.themoa.domain.policy.common.exception.YouthCenterApiException;
+import com.weaone.themoa.common.exception.YouthCenterApiException;
 import com.weaone.themoa.domain.policy.youthcenter.config.YouthCenterApiProperties;
 import com.weaone.themoa.domain.policy.youthcenter.parser.ResponseType;
 import org.springframework.stereotype.Component;

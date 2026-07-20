@@ -7,7 +7,7 @@ import com.weaone.themoa.domain.policy.policy.region.RegionCatalog;
 import com.weaone.themoa.domain.policy.policy.repository.RegionExternalCodeRepository;
 import com.weaone.themoa.domain.policy.policy.repository.RegionSyncErrorRepository;
 import com.weaone.themoa.domain.policy.policy.repository.RegionSyncRunRepository;
-import com.weaone.themoa.domain.policy.common.dto.JobProgressUpdate;
+import com.weaone.themoa.common.dto.JobProgressUpdate;
 import com.weaone.themoa.domain.policy.region.config.RegionSyncProperties;
 import com.weaone.themoa.domain.policy.region.sgis.SgisApiException;
 import com.weaone.themoa.domain.policy.region.sgis.SgisRegionClient;

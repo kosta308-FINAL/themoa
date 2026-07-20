@@ -1,4 +1,4 @@
-package com.weaone.themoa.domain.policy.common.exception;
+package com.weaone.themoa.common.exception;
 
 public class YouthCenterApiException extends RuntimeException {
     public YouthCenterApiException(String message) {

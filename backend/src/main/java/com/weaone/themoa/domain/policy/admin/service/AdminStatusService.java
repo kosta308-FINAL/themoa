@@ -1,7 +1,7 @@
 package com.weaone.themoa.domain.policy.admin.service;
 
 import com.weaone.themoa.domain.policy.admin.dto.AdminStatusResponse;
-import com.weaone.themoa.domain.policy.common.config.LocalSecretConfigurationStatus;
+import com.weaone.themoa.config.LocalSecretConfigurationStatus;
 import com.weaone.themoa.domain.policy.policy.domain.Policy;
 import com.weaone.themoa.domain.policy.policy.domain.PolicyRegion;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyEmbeddingSyncRepository;
