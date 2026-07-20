@@ -31,6 +31,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -82,6 +83,26 @@ class PolicyAdminControllerTest {
         mockMvc.perform(get("/api/policies/admin/jobs/latest"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("RUNNING"));
+    }
+
+    @Test
+    @DisplayName("관리자 정책 동기화 Job endpoint는 POLICY_SYNC로 202 Accepted를 반환한다")
+    void policySyncJobEndpointKeepsContract() throws Exception {
+        AdminJobService jobService = mock(AdminJobService.class);
+        AdminJobStatus job = new AdminJobStatus("job-sync-1", "POLICY_SYNC", "RUNNING",
+                0, 0, 0, 0, 0, 0, 0, "");
+        given(jobService.start("POLICY_SYNC")).willReturn(job);
+        MockMvc mockMvc = MockMvcBuilders
+                .standaloneSetup(new PolicyAdminJobController(jobService))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter())
+                .build();
+
+        mockMvc.perform(post("/api/policies/admin/jobs/policy-sync"))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.jobId").value("job-sync-1"))
+                .andExpect(jsonPath("$.data.jobType").value("POLICY_SYNC"));
+        verify(jobService).start("POLICY_SYNC");
     }
 
     @Test

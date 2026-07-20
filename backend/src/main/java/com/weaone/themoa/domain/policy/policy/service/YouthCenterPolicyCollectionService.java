@@ -26,6 +26,7 @@ import org.springframework.util.DigestUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -58,11 +59,17 @@ public class YouthCenterPolicyCollectionService {
     }
 
     public PolicyCollectionResult collectAll() {
-        return collectAll(null);
+        return collectAll(PolicyCollectionExecutionType.MANUAL, null);
     }
 
     public PolicyCollectionResult collectAll(Consumer<JobProgressUpdate> progressConsumer) {
-        PolicyCollectionRun run = runRepository.save(new PolicyCollectionRun(PolicySource.YOUTH_CENTER.name(), "MANUAL"));
+        return collectAll(PolicyCollectionExecutionType.MANUAL, progressConsumer);
+    }
+
+    public PolicyCollectionResult collectAll(PolicyCollectionExecutionType executionType,
+                                             Consumer<JobProgressUpdate> progressConsumer) {
+        Objects.requireNonNull(executionType, "executionType must not be null");
+        PolicyCollectionRun run = runRepository.save(new PolicyCollectionRun(PolicySource.YOUTH_CENTER.name(), executionType.name()));
         int pageSize = properties.getCollection().getPageSize();
         int maxPages = properties.getCollection().getMaxPages();
         int totalCount = 0;

@@ -32,8 +32,10 @@ public class PolicyLexicalIndexBuilder {
 
     public PolicyLexicalIndex refresh() {
         synchronized (this) {
-            index = new PolicyLexicalIndex(projectionRepository.findAllActive(), normalizer);
-            return index;
+            PolicyLexicalIndex refreshed =
+                    new PolicyLexicalIndex(projectionRepository.findAllActive(), normalizer);
+            index = refreshed;
+            return refreshed;
         }
     }
 

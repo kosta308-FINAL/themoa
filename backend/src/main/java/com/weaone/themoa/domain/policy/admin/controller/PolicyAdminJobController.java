@@ -30,6 +30,11 @@ public class PolicyAdminJobController {
         return accepted(jobService.start("POLICY_COLLECTION"));
     }
 
+    @PostMapping("/jobs/policy-sync")
+    public ResponseEntity<ApiResponse<AdminJobStatus>> syncPolicies() {
+        return accepted(jobService.start("POLICY_SYNC"));
+    }
+
     @PostMapping("/jobs/embedding-queue")
     public ResponseEntity<ApiResponse<AdminJobStatus>> queue() {
         return accepted(jobService.start("EMBEDDING_QUEUE"));
