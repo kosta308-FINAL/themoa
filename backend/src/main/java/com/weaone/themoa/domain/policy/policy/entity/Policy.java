@@ -1,4 +1,4 @@
-package com.weaone.themoa.domain.policy.policy.domain;
+package com.weaone.themoa.domain.policy.policy.entity;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

@@ -1,6 +1,6 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
-import com.weaone.themoa.domain.policy.policy.domain.PolicySearchProjection;
+import com.weaone.themoa.domain.policy.policy.entity.PolicySearchProjection;
 import com.weaone.themoa.domain.policy.policy.repository.PolicySearchProjectionRepository;
 import com.weaone.themoa.domain.policy.rag.dto.EducationStage;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyTargetAudienceClassification;

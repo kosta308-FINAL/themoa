@@ -2,7 +2,7 @@ package com.weaone.themoa.domain.policy.policy.service;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
 import com.weaone.themoa.domain.policy.policy.dto.response.PolicyDetailResponse;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import org.springframework.stereotype.Service;

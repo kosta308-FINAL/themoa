@@ -1,8 +1,8 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyCategory;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyCondition;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyCategory;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyCondition;
 import com.weaone.themoa.domain.policy.rag.dto.SearchDomain;
 import com.weaone.themoa.domain.policy.rag.dto.SupportIntent;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyDomainClassification;

@@ -6,7 +6,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface RegionEligiblePolicyCandidateRepository extends Repository<com.weaone.themoa.domain.policy.policy.domain.Policy, Integer> {
+public interface RegionEligiblePolicyCandidateRepository extends Repository<com.weaone.themoa.domain.policy.policy.entity.Policy, Integer> {
 
     @Query(value = """
             select p.id as policy_id, pr.region_id as region_id, cnt.region_count as region_count

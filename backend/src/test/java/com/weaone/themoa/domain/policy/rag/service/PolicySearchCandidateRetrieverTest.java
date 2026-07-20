@@ -1,15 +1,15 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
 import com.weaone.themoa.domain.policy.policy.region.RegionCompatibility;
 import com.weaone.themoa.domain.policy.policy.region.RegionEligiblePolicyCandidate;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import com.weaone.themoa.domain.policy.policy.repository.PolicySearchProjectionRepository;
 import com.weaone.themoa.domain.policy.policy.region.ResolvedUserRegion;
 import com.weaone.themoa.domain.policy.policy.service.RegionEligiblePolicyCandidateService;
-import com.weaone.themoa.domain.policy.policy.domain.PolicySearchProjection;
+import com.weaone.themoa.domain.policy.policy.entity.PolicySearchProjection;
 import com.weaone.themoa.domain.policy.rag.config.RagProperties;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyCategory;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyCategory;
 import com.weaone.themoa.domain.policy.rag.dto.CandidateSource;
 import com.weaone.themoa.domain.policy.rag.dto.EducationStage;
 import com.weaone.themoa.domain.policy.rag.dto.BenefitGroup;

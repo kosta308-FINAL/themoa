@@ -1,7 +1,7 @@
 package com.weaone.themoa.domain.policy.region.service;
 
-import com.weaone.themoa.domain.policy.policy.domain.RegionCode;
-import com.weaone.themoa.domain.policy.policy.domain.RegionSyncRun;
+import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
+import com.weaone.themoa.domain.policy.policy.entity.RegionSyncRun;
 import com.weaone.themoa.domain.policy.policy.region.RegionCatalog;
 import com.weaone.themoa.domain.policy.policy.repository.RegionExternalCodeRepository;
 import com.weaone.themoa.domain.policy.policy.repository.RegionSyncErrorRepository;

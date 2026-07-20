@@ -1,6 +1,6 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
-import com.weaone.themoa.domain.policy.policy.domain.RegionCode;
+import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
 import com.weaone.themoa.domain.policy.policy.region.FakeRegionData;
 import com.weaone.themoa.domain.policy.policy.region.RegionAliasCatalog;
 import com.weaone.themoa.domain.policy.policy.region.RegionCatalog;

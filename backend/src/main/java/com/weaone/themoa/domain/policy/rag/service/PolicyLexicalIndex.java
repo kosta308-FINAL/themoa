@@ -1,6 +1,6 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
-import com.weaone.themoa.domain.policy.policy.domain.PolicySearchProjection;
+import com.weaone.themoa.domain.policy.policy.entity.PolicySearchProjection;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyTitleIdentity;
 import com.weaone.themoa.domain.policy.rag.dto.CandidateSource;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchCondition;

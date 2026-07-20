@@ -1,4 +1,4 @@
-package com.weaone.themoa.domain.policy.policy.domain;
+package com.weaone.themoa.domain.policy.policy.entity;
 
 public enum PolicyCategory {
     일자리,

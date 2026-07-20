@@ -1,6 +1,6 @@
 package com.weaone.themoa.domain.policy.policy.repository;
 
-import com.weaone.themoa.domain.policy.policy.domain.PolicySearchProjection;
+import com.weaone.themoa.domain.policy.policy.entity.PolicySearchProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

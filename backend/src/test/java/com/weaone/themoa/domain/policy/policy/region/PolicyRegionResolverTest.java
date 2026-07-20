@@ -1,7 +1,7 @@
 package com.weaone.themoa.domain.policy.policy.region;
 
-import com.weaone.themoa.domain.policy.policy.domain.RegionCode;
-import com.weaone.themoa.domain.policy.policy.domain.RegionExternalCode;
+import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
+import com.weaone.themoa.domain.policy.policy.entity.RegionExternalCode;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
 import com.weaone.themoa.domain.policy.policy.repository.RegionExternalCodeRepository;
 import org.junit.jupiter.api.Test;

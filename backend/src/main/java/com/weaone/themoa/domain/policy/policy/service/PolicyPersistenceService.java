@@ -2,10 +2,10 @@ package com.weaone.themoa.domain.policy.policy.service;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyCondition;
-import com.weaone.themoa.domain.policy.policy.domain.PolicySource;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyRawData;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyCondition;
+import com.weaone.themoa.domain.policy.policy.entity.PolicySource;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyRawData;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import com.weaone.themoa.domain.policy.youthcenter.dto.parsed.YouthPolicyItem;
 import org.springframework.stereotype.Service;

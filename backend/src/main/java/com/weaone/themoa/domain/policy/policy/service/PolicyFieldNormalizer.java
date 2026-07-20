@@ -1,6 +1,6 @@
 package com.weaone.themoa.domain.policy.policy.service;
 
-import com.weaone.themoa.domain.policy.policy.domain.PolicyCategory;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyCategory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 

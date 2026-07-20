@@ -2,8 +2,8 @@ package com.weaone.themoa.domain.policy.rag.service;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyEmbeddingSync;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyEmbeddingSync;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyEmbeddingSyncRepository;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import com.weaone.themoa.domain.policy.rag.config.RagProperties;
