@@ -2472,12 +2472,15 @@
   align-items: center;
   gap: 4px;
   padding: 3px;
+  border: none;
   color: var(--spending-green-dark);
   background: transparent;
   font-size: 12px;
   font-weight: 750;
+  font-family: inherit;
   white-space: nowrap;
   text-decoration: none;
+  cursor: pointer;
 }
 .spending-guide .spending-ghost-button {
   min-height: 39px;
@@ -2832,7 +2835,7 @@
   display: grid;
   gap: 9px;
 }
-.spending-guide .spending-category-legend > a {
+.spending-guide .spending-category-legend > div {
   display: grid;
   grid-template-columns: 10px 1fr auto auto;
   align-items: center;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getSpendingTransactions } from "../../api/spendingGuideApi";
 import CalendarPopover from "../../components/common/CalendarPopover";
 import DashboardIcon from "../../components/common/DashboardIcon";
@@ -62,6 +62,7 @@ function SpendingGuidePage() {
     setIsEntryOpen,
     setIsIncomeAdjustmentOpen,
   } = useSpendingGuide();
+  const navigate = useNavigate();
   const [isSavingsGoalOpen, setIsSavingsGoalOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(todayDate());
@@ -186,9 +187,13 @@ function SpendingGuidePage() {
               </button>
             </div>
             <div className="spending-day-nav-side spending-day-nav-right">
-              <Link className="spending-link-button" to={budgetDetailHref}>
+              <button
+                type="button"
+                className="spending-link-button"
+                onClick={() => navigate(budgetDetailHref)}
+              >
                 상세보기 <DashboardIcon name="chevron-right" size={15} />
-              </Link>
+              </button>
             </div>
             {isCalendarOpen && (
               <CalendarPopover
@@ -512,13 +517,14 @@ function SpendingGuidePage() {
                         tone="orange"
                       />
                       {data.candidates?.length > 3 && (
-                        <Link
+                        <button
+                          type="button"
                           className="spending-link-button"
-                          to="/dashboard/fixed-expenses"
+                          onClick={() => navigate("/dashboard/fixed-expenses")}
                         >
                           나머지 {data.candidates.length - 3}개{" "}
                           <DashboardIcon name="chevron-right" size={15} />
-                        </Link>
+                        </button>
                       )}
                     </div>
                     <FixedCandidates

@@ -3,13 +3,16 @@ import { Link, useSearchParams } from "react-router-dom";
 import { getCategoryAnalysis } from "../../api/spendingGuideApi";
 import "./CategoryDetailPage.css";
 
+// 인접 색상 간 구분이 최대가 되도록 고정된 순서의 카테고리 팔레트(색약 대비 검증됨)
 const CATEGORY_COLORS = [
-  "#22c55e",
-  "#14b8a6",
-  "#60a5fa",
-  "#f59e0b",
-  "#a78bfa",
-  "#f472b6",
+  "#2a78d6", // blue
+  "#008300", // green
+  "#e87ba4", // magenta
+  "#eda100", // yellow
+  "#1baf7a", // aqua
+  "#eb6834", // orange
+  "#4a3aa7", // violet
+  "#e34948", // red
 ];
 const PHASE_LABEL = { EARLY: "초반", MIDDLE: "중반", LATE: "후반" };
 
@@ -24,6 +27,18 @@ const formatShortDate = (value) => {
   if (!value) return "—";
   const [, month, day] = value.split("-").map(Number);
   return `${month}.${day}`;
+};
+const formatManOrCheon = (value) => {
+  const amount = toNumber(value);
+  if (amount === 0) return "0";
+  const sign = amount < 0 ? "-" : "";
+  const abs = Math.abs(amount);
+  const man = abs / 10000;
+  if (man >= 1) {
+    const rounded = Math.round(man * 10) / 10;
+    return `${sign}${rounded % 1 === 0 ? rounded : rounded.toFixed(1)}만`;
+  }
+  return `${sign}${Math.round(abs / 1000).toLocaleString("ko-KR")}천`;
 };
 const errorMessage = (error, fallback) =>
   error?.response?.data?.message ||
@@ -571,7 +586,7 @@ function CategoryDetailPage() {
                               y={p.y - 13}
                               textAnchor="middle"
                             >
-                              {Math.round(p.value / 1000).toLocaleString()}천
+                              {formatManOrCheon(p.value)}
                             </text>
                             <text
                               className="chart-label"
