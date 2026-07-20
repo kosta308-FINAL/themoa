@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
@@ -115,7 +116,12 @@ public class BudgetCycleService {
             }
         }
         if (applicable == null) {
-            int paydayThen = history.isEmpty() ? member.getPayday() : history.get(0).getOldPayday();
+            Integer paydayThen = history.isEmpty() ? member.getPayday() : history.get(0).getOldPayday();
+            if (paydayThen == null) {
+                // 소비 가이드 최초 설정 전(카드만 연동, payday 미설정)이라 급여 주기 개념이 없다 — 달력 월로 폴백.
+                return new BudgetCyclePolicy.BudgetCycle(YearMonth.from(date).toString(),
+                        date.withDayOfMonth(1), date.withDayOfMonth(date.lengthOfMonth()));
+            }
             return BudgetCyclePolicy.cycleOf(paydayThen, date);
         }
         BudgetCyclePolicy.BudgetCycle bridge = BudgetCyclePolicy.bridgeCycle(

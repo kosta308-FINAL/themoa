@@ -132,6 +132,11 @@ public class SpendingGuideService {
     @Transactional
     public void changePayday(Long memberId, PaydayUpdateRequest request) {
         Member member = getMember(memberId);
+        if (member.getPayday() == null) {
+            // 최초 설정 전이면 급여일 "변경" 개념 자체가 성립하지 않는다 — pendingPayday만 채워지고 승격
+            // 시점에 member.payday(null) 언박싱으로 NPE가 나는 상태를 미리 막는다. 최초 설정은 setup()으로.
+            throw new BusinessException(ErrorCode.SPENDING_GUIDE_SETUP_REQUIRED);
+        }
         member.requestPaydayChange(request.payday());
     }
 
