@@ -89,10 +89,21 @@
   font-size: 13.5px;
   font-weight: 700;
   color: var(--admin-sidebar-text);
+  margin-bottom: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.admin-nav-btn:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .admin-nav-btn.active {
   color: #ffffff;
+  background: var(--admin-primary-dark);
+}
+
+.admin-nav-btn.active:hover {
   background: var(--admin-primary-dark);
 }
 

@@ -94,7 +94,6 @@ function CustomerServiceAdminPage() {
     <AdminLayout
       title="1:1 문의 / 고객센터 관리"
       subtitle="회원이 접수한 문의를 확인하고 답변을 등록합니다"
-      badgeCount={summary.pending}
     >
       <div className="csa-page">
         <section className="csa-kpi-grid">

@@ -335,4 +335,29 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
         long getTransactionCount();
         BigDecimal getNetAmount();
     }
+
+    /**
+     * 관리자 "미식별 & 기타 가맹점 작업대"(merchant.md §2-1 전역 시드 후보): 최근 N일간 전역 alias가 없는
+     * 원본 가맹점을 발생 건수 상위로 준다. biller(Apple 등)는 이름으로 신원 판별이 안 되고 전역 alias 후보가
+     * 아니라(§5-D) 제외한다.
+     */
+    @Query(value = "select ct.merchant_id as merchantId, m.merchant_name_raw as merchantNameRaw, "
+            + "max(ct.merchant_type_raw) as merchantTypeRaw, count(*) as transactionCount, "
+            + "avg(ct.amount) as averageAmount "
+            + "from card_transaction ct "
+            + "join merchant m on m.id = ct.merchant_id "
+            + "where m.merchant_alias_id is null and ct.replaced_at is null and ct.used_date >= :since "
+            + "and upper(trim(m.merchant_name_raw)) not in (select upper(trim(b.name)) from biller b) "
+            + "group by ct.merchant_id, m.merchant_name_raw "
+            + "order by count(*) desc "
+            + "limit :limit", nativeQuery = true)
+    List<UnclassifiedMerchantRow> findUnclassifiedMerchants(@Param("since") LocalDate since, @Param("limit") int limit);
+
+    interface UnclassifiedMerchantRow {
+        Long getMerchantId();
+        String getMerchantNameRaw();
+        String getMerchantTypeRaw();
+        long getTransactionCount();
+        BigDecimal getAverageAmount();
+    }
 }

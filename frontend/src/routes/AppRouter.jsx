@@ -13,6 +13,7 @@ import FixedExpensePage from "../features/fixed-expense/FixedExpensePage";
 import MyPage from "../features/mypage/MyPage";
 import CustomerServicePage from "../features/customer-service/CustomerServicePage";
 import CustomerServiceAdminPage from "../features/customer-service-admin/CustomerServiceAdminPage";
+import MerchantMasterAdminPage from "../features/merchant-admin/MerchantMasterAdminPage";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 import UserOnlyRoute from "./UserOnlyRoute";
@@ -62,6 +63,7 @@ function AppRouter() {
             path="/admin/customer-service"
             element={<CustomerServiceAdminPage />}
           />
+          <Route path="/admin/merchants" element={<MerchantMasterAdminPage />} />
         </Route>
       </Route>
     </Routes>

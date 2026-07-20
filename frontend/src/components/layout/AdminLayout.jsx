@@ -1,10 +1,34 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { getAdminInquiries } from "../../api/customerServiceApi";
 import "./AdminLayout.css";
 
-function AdminLayout({ title, subtitle, badgeCount, children }) {
+const NAV_ITEMS = [
+  {
+    key: "customer-service",
+    label: "1:1 문의 / 고객센터",
+    to: "/admin/customer-service",
+    icon: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
+  },
+  {
+    key: "merchant-master",
+    label: "가맹점 & 서비스 마스터",
+    to: "/admin/merchants",
+    icon: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+  },
+];
+
+function AdminLayout({ title, subtitle, children }) {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const [pendingInquiryCount, setPendingInquiryCount] = useState(0);
+
+  useEffect(() => {
+    getAdminInquiries({ status: "PENDING", size: 1 })
+      .then((data) => setPendingInquiryCount(data?.totalElements || 0))
+      .catch(() => {});
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -24,15 +48,26 @@ function AdminLayout({ title, subtitle, badgeCount, children }) {
 
         <nav className="admin-sidebar-nav">
           <div className="admin-nav-group-title">운영 &amp; 지원</div>
-          <span className="admin-nav-btn active">
-            <svg className="admin-icon" viewBox="0 0 24 24">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-            1:1 문의 / 고객센터
-            {Boolean(badgeCount) && (
-              <span className="admin-nav-badge">{badgeCount}</span>
-            )}
-          </span>
+          {NAV_ITEMS.map((item) => (
+            <NavLink
+              key={item.key}
+              to={item.to}
+              className={({ isActive }) =>
+                `admin-nav-btn${isActive ? " active" : ""}`
+              }
+            >
+              <svg className="admin-icon" viewBox="0 0 24 24">
+                <path d={item.icon} />
+              </svg>
+              {item.label}
+              {item.key === "customer-service" &&
+                Boolean(pendingInquiryCount) && (
+                  <span className="admin-nav-badge">
+                    {pendingInquiryCount}
+                  </span>
+                )}
+            </NavLink>
+          ))}
         </nav>
 
         <div className="admin-sidebar-footer">
