@@ -16,8 +16,6 @@ import com.weaone.themoa.domain.policy.rag.service.PolicyEmbeddingService;
 import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndex;
 import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndexBuilder;
 import com.weaone.themoa.domain.policy.rag.service.PolicySearchProjectionService;
-import com.weaone.themoa.domain.policy.rag.service.SearchReadinessService;
-import com.weaone.themoa.domain.policy.region.config.RegionSyncProperties;
 import com.weaone.themoa.domain.policy.region.service.RegionSynchronizationService;
 import com.weaone.themoa.domain.policy.sync.service.PolicySyncExecutionGuard;
 import com.weaone.themoa.domain.policy.sync.service.PolicySyncMode;
@@ -26,7 +24,6 @@ import com.weaone.themoa.domain.policy.sync.service.PolicySyncPipelineService;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.task.SyncTaskExecutor;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.function.Consumer;
@@ -46,7 +43,6 @@ class AdminJobServiceTest {
     private final RegionSynchronizationService regionSynchronizationService = mock(RegionSynchronizationService.class);
     private final PolicySearchProjectionService projectionService = mock(PolicySearchProjectionService.class);
     private final PolicyLexicalIndexBuilder lexicalIndexBuilder = mock(PolicyLexicalIndexBuilder.class);
-    private final SearchReadinessService readinessService = mock(SearchReadinessService.class);
     private final RegionCodeRepository regionCodeRepository = mock(RegionCodeRepository.class);
     private final PolicySyncPipelineService policySyncPipelineService = mock(PolicySyncPipelineService.class);
     private final PolicySyncExecutionGuard policySyncExecutionGuard = mock(PolicySyncExecutionGuard.class);
@@ -126,6 +122,19 @@ class AdminJobServiceTest {
     }
 
     @Test
+    void successfulPolicyCollectionInvalidatesLexicalIndex() {
+        allowJobStart();
+        when(collectionService.collectAll(anyJobProgressConsumer())).thenReturn(collectionResult("COMPLETED"));
+
+        AdminJobStatus status = service().start("POLICY_COLLECTION");
+
+        assertThat(status.status()).isEqualTo("COMPLETED");
+        verify(collectionService).collectAll(anyJobProgressConsumer());
+        verify(lexicalIndexBuilder).invalidate();
+        verify(policySyncExecutionGuard).release();
+    }
+
+    @Test
     void guardFailureThrowsAlreadyRunningBusinessException() {
         when(policySyncExecutionGuard.tryAcquire()).thenReturn(false);
 
@@ -169,7 +178,7 @@ class AdminJobServiceTest {
 
     private AdminJobService service() {
         return new AdminJobService(collectionService, embeddingService, regionRebuildService, regionSynchronizationService,
-                projectionService, lexicalIndexBuilder, readinessService, regionCodeRepository, regionSyncProperties(),
+                projectionService, lexicalIndexBuilder, regionCodeRepository,
                 policySyncPipelineService, policySyncExecutionGuard, new SyncTaskExecutor());
     }
 
@@ -198,12 +207,6 @@ class AdminJobServiceTest {
         when(index.size()).thenReturn(size);
         when(index.builtAt()).thenReturn(Instant.parse("2026-07-18T00:00:00Z"));
         return index;
-    }
-
-    private RegionSyncProperties regionSyncProperties() {
-        return new RegionSyncProperties(false, false, "0 0 4 1 * *",
-                Duration.ofMillis(100), Duration.ofSeconds(5), Duration.ofSeconds(20), 3,
-                new RegionSyncProperties.Sgis("https://sgisapi.mods.go.kr", "", ""));
     }
 
     private Consumer<com.weaone.themoa.common.dto.JobProgressUpdate> anyJobProgressConsumer() {

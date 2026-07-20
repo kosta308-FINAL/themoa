@@ -1,5 +1,6 @@
 package com.weaone.themoa.domain.policy.sync.service;
 
+import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.domain.policy.policy.service.PolicyCollectionExecutionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,8 +40,8 @@ public class PolicyDailySyncScheduler {
             adminJobExecutor.execute(this::runDailySync);
         } catch (RuntimeException ex) {
             executionGuard.release();
-            log.warn("정책 일일 동기화 작업 제출에 실패했습니다. errorType={}, message={}",
-                    ex.getClass().getSimpleName(), ex.getMessage());
+            log.warn("정책 일일 동기화 작업 제출에 실패했습니다. errorType={}",
+                    ex.getClass().getSimpleName());
         }
     }
 
@@ -59,9 +60,12 @@ public class PolicyDailySyncScheduler {
                     result.embeddingProcess().failedCount(),
                     result.embeddingProcess().pendingCountAfter(),
                     result.readiness().ready());
+        } catch (BusinessException ex) {
+            log.warn("정책 일일 동기화에 실패했습니다. errorCode={}",
+                    ex.getErrorCode().name());
         } catch (RuntimeException ex) {
-            log.warn("정책 일일 동기화에 실패했습니다. errorType={}, message={}",
-                    ex.getClass().getSimpleName(), ex.getMessage());
+            log.warn("정책 일일 동기화에 실패했습니다. errorType={}",
+                    ex.getClass().getSimpleName());
         } finally {
             executionGuard.release();
         }
