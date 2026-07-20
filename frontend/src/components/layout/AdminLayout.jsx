@@ -1,0 +1,67 @@
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
+import "./AdminLayout.css";
+
+function AdminLayout({ title, subtitle, badgeCount, children }) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
+
+  return (
+    <div className="admin-shell">
+      <aside className="admin-sidebar">
+        <div className="admin-sidebar-header">
+          <span className="admin-brand-mark">M</span>
+          <div>
+            <span className="admin-brand-title">더모아 관리자</span>
+            <span className="admin-brand-sub">Themoa Admin</span>
+          </div>
+        </div>
+
+        <nav className="admin-sidebar-nav">
+          <div className="admin-nav-group-title">운영 &amp; 지원</div>
+          <span className="admin-nav-btn active">
+            <svg className="admin-icon" viewBox="0 0 24 24">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            1:1 문의 / 고객센터
+            {Boolean(badgeCount) && (
+              <span className="admin-nav-badge">{badgeCount}</span>
+            )}
+          </span>
+        </nav>
+
+        <div className="admin-sidebar-footer">
+          <div className="admin-avatar">관</div>
+          <div className="admin-info">
+            <div className="admin-name">관리자 계정</div>
+            <div className="admin-role">ADMIN 권한</div>
+          </div>
+        </div>
+      </aside>
+
+      <div className="admin-main">
+        <header className="admin-topbar">
+          <div className="admin-topbar-title">
+            <span>{title}</span>
+            {subtitle && <span className="admin-topbar-sub">{subtitle}</span>}
+          </div>
+          <button
+            type="button"
+            className="admin-btn admin-btn-secondary"
+            onClick={handleLogout}
+          >
+            로그아웃
+          </button>
+        </header>
+        <main className="admin-content">{children}</main>
+      </div>
+    </div>
+  );
+}
+
+export default AdminLayout;

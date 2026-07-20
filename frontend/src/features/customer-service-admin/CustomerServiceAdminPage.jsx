@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import DashboardTopNav from "../../components/layout/DashboardTopNav";
-import DashboardFooter from "../../components/layout/DashboardFooter";
+import AdminLayout from "../../components/layout/AdminLayout";
 import AdminInquiryDetailPanel from "./components/AdminInquiryDetailPanel";
 import {
   getAdminInquiries,
@@ -32,11 +31,31 @@ function CustomerServiceAdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedInquiryId, setSelectedInquiryId] = useState(null);
+  const [summary, setSummary] = useState({ total: 0, pending: 0 });
 
   useEffect(() => {
     getInquiryCategories()
       .then((data) => setCategories(data || []))
       .catch(() => {});
+  }, []);
+
+  const loadSummary = () =>
+    Promise.all([
+      getAdminInquiries({ size: 1 }),
+      getAdminInquiries({ status: "PENDING", size: 1 }),
+    ])
+      .then(([all, pendingOnly]) => {
+        setSummary({
+          total: all?.totalElements || 0,
+          pending: pendingOnly?.totalElements || 0,
+        });
+      })
+      .catch(() => {
+        // KPI 집계 실패는 조용히 무시하고 목록만 노출한다
+      });
+
+  useEffect(() => {
+    loadSummary();
   }, []);
 
   const load = async () => {
@@ -66,25 +85,31 @@ function CustomerServiceAdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, categoryId, keyword]);
 
-  const pendingCount = items.filter((item) => item.status === "PENDING").length;
+  const refreshAfterAnswer = () => {
+    load();
+    loadSummary();
+  };
 
   return (
-    <div className="csa-page">
-      <DashboardTopNav />
-      <main className="csa-main">
-        <section className="csa-header">
-          <div>
-            <p className="csa-eyebrow">Customer support</p>
-            <h1>1:1 문의 관리</h1>
-            <p className="csa-sub">
-              회원이 접수한 1:1 문의를 확인하고 답변을 등록합니다. 답변을 최초
-              등록하면 작성자에게 앱 내 알림이 즉시 발송됩니다.
-            </p>
+    <AdminLayout
+      title="1:1 문의 / 고객센터 관리"
+      subtitle="회원이 접수한 문의를 확인하고 답변을 등록합니다"
+      badgeCount={summary.pending}
+    >
+      <div className="csa-page">
+        <section className="csa-kpi-grid">
+          <div className="csa-kpi-card">
+            <span className="csa-kpi-title">전체 문의</span>
+            <span className="csa-kpi-value">{summary.total} 건</span>
           </div>
-          <div className="csa-kpi">
-            <span className="csa-kpi-value">{pendingCount}</span>
-            <span className="csa-kpi-label">
-              답변 대기중 (조회된 목록 기준)
+          <div className="csa-kpi-card">
+            <span className="csa-kpi-title">답변 대기중</span>
+            <span className="csa-kpi-value warn">{summary.pending} 건</span>
+          </div>
+          <div className="csa-kpi-card">
+            <span className="csa-kpi-title">답변 완료</span>
+            <span className="csa-kpi-value">
+              {Math.max(summary.total - summary.pending, 0)} 건
             </span>
           </div>
         </section>
@@ -121,6 +146,15 @@ function CustomerServiceAdminPage() {
         </section>
 
         <section className="csa-panel">
+          <div className="csa-panel-header">
+            <div>
+              <div className="csa-panel-title">접수된 1:1 문의 목록</div>
+              <div className="csa-panel-sub">
+                사용자가 앱 및 고객센터 페이지에서 접수한 문의 내역입니다.
+                클릭하여 답변을 등록하세요.
+              </div>
+            </div>
+          </div>
           {error && <div className="csa-alert">{error}</div>}
           {isLoading ? (
             <div className="csa-empty">불러오는 중...</div>
@@ -172,17 +206,16 @@ function CustomerServiceAdminPage() {
           )}
           <div className="csa-total-count">총 {totalElements}건</div>
         </section>
-      </main>
-      <DashboardFooter />
 
-      {selectedInquiryId && (
-        <AdminInquiryDetailPanel
-          inquiryId={selectedInquiryId}
-          onClose={() => setSelectedInquiryId(null)}
-          onAnswered={load}
-        />
-      )}
-    </div>
+        {selectedInquiryId && (
+          <AdminInquiryDetailPanel
+            inquiryId={selectedInquiryId}
+            onClose={() => setSelectedInquiryId(null)}
+            onAnswered={refreshAfterAnswer}
+          />
+        )}
+      </div>
+    </AdminLayout>
   );
 }
 

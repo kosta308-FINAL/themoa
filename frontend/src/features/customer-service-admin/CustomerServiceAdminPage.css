@@ -18,69 +18,42 @@
   --radius: 16px;
   --shadow: 0 8px 30px rgba(22, 101, 52, 0.06), 0 2px 8px rgba(0, 0, 0, 0.02);
 
-  min-height: 100vh;
-  background: var(--page);
   color: var(--text);
 }
 
-.csa-main {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 30px 40px 64px;
-}
-
-.csa-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 24px;
+.csa-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
   margin-bottom: 24px;
 }
 
-.csa-eyebrow {
-  margin: 0 0 4px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--green-dark);
-}
-
-.csa-header h1 {
-  margin: 0 0 6px;
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -0.4px;
-}
-
-.csa-sub {
-  margin: 0;
-  max-width: 560px;
-  font-size: 13.5px;
-  color: var(--text-2);
-  line-height: 1.5;
-}
-
-.csa-kpi {
-  flex-shrink: 0;
-  text-align: right;
+.csa-kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px 22px;
+  padding: 18px 20px;
   box-shadow: var(--shadow);
 }
 
-.csa-kpi-value {
-  display: block;
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--green-dark);
+.csa-kpi-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
 }
 
-.csa-kpi-label {
-  font-size: 11.5px;
-  color: var(--text-3);
+.csa-kpi-value {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: var(--text);
+}
+
+.csa-kpi-value.warn {
+  color: var(--yellow);
 }
 
 .csa-filters {
@@ -124,6 +97,23 @@
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   overflow: hidden;
+}
+
+.csa-panel-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.csa-panel-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.csa-panel-sub {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 2px;
 }
 
 .csa-alert {

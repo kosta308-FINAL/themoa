@@ -15,6 +15,7 @@ import CustomerServicePage from "../features/customer-service/CustomerServicePag
 import CustomerServiceAdminPage from "../features/customer-service-admin/CustomerServiceAdminPage";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
+import UserOnlyRoute from "./UserOnlyRoute";
 import DashboardLayout from "../components/layout/DashboardLayout";
 
 const policyLocalToolsEnabled =
@@ -33,22 +34,27 @@ function AppRouter() {
       )}
 
       <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="products" element={<ProductsPage />} />
-          <Route path="policy" element={<PolicyPage />} />
-          <Route path="spending" element={<SpendingGuidePage />} />
-          <Route
-            path="spending/transactions"
-            element={<SpendingHistoryPage />}
-          />
-          <Route
-            path="spending/category-detail"
-            element={<CategoryDetailPage />}
-          />
-          <Route path="fixed-expenses" element={<FixedExpensePage />} />
-          <Route path="mypage" element={<MyPage />} />
-          <Route path="customer-service" element={<CustomerServicePage />} />
+        <Route element={<UserOnlyRoute />}>
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="products" element={<ProductsPage />} />
+            <Route path="policy" element={<PolicyPage />} />
+            <Route path="spending" element={<SpendingGuidePage />} />
+            <Route
+              path="spending/transactions"
+              element={<SpendingHistoryPage />}
+            />
+            <Route
+              path="spending/category-detail"
+              element={<CategoryDetailPage />}
+            />
+            <Route path="fixed-expenses" element={<FixedExpensePage />} />
+            <Route path="mypage" element={<MyPage />} />
+            <Route
+              path="customer-service"
+              element={<CustomerServicePage />}
+            />
+          </Route>
         </Route>
 
         <Route element={<AdminRoute />}>
