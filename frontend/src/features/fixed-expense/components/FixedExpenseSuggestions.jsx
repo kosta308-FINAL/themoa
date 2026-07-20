@@ -58,7 +58,7 @@ function FixedExpenseSuggestions({
       <div className="fx-panel-head">
         <div className="fx-panel-title">
           <span className="fx-panel-title-icon fx-tone-orange">
-            <DashboardIcon name="sparkle" size={16} />
+            <DashboardIcon name="sparkle" size={18} />
           </span>
           <div>
             <h2>새로 발견한 고정지출</h2>

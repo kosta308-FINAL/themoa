@@ -269,15 +269,7 @@ function FixedExpensePage() {
             </section>
 
             <div className="fx-content-grid">
-              <FixedExpenseList
-                items={items}
-                filter={filter}
-                onFilterChange={setFilter}
-                sort={sort}
-                onSortChange={setSort}
-                onSelect={setDetailExpense}
-              />
-              <div className="fx-side-col">
+              <div className="fx-main-col">
                 <FixedExpenseSuggestions
                   candidates={candidates}
                   pendingId={pendingCandidateId}
@@ -286,8 +278,16 @@ function FixedExpensePage() {
                   onReject={handleCandidateReject}
                   onReclassifyHabit={handleCandidateReclassifyHabit}
                 />
-                <UpcomingPayments items={items} />
+                <FixedExpenseList
+                  items={items}
+                  filter={filter}
+                  onFilterChange={setFilter}
+                  sort={sort}
+                  onSortChange={setSort}
+                  onSelect={setDetailExpense}
+                />
               </div>
+              <UpcomingPayments items={items} />
             </div>
           </>
         )}
