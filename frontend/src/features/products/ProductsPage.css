@@ -1,0 +1,318 @@
+/* 맞춤형 금융상품 추천. 색상·그림자·radius는 DashboardLayout(.dashboard)의
+   green 계열 --dash-* 토큰을 그대로 사용해 대시보드와 동일한 테마를 유지한다. */
+
+.products-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+/* ─── 입력 폼 ─────────────────────────────────────────── */
+.rec-form {
+  position: sticky;
+  top: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--dash-bg-card);
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius);
+  box-shadow: var(--dash-shadow);
+  padding: 20px;
+}
+
+.rec-form h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--dash-text-primary);
+}
+
+.rec-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rec-field > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dash-text-secondary);
+}
+
+.rec-field input,
+.rec-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  background: var(--dash-bg-card);
+  color: var(--dash-text-primary);
+  font: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.rec-field input:focus,
+.rec-field select:focus {
+  border-color: var(--dash-accent);
+}
+
+.rec-goal-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.rec-goal-toggle button {
+  flex: 1;
+  padding: 9px;
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  background: var(--dash-bg-card);
+  color: var(--dash-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.rec-goal-toggle button.active {
+  border-color: var(--dash-accent);
+  background: var(--dash-accent-light);
+  color: var(--dash-accent-dark);
+}
+
+.rec-goal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rec-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rec-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--dash-text-primary);
+  cursor: pointer;
+}
+
+.rec-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--dash-accent);
+}
+
+.rec-submit {
+  margin-top: 4px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--dash-accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  transition: background 0.15s ease;
+}
+
+.rec-submit:hover:not(:disabled) {
+  background: var(--dash-accent-dark);
+}
+
+.rec-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ─── 결과 영역 ───────────────────────────────────────── */
+.rec-results {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rec-state {
+  background: var(--dash-bg-card);
+  border: 1px dashed var(--dash-border);
+  border-radius: var(--dash-radius);
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--dash-text-secondary);
+  font-size: 14px;
+}
+
+.rec-alert {
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.rec-alert-danger {
+  background: #fdeeee;
+  border: 1px solid #f3c2c2;
+  color: #a12c2c;
+}
+
+.rec-alert-warn {
+  background: #fef3c7;
+  border: 1px solid #f4d38a;
+  color: #92610a;
+}
+
+.rec-alert-ok {
+  background: var(--dash-accent-light);
+  border: 1px solid #bfe9cd;
+  color: var(--dash-accent-dark);
+}
+
+.rec-card {
+  background: var(--dash-bg-card);
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius);
+  box-shadow: var(--dash-shadow);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rec-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rec-rank {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--dash-accent-dark);
+  background: var(--dash-accent-light);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.rec-score {
+  font-size: 12px;
+  color: var(--dash-text-secondary);
+}
+
+.rec-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--dash-text-primary);
+}
+
+.rec-badge-warn {
+  font-size: 11px;
+  font-weight: 700;
+  color: #a15c00;
+  background: #fff3d6;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+.rec-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--dash-text-secondary);
+}
+
+.rec-type {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--dash-bg, #f4f5f7);
+  border: 1px solid var(--dash-border);
+}
+
+.rec-rate strong {
+  color: var(--dash-accent-dark);
+  font-size: 16px;
+}
+
+.rec-line {
+  font-size: 13px;
+  color: var(--dash-text-primary);
+}
+
+.rec-line strong {
+  color: var(--dash-accent-dark);
+}
+
+.rec-line span {
+  color: var(--dash-text-secondary);
+  font-size: 12px;
+}
+
+.rec-line-goal strong {
+  color: #0a7d3c;
+}
+
+.rec-protect {
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0a7d3c;
+  background: #e5f5ea;
+  border-radius: 6px;
+  padding: 3px 9px;
+}
+
+.rec-ai {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #22314f;
+  background: #eef2ff;
+  border-left: 3px solid var(--accent, #4f62e8);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.rec-reasons-label {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--dash-text-secondary);
+}
+
+.rec-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 16px;
+  list-style: disc;
+  color: var(--dash-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.rec-link {
+  align-self: flex-start;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dash-accent-dark);
+}
+
+@media (max-width: 900px) {
+  .products-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .rec-form {
+    position: static;
+  }
+}
