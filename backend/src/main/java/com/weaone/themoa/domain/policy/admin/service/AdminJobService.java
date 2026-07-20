@@ -3,7 +3,7 @@ package com.weaone.themoa.domain.policy.admin.service;
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.policy.admin.dto.AdminJobStatus;
-import com.weaone.themoa.domain.policy.common.dto.JobProgressUpdate;
+import com.weaone.themoa.common.dto.JobProgressUpdate;
 import com.weaone.themoa.domain.policy.policy.service.PolicyCollectionResult;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
 import com.weaone.themoa.domain.policy.policy.service.PolicyRegionRebuildResult;

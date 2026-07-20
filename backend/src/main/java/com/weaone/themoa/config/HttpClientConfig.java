@@ -1,4 +1,4 @@
-package com.weaone.themoa.domain.policy.common.config;
+package com.weaone.themoa.config;
 
 import com.weaone.themoa.domain.policy.youthcenter.config.YouthCenterApiProperties;
 import org.springframework.context.annotation.Bean;

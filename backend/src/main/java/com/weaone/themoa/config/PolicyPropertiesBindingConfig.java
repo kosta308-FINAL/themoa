@@ -1,4 +1,4 @@
-package com.weaone.themoa.domain.policy.config;
+package com.weaone.themoa.config;
 
 import com.weaone.themoa.domain.policy.policy.service.RegionRebuildProperties;
 import com.weaone.themoa.domain.policy.rag.config.RagProperties;

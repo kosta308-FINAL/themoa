@@ -1,4 +1,4 @@
-package com.weaone.themoa.domain.policy.common.util;
+package com.weaone.themoa.common.util;
 
 import java.util.regex.Pattern;
 

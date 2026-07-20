@@ -2,7 +2,7 @@ package com.weaone.themoa.domain.policy.youthcenter.parser;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
-import com.weaone.themoa.domain.policy.common.exception.YouthCenterApiResponseException;
+import com.weaone.themoa.common.exception.YouthCenterApiResponseException;
 import com.weaone.themoa.domain.policy.youthcenter.client.ExternalApiResponse;
 import com.weaone.themoa.domain.policy.youthcenter.dto.parsed.ParsedPolicyDetail;
 import com.weaone.themoa.domain.policy.youthcenter.dto.parsed.ParsedPolicyList;
