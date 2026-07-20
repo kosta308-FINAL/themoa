@@ -1,0 +1,31 @@
+name: Discord PR Merge Notification
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - dev
+
+jobs:
+  notify:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Discord notification
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          description="${PR_BODY:-내용 없음}"
+          if [ "${#description}" -gt 1200 ]; then
+            description="${description:0:1200}\n...(description이 길어 일부만 표시됩니다)"
+          fi
+
+          message="dev 브랜치에 PR이 merge되었습니다.\n#${PR_NUMBER} ${PR_TITLE}\n${PR_URL}\n\n${description}"
+          payload=$(jq -n --arg content "$message" '{content: $content}')
+          curl -H "Content-Type: application/json" \
+            -d "$payload" \
+            "${{ secrets.DISCORD_WEBHOOK_URL }}"

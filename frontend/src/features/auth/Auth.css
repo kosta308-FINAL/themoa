@@ -1,0 +1,484 @@
+/* Auth-scoped theme — 대시보드(Dashboard.css)의 그린 언어를 따르고, 랜딩의 블루는 쓰지 않는다 */
+.auth {
+  --auth-accent: #22c55e;
+  --auth-accent-dark: #16a34a;
+  --auth-accent-light: #e7f9ee;
+  --auth-panel: #0f2e1d;
+  --auth-mint: #8fe6b0;
+  --auth-ink: #16241c;
+  --auth-sub: #6b7a72;
+  --auth-border: #e5ede8;
+  --auth-danger: #dc2626;
+  --auth-danger-bg: #fef2f2;
+  --auth-radius: 16px;
+
+  display: flex;
+  min-height: 100vh;
+  background: #ffffff;
+  color: var(--auth-ink);
+  font-family:
+    "Pretendard",
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+.auth button:focus-visible,
+.auth a:focus-visible {
+  outline: 2px solid var(--auth-accent-dark);
+  outline-offset: 2px;
+}
+
+/* ─── Left: brand panel ─────────────────────────────────── */
+.auth-panel {
+  width: 42%;
+  max-width: 520px;
+  min-width: 380px;
+  background: var(--auth-panel);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 36px 44px;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  width: fit-content;
+}
+
+.auth-logo-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--auth-accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.auth-logo-text {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.auth-panel-body {
+  margin: auto 0;
+  padding: 48px 0;
+}
+
+.auth-panel-date {
+  color: var(--auth-mint);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-bottom: 12px;
+}
+
+.auth-panel-title {
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #fff;
+  margin-bottom: 30px;
+}
+
+.auth-demo-card {
+  background: #fff;
+  color: var(--auth-ink);
+  border-radius: var(--auth-radius);
+  padding: 22px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 320px;
+  animation: auth-card-in 0.55s ease-out both;
+}
+
+.auth-demo-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--auth-sub);
+}
+
+.auth-demo-amount {
+  font-size: 32px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.auth-demo-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--auth-accent-light);
+  overflow: hidden;
+}
+
+.auth-demo-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--auth-accent);
+}
+
+.auth-demo-note {
+  font-size: 12px;
+  color: var(--auth-sub);
+}
+
+.auth-panel-foot {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+@keyframes auth-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Right: form ───────────────────────────────────────── */
+.auth-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.auth-form-area {
+  width: 100%;
+  max-width: 400px;
+}
+
+.auth-head {
+  margin-bottom: 28px;
+}
+
+.auth-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.auth-sub {
+  font-size: 14px;
+  color: var(--auth-sub);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-field-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--auth-border);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--auth-ink);
+  background: #fff;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: var(--auth-accent);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+.auth-input::placeholder {
+  color: #a8b5ad;
+}
+
+.auth-hint {
+  font-size: 12px;
+  color: var(--auth-sub);
+}
+
+.auth-field-error {
+  font-size: 12px;
+  color: var(--auth-danger);
+}
+
+.auth-row {
+  display: flex;
+  gap: 8px;
+}
+
+.auth-row .auth-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.auth-btn-secondary {
+  padding: 0 16px;
+  border-radius: 10px;
+  background: var(--auth-accent-light);
+  color: var(--auth-accent-dark);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.auth-btn-secondary:hover:not(:disabled) {
+  background: #d7f4e3;
+}
+
+.auth-btn-secondary:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.auth-submit {
+  margin-top: 4px;
+  padding: 13px;
+  border-radius: 12px;
+  background: var(--auth-accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.auth-submit:hover:not(:disabled) {
+  background: var(--auth-accent-dark);
+  transform: translateY(-1px);
+}
+
+.auth-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.auth-error {
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: var(--auth-danger-bg);
+  color: var(--auth-danger);
+  font-size: 13px;
+}
+
+.auth-switch {
+  margin-top: 24px;
+  font-size: 14px;
+  color: var(--auth-sub);
+  text-align: center;
+}
+
+.auth-switch a {
+  color: var(--auth-accent-dark);
+  font-weight: 600;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
+/* ─── Signup steps (실제 가입 순서: ① 이메일 인증 → ② 기본 정보) ─── */
+.auth-steps {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.auth-steps li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--auth-sub);
+}
+
+.auth-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  background: var(--auth-border);
+  color: var(--auth-sub);
+}
+
+.auth-steps li.current {
+  color: var(--auth-ink);
+}
+
+.auth-steps li.current .auth-step-num {
+  background: var(--auth-accent);
+  color: #fff;
+}
+
+.auth-steps li.done {
+  color: var(--auth-accent-dark);
+}
+
+.auth-steps li.done .auth-step-num {
+  background: var(--auth-accent-light);
+  color: var(--auth-accent-dark);
+}
+
+/* 인증 코드 만료 시간·재발송 */
+.auth-code-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.auth-code-ttl {
+  color: var(--auth-sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.auth-code-ttl.expired {
+  color: var(--auth-danger);
+}
+
+.auth-resend {
+  background: none;
+  color: var(--auth-accent-dark);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0;
+}
+
+.auth-resend:disabled {
+  color: var(--auth-sub);
+  cursor: default;
+  font-weight: 500;
+}
+
+.auth-resend:not(:disabled):hover {
+  text-decoration: underline;
+}
+
+/* 인증 완료된 이메일 표시 */
+.auth-verified {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--auth-accent-light);
+  color: var(--auth-accent-dark);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth-verified-badge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* 성별 세그먼트 */
+.auth-segment {
+  display: flex;
+  border: 1px solid var(--auth-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.auth-segment label {
+  position: relative;
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--auth-sub);
+  background: #fff;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.auth-segment label + label {
+  border-left: 1px solid var(--auth-border);
+}
+
+.auth-segment input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.auth-segment label.on {
+  background: var(--auth-accent-light);
+  color: var(--auth-accent-dark);
+  font-weight: 700;
+}
+
+.auth-segment label:focus-within {
+  box-shadow: inset 0 0 0 2px var(--auth-accent);
+}
+
+/* ─── Responsive ────────────────────────────────────────── */
+@media (max-width: 880px) {
+  .auth {
+    flex-direction: column;
+  }
+
+  .auth-panel {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    flex-direction: row;
+    align-items: center;
+    padding: 14px 20px;
+  }
+
+  .auth-panel-body,
+  .auth-panel-foot {
+    display: none;
+  }
+
+  .auth-content {
+    align-items: flex-start;
+    padding: 32px 20px 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth *,
+  .auth *::before,
+  .auth *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

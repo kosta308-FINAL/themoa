@@ -1,0 +1,103 @@
+package com.weaone.themoa.domain.policy.rag.service;
+
+/**
+ * 후보 수집 단계에서만 알 수 있는 검색량/중복/지역 풀 지표다.
+ *
+ * <p>Diagnostics 조립 시 서비스 본문에 90개가 넘는 생성자 인자를 직접 나열하지 않도록
+ * 후보 수집 관련 값을 한 객체로 묶는다.</p>
+ */
+public record CandidateCollectionMetrics(
+        int vectorCandidateCount,
+        int vectorOriginalCandidateCount,
+        int vectorIntentCandidateCount,
+        int vectorExpandedCandidateCount,
+        int vectorCategoryCandidateCount,
+        int vectorNormalizedCandidateCount,
+        int lexicalCandidateCount,
+        int mysqlTitleCandidateCount,
+        int mysqlKeywordCandidateCount,
+        int mysqlSummaryCandidateCount,
+        int mysqlCategoryCandidateCount,
+        int loadedPolicyCount,
+        int duplicateCandidateCount,
+        int fallbackAddedCount,
+        int regionPoolTotal,
+        int regionPoolExactSigungu,
+        int regionPoolParentSido,
+        int regionPoolNationwide,
+        int regionPoolMultiple,
+        int initialMergedCandidateCount,
+        int regionIntersectionCandidateCount,
+        boolean rankingFallbackUsed,
+        int rankingFallbackReviewedCount,
+        int rankingFallbackPassedCount,
+        String titleSearchMode,
+        String normalizedQueryTitle,
+        String matchedPolicyTitle,
+        double titleMatchScore,
+        int exactMatchCount,
+        boolean broadSearchSuppressed,
+        String generalBenefitSubQueries,
+        String generalBenefitVectorCounts,
+        String generalBenefitLexicalCounts
+) {
+    public CandidateCollectionMetrics(int vectorCandidateCount,
+                                      int vectorOriginalCandidateCount,
+                                      int vectorIntentCandidateCount,
+                                      int vectorExpandedCandidateCount,
+                                      int vectorCategoryCandidateCount,
+                                      int vectorNormalizedCandidateCount,
+                                      int lexicalCandidateCount,
+                                      int mysqlTitleCandidateCount,
+                                      int mysqlKeywordCandidateCount,
+                                      int mysqlSummaryCandidateCount,
+                                      int mysqlCategoryCandidateCount,
+                                      int loadedPolicyCount,
+                                      int duplicateCandidateCount,
+                                      int fallbackAddedCount,
+                                      int regionPoolTotal,
+                                      int regionPoolExactSigungu,
+                                      int regionPoolParentSido,
+                                      int regionPoolNationwide,
+                                      int regionPoolMultiple) {
+        this(vectorCandidateCount, vectorOriginalCandidateCount, vectorIntentCandidateCount, vectorExpandedCandidateCount,
+                vectorCategoryCandidateCount, vectorNormalizedCandidateCount, lexicalCandidateCount, mysqlTitleCandidateCount,
+                mysqlKeywordCandidateCount, mysqlSummaryCandidateCount, mysqlCategoryCandidateCount, loadedPolicyCount,
+                duplicateCandidateCount, fallbackAddedCount, regionPoolTotal, regionPoolExactSigungu, regionPoolParentSido,
+                regionPoolNationwide, regionPoolMultiple, loadedPolicyCount, loadedPolicyCount, false, 0, 0,
+                "NORMAL_SEARCH", "", "", 0.0, 0, false, "", "", "");
+    }
+
+    public CandidateCollectionMetrics(int vectorCandidateCount,
+                                      int vectorOriginalCandidateCount,
+                                      int vectorIntentCandidateCount,
+                                      int vectorExpandedCandidateCount,
+                                      int vectorCategoryCandidateCount,
+                                      int vectorNormalizedCandidateCount,
+                                      int lexicalCandidateCount,
+                                      int mysqlTitleCandidateCount,
+                                      int mysqlKeywordCandidateCount,
+                                      int mysqlSummaryCandidateCount,
+                                      int mysqlCategoryCandidateCount,
+                                      int loadedPolicyCount,
+                                      int duplicateCandidateCount,
+                                      int fallbackAddedCount,
+                                      int regionPoolTotal,
+                                      int regionPoolExactSigungu,
+                                      int regionPoolParentSido,
+                                      int regionPoolNationwide,
+                                      int regionPoolMultiple,
+                                      int initialMergedCandidateCount,
+                                      int regionIntersectionCandidateCount,
+                                      boolean rankingFallbackUsed,
+                                      int rankingFallbackReviewedCount,
+                                      int rankingFallbackPassedCount) {
+        this(vectorCandidateCount, vectorOriginalCandidateCount, vectorIntentCandidateCount, vectorExpandedCandidateCount,
+                vectorCategoryCandidateCount, vectorNormalizedCandidateCount, lexicalCandidateCount, mysqlTitleCandidateCount,
+                mysqlKeywordCandidateCount, mysqlSummaryCandidateCount, mysqlCategoryCandidateCount, loadedPolicyCount,
+                duplicateCandidateCount, fallbackAddedCount, regionPoolTotal, regionPoolExactSigungu, regionPoolParentSido,
+                regionPoolNationwide, regionPoolMultiple, initialMergedCandidateCount, regionIntersectionCandidateCount,
+                rankingFallbackUsed, rankingFallbackReviewedCount, rankingFallbackPassedCount,
+                "NORMAL_SEARCH", "", "", 0.0, 0, false, "", "", "");
+    }
+}

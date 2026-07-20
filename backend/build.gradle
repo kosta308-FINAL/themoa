@@ -3,6 +3,9 @@ plugins {
     id 'org.springframework.boot' version '3.5.16'
     id 'io.spring.dependency-management' version '1.1.7'
 }
+ext {
+    springAiVersion = "1.1.8"
+}
 
 group = 'com.weaone'
 version = '0.0.1-SNAPSHOT'
@@ -23,10 +26,43 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.16'
     implementation 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
+
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // CODEF 카드사 커넥션(connectedId 발급) 연동
+    implementation 'io.codef.api:easycodef-java:1.0.6'
+    implementation 'org.json:json:20240303'
+
+//    implementation 'org.springframework.ai:spring-ai-starter-vector-store-qdrant' 나중에 qdrant세팅되면 주석해제
+    // 습관성 지출 코칭 LLM 문구 생성(habitExpense.md §4) — Google GenAI(Gemini) 채팅 모델
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+    implementation 'org.springframework.ai:spring-ai-starter-vector-store-qdrant'
+    implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.mysql:mysql-connector-j'
+    testRuntimeOnly 'com.h2database:h2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:$springAiVersion"
+    }
 }
 
 tasks.named('test') {

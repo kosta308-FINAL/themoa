@@ -1,2 +1,9 @@
 final_project_summary/
 .idea/
+.claude/
+front-design/
+plan/
+troubleshooting/
+docker-compose.yml
+frontendrule.md
+mustrule.md
