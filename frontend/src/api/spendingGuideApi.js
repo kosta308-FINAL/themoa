@@ -11,6 +11,9 @@ export const setupSpendingGuide = (payload) =>
 export const updateSalary = (payload) =>
   axiosInstance.patch("/api/spending-guide/salary", payload);
 
+export const updateIncomeType = (payload) =>
+  axiosInstance.patch("/api/spending-guide/income-type", payload);
+
 export const updateSavingsGoal = (payload) =>
   axiosInstance.patch("/api/spending-guide/savings-goal", payload);
 
@@ -152,3 +155,19 @@ export const recoverSync = (mode) =>
   axiosInstance
     .post("/api/card-transactions/sync/recovery", { mode })
     .then(responseData);
+
+export const updateWorkSchedule = (payload) =>
+  axiosInstance.patch("/api/spending-guide/work-schedule", payload);
+
+export const createIncomeAdjustment = (payload) =>
+  axiosInstance
+    .post("/api/spending-guide/income-adjustments", payload)
+    .then(responseData);
+
+export const getIncomeAdjustments = () =>
+  axiosInstance
+    .get("/api/spending-guide/income-adjustments")
+    .then(responseData);
+
+export const deleteIncomeAdjustment = (id) =>
+  axiosInstance.delete(`/api/spending-guide/income-adjustments/${id}`);

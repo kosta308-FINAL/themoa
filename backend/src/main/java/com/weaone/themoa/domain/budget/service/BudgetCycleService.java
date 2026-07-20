@@ -10,7 +10,9 @@ import com.weaone.themoa.domain.fixedexpense.repository.FixedExpensePaymentRepos
 import com.weaone.themoa.domain.fixedexpense.repository.FixedExpenseRepository;
 import com.weaone.themoa.domain.fixedexpense.service.ConvertedKrwAmount;
 import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseKrwConverter;
+import com.weaone.themoa.domain.member.entity.IncomeType;
 import com.weaone.themoa.domain.member.entity.Member;
+import com.weaone.themoa.domain.member.repository.MemberWorkScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,6 +42,8 @@ public class BudgetCycleService {
     private final FixedExpenseRepository fixedExpenseRepository;
     private final FixedExpensePaymentRepository fixedExpensePaymentRepository;
     private final FixedExpenseKrwConverter krwConverter;
+    private final MemberWorkScheduleRepository memberWorkScheduleRepository;
+    private final WorkScheduleSalaryCalculator workScheduleSalaryCalculator;
 
     /** 현재 주기 예산을 조회하고 없으면 생성한다. 호출 전 {@code member.hasSpendingGuideSetup()}이 참이어야 한다. */
     public Budget getOrCreateCurrentBudget(Member member, LocalDate today) {
@@ -74,9 +78,20 @@ public class BudgetCycleService {
     private Budget createCycle(Member member, BudgetCyclePolicy.BudgetCycle cycle, LocalDate today) {
         BigDecimal expectedFixedTotal = refreshAndSumFixedExpenses(member.getId(), today);
         BigDecimal confirmedTotal = fixedExpensePaymentRepository.sumPaidAmount(member.getId(), cycle.yearMonth());
+        BigDecimal salaryAmount = resolveSalaryAmount(member, cycle);
         Budget budget = Budget.openCycle(member, cycle.yearMonth(), cycle.cycleStartDate(), cycle.cycleEndDate(),
-                member.getSalaryAmount(), member.getSavingsTargetOrZero(), expectedFixedTotal, confirmedTotal);
+                salaryAmount, member.getSavingsTargetOrZero(), expectedFixedTotal, confirmedTotal);
         return budgetRepository.save(budget);
+    }
+
+    /** SALARY는 원본을 그대로, HOURLY는 그 주기 날짜 범위에 요일별 스케줄을 대입해 예상 소득을 산출한다. */
+    private BigDecimal resolveSalaryAmount(Member member, BudgetCyclePolicy.BudgetCycle cycle) {
+        if (member.getIncomeType() != IncomeType.HOURLY) {
+            return member.getSalaryAmount();
+        }
+        return workScheduleSalaryCalculator.calculate(
+                memberWorkScheduleRepository.findByMember_Id(member.getId()), member.getHourlyWage(),
+                cycle.cycleStartDate(), cycle.cycleEndDate());
     }
 
     /**

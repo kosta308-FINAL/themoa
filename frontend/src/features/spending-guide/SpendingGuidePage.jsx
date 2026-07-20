@@ -11,6 +11,7 @@ import { LoadingState, PanelTitle } from "./components/SpendingGuideCommon";
 import SurplusSummary from "./components/SurplusSummary";
 import TodayTransactions from "./components/TodayTransactions";
 import useSpendingGuide from "./hooks/useSpendingGuide";
+import IncomeAdjustmentModal from "./IncomeAdjustmentModal";
 import ManualTransactionModal from "./ManualTransactionModal";
 import {
   formatDate,
@@ -37,6 +38,7 @@ function SpendingGuidePage() {
     initialSyncState,
     isBudgetOpen,
     isEntryOpen,
+    isIncomeAdjustmentOpen,
     isLoading,
     isSyncing,
     loadGuide,
@@ -48,6 +50,7 @@ function SpendingGuidePage() {
     setEditingTransaction,
     setIsBudgetOpen,
     setIsEntryOpen,
+    setIsIncomeAdjustmentOpen,
   } = useSpendingGuide();
   const summary = data.summary;
   const dailyRecommended = toNumber(summary?.dailyRecommendedAmount);
@@ -250,6 +253,14 @@ function SpendingGuidePage() {
                           <DashboardIcon name="plus" size={15} />
                           지출 직접 입력
                         </button>
+                        <button
+                          type="button"
+                          className="spending-secondary"
+                          onClick={() => setIsIncomeAdjustmentOpen(true)}
+                        >
+                          <DashboardIcon name="plus" size={15} />
+                          수입 직접 입력
+                        </button>
                       </div>
                     </div>
                     <TodayTransactions
@@ -355,6 +366,12 @@ function SpendingGuidePage() {
               !data.connections.cardSyncEnabled),
           )}
           onClose={() => setIsEntryOpen(false)}
+          onSaved={loadGuide}
+        />
+      )}
+      {isIncomeAdjustmentOpen && (
+        <IncomeAdjustmentModal
+          onClose={() => setIsIncomeAdjustmentOpen(false)}
           onSaved={loadGuide}
         />
       )}
