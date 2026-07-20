@@ -1,0 +1,209 @@
+.mma-page {
+  --green: #22c55e;
+  --green-dark: #15803d;
+  --green-soft: #e7f9ee;
+  --surface: #ffffff;
+  --border: #e5ede8;
+  --text: #16241c;
+  --text-2: #637169;
+  --text-3: #96a29b;
+  --yellow: #b8860b;
+  --purple: #7c3aed;
+  --purple-soft: #f2edff;
+  --radius: 16px;
+  --shadow: 0 8px 30px rgba(22, 101, 52, 0.06), 0 2px 8px rgba(0, 0, 0, 0.02);
+
+  color: var(--text);
+}
+
+.mma-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.mma-kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+}
+
+.mma-kpi-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.mma-kpi-value {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+}
+
+.mma-kpi-value.warn {
+  color: var(--yellow);
+}
+
+.mma-alert {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.mma-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.mma-panel-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mma-panel-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.mma-panel-sub {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.mma-empty {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 13.5px;
+}
+
+.mma-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.mma-table th {
+  text-align: left;
+  padding: 12px 18px;
+  background: #f8fafc;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.mma-table td {
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.mma-table tr:last-child td {
+  border-bottom: none;
+}
+
+.mma-table tr:hover td {
+  background: #f8fafc;
+}
+
+.mma-table code {
+  background: #f1f5f4;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.mma-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mma-badge.purple {
+  background: var(--purple-soft);
+  color: var(--purple);
+}
+
+.mma-btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 9px;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+
+.mma-btn-sm {
+  height: 30px;
+  padding: 0 12px;
+}
+
+.mma-btn-primary {
+  background: var(--green-dark);
+  color: #fff;
+}
+
+.mma-btn-primary:hover {
+  background: #166534;
+}
+
+.mma-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mma-quick-form {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mma-input,
+.mma-select {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text);
+}
+
+.mma-input {
+  width: 150px;
+}
+
+.mma-select {
+  width: 120px;
+}
+
+.mma-input:focus,
+.mma-select:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}

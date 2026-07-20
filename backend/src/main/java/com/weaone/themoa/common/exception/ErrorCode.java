@@ -46,6 +46,7 @@ public enum ErrorCode {
     MERCHANT_ALIAS_NOT_FOUND(HttpStatus.NOT_FOUND, "가맹점 별칭을 찾을 수 없습니다."),
     MERCHANT_ALIAS_TERM_BILLER_FORBIDDEN(HttpStatus.BAD_REQUEST, "결제대행사 이름은 가맹점 표기로 등록할 수 없습니다."),
     MERCHANT_ALIAS_TERM_CONFLICT(HttpStatus.CONFLICT, "이미 다른 서비스로 등록된 표기입니다."),
+    MERCHANT_NOT_FOUND(HttpStatus.NOT_FOUND, "가맹점을 찾을 수 없습니다."),
 
     // 카드 거래
     CARD_TRANSACTION_NOT_FOUND(HttpStatus.NOT_FOUND, "거래 내역을 찾을 수 없습니다."),

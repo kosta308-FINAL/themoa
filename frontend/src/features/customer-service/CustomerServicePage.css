@@ -445,6 +445,7 @@ textarea.form-control {
 }
 
 .file-dropzone {
+  display: block;
   border: 2px dashed var(--border-strong);
   border-radius: 14px;
   padding: 24px 16px;

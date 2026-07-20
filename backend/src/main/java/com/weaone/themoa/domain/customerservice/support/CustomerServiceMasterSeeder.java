@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,7 @@ public class CustomerServiceMasterSeeder implements ApplicationRunner {
     private final FaqCategoryRepository faqCategoryRepository;
     private final FaqRepository faqRepository;
     private final CustomerInquiryCategoryRepository inquiryCategoryRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
@@ -43,6 +45,7 @@ public class CustomerServiceMasterSeeder implements ApplicationRunner {
         if (inquiryCategoryRepository.count() > 0) {
             return;
         }
+        jdbcTemplate.execute("ALTER TABLE customer_inquiry_category AUTO_INCREMENT = 1");
         LocalDateTime now = LocalDateTime.now();
         inquiryCategoryRepository.saveAll(List.of(
                 CustomerInquiryCategory.seed("카드 연동", 1, now),
@@ -60,6 +63,8 @@ public class CustomerServiceMasterSeeder implements ApplicationRunner {
         if (faqCategoryRepository.count() > 0) {
             return;
         }
+        jdbcTemplate.execute("ALTER TABLE faq_category AUTO_INCREMENT = 1");
+        jdbcTemplate.execute("ALTER TABLE faq AUTO_INCREMENT = 1");
         LocalDateTime now = LocalDateTime.now();
         Map<String, FaqCategory> categories = faqCategoryRepository.saveAll(List.of(
                 FaqCategory.seed("CARD_SYNC", "카드 연동/수집", 1, now),

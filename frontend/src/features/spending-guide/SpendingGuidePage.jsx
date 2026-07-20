@@ -4,6 +4,7 @@ import { getSpendingTransactions } from "../../api/spendingGuideApi";
 import CalendarPopover from "../../components/common/CalendarPopover";
 import DashboardIcon from "../../components/common/DashboardIcon";
 import BudgetSettingsModal from "./BudgetSettingsModal";
+import CardManagementModal from "./CardManagementModal";
 import CategorySummary from "./components/CategorySummary";
 import CoachingPanel from "./components/CoachingPanel";
 import FixedCandidates from "./components/FixedCandidates";
@@ -64,6 +65,7 @@ function SpendingGuidePage() {
   } = useSpendingGuide();
   const navigate = useNavigate();
   const [isSavingsGoalOpen, setIsSavingsGoalOpen] = useState(false);
+  const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(todayDate());
   const [dayItems, setDayItems] = useState(null);
@@ -128,6 +130,7 @@ function SpendingGuidePage() {
     INITIAL_SYNC_IN_PROGRESS.has(initialSyncState?.overallStatus) ||
     initialSyncState?.overallStatus === "FAILED";
   const showSetup = summary?.setupRequired && !showInitialSync;
+  const hasCardConnection = Boolean(data.connections?.connections?.length);
   const canManualSync = Boolean(
     data.connections?.cardSyncEnabled &&
     data.connections.connections?.some(
@@ -434,11 +437,24 @@ function SpendingGuidePage() {
                           <button
                             type="button"
                             className="spending-secondary spending-sync-button"
-                            onClick={handleManualSync}
-                            disabled={!canManualSync || isSyncing}
+                            onClick={
+                              hasCardConnection
+                                ? handleManualSync
+                                : () => setIsCardModalOpen(true)
+                            }
+                            disabled={
+                              hasCardConnection && (!canManualSync || isSyncing)
+                            }
                           >
-                            <DashboardIcon name="repeat" size={15} />
-                            {isSyncing ? "동기화 중..." : "카드내역 동기화"}
+                            <DashboardIcon
+                              name={hasCardConnection ? "repeat" : "plus"}
+                              size={15}
+                            />
+                            {hasCardConnection
+                              ? isSyncing
+                                ? "동기화 중..."
+                                : "카드내역 동기화"
+                              : "카드 연결"}
                           </button>
                           <button
                             type="button"
@@ -587,6 +603,12 @@ function SpendingGuidePage() {
           currentAmount={summary.savingsGoalAmount}
           onClose={() => setIsSavingsGoalOpen(false)}
           onSaved={loadGuide}
+        />
+      )}
+      {isCardModalOpen && (
+        <CardManagementModal
+          onClose={() => setIsCardModalOpen(false)}
+          onChanged={loadGuide}
         />
       )}
       {detailId && (

@@ -49,4 +49,9 @@ public class Merchant {
     public static Merchant observe(String merchantNameRaw, MerchantAlias globalAlias) {
         return new Merchant(merchantNameRaw, globalAlias);
     }
+
+    /** 관리자가 직접 전역 마스터에 연결한다(merchant.md §2-1 전역 시드 경로 — 사용자 학습이 아닌 관리자 판단 영역). */
+    public void linkGlobalAlias(MerchantAlias merchantAlias) {
+        this.merchantAlias = merchantAlias;
+    }
 }
