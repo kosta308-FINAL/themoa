@@ -4,25 +4,27 @@ import com.weaone.themoa.domain.policy.rag.dto.PolicySearchCondition;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyQuerySemantics;
 import com.weaone.themoa.domain.policy.rag.dto.SearchDomain;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 @Component
 public class CompositePolicySearchConditionParser implements PolicySearchConditionParser {
-    private final ObjectProvider<ChatClient.Builder> chatClientBuilderProvider;
+    private final ObjectProvider<ChatModel> openAiChatModelProvider;
     private final RuleBasedPolicySearchConditionParser ruleBasedParser;
     private final PolicySearchConditionValidator conditionValidator;
     private final PolicyIntentPolarityDetector polarityDetector;
     private final String openAiApiKey;
 
-    public CompositePolicySearchConditionParser(ObjectProvider<ChatClient.Builder> chatClientBuilderProvider,
+    public CompositePolicySearchConditionParser(@Qualifier("openAiChatModel") ObjectProvider<ChatModel> openAiChatModelProvider,
                                                 RuleBasedPolicySearchConditionParser ruleBasedParser,
                                                 PolicySearchConditionValidator conditionValidator,
                                                 PolicyIntentPolarityDetector polarityDetector,
                                                 @Value("${spring.ai.openai.api-key:}") String openAiApiKey) {
-        this.chatClientBuilderProvider = chatClientBuilderProvider;
+        this.openAiChatModelProvider = openAiChatModelProvider;
         this.ruleBasedParser = ruleBasedParser;
         this.conditionValidator = conditionValidator;
         this.polarityDetector = polarityDetector;
@@ -33,10 +35,10 @@ public class CompositePolicySearchConditionParser implements PolicySearchConditi
     public ParsedPolicySearchCondition parse(String query, Integer resultSize) {
         PolicySearchCondition ruleCondition = ruleBasedParser.parseCondition(query, resultSize);
         if (StringUtils.hasText(openAiApiKey)) {
-            ChatClient.Builder builder = chatClientBuilderProvider.getIfAvailable();
-            if (builder != null) {
+            ChatModel openAiChatModel = openAiChatModelProvider.getIfAvailable();
+            if (openAiChatModel != null) {
                 try {
-                    OpenAiPolicySearchAnalysis analysis = builder.build()
+                    OpenAiPolicySearchAnalysis analysis = ChatClient.builder(openAiChatModel).build()
                             .prompt()
                             .system("""
                                     You extract structured Korean youth policy search conditions.

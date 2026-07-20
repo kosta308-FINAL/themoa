@@ -2,9 +2,10 @@ package com.weaone.themoa.domain.coaching.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 
@@ -31,7 +32,6 @@ import java.util.concurrent.TimeoutException;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class GeminiHabitCoachingLlmClient implements HabitCoachingLlmClient {
 
     private static final Duration CALL_TIMEOUT = Duration.ofSeconds(25);
@@ -58,6 +58,12 @@ public class GeminiHabitCoachingLlmClient implements HabitCoachingLlmClient {
 
     private final ChatClient.Builder chatClientBuilder;
     private final ObjectMapper objectMapper;
+
+    public GeminiHabitCoachingLlmClient(@Qualifier("googleGenAiChatModel") ChatModel googleGenAiChatModel,
+                                         ObjectMapper objectMapper) {
+        this.chatClientBuilder = ChatClient.builder(googleGenAiChatModel);
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     public List<CoachingCardDraft> generateDrafts(List<HabitCoachingCandidate> candidates) {
