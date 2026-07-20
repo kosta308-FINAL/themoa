@@ -3,8 +3,8 @@ package com.weaone.themoa.domain.policy.rag.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
-import com.weaone.themoa.domain.policy.policy.domain.PolicySearchProjection;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.PolicySearchProjection;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import com.weaone.themoa.domain.policy.policy.repository.PolicySearchProjectionRepository;
 import com.weaone.themoa.domain.policy.policy.repository.PolicySourceSnapshotRepository;
@@ -91,7 +91,7 @@ public class PolicySearchProjectionService {
 
     public ProjectionBatchResult rebuildBatch(List<Integer> ids) {
         List<Policy> policies = policyRepository.findWithRelationsByIdIn(ids);
-        Map<Integer, com.weaone.themoa.domain.policy.policy.domain.PolicySourceSnapshot> snapshots =
+        Map<Integer, com.weaone.themoa.domain.policy.policy.entity.PolicySourceSnapshot> snapshots =
                 snapshotRepository.findByPolicyIdIn(ids).stream()
                         .collect(Collectors.toMap(snapshot -> snapshot.getPolicy().getId(), Function.identity()));
         long missingSnapshot = 0;
@@ -107,7 +107,7 @@ public class PolicySearchProjectionService {
         return source(policy, snapshotRepository.findByPolicyId(policy.getId()).orElse(null));
     }
 
-    private ProjectionSource source(Policy policy, com.weaone.themoa.domain.policy.policy.domain.PolicySourceSnapshot snapshot) {
+    private ProjectionSource source(Policy policy, com.weaone.themoa.domain.policy.policy.entity.PolicySourceSnapshot snapshot) {
         if (snapshot != null) {
             try {
                 Map<String, Object> fields = objectMapper.readValue(snapshot.getRawPolicyJson(), new TypeReference<>() {

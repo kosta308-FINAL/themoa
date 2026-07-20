@@ -2,10 +2,10 @@ package com.weaone.themoa.domain.policy.policy.service;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyCategory;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyRegion;
-import com.weaone.themoa.domain.policy.policy.domain.RegionCode;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyCategory;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyRegion;
+import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
 import com.weaone.themoa.domain.policy.policy.dto.response.PolicyDetailResponse;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import org.junit.jupiter.api.DisplayName;

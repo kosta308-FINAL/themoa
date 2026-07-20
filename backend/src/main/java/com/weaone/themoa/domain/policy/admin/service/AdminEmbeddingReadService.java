@@ -2,8 +2,8 @@ package com.weaone.themoa.domain.policy.admin.service;
 
 import com.weaone.themoa.domain.policy.admin.dto.embedding.AdminEmbeddingItemResponse;
 import com.weaone.themoa.domain.policy.admin.dto.embedding.AdminEmbeddingPageResponse;
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyEmbeddingSync;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyEmbeddingSync;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyEmbeddingSyncRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

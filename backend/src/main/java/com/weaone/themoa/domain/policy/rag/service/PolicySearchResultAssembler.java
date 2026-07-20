@@ -1,8 +1,8 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyCondition;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyRegion;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyCondition;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyRegion;
 import com.weaone.themoa.domain.policy.rag.dto.CandidateSource;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyDomainClassification;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyEmploymentAudience;

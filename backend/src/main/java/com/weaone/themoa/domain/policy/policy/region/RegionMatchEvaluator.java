@@ -1,7 +1,7 @@
 package com.weaone.themoa.domain.policy.policy.region;
 
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
-import com.weaone.themoa.domain.policy.policy.domain.RegionCode;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -60,12 +60,12 @@ public class RegionMatchEvaluator {
         if (userRegion == null || !userRegion.hasRegion()) {
             return result(RegionCompatibility.UNKNOWN, true, 0, "지역 조건 없음");
         }
-        Set<com.weaone.themoa.domain.policy.policy.domain.PolicyRegion> regions = policy.getRegions();
+        Set<com.weaone.themoa.domain.policy.policy.entity.PolicyRegion> regions = policy.getRegions();
         if (regions.isEmpty()) {
             return result(RegionCompatibility.UNKNOWN, false, 0, "정책 적용 지역을 확인할 수 없습니다.");
         }
         List<RegionCode> policyRegions = regions.stream()
-                .map(com.weaone.themoa.domain.policy.policy.domain.PolicyRegion::getRegion)
+                .map(com.weaone.themoa.domain.policy.policy.entity.PolicyRegion::getRegion)
                 .filter(Objects::nonNull)
                 .toList();
         if (policyRegions.stream().anyMatch(this::isNationwide)) {

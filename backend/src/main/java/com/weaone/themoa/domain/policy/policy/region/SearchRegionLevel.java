@@ -1,6 +1,6 @@
 package com.weaone.themoa.domain.policy.policy.region;
 
-import com.weaone.themoa.domain.policy.policy.domain.RegionCode;
+import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
 
 public enum SearchRegionLevel {
     NATIONWIDE,

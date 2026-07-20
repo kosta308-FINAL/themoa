@@ -5,8 +5,8 @@ import com.weaone.themoa.domain.policy.admin.dto.response.AdminRegionCoverageRes
 import com.weaone.themoa.domain.policy.admin.dto.response.AdminRegionResolveResponse;
 import com.weaone.themoa.domain.policy.admin.dto.response.AdminRegionSearchResponse;
 import com.weaone.themoa.domain.policy.admin.dto.response.AdminRegionSyncRunResponse;
-import com.weaone.themoa.domain.policy.policy.domain.RegionCode;
-import com.weaone.themoa.domain.policy.policy.domain.RegionSyncRun;
+import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
+import com.weaone.themoa.domain.policy.policy.entity.RegionSyncRun;
 import com.weaone.themoa.domain.policy.policy.region.RegionCatalog;
 import com.weaone.themoa.domain.policy.policy.region.UserRegionResolution;
 import com.weaone.themoa.domain.policy.policy.region.UserRegionTextResolver;

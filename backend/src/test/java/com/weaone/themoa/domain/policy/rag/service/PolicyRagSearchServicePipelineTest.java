@@ -1,10 +1,10 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyCategory;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyCondition;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyRegion;
-import com.weaone.themoa.domain.policy.policy.domain.RegionCode;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyCategory;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyCondition;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyRegion;
+import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
 import com.weaone.themoa.domain.policy.policy.region.FakeRegionData;
 import com.weaone.themoa.domain.policy.policy.region.RegionAliasCatalog;
 import com.weaone.themoa.domain.policy.policy.region.RegionCatalog;

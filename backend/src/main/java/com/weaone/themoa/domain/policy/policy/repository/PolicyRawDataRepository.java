@@ -1,6 +1,6 @@
 package com.weaone.themoa.domain.policy.policy.repository;
 
-import com.weaone.themoa.domain.policy.policy.domain.PolicyRawData;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyRawData;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
