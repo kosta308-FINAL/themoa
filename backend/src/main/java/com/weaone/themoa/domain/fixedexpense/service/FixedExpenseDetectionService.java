@@ -1,5 +1,6 @@
 package com.weaone.themoa.domain.fixedexpense.service;
 
+import com.weaone.themoa.domain.budget.service.BudgetCycleService;
 import com.weaone.themoa.domain.cardconnection.entity.CardConnection;
 import com.weaone.themoa.domain.cardconnection.entity.ConnectionStatus;
 import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -63,26 +65,34 @@ public class FixedExpenseDetectionService {
     private final CategoryRepository categoryRepository;
     private final RecurringPatternDetector recurringPatternDetector;
     private final AmountClusterer amountClusterer;
+    private final BudgetCycleService budgetCycleService;
 
     /** 카드거래 수집 새벽 배치(03:00) 이후에 돌도록 30분 뒤로 잡는다. */
     @Scheduled(cron = "0 30 3 * * *", zone = "Asia/Seoul")
     public void runNightlyDetection() {
         LocalDateTime activeSince = LocalDateTime.now(FixedExpenseCyclePolicy.ZONE_SEOUL).minusDays(INACTIVITY_LIMIT_DAYS);
+        LocalDate today = LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL);
         List<CardConnection> connections = cardConnectionRepository
                 .findEligibleForNightlyBatch(ConnectionStatus.ACTIVE, activeSince);
         Map<Long, Member> membersById = connections.stream()
                 .map(CardConnection::getMember)
                 .collect(Collectors.toMap(Member::getId, member -> member, (a, b) -> a, LinkedHashMap::new));
         for (Member member : membersById.values()) {
-            detectForMember(member.getId(), FixedExpenseCyclePolicy.currentYearMonth(member.getPayday()));
+            detectForMember(member.getId(), currentYearMonth(member.getId(), today));
         }
     }
 
     /** 로그인 회원 본인 범위 즉시 실행(F-04 테스트용 트리거)용 진입점 — payday를 직접 조회해 배치와 같은 라벨을 계산한다. */
     @Transactional
     public void detectForMember(Long memberId) {
+        detectForMember(memberId, currentYearMonth(memberId, LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL)));
+    }
+
+    /** 급여일 변경 예약을 먼저 승격한 뒤(payday.md §급여일 변경) 최신 payday·이력 기준으로 라벨을 계산한다. */
+    private String currentYearMonth(Long memberId, LocalDate today) {
+        budgetCycleService.ensurePaydayPromoted(memberId, today);
         Member member = memberRepository.getReferenceById(memberId);
-        detectForMember(memberId, FixedExpenseCyclePolicy.currentYearMonth(member.getPayday()));
+        return budgetCycleService.resolveCycleForDate(member, today).yearMonth();
     }
 
     @Transactional

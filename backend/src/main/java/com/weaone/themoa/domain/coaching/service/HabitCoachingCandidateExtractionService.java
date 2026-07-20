@@ -1,6 +1,5 @@
 package com.weaone.themoa.domain.coaching.service;
 
-import com.weaone.themoa.domain.budget.service.BudgetCyclePolicy;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionSource;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
@@ -38,23 +37,6 @@ public class HabitCoachingCandidateExtractionService {
 
     private final CardTransactionRepository cardTransactionRepository;
     private final CoachingDismissRepository coachingDismissRepository;
-
-    /** 회원의 가장 최근에 완료된 급여 주기 소비로 상위 후보를 뽑는다. payday 미설정 회원은 대상이 아니다. */
-    @Transactional(readOnly = true)
-    public List<HabitCoachingCandidate> extractTopCandidates(Member member, LocalDate today) {
-        if (member.getPayday() == null) {
-            return List.of();
-        }
-        BudgetCyclePolicy.BudgetCycle previousCycle = previousCompletedCycle(member.getPayday(), today);
-        return extractTopCandidates(member, previousCycle.cycleStartDate(), previousCycle.cycleEndDate());
-    }
-
-    /** 카드 생성 배치의 멱등성 키(주기 라벨) 산출용으로도 재사용한다(§8 "동일 year_month 멱등성"). */
-    public static BudgetCyclePolicy.BudgetCycle previousCompletedCycle(int payday, LocalDate today) {
-        BudgetCyclePolicy.BudgetCycle current = BudgetCyclePolicy.cycleOf(payday, today);
-        LocalDate anchor = current.cycleStartDate().minusDays(1);
-        return BudgetCyclePolicy.cycleOf(payday, anchor);
-    }
 
     @Transactional(readOnly = true)
     public List<HabitCoachingCandidate> extractTopCandidates(Member member, LocalDate cycleStart, LocalDate cycleEnd) {

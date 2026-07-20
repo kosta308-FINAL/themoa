@@ -21,9 +21,19 @@ function SurplusSummary({ data, onSetGoal }) {
           tone="teal"
         />
         {data.hasSavingsGoal && (
-          <span className="spending-status">
-            저축 목표 {formatWon(data.savingsTargetAmount)}
-          </span>
+          <div className="spending-surplus-goal-badge">
+            <span className="spending-status">
+              저축 목표 {formatWon(data.savingsTargetAmount)}
+            </span>
+            <button
+              type="button"
+              className="spending-surplus-goal-edit"
+              onClick={onSetGoal}
+              aria-label="저축 목표 수정"
+            >
+              <DashboardIcon name="edit" size={14} />
+            </button>
+          </div>
         )}
       </div>
 
@@ -61,28 +71,8 @@ function SurplusSummary({ data, onSetGoal }) {
           />
         </div>
       )}
-
-      {!data.hasSavingsGoal && (
-        <div className="spending-surplus-goal-cta">
-          <span className="spending-surplus-goal-icon">
-            <DashboardIcon name="target" size={17} />
-          </span>
-          <div>
-            <strong>아직 저축 목표가 없어요</strong>
-            <p>목표를 정하면 잉여금을 목표 달성에 맞게 활용할 수 있어요.</p>
-          </div>
-          <button
-            type="button"
-            className="spending-primary"
-            onClick={onSetGoal}
-          >
-            목표 정하기
-          </button>
-        </div>
-      )}
     </section>
   );
 }
 
 export default SurplusSummary;
-

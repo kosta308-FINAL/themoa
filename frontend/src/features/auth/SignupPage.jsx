@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { sendEmailCode, signup, verifyEmailCode } from "../../api/authApi";
+import CalendarPopover from "../../components/common/CalendarPopover";
+import DashboardIcon from "../../components/common/DashboardIcon";
 import { useAuth } from "../../hooks/useAuth";
 import { getApiErrorMessage } from "../../utils/apiError";
 import AuthLayout from "./components/AuthLayout";
+
+const formatBirthDate = (iso) => {
+  const [year, month, day] = iso.split("-");
+  return `${year}년 ${Number(month)}월 ${Number(day)}일`;
+};
 
 /* 서버(SignupRequest)와 동일한 규칙: 공백 없이 10~64자, 영문·숫자·특수문자 모두 포함 */
 const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S{10,64}$/;
@@ -37,6 +44,7 @@ function SignupPage() {
   const [nickname, setNickname] = useState("");
   const [gender, setGender] = useState("");
   const [birthDate, setBirthDate] = useState("");
+  const [isBirthDateOpen, setIsBirthDateOpen] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -148,6 +156,7 @@ function SignupPage() {
   };
 
   const today = new Date().toISOString().slice(0, 10);
+  const birthYearFloor = Number(today.slice(0, 4)) - 100;
 
   return (
     <AuthLayout>
@@ -353,16 +362,34 @@ function SignupPage() {
             )}
           </div>
 
-          <label className="auth-field">
+          <div className="auth-field">
             <span className="auth-field-label">출생일</span>
-            <input
-              className="auth-input"
-              type="date"
-              value={birthDate}
-              onChange={(e) => setBirthDate(e.target.value)}
-              max={today}
-              required
-            />
+            <div className="auth-date-field">
+              <button
+                type="button"
+                className="auth-date-trigger"
+                onClick={() => setIsBirthDateOpen((open) => !open)}
+              >
+                <DashboardIcon name="calendar" size={16} />
+                <span className={birthDate ? "" : "auth-date-placeholder"}>
+                  {birthDate ? formatBirthDate(birthDate) : "연도-월-일"}
+                </span>
+              </button>
+              {isBirthDateOpen && (
+                <CalendarPopover
+                  value={birthDate}
+                  max={today}
+                  minYear={birthYearFloor}
+                  title="출생일 선택"
+                  placement="top"
+                  onSelect={(date) => {
+                    setBirthDate(date);
+                    setIsBirthDateOpen(false);
+                  }}
+                  onClose={() => setIsBirthDateOpen(false)}
+                />
+              )}
+            </div>
             {fieldErrors.birthDate ? (
               <span className="auth-field-error">{fieldErrors.birthDate}</span>
             ) : (
@@ -370,7 +397,7 @@ function SignupPage() {
                 만 19세 이상만 가입할 수 있어요.
               </span>
             )}
-          </label>
+          </div>
 
           <button type="submit" className="auth-submit" disabled={submitting}>
             {submitting ? "가입 중…" : "가입하고 시작하기"}

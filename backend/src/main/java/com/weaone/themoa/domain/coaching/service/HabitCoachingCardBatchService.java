@@ -1,6 +1,7 @@
 package com.weaone.themoa.domain.coaching.service;
 
 import com.weaone.themoa.domain.budget.service.BudgetCyclePolicy;
+import com.weaone.themoa.domain.budget.service.BudgetCycleService;
 import com.weaone.themoa.domain.category.repository.CategoryRepository;
 import com.weaone.themoa.domain.coaching.entity.CoachingCard;
 import com.weaone.themoa.domain.coaching.entity.CoachingCardTargetType;
@@ -42,12 +43,19 @@ public class HabitCoachingCardBatchService {
     private final HabitCoachingCandidateExtractionService candidateExtractionService;
     private final HabitCoachingLlmClient habitCoachingLlmClient;
     private final HabitCoachingTemplateCardFactory templateCardFactory;
+    private final BudgetCycleService budgetCycleService;
 
-    /** 회원별 급여일 새벽 배치. 오늘이 실제 급여일(말일 보정 포함)인 회원만 대상으로 한다. */
+    /**
+     * 회원별 급여일 새벽 배치. 오늘이 실제 급여일(말일 보정 포함)인 회원만 대상으로 한다. 매일 전 회원을
+     * 훑는 유일한 배치라 급여일 변경 예약(pendingPayday) 승격도 여기서 겸해 처리한다 — 사용자가 앱을 안
+     * 열어도 하루 안에는 승격이 보장된다(payday.md §급여일 변경). isPaydayToday 판정은 승격 전 스냅샷 값을
+     * 쓰므로 변경 당일 트리거가 하루 어긋날 수 있지만, generateForMember는 멱등이라 다음 배치에서 만회된다.
+     */
     @Scheduled(cron = "0 30 4 * * *", zone = "Asia/Seoul")
     public void runPaydayBatch() {
         LocalDate today = LocalDate.now(ZONE_SEOUL);
         for (Member member : memberRepository.findByPaydayIsNotNull()) {
+            budgetCycleService.ensurePaydayPromoted(member.getId(), today);
             if (!isPaydayToday(member.getPayday(), today)) {
                 continue;
             }
@@ -71,8 +79,7 @@ public class HabitCoachingCardBatchService {
         if (member.getPayday() == null) {
             return;
         }
-        BudgetCyclePolicy.BudgetCycle previousCycle =
-                HabitCoachingCandidateExtractionService.previousCompletedCycle(member.getPayday(), today);
+        BudgetCyclePolicy.BudgetCycle previousCycle = budgetCycleService.previousCompletedCycle(member, today);
         String yearMonth = previousCycle.yearMonth();
         if (coachingCardRepository.existsByMember_IdAndYearMonth(memberId, yearMonth)) {
             return;

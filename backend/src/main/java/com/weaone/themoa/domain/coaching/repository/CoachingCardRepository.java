@@ -12,5 +12,6 @@ public interface CoachingCardRepository extends JpaRepository<CoachingCard, Long
 
     boolean existsByMember_IdAndYearMonth(Long memberId, String yearMonth);
 
-    List<CoachingCard> findByMember_IdAndYearMonthOrderByDisplayOrderAsc(Long memberId, String yearMonth);
+    List<CoachingCard> findByMember_IdAndYearMonthAndDismissedAtIsNullOrderByDisplayOrderAsc(Long memberId,
+                                                                                              String yearMonth);
 }

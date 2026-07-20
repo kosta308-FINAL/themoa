@@ -17,9 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 /**
- * 코칭 카드 넘기기(habitExpense.md §5). 카드가 이미 들고 있는 코칭 대상 참조(category/merchant_alias)를
- * 그대로 써서 대상별 1행으로 upsert한다 — 사용자가 나중에 다른 유형으로 다시 넘기면(NOT_WASTE→HIDE 등)
- * 기존 행을 갱신한다.
+ * 코칭 카드 넘기기(habitExpense.md §5). 넘긴 카드 자신은 즉시 목록에서 빠지도록 dismissedAt을 남기고,
+ * 카드가 이미 들고 있는 코칭 대상 참조(category/merchant_alias)는 그대로 써서 대상별 1행으로 upsert한다
+ * — 이 upsert 결과는 다음 주기 후보 추출에 반영된다. 사용자가 나중에 다른 유형으로 다시 넘기면
+ * (NOT_WASTE→HIDE 등) 기존 행을 갱신한다.
  */
 @Service
 @RequiredArgsConstructor
@@ -33,6 +34,7 @@ public class CoachingDismissService {
         CoachingCard card = coachingCardRepository.findByIdAndMember_Id(cardId, memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COACHING_CARD_NOT_FOUND));
         LocalDateTime now = LocalDateTime.now();
+        card.markDismissed(now);
         Member member = card.getMember();
         if (card.getTargetType() == CoachingCardTargetType.CATEGORY) {
             upsertForCategory(member, card, dismissType, now);

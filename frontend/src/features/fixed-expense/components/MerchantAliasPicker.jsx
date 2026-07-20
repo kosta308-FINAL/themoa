@@ -19,7 +19,8 @@ function MerchantAliasPicker({ initialName = "", onChange }) {
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
-      if (boxRef.current && !boxRef.current.contains(event.target)) setIsOpen(false);
+      if (boxRef.current && !boxRef.current.contains(event.target))
+        setIsOpen(false);
     };
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);

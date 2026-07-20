@@ -33,6 +33,25 @@ public final class BudgetCyclePolicy {
         return yearMonth.atDay(Math.min(payday, yearMonth.lengthOfMonth()));
     }
 
+    /**
+     * 급여일 변경 직후 첫 주기(브리지 주기, payday.md §급여일 변경). 이전 주기 종료 다음날부터, 새 payday가
+     * 그 뒤 처음 도래하는 날 전날까지로 계산한다 — {@code cycleOf(newPayday, today)}로 그냥 재계산하면 새
+     * payday가 이전 주기 종료일보다 앞선 날짜를 시작일로 잡아 두 주기가 겹치거나(당김) 사이에 공백이
+     * 생길(미룸) 수 있어 별도 계산이 필요하다. 이 주기 종료일 다음날은 새 payday의 실제 도래일과 정확히
+     * 일치하므로, 그 다음부터는 다시 {@link #cycleOf}만으로 이어진다.
+     */
+    public static BudgetCycle bridgeCycle(LocalDate previousCycleEndDate, int newPayday) {
+        LocalDate start = previousCycleEndDate.plusDays(1);
+        LocalDate nextOccurrence = firstOccurrenceStrictlyAfter(start, newPayday);
+        LocalDate end = nextOccurrence.minusDays(1);
+        return new BudgetCycle(YearMonth.from(start).toString(), start, end);
+    }
+
+    private static LocalDate firstOccurrenceStrictlyAfter(LocalDate date, int payday) {
+        LocalDate candidate = effectivePayday(YearMonth.from(date), payday);
+        return candidate.isAfter(date) ? candidate : effectivePayday(YearMonth.from(date).plusMonths(1), payday);
+    }
+
     /** 남은 일수 = 오늘부터 주기 종료일까지, 오늘 포함. 최소 1(종료일 당일). */
     public static int remainingDays(LocalDate today, LocalDate cycleEndDate) {
         return (int) ChronoUnit.DAYS.between(today, cycleEndDate) + 1;

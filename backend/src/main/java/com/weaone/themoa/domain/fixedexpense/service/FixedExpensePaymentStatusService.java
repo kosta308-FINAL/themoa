@@ -1,11 +1,13 @@
 package com.weaone.themoa.domain.fixedexpense.service;
 
+import com.weaone.themoa.domain.budget.service.BudgetCycleService;
 import com.weaone.themoa.domain.cardconnection.entity.ConnectionStatus;
 import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpensePaymentMethod;
 import com.weaone.themoa.domain.fixedexpense.repository.FixedExpensePaymentRepository;
 import com.weaone.themoa.domain.member.entity.Member;
+import com.weaone.themoa.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,19 +28,30 @@ public class FixedExpensePaymentStatusService {
 
     private final FixedExpensePaymentRepository fixedExpensePaymentRepository;
     private final CardConnectionRepository cardConnectionRepository;
+    private final MemberRepository memberRepository;
+    private final BudgetCycleService budgetCycleService;
 
+    /**
+     * fixedExpense는 다른(이미 닫힌) 트랜잭션에서 조회된 detached 엔티티일 수 있어 {@code fixedExpense.getMember()}의
+     * 지연 로딩 연관을 그대로 타면 LazyInitializationException이 난다. member.getId()는 프록시에 저장된 값이라
+     * 안전하지만 payday는 이 메서드 자신의 세션에서 별도 조회해야 한다. 조회 전용(readOnly)이라 여기서
+     * 급여일 변경 예약을 승격하지는 않는다 — 이미 승격된 이력·payday까지만 반영한다.
+     */
     @Transactional(readOnly = true)
     public String resolve(FixedExpense fixedExpense) {
-        Member member = fixedExpense.getMember();
+        Long memberId = fixedExpense.getMember().getId();
         boolean cardLinked = fixedExpense.getPaymentMethod() == FixedExpensePaymentMethod.CARD
                 && fixedExpense.getExpectedPayDay() != null
-                && cardConnectionRepository.existsByMember_IdAndStatus(member.getId(), ConnectionStatus.ACTIVE);
+                && cardConnectionRepository.existsByMember_IdAndStatus(memberId, ConnectionStatus.ACTIVE);
         if (!cardLinked) {
             return null;
         }
 
+        Member member = memberRepository.getReferenceById(memberId);
         LocalDate today = LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL);
-        String yearMonth = FixedExpenseCyclePolicy.currentYearMonth(member.getPayday());
+        String yearMonth = member.getPayday() == null
+                ? FixedExpenseCyclePolicy.currentYearMonth(null)
+                : budgetCycleService.resolveCycleForDate(member, today).yearMonth();
         if (fixedExpensePaymentRepository.existsByFixedExpense_IdAndYearMonth(fixedExpense.getId(), yearMonth)) {
             return "PAID";
         }

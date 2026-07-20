@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import {
   formatChartTick,
+  formatDateWithWeekday,
   formatWon,
   todayDate,
   toNumber,
@@ -51,17 +52,24 @@ function RecentFlow({ data, error }) {
           {data.days.map((day) => {
             const amount = toNumber(day.netAmount);
             const isToday = day.date === todayDate();
+            const guideLine = toNumber(data.guideLineAmount);
+            const diff = guideLine - amount;
+            const tooltip =
+              `${formatDateWithWeekday(day.date)}\n` +
+              `${amount < 0 ? "취소 반영 순사용액" : "순사용액"} ${formatWon(Math.abs(amount))}\n` +
+              `하루 권장액 ${formatWon(guideLine)} 대비 ${diff >= 0 ? `${formatWon(diff)} 여유` : `${formatWon(-diff)} 초과`}`;
             return (
               <Link
                 className="spending-bar-item"
                 to={`/dashboard/spending/transactions?date=${day.date}`}
                 key={day.date}
+                title={tooltip}
               >
                 <span
                   className={`spending-bar-space${amount < 0 ? " negative-space" : ""}`}
                 >
                   <i
-                    className={`${amount < 0 ? "negative" : amount > toNumber(data.guideLineAmount) ? "over" : ""}${isToday ? " today" : ""}`}
+                    className={`${amount < 0 ? "negative" : amount > guideLine ? "over" : ""}${isToday ? " today" : ""}`}
                     style={{
                       height: `${Math.max(5, (Math.abs(amount) / axisMax) * 100)}%`,
                     }}
@@ -70,6 +78,9 @@ function RecentFlow({ data, error }) {
                 <strong>
                   {isToday ? "오늘" : `${Number(day.date.slice(8, 10))}일`}
                 </strong>
+                <em className="spending-bar-amount">
+                  {formatChartTick(Math.abs(amount))}
+                </em>
               </Link>
             );
           })}
@@ -84,4 +95,3 @@ function RecentFlow({ data, error }) {
 }
 
 export default RecentFlow;
-

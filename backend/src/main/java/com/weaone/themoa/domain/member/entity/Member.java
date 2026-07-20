@@ -91,9 +91,17 @@ public class Member {
     @Column(name = "savings_target_amount", precision = 14, scale = 2)
     private BigDecimal savingsTargetAmount;
 
-    /** 명목 월급일(1~31). 없는 날이면 말일로 당긴다. 소비가이드 최초 설정에서만 저장하고 MVP에서 일반 수정은 없다. */
+    /** 명목 월급일(1~31). 없는 날이면 말일로 당긴다. 소비가이드 최초 설정에서 저장한다. */
     @Column(name = "payday")
     private Integer payday;
+
+    /**
+     * 급여일 변경 예약값. 사용자가 급여일을 바꾸면 이 필드만 채워지고 {@link #payday}는 그대로 둔다 —
+     * 진행 중인 주기는 항상 기존 payday로 계산돼야 하기 때문이다(dailyBudget.md §1). 다음 주기가 열리는
+     * 순간(그 주기의 {@code Budget} row가 아직 없는 시점) {@link #applyPendingPayday()}로 승격된다.
+     */
+    @Column(name = "pending_payday")
+    private Integer pendingPayday;
 
     /** 가입일(dayguide.md §3.4·§8): 수기 모드 사용자의 카테고리 도넛 주기 이동 하한 계산에 쓰인다. */
     @Column(name = "created_at", nullable = false)
@@ -166,8 +174,7 @@ public class Member {
     }
 
     /**
-     * 소비 가이드 최초 설정(S-00A, MOA-S-BUD-BGT-01). 월급·급여일을 함께 저장한다. 급여일은 MVP에서
-     * 최초 설정 이후 일반 수정 대상이 아니므로(dailyBudget.md §1) 이 메서드로만 채워진다.
+     * 소비 가이드 최초 설정(S-00A, MOA-S-BUD-BGT-01). 월급·급여일을 함께 저장한다.
      *
      * <p>incomeType=SALARY면 salaryAmount, HOURLY면 hourlyWage를 채운다(요일별 근무시간 행 저장은
      * 호출자가 같은 트랜잭션에서 별도로 처리한다 — Member는 소득유형·시급만 안다).
@@ -178,6 +185,20 @@ public class Member {
         this.salaryAmount = salaryAmount;
         this.hourlyWage = hourlyWage;
         this.payday = payday;
+    }
+
+    /**
+     * 급여일 변경 신청. 즉시 반영하지 않고 예약만 한다 — 실제 적용은 다음 주기가 열릴 때
+     * BudgetCycleService가 {@link #applyPendingPayday()}를 호출해 승격한다.
+     */
+    public void requestPaydayChange(int newPayday) {
+        this.pendingPayday = newPayday;
+    }
+
+    /** 예약된 급여일을 실제 급여일로 승격한다. 호출 전 {@code pendingPayday != null}을 보장해야 한다. */
+    public void applyPendingPayday() {
+        this.payday = this.pendingPayday;
+        this.pendingPayday = null;
     }
 
     /** 월급 원본 변경(MOA-S-BUD-BGT-08, incomeType=SALARY 전용). 주기 스냅샷 반영 여부는 호출자가 결정한다. */

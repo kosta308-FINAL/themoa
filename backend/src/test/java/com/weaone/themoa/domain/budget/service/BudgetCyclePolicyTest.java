@@ -58,4 +58,41 @@ class BudgetCyclePolicyTest {
         assertThat(BudgetCyclePolicy.remainingDays(LocalDate.of(2026, 8, 4), LocalDate.of(2026, 8, 4)))
                 .isEqualTo(1);
     }
+
+    @Test
+    @DisplayName("급여일을 뒤로 미루면(5일→20일) 브리지 주기는 이전 주기 종료 다음날부터 새 급여일 전날까지")
+    void bridgeCycleWhenPaydayMovesLater() {
+        // 이전 주기(급여일 5일 기준)가 8/4에 끝났다고 가정 — 다음날(8/5)부터 새 급여일 20일 도래 전날(8/19)까지
+        BudgetCyclePolicy.BudgetCycle bridge =
+                BudgetCyclePolicy.bridgeCycle(LocalDate.of(2026, 8, 4), 20);
+
+        assertThat(bridge.cycleStartDate()).isEqualTo(LocalDate.of(2026, 8, 5));
+        assertThat(bridge.cycleEndDate()).isEqualTo(LocalDate.of(2026, 8, 19));
+        assertThat(bridge.yearMonth()).isEqualTo("2026-08");
+        // 다음 주기는 브리지 종료 다음날(8/20)부터 다시 cycleOf만으로 이어진다
+        BudgetCyclePolicy.BudgetCycle next = BudgetCyclePolicy.cycleOf(20, bridge.cycleEndDate().plusDays(1));
+        assertThat(next.cycleStartDate()).isEqualTo(bridge.cycleEndDate().plusDays(1));
+    }
+
+    @Test
+    @DisplayName("급여일을 앞당기면(20일→5일) 겹치지 않고 이전 주기 종료 다음날부터 다음 달 5일 전날까지로 이어붙인다")
+    void bridgeCycleWhenPaydayMovesEarlier() {
+        // 이전 주기(급여일 20일 기준)가 8/19에 끝났다고 가정 — 새 급여일 5일은 이미 지나있어 다음 달 5일이 첫 도래일
+        BudgetCyclePolicy.BudgetCycle bridge =
+                BudgetCyclePolicy.bridgeCycle(LocalDate.of(2026, 8, 19), 5);
+
+        assertThat(bridge.cycleStartDate()).isEqualTo(LocalDate.of(2026, 8, 20));
+        assertThat(bridge.cycleEndDate()).isEqualTo(LocalDate.of(2026, 9, 4));
+        assertThat(bridge.yearMonth()).isEqualTo("2026-08");
+    }
+
+    @Test
+    @DisplayName("이전 주기 종료 다음날이 마침 새 급여일 당일이면 그 다음 달 급여일까지 정상 길이 주기가 된다")
+    void bridgeCycleWhenStartLandsExactlyOnNewPayday() {
+        BudgetCyclePolicy.BudgetCycle bridge =
+                BudgetCyclePolicy.bridgeCycle(LocalDate.of(2026, 8, 4), 5);
+
+        assertThat(bridge.cycleStartDate()).isEqualTo(LocalDate.of(2026, 8, 5));
+        assertThat(bridge.cycleEndDate()).isEqualTo(LocalDate.of(2026, 9, 4));
+    }
 }

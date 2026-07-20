@@ -1,5 +1,6 @@
 package com.weaone.themoa.domain.fixedexpense.service;
 
+import com.weaone.themoa.domain.budget.service.BudgetCycleService;
 import com.weaone.themoa.domain.cardconnection.entity.ConnectionStatus;
 import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
@@ -37,6 +38,7 @@ public class FixedExpenseNotificationBatchService {
     private final FixedExpensePaymentRepository fixedExpensePaymentRepository;
     private final CardConnectionRepository cardConnectionRepository;
     private final NotificationService notificationService;
+    private final BudgetCycleService budgetCycleService;
 
     /** 탐지 배치(03:30) 이후, 매칭 반영이 끝난 시각에 돌도록 04:00으로 잡는다. */
     @Scheduled(cron = "0 0 4 * * *", zone = "Asia/Seoul")
@@ -60,7 +62,8 @@ public class FixedExpenseNotificationBatchService {
         if (member.isReturningAfterAbsence(now, INACTIVITY_LIMIT_DAYS) || fixedExpense.getExpectedPayDay() == null) {
             return;
         }
-        String yearMonth = FixedExpenseCyclePolicy.currentYearMonth(member.getPayday());
+        budgetCycleService.ensurePaydayPromoted(member, today);
+        String yearMonth = budgetCycleService.resolveCycleForDate(member, today).yearMonth();
 
         boolean cardLinked = fixedExpense.getPaymentMethod() == FixedExpensePaymentMethod.CARD
                 && cardConnectionRepository.existsByMember_IdAndStatus(member.getId(), ConnectionStatus.ACTIVE);

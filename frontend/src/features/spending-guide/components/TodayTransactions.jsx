@@ -11,7 +11,13 @@ import {
 } from "../spendingGuideUtils";
 import { EmptyState, LoadingState, SectionError } from "./SpendingGuideCommon";
 
-function TodayTransactions({ data, error, onExpand, onSelect }) {
+function TodayTransactions({
+  data,
+  error,
+  onExpand,
+  onSelect,
+  viewAllHref = "/dashboard/spending/transactions",
+}) {
   const [expanded, setExpanded] = useState(false);
   if (error) return <SectionError message={error} />;
   if (!data) return <LoadingState />;
@@ -111,10 +117,7 @@ function TodayTransactions({ data, error, onExpand, onSelect }) {
         ) : (
           <span />
         )}
-        <Link
-          className="spending-link-button"
-          to="/dashboard/spending/transactions"
-        >
+        <Link className="spending-link-button" to={viewAllHref}>
           전체 소비내역 보기 <DashboardIcon name="chevron-right" size={15} />
         </Link>
       </div>
@@ -123,4 +126,3 @@ function TodayTransactions({ data, error, onExpand, onSelect }) {
 }
 
 export default TodayTransactions;
-

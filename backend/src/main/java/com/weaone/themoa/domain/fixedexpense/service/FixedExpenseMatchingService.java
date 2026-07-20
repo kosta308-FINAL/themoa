@@ -1,5 +1,6 @@
 package com.weaone.themoa.domain.fixedexpense.service;
 
+import com.weaone.themoa.domain.budget.service.BudgetCycleService;
 import com.weaone.themoa.domain.cardtransaction.entity.CardTransaction;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
@@ -32,6 +33,7 @@ public class FixedExpenseMatchingService {
     private final FixedExpensePaymentRepository fixedExpensePaymentRepository;
     private final BillerRepository billerRepository;
     private final NotificationService notificationService;
+    private final BudgetCycleService budgetCycleService;
 
     @Transactional
     public void match(CardTransaction transaction) {
@@ -43,7 +45,7 @@ public class FixedExpenseMatchingService {
         if (candidates.isEmpty()) {
             return;
         }
-        String yearMonth = FixedExpenseCyclePolicy.yearMonthOf(transaction.getUsedDate(), transaction.getMember().getPayday());
+        String yearMonth = yearMonthOf(transaction);
         for (FixedExpense fixedExpense : candidates) {
             if (fixedExpensePaymentRepository.existsByFixedExpense_IdAndYearMonth(fixedExpense.getId(), yearMonth)) {
                 continue; // 조건④: 이번 주기 이미 이행
@@ -90,8 +92,15 @@ public class FixedExpenseMatchingService {
     /** F-05 "이 거래예요" 확인(사용자 수동 매칭). 자동 매칭과 동일한 태깅·이행기록 경로를 재사용한다. */
     @Transactional
     public void confirmMatch(CardTransaction transaction, FixedExpense fixedExpense) {
-        String yearMonth = FixedExpenseCyclePolicy.yearMonthOf(transaction.getUsedDate(), transaction.getMember().getPayday());
-        tagAndRecord(transaction, fixedExpense, yearMonth);
+        tagAndRecord(transaction, fixedExpense, yearMonthOf(transaction));
+    }
+
+    /**
+     * 거래일이 속한 급여 주기 라벨. {@code member.payday}를 그대로 쓰지 않고 급여일 변경 이력까지 반영해
+     * 계산한다(payday.md §급여일 변경) — 거래일이 과거라 그 시점엔 지금과 다른 payday가 유효했을 수 있다.
+     */
+    private String yearMonthOf(CardTransaction transaction) {
+        return budgetCycleService.resolveCycleForDate(transaction.getMember(), transaction.getUsedDate()).yearMonth();
     }
 
     /** 취소 재수집 시 이행 기록 삭제 → 미납 복귀(§7). 매칭 안 된 거래는 아무 일도 하지 않는다. */

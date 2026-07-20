@@ -224,6 +224,36 @@
   color: var(--auth-sub);
 }
 
+.auth-date-field {
+  position: relative;
+}
+
+.auth-date-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border: 1px solid var(--auth-border);
+  border-radius: 10px;
+  color: var(--auth-ink);
+  background: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  text-align: left;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.auth-date-trigger:hover {
+  border-color: var(--auth-accent);
+}
+
+.auth-date-placeholder {
+  color: #a8b5ad;
+}
+
 .auth-field-error {
   font-size: 12px;
   color: var(--auth-danger);

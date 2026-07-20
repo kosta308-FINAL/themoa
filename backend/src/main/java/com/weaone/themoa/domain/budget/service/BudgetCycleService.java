@@ -1,7 +1,9 @@
 package com.weaone.themoa.domain.budget.service;
 
 import com.weaone.themoa.domain.budget.entity.Budget;
+import com.weaone.themoa.domain.budget.entity.PaydayChangeHistory;
 import com.weaone.themoa.domain.budget.repository.BudgetRepository;
+import com.weaone.themoa.domain.budget.repository.PaydayChangeHistoryRepository;
 import com.weaone.themoa.domain.cardtransaction.service.ExchangeRateUnavailableException;
 import com.weaone.themoa.domain.cardtransaction.support.BackfillWindowPolicy;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
@@ -12,6 +14,7 @@ import com.weaone.themoa.domain.fixedexpense.service.ConvertedKrwAmount;
 import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseKrwConverter;
 import com.weaone.themoa.domain.member.entity.IncomeType;
 import com.weaone.themoa.domain.member.entity.Member;
+import com.weaone.themoa.domain.member.repository.MemberRepository;
 import com.weaone.themoa.domain.member.repository.MemberWorkScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 급여 주기 예산 스냅샷의 생성·조회(dailyBudget.md §1). 주기 생성 시 해외 고정지출의 원화 스냅샷을 최신
@@ -44,11 +50,96 @@ public class BudgetCycleService {
     private final FixedExpenseKrwConverter krwConverter;
     private final MemberWorkScheduleRepository memberWorkScheduleRepository;
     private final WorkScheduleSalaryCalculator workScheduleSalaryCalculator;
+    private final PaydayChangeHistoryRepository paydayChangeHistoryRepository;
+    private final MemberRepository memberRepository;
 
     /** 현재 주기 예산을 조회하고 없으면 생성한다. 호출 전 {@code member.hasSpendingGuideSetup()}이 참이어야 한다. */
     public Budget getOrCreateCurrentBudget(Member member, LocalDate today) {
-        BudgetCyclePolicy.BudgetCycle cycle = BudgetCyclePolicy.cycleOf(member.getPayday(), today);
+        Optional<BudgetCyclePolicy.BudgetCycle> bridge = ensurePaydayPromoted(member, today);
+        BudgetCyclePolicy.BudgetCycle cycle = bridge
+                .filter(b -> !today.isAfter(b.cycleEndDate()))
+                .orElseGet(() -> BudgetCyclePolicy.cycleOf(member.getPayday(), today));
         return getOrCreateCycle(member, cycle, today);
+    }
+
+    /**
+     * 급여일 변경 예약(payday.md §급여일 변경) 승격 지점. "다음 주기"는 기존 payday로 계산한 오늘의 주기에
+     * 해당하는 {@code Budget} row가 아직 없는 시점이다 — 그 전까지는 진행 중인 주기를 절대 건드리지 않는다
+     * (dailyBudget.md §1 "과거·현재 주기 불변" 원칙과 같은 메커니즘을 재사용). 승격 시 이력을 남기고, 지금
+     * 막 새로 열리는 주기가 브리지 주기이면 그 범위를 돌려준다(호출자가 바로 써서 Budget을 만들 수 있게).
+     * pending 예약이 없거나 아직 승격할 시점이 아니면 아무 것도 하지 않고 빈 값을 돌려준다.
+     */
+    @Transactional
+    public Optional<BudgetCyclePolicy.BudgetCycle> ensurePaydayPromoted(Member member, LocalDate today) {
+        if (member.getPendingPayday() == null) {
+            return Optional.empty();
+        }
+        BudgetCyclePolicy.BudgetCycle openCycle = BudgetCyclePolicy.cycleOf(member.getPayday(), today);
+        if (budgetRepository.findByMember_IdAndYearMonth(member.getId(), openCycle.yearMonth()).isPresent()) {
+            return Optional.empty();
+        }
+        LocalDate previousCycleEnd = budgetRepository.findFirstByMember_IdOrderByCycleStartDateDesc(member.getId())
+                .map(Budget::getCycleEndDate)
+                .orElse(today.minusDays(1));
+        int oldPayday = member.getPayday();
+        int newPayday = member.getPendingPayday();
+        BudgetCyclePolicy.BudgetCycle bridge = BudgetCyclePolicy.bridgeCycle(previousCycleEnd, newPayday);
+        paydayChangeHistoryRepository.save(
+                PaydayChangeHistory.record(member, oldPayday, newPayday, bridge.cycleStartDate(), LocalDateTime.now()));
+        member.applyPendingPayday();
+        return Optional.of(bridge);
+    }
+
+    /** {@link #ensurePaydayPromoted(Member, LocalDate)}의 memberId 진입점. 배치 루프처럼 준영속 상태로
+     * member를 들고 있는 호출자를 위한 것 — 관리 상태 엔티티를 새로 조회해 안전하게 승격한다. */
+    @Transactional
+    public void ensurePaydayPromoted(Long memberId, LocalDate today) {
+        memberRepository.findById(memberId).ifPresent(member -> ensurePaydayPromoted(member, today));
+    }
+
+    /**
+     * 임의 날짜(주로 과거)가 속한 주기를 급여일 변경 이력까지 반영해 계산한다. {@code Budget} row 존재
+     * 여부와 무관하게 동작하도록 만든 순수 조회 경로다 — 고정지출 매칭처럼 그 시점 {@code Budget}이 아직
+     * 생성돼 있지 않을 수 있는 도메인에서 쓴다. 아직 승격되지 않은 예약(pendingPayday)은 반영하지 않는다 —
+     * "오늘" 기준 최신 상태가 필요하면 먼저 {@link #ensurePaydayPromoted(Member, LocalDate)}를 호출해야 한다.
+     */
+    @Transactional(readOnly = true)
+    public BudgetCyclePolicy.BudgetCycle resolveCycleForDate(Member member, LocalDate date) {
+        List<PaydayChangeHistory> history =
+                paydayChangeHistoryRepository.findByMember_IdOrderByEffectiveCycleStartDateAsc(member.getId());
+        PaydayChangeHistory applicable = null;
+        for (PaydayChangeHistory h : history) {
+            if (!h.getEffectiveCycleStartDate().isAfter(date)) {
+                applicable = h;
+            } else {
+                break;
+            }
+        }
+        if (applicable == null) {
+            Integer paydayThen = history.isEmpty() ? member.getPayday() : history.get(0).getOldPayday();
+            if (paydayThen == null) {
+                // 소비 가이드 최초 설정 전(카드만 연동, payday 미설정)이라 급여 주기 개념이 없다 — 달력 월로 폴백.
+                return new BudgetCyclePolicy.BudgetCycle(YearMonth.from(date).toString(),
+                        date.withDayOfMonth(1), date.withDayOfMonth(date.lengthOfMonth()));
+            }
+            return BudgetCyclePolicy.cycleOf(paydayThen, date);
+        }
+        BudgetCyclePolicy.BudgetCycle bridge = BudgetCyclePolicy.bridgeCycle(
+                applicable.getEffectiveCycleStartDate().minusDays(1), applicable.getNewPayday());
+        return date.isAfter(bridge.cycleEndDate())
+                ? BudgetCyclePolicy.cycleOf(applicable.getNewPayday(), date)
+                : bridge;
+    }
+
+    /**
+     * 기준일이 속한 주기 바로 이전, 완료된 주기(습관 코칭 §3·§8, 코칭 카드 조회 공용). 급여일 변경 이력을
+     * 반영해 정확한 경계를 계산한다. referenceDate가 "오늘"이면 먼저 승격을 시도해 최신 payday를 보장한다.
+     */
+    @Transactional
+    public BudgetCyclePolicy.BudgetCycle previousCompletedCycle(Member member, LocalDate referenceDate) {
+        ensurePaydayPromoted(member, referenceDate);
+        BudgetCyclePolicy.BudgetCycle current = resolveCycleForDate(member, referenceDate);
+        return resolveCycleForDate(member, current.cycleStartDate().minusDays(1));
     }
 
     /**

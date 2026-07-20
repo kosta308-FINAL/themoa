@@ -178,6 +178,28 @@
   font-size: 11px;
 }
 
+.consume-history-page .day-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.consume-history-page .day-date-input {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-2);
+  background: #fff;
+  font-size: 12px;
+}
+
+.consume-history-page .day-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 22px 0 18px;
+}
+
 .consume-history-page .analytics-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(320px, 1.15fr);

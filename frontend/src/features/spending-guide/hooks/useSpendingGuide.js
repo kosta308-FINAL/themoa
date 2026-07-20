@@ -13,10 +13,7 @@ import {
   retryInitialSync,
   syncCardTransactions,
 } from "../../../api/spendingGuideApi";
-import {
-  errorMessage,
-  INITIAL_SYNC_IN_PROGRESS,
-} from "../spendingGuideUtils";
+import { errorMessage, INITIAL_SYNC_IN_PROGRESS } from "../spendingGuideUtils";
 
 const EMPTY_DATA = {
   summary: null,
@@ -207,8 +204,13 @@ function useSpendingGuide() {
     setPendingCoachId(cardId);
     try {
       await dismissCoachingCard(cardId, dismissType);
-      const coaching = await getCoachingCards();
-      setData((current) => ({ ...current, coaching }));
+      setData((current) => ({
+        ...current,
+        coaching: {
+          ...current.coaching,
+          items: current.coaching.items.filter((item) => item.id !== cardId),
+        },
+      }));
     } catch (error) {
       setSectionErrors((current) => ({
         ...current,
@@ -249,4 +251,3 @@ function useSpendingGuide() {
 }
 
 export default useSpendingGuide;
-

@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.coaching.service;
 
 import com.weaone.themoa.domain.budget.entity.Budget;
 import com.weaone.themoa.domain.budget.service.BudgetCyclePolicy;
+import com.weaone.themoa.domain.budget.service.BudgetCycleService;
 import com.weaone.themoa.domain.budget.service.SpendingGuideService;
 import com.weaone.themoa.domain.category.entity.Category;
 import com.weaone.themoa.domain.category.entity.CategoryCode;
@@ -37,6 +38,8 @@ class CoachingCardQueryServiceTest {
     private CoachingCardRepository coachingCardRepository;
     @Mock
     private SpendingGuideService spendingGuideService;
+    @Mock
+    private BudgetCycleService budgetCycleService;
 
     @InjectMocks
     private CoachingCardQueryService coachingCardQueryService;
@@ -56,9 +59,11 @@ class CoachingCardQueryServiceTest {
     }
 
     private String analyzedYearMonth(Member member, Budget budget) {
-        return HabitCoachingCandidateExtractionService
-                .previousCompletedCycle(member.getPayday(), budget.getCycleStartDate())
-                .yearMonth();
+        BudgetCyclePolicy.BudgetCycle current = BudgetCyclePolicy.cycleOf(member.getPayday(), budget.getCycleStartDate());
+        BudgetCyclePolicy.BudgetCycle previous =
+                BudgetCyclePolicy.cycleOf(member.getPayday(), current.cycleStartDate().minusDays(1));
+        given(budgetCycleService.previousCompletedCycle(member, budget.getCycleStartDate())).willReturn(previous);
+        return previous.yearMonth();
     }
 
     @Test
@@ -71,7 +76,7 @@ class CoachingCardQueryServiceTest {
         Category category = Category.seed(CategoryCode.FOOD, "식비");
         CoachingCard card = CoachingCard.forCategory(member, yearMonth, "제목", "본문", category,
                 BigDecimal.valueOf(10000), (short) 1, LocalDateTime.now());
-        given(coachingCardRepository.findByMember_IdAndYearMonthOrderByDisplayOrderAsc(MEMBER_ID, yearMonth))
+        given(coachingCardRepository.findByMember_IdAndYearMonthAndDismissedAtIsNullOrderByDisplayOrderAsc(MEMBER_ID, yearMonth))
                 .willReturn(List.of(card));
 
         CoachingCardListResponse response = coachingCardQueryService.list(MEMBER_ID, null);
@@ -86,7 +91,7 @@ class CoachingCardQueryServiceTest {
         Member member = member(5);
         Budget budget = currentBudget(member);
         given(spendingGuideService.getBudgetOrCurrent(MEMBER_ID, null)).willReturn(budget);
-        given(coachingCardRepository.findByMember_IdAndYearMonthOrderByDisplayOrderAsc(MEMBER_ID, analyzedYearMonth(member, budget)))
+        given(coachingCardRepository.findByMember_IdAndYearMonthAndDismissedAtIsNullOrderByDisplayOrderAsc(MEMBER_ID, analyzedYearMonth(member, budget)))
                 .willReturn(List.of());
 
         CoachingCardListResponse response = coachingCardQueryService.list(MEMBER_ID, null);
@@ -102,7 +107,7 @@ class CoachingCardQueryServiceTest {
         member.startCardSync(LocalDateTime.now());
         Budget budget = currentBudget(member);
         given(spendingGuideService.getBudgetOrCurrent(MEMBER_ID, 31L)).willReturn(budget);
-        given(coachingCardRepository.findByMember_IdAndYearMonthOrderByDisplayOrderAsc(MEMBER_ID, analyzedYearMonth(member, budget)))
+        given(coachingCardRepository.findByMember_IdAndYearMonthAndDismissedAtIsNullOrderByDisplayOrderAsc(MEMBER_ID, analyzedYearMonth(member, budget)))
                 .willReturn(List.of());
 
         CoachingCardListResponse response = coachingCardQueryService.list(MEMBER_ID, 31L);
