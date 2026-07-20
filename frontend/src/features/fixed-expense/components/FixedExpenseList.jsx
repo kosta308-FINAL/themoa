@@ -33,15 +33,22 @@ function sortItems(items, sort) {
   );
 }
 
-function FixedExpenseList({ items, filter, onFilterChange, sort, onSortChange, onSelect }) {
-  const cardCount = items.filter((item) => item.paymentMethod === "CARD").length;
+function FixedExpenseList({
+  items,
+  filter,
+  onFilterChange,
+  sort,
+  onSortChange,
+  onSelect,
+}) {
+  const cardCount = items.filter(
+    (item) => item.paymentMethod === "CARD",
+  ).length;
   const transferCount = items.length - cardCount;
   const filtered =
     filter === "all"
       ? items
-      : items.filter(
-          (item) => item.paymentMethod === filter.toUpperCase(),
-        );
+      : items.filter((item) => item.paymentMethod === filter.toUpperCase());
   const sorted = sortItems(filtered, sort);
 
   return (
@@ -131,7 +138,9 @@ function FixedExpenseList({ items, filter, onFilterChange, sort, onSortChange, o
                     {formatAmount(item.expectedAmount, item.expectedCurrency)}
                   </strong>
                   {item.expectedCurrency !== "KRW" && (
-                    <span>예상 {formatAmount(item.expectedAmountKrw, "KRW")}</span>
+                    <span>
+                      예상 {formatAmount(item.expectedAmountKrw, "KRW")}
+                    </span>
                   )}
                 </span>
                 <span className="fx-chevron">

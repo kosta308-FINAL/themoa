@@ -20,10 +20,12 @@ const buildCalendarDays = (year, month) => {
  * 펼쳐지는 달력 팝오버. 사용하는 쪽에서 트리거를 감싼 컨테이너에
  * position: relative를 지정해야 위치가 맞습니다.
  * placement="top"이면 트리거 위쪽으로, 기본값("bottom")이면 아래쪽으로 열립니다.
+ * minYear로 연도 선택 목록의 하한을 지정할 수 있습니다(기본값: max 연도 - 5).
  */
 function CalendarPopover({
   value,
   max,
+  minYear,
   onSelect,
   onClose,
   title = "날짜 선택",
@@ -35,7 +37,11 @@ function CalendarPopover({
   const [viewMonth, setViewMonth] = useState(selMonth);
 
   const days = buildCalendarDays(viewYear, viewMonth);
-  const yearOptions = Array.from({ length: 6 }, (_, i) => maxYear - 5 + i);
+  const yearFloor = minYear ?? maxYear - 5;
+  const yearOptions = Array.from(
+    { length: maxYear - yearFloor + 1 },
+    (_, i) => yearFloor + i,
+  );
   const isAtMaxMonth = viewYear === maxYear && viewMonth === maxMonth;
 
   const changeMonth = (delta) => {

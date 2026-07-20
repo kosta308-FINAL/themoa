@@ -17,7 +17,7 @@ import {
   getSpendingTransactions,
   syncCardTransactions,
 } from "../../api/spendingGuideApi";
-import { todayDate } from "./spendingGuideUtils";
+import { shiftDateBy, todayDate } from "./spendingGuideUtils";
 import "./SpendingHistoryPage.css";
 
 const ICONS = {
@@ -96,13 +96,6 @@ const formatMonthDay = (isoDate) => {
 const formatMonthDayKo = (isoDate) => {
   const [, m, d] = isoDate.split("-");
   return `${Number(m)}월 ${Number(d)}일`;
-};
-
-const shiftDateBy = (isoDate, deltaDays) => {
-  const [y, m, d] = isoDate.split("-").map(Number);
-  const date = new Date(y, m - 1, d + deltaDays);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 };
 
 const transactionVisual = (transaction) => {
@@ -358,6 +351,7 @@ function SpendingHistoryPage() {
   const initialDateTime = useMemo(() => nowLocalInputValue(), []);
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedDate = searchParams.get("date");
+  const [initialBudgetId] = useState(() => searchParams.get("budgetId"));
   const [dayItems, setDayItems] = useState(null);
   const [isDayLoading, setIsDayLoading] = useState(false);
   const [dayError, setDayError] = useState("");
@@ -467,9 +461,10 @@ function SpendingHistoryPage() {
   );
 
   useEffect(() => {
-    const run = () => loadCycle(null);
+    const run = () =>
+      loadCycle(initialBudgetId ? Number(initialBudgetId) : null);
     run();
-  }, [loadCycle]);
+  }, [loadCycle, initialBudgetId]);
 
   useEffect(() => {
     getCategories()

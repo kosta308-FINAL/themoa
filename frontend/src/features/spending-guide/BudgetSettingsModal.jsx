@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   updateIncomeType,
+  updatePayday,
   updateSalary,
   updateWorkSchedule,
 } from "../../api/spendingGuideApi";
@@ -25,6 +26,7 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
     })),
   );
   const [applyFrom, setApplyFrom] = useState("CURRENT_CYCLE");
+  const [payday, setPayday] = useState(String(summary.payday || ""));
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -57,7 +59,11 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
               applyFrom,
             })
           : updateSalary({ amount: Number(salary), applyFrom });
-      await incomeUpdate;
+      const paydayChanged = Number(payday) !== Number(summary.payday);
+      await Promise.all([
+        incomeUpdate,
+        paydayChanged ? updatePayday({ payday: Number(payday) }) : null,
+      ]);
       await onSaved();
       onClose();
     } catch (requestError) {
@@ -127,6 +133,25 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
             <span>
               현재 주기에 적용하면 남은 예산과 하루 권장액이 즉시 다시
               계산됩니다.
+            </span>
+          </div>
+          <label className="wide">
+            <span>급여일 *</span>
+            <input
+              type="number"
+              min="1"
+              max="31"
+              value={payday}
+              onChange={(event) => setPayday(event.target.value)}
+            />
+          </label>
+          <div className="spending-form-notice wide">
+            <DashboardIcon name="info" size={17} />
+            <span>
+              급여일 변경은 항상 다음 급여 주기부터 적용돼요. 진행 중인 이번
+              주기는 그대로 유지됩니다.
+              {summary.pendingPayday != null &&
+                ` (다음 주기부터 ${summary.pendingPayday}일로 변경 예정)`}
             </span>
           </div>
           {error && (

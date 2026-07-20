@@ -156,6 +156,7 @@ function SignupPage() {
   };
 
   const today = new Date().toISOString().slice(0, 10);
+  const birthYearFloor = Number(today.slice(0, 4)) - 100;
 
   return (
     <AuthLayout>
@@ -378,6 +379,7 @@ function SignupPage() {
                 <CalendarPopover
                   value={birthDate}
                   max={today}
+                  minYear={birthYearFloor}
                   title="출생일 선택"
                   placement="top"
                   onSelect={(date) => {

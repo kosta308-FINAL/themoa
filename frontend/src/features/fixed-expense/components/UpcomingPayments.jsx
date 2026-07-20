@@ -33,7 +33,9 @@ function UpcomingPayments({ items }) {
                 <strong>{item.name}</strong>
                 <span>
                   {item.paymentMethod === "CARD" ? "카드" : "계좌이체"} ·{" "}
-                  {schedule.daysUntil === 0 ? "오늘" : `${schedule.daysUntil}일 뒤`}
+                  {schedule.daysUntil === 0
+                    ? "오늘"
+                    : `${schedule.daysUntil}일 뒤`}
                 </span>
               </span>
               <strong className="fx-schedule-amount">
@@ -53,9 +55,8 @@ function UpcomingPayments({ items }) {
           카드 연동 상태
         </strong>
         <p>
-          카드 고정지출은 실제 결제내역과 자동으로 대조하고, 계좌이체는
-          예정일만 알려드려요. 결제내역이 안 보이면 상세보기에서 확인할 수
-          있어요.
+          카드 고정지출은 실제 결제내역과 자동으로 대조하고, 계좌이체는 예정일만
+          알려드려요. 결제내역이 안 보이면 상세보기에서 확인할 수 있어요.
         </p>
       </div>
     </aside>

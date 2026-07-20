@@ -204,8 +204,13 @@ function useSpendingGuide() {
     setPendingCoachId(cardId);
     try {
       await dismissCoachingCard(cardId, dismissType);
-      const coaching = await getCoachingCards();
-      setData((current) => ({ ...current, coaching }));
+      setData((current) => ({
+        ...current,
+        coaching: {
+          ...current.coaching,
+          items: current.coaching.items.filter((item) => item.id !== cardId),
+        },
+      }));
     } catch (error) {
       setSectionErrors((current) => ({
         ...current,

@@ -47,7 +47,8 @@ function FixedExpenseSuggestions({
               <div className="fx-service-info">
                 <strong>{candidate.merchantAliasName}</strong>
                 <span>
-                  매월 {candidate.avgPayDay}일쯤 · {formatWon(candidate.avgAmount)}
+                  매월 {candidate.avgPayDay}일쯤 ·{" "}
+                  {formatWon(candidate.avgAmount)}
                 </span>
               </div>
             </div>

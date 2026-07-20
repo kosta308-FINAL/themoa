@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { getSpendingTransactions } from "../../api/spendingGuideApi";
+import CalendarPopover from "../../components/common/CalendarPopover";
 import DashboardIcon from "../../components/common/DashboardIcon";
 import BudgetSettingsModal from "./BudgetSettingsModal";
 import CategorySummary from "./components/CategorySummary";
@@ -8,7 +10,11 @@ import FixedCandidates from "./components/FixedCandidates";
 import InitialSyncView from "./components/InitialSyncView";
 import RecentFlow from "./components/RecentFlow";
 import SpendingGuideSetup from "./components/SpendingGuideSetup";
-import { LoadingState, PanelTitle } from "./components/SpendingGuideCommon";
+import {
+  LoadingState,
+  PanelTitle,
+  SectionError,
+} from "./components/SpendingGuideCommon";
 import SurplusSummary from "./components/SurplusSummary";
 import TodayTransactions from "./components/TodayTransactions";
 import useSpendingGuide from "./hooks/useSpendingGuide";
@@ -16,10 +22,12 @@ import IncomeAdjustmentModal from "./IncomeAdjustmentModal";
 import ManualTransactionModal from "./ManualTransactionModal";
 import SavingsGoalModal from "./SavingsGoalModal";
 import {
+  errorMessage,
   formatDate,
   formatDateWithWeekday,
   formatWon,
   INITIAL_SYNC_IN_PROGRESS,
+  shiftDateBy,
   todayDate,
   toNumber,
 } from "./spendingGuideUtils";
@@ -55,16 +63,50 @@ function SpendingGuidePage() {
     setIsIncomeAdjustmentOpen,
   } = useSpendingGuide();
   const [isSavingsGoalOpen, setIsSavingsGoalOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(todayDate());
+  const [dayItems, setDayItems] = useState(null);
+  const [isDayLoading, setIsDayLoading] = useState(false);
+  const [dayError, setDayError] = useState("");
+  const isSelectedToday = selectedDate === todayDate();
+
+  useEffect(() => {
+    const run = () => {
+      if (isSelectedToday) return;
+      setIsDayLoading(true);
+      setDayError("");
+      getSpendingTransactions({ date: selectedDate, size: 50 })
+        .then((result) => setDayItems(result.items ?? []))
+        .catch((error) =>
+          setDayError(errorMessage(error, "거래 내역을 불러오지 못했습니다.")),
+        )
+        .finally(() => setIsDayLoading(false));
+    };
+    run();
+  }, [selectedDate, isSelectedToday]);
+
   const summary = data.summary;
   const dailyRecommended = toNumber(summary?.dailyRecommendedAmount);
   const todaySpent = toNumber(summary?.todayNetSpend);
-  const useRate =
+  const dayNetTotal = (dayItems ?? []).reduce(
+    (sum, item) => sum + toNumber(item.netAmount),
+    0,
+  );
+  const displayNetSpend = isSelectedToday ? todaySpent : dayNetTotal;
+  const displayAvailable = isSelectedToday
+    ? toNumber(summary?.todayAvailableAmount)
+    : dailyRecommended - dayNetTotal;
+  const displayUseRate =
     dailyRecommended > 0
-      ? Math.max(0, Math.round((todaySpent / dailyRecommended) * 100))
+      ? Math.max(0, Math.round((displayNetSpend / dailyRecommended) * 100))
       : 0;
   const cycleSpent = summary
     ? toNumber(summary.availableAmount) - toNumber(summary.remainingAmount)
     : 0;
+  const dayTransactionsData = isSelectedToday
+    ? data.today
+    : dayItems && { items: dayItems, totalCount: dayItems.length };
+  const isDayReady = isSelectedToday || (!isDayLoading && !dayError);
   // surplus_fund(erd.md §6) 합계를 반환하는 조회 API가 아직 없어 누적 잉여금·최근 주기는
   // 빈 상태로 둔다(가짜 숫자 금지). 저축 목표 여부만 실제 summary.savingsGoalAmount로 판단한다.
   const surplusSummary = {
@@ -84,6 +126,7 @@ function SpendingGuidePage() {
       (connection) => connection.connectionStatus === "ACTIVE",
     ),
   );
+  const budgetDetailHref = `/dashboard/spending/transactions${data.category?.budgetId ? `?budgetId=${data.category.budgetId}` : ""}`;
 
   return (
     <div className="spending-guide">
@@ -108,6 +151,58 @@ function SpendingGuidePage() {
             </button>
           )}
         </header>
+
+        {!showSetup && !showInitialSync && summary && (
+          <section className="spending-day-nav" aria-label="날짜별 소비 확인">
+            <div className="spending-day-nav-side spending-day-nav-left">
+              <button
+                type="button"
+                className="spending-day-nav-arrow"
+                aria-label="전날"
+                onClick={() =>
+                  setSelectedDate((current) => shiftDateBy(current, -1))
+                }
+              >
+                <DashboardIcon name="chevron-left" size={16} />
+              </button>
+              <button
+                type="button"
+                className="spending-day-nav-label"
+                onClick={() => setIsCalendarOpen(true)}
+              >
+                <DashboardIcon name="calendar" size={15} />
+                {isSelectedToday ? "오늘" : formatDateWithWeekday(selectedDate)}
+              </button>
+              <button
+                type="button"
+                className="spending-day-nav-arrow"
+                aria-label="다음날"
+                disabled={isSelectedToday}
+                onClick={() =>
+                  setSelectedDate((current) => shiftDateBy(current, 1))
+                }
+              >
+                <DashboardIcon name="chevron-right" size={16} />
+              </button>
+            </div>
+            <div className="spending-day-nav-side spending-day-nav-right">
+              <Link className="spending-link-button" to={budgetDetailHref}>
+                상세보기 <DashboardIcon name="chevron-right" size={15} />
+              </Link>
+            </div>
+            {isCalendarOpen && (
+              <CalendarPopover
+                value={selectedDate}
+                max={todayDate()}
+                onSelect={(date) => {
+                  setSelectedDate(date);
+                  setIsCalendarOpen(false);
+                }}
+                onClose={() => setIsCalendarOpen(false)}
+              />
+            )}
+          </section>
+        )}
 
         {pageError && (
           <div className="spending-page-error">
@@ -139,69 +234,106 @@ function SpendingGuidePage() {
                 <article className="spending-today-card">
                   <div className="spending-card-head">
                     <div>
-                      <h2>오늘의 소비 기준</h2>
+                      <h2>
+                        {isSelectedToday
+                          ? "오늘의 소비 기준"
+                          : "이 날의 소비 기준"}
+                      </h2>
                       <p>
-                        {formatDateWithWeekday(todayDate())} · 오늘 하루 동안
-                        권장액은 유지돼요
+                        {isSelectedToday
+                          ? `${formatDateWithWeekday(todayDate())} · 오늘 하루 동안 권장액은 유지돼요`
+                          : `${formatDateWithWeekday(selectedDate)} · 권장액은 현재 기준으로 비교한 값이에요`}
                       </p>
                     </div>
-                    <span
-                      className={`spending-status ${useRate > 100 ? "warning" : ""}`}
-                    >
-                      {useRate > 100
-                        ? "오늘 권장액 초과"
-                        : "안정적으로 사용 중"}
-                    </span>
-                  </div>
-                  <div className="spending-number-grid">
-                    <div className="spending-number-main">
-                      <span>
-                        <DashboardIcon name="wallet" size={16} />
-                        오늘 사용 가능 금액
+                    {isDayReady && (
+                      <span
+                        className={`spending-status ${displayUseRate > 100 ? "warning" : ""}`}
+                      >
+                        {displayUseRate > 100
+                          ? isSelectedToday
+                            ? "오늘 권장액 초과"
+                            : "권장액 초과"
+                          : "안정적으로 사용 중"}
                       </span>
-                      <strong>{formatWon(summary.todayAvailableAmount)}</strong>
-                      <p>
-                        {toNumber(summary.todayAvailableAmount) <= 0
-                          ? "오늘 권장액을 모두 사용했어요."
-                          : "오늘 남은 권장 금액이에요."}
-                      </p>
-                    </div>
-                    <div className="spending-mini-stat">
-                      <span>하루 권장 소비액</span>
-                      <strong>
-                        {formatWon(summary.dailyRecommendedAmount)}
-                      </strong>
-                      <p>자정까지 고정</p>
-                    </div>
-                    <div className="spending-mini-stat">
-                      <span>오늘 순사용액</span>
-                      <strong>{formatWon(summary.todayNetSpend)}</strong>
-                      <p>취소 반영 금액</p>
-                    </div>
+                    )}
                   </div>
-                  <div className="spending-progress-meta">
-                    <span>오늘 권장액 사용률</span>
-                    <strong>{useRate}%</strong>
-                  </div>
-                  <div className="spending-progress">
-                    <i
-                      className={useRate > 100 ? "over" : ""}
-                      style={{
-                        width: `${Math.min(100, Math.max(0, useRate))}%`,
-                      }}
-                    />
-                  </div>
-                  <div
-                    className={`spending-today-message${useRate > 100 ? " warning" : ""}`}
-                  >
-                    <DashboardIcon
-                      name={useRate > 100 ? "info" : "check"}
-                      size={15}
-                    />
-                    {useRate > 100
-                      ? `오늘 권장액을 ${formatWon(todaySpent - dailyRecommended)} 초과했어요.`
-                      : "오늘 하루 동안 권장 범위 안에서 사용하고 있어요."}
-                  </div>
+                  {!isDayReady ? (
+                    isDayLoading ? (
+                      <LoadingState label="이 날의 소비 기준을 불러오고 있어요." />
+                    ) : (
+                      <SectionError message={dayError} />
+                    )
+                  ) : (
+                    <>
+                      <div className="spending-number-grid">
+                        <div className="spending-number-main">
+                          <span>
+                            <DashboardIcon name="wallet" size={16} />
+                            {isSelectedToday
+                              ? "오늘 사용 가능 금액"
+                              : "이 날 권장액 대비 남은 금액"}
+                          </span>
+                          <strong>{formatWon(displayAvailable)}</strong>
+                          <p>
+                            {isSelectedToday
+                              ? displayAvailable <= 0
+                                ? "오늘 권장액을 모두 사용했어요."
+                                : "오늘 남은 권장 금액이에요."
+                              : displayAvailable <= 0
+                                ? "권장액을 모두 썼거나 초과했어요."
+                                : "권장액 대비 남은 금액이에요."}
+                          </p>
+                        </div>
+                        <div className="spending-mini-stat">
+                          <span>하루 권장 소비액</span>
+                          <strong>{formatWon(dailyRecommended)}</strong>
+                          <p>
+                            {isSelectedToday
+                              ? "자정까지 고정"
+                              : "현재 기준 권장액"}
+                          </p>
+                        </div>
+                        <div className="spending-mini-stat">
+                          <span>
+                            {isSelectedToday
+                              ? "오늘 순사용액"
+                              : "이 날 순사용액"}
+                          </span>
+                          <strong>{formatWon(displayNetSpend)}</strong>
+                          <p>취소 반영 금액</p>
+                        </div>
+                      </div>
+                      <div className="spending-progress-meta">
+                        <span>
+                          {isSelectedToday
+                            ? "오늘 권장액 사용률"
+                            : "이 날 권장액 사용률"}
+                        </span>
+                        <strong>{displayUseRate}%</strong>
+                      </div>
+                      <div className="spending-progress">
+                        <i
+                          className={displayUseRate > 100 ? "over" : ""}
+                          style={{
+                            width: `${Math.min(100, Math.max(0, displayUseRate))}%`,
+                          }}
+                        />
+                      </div>
+                      <div
+                        className={`spending-today-message${displayUseRate > 100 ? " warning" : ""}`}
+                      >
+                        <DashboardIcon
+                          name={displayUseRate > 100 ? "info" : "check"}
+                          size={15}
+                        />
+                        {displayUseRate > 100
+                          ? `${isSelectedToday ? "오늘" : "이 날"} 권장액을 ${formatWon(displayNetSpend - dailyRecommended)} 초과했어요.`
+                          : isSelectedToday
+                            ? "오늘 하루 동안 권장 범위 안에서 사용하고 있어요."
+                            : "이 날은 권장 범위 안에서 사용했어요."}
+                      </div>
+                    </>
+                  )}
                 </article>
                 <aside className="spending-cycle-card">
                   <div className="spending-cycle-top">
@@ -233,20 +365,30 @@ function SpendingGuidePage() {
                     <div>
                       <span>
                         월 저축 목표
+                        {surplusSummary.hasSavingsGoal && (
+                          <button
+                            type="button"
+                            className="spending-cycle-savings-edit"
+                            onClick={() => setIsSavingsGoalOpen(true)}
+                            aria-label="월 저축 목표 수정"
+                          >
+                            <DashboardIcon name="edit" size={12} />
+                          </button>
+                        )}
+                      </span>
+                      {surplusSummary.hasSavingsGoal ? (
+                        <strong>
+                          {formatWon(surplusSummary.savingsTargetAmount)}
+                        </strong>
+                      ) : (
                         <button
                           type="button"
-                          className="spending-cycle-savings-edit"
+                          className="spending-cycle-savings-set"
                           onClick={() => setIsSavingsGoalOpen(true)}
-                          aria-label="월 저축 목표 수정"
                         >
-                          <DashboardIcon name="edit" size={12} />
+                          목표 정하기
                         </button>
-                      </span>
-                      <strong>
-                        {surplusSummary.hasSavingsGoal
-                          ? formatWon(surplusSummary.savingsTargetAmount)
-                          : "미설정"}
-                      </strong>
+                      )}
                     </div>
                   </div>
                 </aside>
@@ -262,44 +404,59 @@ function SpendingGuidePage() {
                     <div className="spending-panel-head">
                       <PanelTitle
                         icon="receipt"
-                        title="오늘 거래"
+                        title={
+                          isSelectedToday
+                            ? "오늘 거래"
+                            : `${formatDate(selectedDate)} 거래`
+                        }
                         description="고정지출은 제외하고 보여드려요"
                       />
-                      <div className="spending-panel-actions">
-                        <button
-                          type="button"
-                          className="spending-secondary spending-sync-button"
-                          onClick={handleManualSync}
-                          disabled={!canManualSync || isSyncing}
-                        >
-                          <DashboardIcon name="repeat" size={15} />
-                          {isSyncing ? "동기화 중..." : "카드내역 동기화"}
-                        </button>
-                        <button
-                          type="button"
-                          className="spending-secondary"
-                          onClick={() => setIsEntryOpen(true)}
-                          disabled={!data.categories?.length}
-                        >
-                          <DashboardIcon name="plus" size={15} />
-                          지출 직접 입력
-                        </button>
-                        <button
-                          type="button"
-                          className="spending-secondary"
-                          onClick={() => setIsIncomeAdjustmentOpen(true)}
-                        >
-                          <DashboardIcon name="plus" size={15} />
-                          수입 직접 입력
-                        </button>
-                      </div>
+                      {isSelectedToday && (
+                        <div className="spending-panel-actions">
+                          <button
+                            type="button"
+                            className="spending-secondary spending-sync-button"
+                            onClick={handleManualSync}
+                            disabled={!canManualSync || isSyncing}
+                          >
+                            <DashboardIcon name="repeat" size={15} />
+                            {isSyncing ? "동기화 중..." : "카드내역 동기화"}
+                          </button>
+                          <button
+                            type="button"
+                            className="spending-secondary"
+                            onClick={() => setIsEntryOpen(true)}
+                            disabled={!data.categories?.length}
+                          >
+                            <DashboardIcon name="plus" size={15} />
+                            지출 직접 입력
+                          </button>
+                          <button
+                            type="button"
+                            className="spending-secondary"
+                            onClick={() => setIsIncomeAdjustmentOpen(true)}
+                          >
+                            <DashboardIcon name="plus" size={15} />
+                            수입 직접 입력
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <TodayTransactions
-                      data={data.today}
-                      error={sectionErrors.today}
-                      onExpand={expandToday}
-                      onSelect={setDetailId}
-                    />
+                    {!isSelectedToday && isDayLoading ? (
+                      <LoadingState label="거래 내역을 불러오고 있어요." />
+                    ) : !isSelectedToday && dayError ? (
+                      <SectionError message={dayError} />
+                    ) : (
+                      <TodayTransactions
+                        data={dayTransactionsData}
+                        error={isSelectedToday ? sectionErrors.today : ""}
+                        onExpand={
+                          isSelectedToday ? expandToday : async () => {}
+                        }
+                        onSelect={setDetailId}
+                        viewAllHref={budgetDetailHref}
+                      />
+                    )}
                   </section>
                   <section className="spending-panel spending-flow-panel">
                     <div className="spending-panel-head">
@@ -309,13 +466,6 @@ function SpendingGuidePage() {
                         description="날짜별 순사용액과 하루 권장액을 비교해요"
                         tone="blue"
                       />
-                      <Link
-                        className="spending-link-button"
-                        to={`/dashboard/spending/transactions?date=${todayDate()}`}
-                      >
-                        상세보기{" "}
-                        <DashboardIcon name="chevron-right" size={15} />
-                      </Link>
                     </div>
                     <RecentFlow
                       data={data.recent}

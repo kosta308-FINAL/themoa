@@ -300,14 +300,10 @@ function CategoryDetailPage() {
 
         <div className="page-head">
           <div>
-            <div className="eyebrow">
-              <Icon name="target" small />
-              CATEGORY ANALYSIS
-            </div>
             <h1>카테고리 소비 상세</h1>
-            <p>
+            {/* <p>
               카테고리별 변화와 소비 시점을 비교해 지출 흐름을 확인해보세요.
-            </p>
+            </p> */}
           </div>
           {cycle && (
             <div className="cycle-nav" aria-label="급여주기 선택">

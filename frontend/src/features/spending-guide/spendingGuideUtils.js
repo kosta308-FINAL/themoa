@@ -43,6 +43,13 @@ const todayDate = () => {
   return now.toISOString().slice(0, 10);
 };
 
+const shiftDateBy = (isoDate, deltaDays) => {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const date = new Date(y, m - 1, d + deltaDays);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
 const paymentLabel = (transaction) => {
   if (transaction.paymentMethod === "CASH") return "현금";
   if (transaction.paymentMethod === "TRANSFER") return "계좌이체";
@@ -88,6 +95,7 @@ export {
   formatTime,
   formatWon,
   paymentLabel,
+  shiftDateBy,
   todayDate,
   toNumber,
   transactionAmount,
