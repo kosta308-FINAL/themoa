@@ -13,10 +13,7 @@ import {
   retryInitialSync,
   syncCardTransactions,
 } from "../../../api/spendingGuideApi";
-import {
-  errorMessage,
-  INITIAL_SYNC_IN_PROGRESS,
-} from "../spendingGuideUtils";
+import { errorMessage, INITIAL_SYNC_IN_PROGRESS } from "../spendingGuideUtils";
 
 const EMPTY_DATA = {
   summary: null,
@@ -249,4 +246,3 @@ function useSpendingGuide() {
 }
 
 export default useSpendingGuide;
-

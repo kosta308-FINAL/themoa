@@ -36,4 +36,3 @@ function FixedCandidates({ data, error }) {
 }
 
 export default FixedCandidates;
-

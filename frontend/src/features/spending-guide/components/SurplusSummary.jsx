@@ -21,9 +21,19 @@ function SurplusSummary({ data, onSetGoal }) {
           tone="teal"
         />
         {data.hasSavingsGoal && (
-          <span className="spending-status">
-            저축 목표 {formatWon(data.savingsTargetAmount)}
-          </span>
+          <div className="spending-surplus-goal-badge">
+            <span className="spending-status">
+              저축 목표 {formatWon(data.savingsTargetAmount)}
+            </span>
+            <button
+              type="button"
+              className="spending-surplus-goal-edit"
+              onClick={onSetGoal}
+              aria-label="저축 목표 수정"
+            >
+              <DashboardIcon name="edit" size={14} />
+            </button>
+          </div>
         )}
       </div>
 
@@ -85,4 +95,3 @@ function SurplusSummary({ data, onSetGoal }) {
 }
 
 export default SurplusSummary;
-

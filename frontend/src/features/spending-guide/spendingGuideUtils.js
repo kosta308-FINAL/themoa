@@ -65,10 +65,8 @@ const transactionVisual = (transaction) => {
     return { icon: "utensils", tone: "orange" };
   if (/교통|택시|주유|차량/.test(category))
     return { icon: "car", tone: "blue" };
-  if (/편의점|마트|쇼핑/.test(category))
-    return { icon: "bag", tone: "orange" };
-  if (toNumber(transaction.netAmount) < 0)
-    return { icon: "card", tone: "red" };
+  if (/편의점|마트|쇼핑/.test(category)) return { icon: "bag", tone: "orange" };
+  if (toNumber(transaction.netAmount) < 0) return { icon: "card", tone: "red" };
   return {
     icon: transaction.paymentMethod === "CARD" ? "card" : "receipt",
     tone: "",

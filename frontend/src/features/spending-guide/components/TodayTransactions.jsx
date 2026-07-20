@@ -123,4 +123,3 @@ function TodayTransactions({ data, error, onExpand, onSelect }) {
 }
 
 export default TodayTransactions;
-

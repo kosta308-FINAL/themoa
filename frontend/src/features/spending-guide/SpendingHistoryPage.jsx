@@ -6,15 +6,18 @@ import {
   useRef,
   useState,
 } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   createManualTransaction,
   getCardConnections,
   getCategories,
   getConsumptionHistorySummary,
   getConsumptionHistoryTransactions,
+  getSpendingGuideSummary,
+  getSpendingTransactions,
   syncCardTransactions,
 } from "../../api/spendingGuideApi";
+import { todayDate } from "./spendingGuideUtils";
 import "./SpendingHistoryPage.css";
 
 const ICONS = {
@@ -93,6 +96,13 @@ const formatMonthDay = (isoDate) => {
 const formatMonthDayKo = (isoDate) => {
   const [, m, d] = isoDate.split("-");
   return `${Number(m)}월 ${Number(d)}일`;
+};
+
+const shiftDateBy = (isoDate, deltaDays) => {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const date = new Date(y, m - 1, d + deltaDays);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 };
 
 const transactionVisual = (transaction) => {
@@ -268,6 +278,66 @@ function groupTransactions(items) {
   return groups;
 }
 
+function TransactionGroup({ group, isToday }) {
+  return (
+    <div className="history-group">
+      <div className="history-date">
+        <strong>{`${formatMonthDayKo(group.date)}${isToday ? " · 오늘" : ""}`}</strong>
+        <span>{`순사용 ${formatWon(group.total)}`}</span>
+      </div>
+      <div className="transaction-list">
+        {group.items.map((item) => {
+          const visual = transactionVisual(item);
+          const isManual = item.source === "MANUAL";
+          const badge =
+            item.status === "PARTIAL_CANCELED"
+              ? "일부 취소됨"
+              : item.status === "CANCELED"
+                ? "취소"
+                : isManual
+                  ? "직접 입력"
+                  : "";
+          const isRefund = toNumber(item.netAmount) < 0;
+          const amountSub =
+            item.status === "PARTIAL_CANCELED" && item.originalAmount != null
+              ? `원 결제 ${formatWon(item.originalAmount)}`
+              : item.status === "CANCELED"
+                ? "취소행"
+                : "";
+          const sourceLabel = isManual
+            ? `${PAYMENT_METHOD_LABELS[item.paymentMethod] || item.paymentMethod} · 직접 입력`
+            : `${item.cardOrganizationName || ""} ${item.cardNumberMasked || ""} · 카드 자동수집`.trim();
+          return (
+            <div className="transaction-row" key={item.id}>
+              <span className={`tx-icon ${visual.tone}`}>
+                <HistoryIcon name={visual.icon} />
+              </span>
+              <span className="tx-info">
+                <span className="tx-name">
+                  <strong>{item.merchantDisplayName}</strong>
+                  {badge && (
+                    <em
+                      className={`tiny-badge${badge.includes("취소") ? " cancel" : ""}`}
+                    >
+                      {badge}
+                    </em>
+                  )}
+                </span>
+                <span className="tx-meta">{`${item.usedAt.slice(11, 16)} · ${item.categoryName}`}</span>
+                <span className="tx-meta">{sourceLabel}</span>
+              </span>
+              <span className={`tx-amount${isRefund ? " refund" : ""}`}>
+                <strong>{`${isRefund ? "+" : "-"}${formatWon(Math.abs(toNumber(item.netAmount)))}`}</strong>
+                <span>{amountSub}</span>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function SpendingHistoryPage() {
   const [cycleBudgetId, setCycleBudgetId] = useState(null);
   const [summary, setSummary] = useState(null);
@@ -286,12 +356,64 @@ function SpendingHistoryPage() {
   const [toast, setToast] = useState("");
   const transactionsPanelRef = useRef(null);
   const initialDateTime = useMemo(() => nowLocalInputValue(), []);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedDate = searchParams.get("date");
+  const [dayItems, setDayItems] = useState(null);
+  const [isDayLoading, setIsDayLoading] = useState(false);
+  const [dayError, setDayError] = useState("");
+  const [dailyGuideAmount, setDailyGuideAmount] = useState(null);
+  const today = todayDate();
 
   useEffect(() => {
     if (!toast) return undefined;
     const timer = window.setTimeout(() => setToast(""), 2200);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    getSpendingGuideSummary()
+      .then((data) =>
+        setDailyGuideAmount(toNumber(data.dailyRecommendedAmount)),
+      )
+      .catch(() => {});
+  }, []);
+
+  const loadDay = useCallback((dateValue) => {
+    setIsDayLoading(true);
+    setDayError("");
+    getSpendingTransactions({ date: dateValue, size: 50 })
+      .then((result) => setDayItems(result.items ?? []))
+      .catch((error) =>
+        setDayError(
+          errorMessage(error, "해당 날짜의 내역을 불러오지 못했어요."),
+        ),
+      )
+      .finally(() => setIsDayLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const run = () => {
+      if (selectedDate) loadDay(selectedDate);
+    };
+    run();
+  }, [selectedDate, loadDay]);
+
+  const goToDate = (nextDate) => {
+    const next = new URLSearchParams(searchParams);
+    if (nextDate) next.set("date", nextDate);
+    else next.delete("date");
+    setSearchParams(next);
+  };
+
+  const dayNetTotal = useMemo(
+    () =>
+      (dayItems ?? []).reduce((sum, item) => sum + toNumber(item.netAmount), 0),
+    [dayItems],
+  );
+  const dayGroups = useMemo(
+    () => groupTransactions(dayItems ?? []),
+    [dayItems],
+  );
 
   const fetchTransactionsPage = useCallback(
     (budgetId, page) =>
@@ -474,7 +596,136 @@ function SpendingHistoryPage() {
           </div>
         )}
 
-        {cycle && (
+        {selectedDate && (
+          <>
+            <section className="cycle-toolbar" aria-label="조회 날짜">
+              <div className="period-nav">
+                <button
+                  className="cycle-arrow"
+                  type="button"
+                  aria-label="전날"
+                  onClick={() => goToDate(shiftDateBy(selectedDate, -1))}
+                >
+                  <HistoryIcon name="chevron-left" small />
+                </button>
+                <strong>{`${formatMonthDayKo(selectedDate)}${selectedDate === today ? " · 오늘" : ""}`}</strong>
+                <button
+                  className="cycle-arrow"
+                  type="button"
+                  aria-label="다음날"
+                  onClick={() => goToDate(shiftDateBy(selectedDate, 1))}
+                  disabled={selectedDate >= today}
+                >
+                  <HistoryIcon name="chevron-right" small />
+                </button>
+              </div>
+              <div className="day-toolbar-actions">
+                <input
+                  type="date"
+                  className="day-date-input"
+                  value={selectedDate}
+                  max={today}
+                  onChange={(event) =>
+                    event.target.value && goToDate(event.target.value)
+                  }
+                  aria-label="날짜 선택"
+                />
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => goToDate(null)}
+                >
+                  전체 소비내역 보기
+                </button>
+              </div>
+            </section>
+
+            <section
+              className="day-stats-grid"
+              aria-label="선택한 날짜 소비 요약"
+            >
+              <article className="stat-card">
+                <div className="stat-head">
+                  <span className="stat-label">
+                    <span className="stat-icon">
+                      <HistoryIcon name="receipt" />
+                    </span>
+                    이 날 순사용액
+                  </span>
+                </div>
+                <strong className="stat-value">{formatWon(dayNetTotal)}</strong>
+                <span className="stat-sub">고정지출 제외</span>
+              </article>
+              <article className="stat-card">
+                <div className="stat-head">
+                  <span className="stat-label">
+                    <span className="stat-icon">
+                      <HistoryIcon name="trend-down" />
+                    </span>
+                    하루 권장액 대비
+                  </span>
+                </div>
+                {dailyGuideAmount != null ? (
+                  <>
+                    <strong className="stat-value">
+                      {formatWon(dailyGuideAmount)}
+                    </strong>
+                    <span className="stat-sub">
+                      {dayNetTotal > dailyGuideAmount
+                        ? `권장액보다 ${formatWon(dayNetTotal - dailyGuideAmount)} 더 썼어요`
+                        : `권장액보다 ${formatWon(dailyGuideAmount - dayNetTotal)} 덜 썼어요`}
+                    </span>
+                  </>
+                ) : (
+                  <p className="empty-note">불러오는 중이에요...</p>
+                )}
+                <span className="stat-refund-note">
+                  현재 기준 하루 권장액이에요. 지난 주기에는 금액이 달랐을 수
+                  있어요.
+                </span>
+              </article>
+            </section>
+
+            <section
+              className="panel transactions-panel"
+              aria-label="선택한 날짜 결제내역"
+            >
+              <div className="transactions-head">
+                <div className="panel-head">
+                  <div>
+                    <h2>{formatMonthDayKo(selectedDate)} 결제내역</h2>
+                    <p>이 날짜에 기록된 결제내역이에요.</p>
+                  </div>
+                </div>
+              </div>
+              {isDayLoading && (
+                <p className="empty-note">불러오는 중이에요...</p>
+              )}
+              {!isDayLoading && dayError && (
+                <div className="page-error">
+                  <span>{dayError}</span>
+                  <button type="button" onClick={() => loadDay(selectedDate)}>
+                    다시 시도
+                  </button>
+                </div>
+              )}
+              {!isDayLoading && !dayError && dayGroups.length === 0 && (
+                <p className="empty-note">이 날짜에는 결제내역이 없어요.</p>
+              )}
+              {!isDayLoading &&
+                !dayError &&
+                dayGroups.map((group) => (
+                  <TransactionGroup
+                    key={group.date}
+                    group={group}
+                    isToday={group.date === today}
+                  />
+                ))}
+            </section>
+          </>
+        )}
+
+        {!selectedDate && cycle && (
           <>
             <section className="cycle-toolbar" aria-label="조회 급여 주기">
               <div className="period-nav">
@@ -667,75 +918,16 @@ function SpendingHistoryPage() {
 
                 {!transactionsError && groups.length > 0 && (
                   <div>
-                    {groups.map((group) => {
-                      const isToday =
-                        cycle.status === "IN_PROGRESS" &&
-                        group.date === cycle.dataEndDate;
-                      return (
-                        <div className="history-group" key={group.date}>
-                          <div className="history-date">
-                            <strong>{`${formatMonthDayKo(group.date)}${isToday ? " · 오늘" : ""}`}</strong>
-                            <span>{`순사용 ${formatWon(group.total)}`}</span>
-                          </div>
-                          <div className="transaction-list">
-                            {group.items.map((item) => {
-                              const visual = transactionVisual(item);
-                              const isManual = item.source === "MANUAL";
-                              const badge =
-                                item.status === "PARTIAL_CANCELED"
-                                  ? "일부 취소됨"
-                                  : item.status === "CANCELED"
-                                    ? "취소"
-                                    : isManual
-                                      ? "직접 입력"
-                                      : "";
-                              const isRefund = toNumber(item.netAmount) < 0;
-                              const amountSub =
-                                item.status === "PARTIAL_CANCELED" &&
-                                item.originalAmount != null
-                                  ? `원 결제 ${formatWon(item.originalAmount)}`
-                                  : item.status === "CANCELED"
-                                    ? "취소행"
-                                    : "";
-                              const sourceLabel = isManual
-                                ? `${PAYMENT_METHOD_LABELS[item.paymentMethod] || item.paymentMethod} · 직접 입력`
-                                : `${item.cardOrganizationName || ""} ${item.cardNumberMasked || ""} · 카드 자동수집`.trim();
-                              return (
-                                <div className="transaction-row" key={item.id}>
-                                  <span className={`tx-icon ${visual.tone}`}>
-                                    <HistoryIcon name={visual.icon} />
-                                  </span>
-                                  <span className="tx-info">
-                                    <span className="tx-name">
-                                      <strong>
-                                        {item.merchantDisplayName}
-                                      </strong>
-                                      {badge && (
-                                        <em
-                                          className={`tiny-badge${badge.includes("취소") ? " cancel" : ""}`}
-                                        >
-                                          {badge}
-                                        </em>
-                                      )}
-                                    </span>
-                                    <span className="tx-meta">{`${item.usedAt.slice(11, 16)} · ${item.categoryName}`}</span>
-                                    <span className="tx-meta">
-                                      {sourceLabel}
-                                    </span>
-                                  </span>
-                                  <span
-                                    className={`tx-amount${isRefund ? " refund" : ""}`}
-                                  >
-                                    <strong>{`${isRefund ? "+" : "-"}${formatWon(Math.abs(toNumber(item.netAmount)))}`}</strong>
-                                    <span>{amountSub}</span>
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {groups.map((group) => (
+                      <TransactionGroup
+                        key={group.date}
+                        group={group}
+                        isToday={
+                          cycle.status === "IN_PROGRESS" &&
+                          group.date === cycle.dataEndDate
+                        }
+                      />
+                    ))}
                   </div>
                 )}
 

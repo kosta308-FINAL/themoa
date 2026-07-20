@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import DashboardIcon from "../../components/common/DashboardIcon";
 import BudgetSettingsModal from "./BudgetSettingsModal";
@@ -13,6 +14,7 @@ import TodayTransactions from "./components/TodayTransactions";
 import useSpendingGuide from "./hooks/useSpendingGuide";
 import IncomeAdjustmentModal from "./IncomeAdjustmentModal";
 import ManualTransactionModal from "./ManualTransactionModal";
+import SavingsGoalModal from "./SavingsGoalModal";
 import {
   formatDate,
   formatDateWithWeekday,
@@ -52,6 +54,7 @@ function SpendingGuidePage() {
     setIsEntryOpen,
     setIsIncomeAdjustmentOpen,
   } = useSpendingGuide();
+  const [isSavingsGoalOpen, setIsSavingsGoalOpen] = useState(false);
   const summary = data.summary;
   const dailyRecommended = toNumber(summary?.dailyRecommendedAmount);
   const todaySpent = toNumber(summary?.todayNetSpend);
@@ -94,6 +97,16 @@ function SpendingGuidePage() {
                 : "오늘의 기준을 확인하고, 무리 없이 쓸 수 있는 금액을 관리해보세요."}
             </p>
           </div>
+          {!showSetup && !showInitialSync && summary && (
+            <button
+              type="button"
+              className="spending-settings-button"
+              onClick={() => setIsBudgetOpen(true)}
+            >
+              <DashboardIcon name="settings" size={16} />
+              소득 정보 변경
+            </button>
+          )}
         </header>
 
         {pageError && (
@@ -217,6 +230,24 @@ function SpendingGuidePage() {
                       <span>주기 순사용액</span>
                       <strong>{formatWon(cycleSpent)}</strong>
                     </div>
+                    <div>
+                      <span>
+                        월 저축 목표
+                        <button
+                          type="button"
+                          className="spending-cycle-savings-edit"
+                          onClick={() => setIsSavingsGoalOpen(true)}
+                          aria-label="월 저축 목표 수정"
+                        >
+                          <DashboardIcon name="edit" size={12} />
+                        </button>
+                      </span>
+                      <strong>
+                        {surplusSummary.hasSavingsGoal
+                          ? formatWon(surplusSummary.savingsTargetAmount)
+                          : "미설정"}
+                      </strong>
+                    </div>
                   </div>
                 </aside>
               </section>
@@ -225,7 +256,7 @@ function SpendingGuidePage() {
                 <div className="spending-column">
                   <SurplusSummary
                     data={surplusSummary}
-                    onSetGoal={() => setIsBudgetOpen(true)}
+                    onSetGoal={() => setIsSavingsGoalOpen(true)}
                   />
                   <section className="spending-panel spending-transactions-panel">
                     <div className="spending-panel-head">
@@ -379,6 +410,13 @@ function SpendingGuidePage() {
         <BudgetSettingsModal
           summary={summary}
           onClose={() => setIsBudgetOpen(false)}
+          onSaved={loadGuide}
+        />
+      )}
+      {isSavingsGoalOpen && summary && (
+        <SavingsGoalModal
+          currentAmount={summary.savingsGoalAmount}
+          onClose={() => setIsSavingsGoalOpen(false)}
           onSaved={loadGuide}
         />
       )}

@@ -2,14 +2,10 @@ import { useState } from "react";
 import {
   updateIncomeType,
   updateSalary,
-  updateSavingsGoal,
   updateWorkSchedule,
 } from "../../api/spendingGuideApi";
 import DashboardIcon from "../../components/common/DashboardIcon";
 import IncomeProfileFields from "./components/IncomeProfileFields";
-
-const WON = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
-const digits = (value) => value.replace(/\D/g, "").slice(0, 12);
 
 function BudgetSettingsModal({ summary, onClose, onSaved }) {
   const initialIncomeType =
@@ -27,9 +23,6 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
       dayOfWeek: item.dayOfWeek,
       hours: String(item.hours),
     })),
-  );
-  const [savingsGoal, setSavingsGoal] = useState(
-    String(Number(summary.savingsGoalAmount || 0)),
   );
   const [applyFrom, setApplyFrom] = useState("CURRENT_CYCLE");
   const [error, setError] = useState("");
@@ -64,16 +57,13 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
               applyFrom,
             })
           : updateSalary({ amount: Number(salary), applyFrom });
-      await Promise.all([
-        incomeUpdate,
-        updateSavingsGoal({ amount: Number(savingsGoal), applyFrom }),
-      ]);
+      await incomeUpdate;
       await onSaved();
       onClose();
     } catch (requestError) {
       setError(
         requestError.response?.data?.message ||
-          "예산 기준을 저장하지 못했습니다.",
+          "소득 정보를 저장하지 못했습니다.",
       );
     } finally {
       setIsSubmitting(false);
@@ -95,10 +85,10 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
       >
         <div className="spending-modal-head">
           <div>
-            <h2 id="budget-settings-title">예산 기준</h2>
+            <h2 id="budget-settings-title">소득 정보 변경</h2>
             <p>
-              {isHourly ? "시급·근무시간" : "월급"}과 저축 목표의 적용 시점을
-              선택해 변경해요.
+              {isHourly ? "시급·근무시간" : "월급"} 정보와 적용 시점을 선택해
+              변경해요.
             </p>
           </div>
           <button
@@ -122,17 +112,6 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
             workSchedule={workSchedule}
             onWorkScheduleChange={setWorkSchedule}
           />
-          <label className="wide">
-            <span>월 저축 목표</span>
-            <div className="spending-input-suffix">
-              <input
-                inputMode="numeric"
-                value={savingsGoal ? WON.format(Number(savingsGoal)) : ""}
-                onChange={(event) => setSavingsGoal(digits(event.target.value))}
-              />
-              <em>원</em>
-            </div>
-          </label>
           <label className="wide">
             <span>적용 시점 *</span>
             <select
@@ -161,7 +140,7 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
             className="spending-primary wide"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "저장 중..." : "예산 기준 저장"}
+            {isSubmitting ? "저장 중..." : "소득 정보 저장"}
           </button>
         </form>
       </section>

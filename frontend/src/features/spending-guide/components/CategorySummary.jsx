@@ -1,11 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import DashboardIcon from "../../../components/common/DashboardIcon";
-import {
-  formatShortDate,
-  formatWon,
-  toNumber,
-} from "../spendingGuideUtils";
+import { formatShortDate, formatWon, toNumber } from "../spendingGuideUtils";
 import { EmptyState, LoadingState, SectionError } from "./SpendingGuideCommon";
 
 function CategorySummary({ data, error, onNavigate }) {
@@ -110,4 +106,3 @@ function CategorySummary({ data, error, onNavigate }) {
 }
 
 export default CategorySummary;
-

@@ -75,7 +75,9 @@ function TransactionDetailModal({
     setCategoryId(String(response.categoryId || ""));
     setMemo(response.memo || "");
     setCanceledAmountInput(
-      response.canceledAmount != null ? String(Number(response.canceledAmount)) : "",
+      response.canceledAmount != null
+        ? String(Number(response.canceledAmount))
+        : "",
     );
     setAmountInput(
       response.amount != null ? String(Number(response.amount)) : "",
@@ -369,9 +371,7 @@ function TransactionDetailModal({
                   >
                     <input
                       inputMode="numeric"
-                      value={
-                        amountInput ? WON.format(Number(amountInput)) : ""
-                      }
+                      value={amountInput ? WON.format(Number(amountInput)) : ""}
                       onChange={(event) =>
                         setAmountInput(digits(event.target.value))
                       }

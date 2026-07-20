@@ -19,6 +19,7 @@
 
 .spending-page-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
@@ -2666,7 +2667,7 @@
 .spending-guide .spending-bar-item {
   height: 100%;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) 26px 32px;
+  grid-template-rows: minmax(0, 1fr) 26px 20px 14px;
   align-items: stretch;
   justify-content: stretch;
   justify-items: center;
@@ -2718,6 +2719,13 @@
   color: var(--spending-muted);
   font-size: 10px;
   font-weight: 650;
+}
+.spending-guide .spending-bar-amount {
+  grid-row: 4;
+  color: #96a29b;
+  font-size: 9px;
+  font-style: normal;
+  white-space: nowrap;
 }
 .spending-guide .spending-chart-legend {
   display: flex;
@@ -3191,6 +3199,67 @@
   min-height: 34px;
   padding: 0 13px;
   font-size: 11px;
+}
+
+.spending-surplus-goal-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.spending-surplus-goal-edit {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--spending-border);
+  border-radius: 999px;
+  color: var(--spending-muted);
+  background: #fff;
+}
+.spending-surplus-goal-edit:hover {
+  color: var(--spending-green-dark);
+  background: var(--spending-soft);
+}
+
+.spending-settings-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--spending-border);
+  border-radius: 11px;
+  color: var(--spending-muted);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.spending-settings-button:hover {
+  color: var(--spending-green-dark);
+  border-color: #cce9d6;
+  background: var(--spending-soft);
+}
+
+.spending-cycle-bottom span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.spending-cycle-savings-edit {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--spending-muted);
+}
+.spending-cycle-savings-edit:hover {
+  color: var(--spending-green-dark);
+  background: var(--spending-soft);
 }
 
 @media (max-width: 560px) {
