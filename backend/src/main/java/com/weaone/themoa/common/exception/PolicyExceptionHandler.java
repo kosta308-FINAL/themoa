@@ -1,4 +1,4 @@
-package com.weaone.themoa.domain.policy.common.exception;
+package com.weaone.themoa.common.exception;
 
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.common.response.ApiResponse;

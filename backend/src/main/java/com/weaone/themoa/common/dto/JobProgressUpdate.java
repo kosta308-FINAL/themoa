@@ -1,4 +1,4 @@
-package com.weaone.themoa.domain.policy.common.dto;
+package com.weaone.themoa.common.dto;
 
 public record JobProgressUpdate(
         String stage,

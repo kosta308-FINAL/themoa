@@ -1,4 +1,4 @@
-package com.weaone.themoa.domain.policy.common.config;
+package com.weaone.themoa.config;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;

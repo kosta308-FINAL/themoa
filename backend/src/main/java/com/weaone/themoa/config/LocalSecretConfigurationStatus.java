@@ -1,4 +1,4 @@
-package com.weaone.themoa.domain.policy.common.config;
+package com.weaone.themoa.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
