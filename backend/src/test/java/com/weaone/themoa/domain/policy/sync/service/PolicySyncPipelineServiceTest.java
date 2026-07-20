@@ -62,13 +62,13 @@ class PolicySyncPipelineServiceTest {
                 projectionService, embeddingService, readinessService);
         order.verify(regionCodeRepository).count();
         order.verify(collectionService).collectAll(eq(PolicyCollectionExecutionType.MANUAL), anyJobProgressConsumer());
-        order.verify(lexicalIndexBuilder).invalidate();
         order.verify(regionRebuildService).rebuildAll(anyJobProgressConsumer());
         order.verify(projectionService).rebuildAll(anyProjectionProgressConsumer());
         order.verify(lexicalIndexBuilder).refresh();
         order.verify(embeddingService).queueAll(eq(false), anyJobProgressConsumer());
         order.verify(embeddingService).processPending(anyEmbeddingProgressConsumer());
         order.verify(readinessService).readiness();
+        verify(lexicalIndexBuilder, never()).invalidate();
     }
 
     @Test
@@ -101,6 +101,8 @@ class PolicySyncPipelineServiceTest {
         );
 
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.POLICY_EXTERNAL_API_ERROR);
+        verify(lexicalIndexBuilder, never()).invalidate();
+        verify(lexicalIndexBuilder, never()).refresh();
         verifyNoInteractions(regionRebuildService, projectionService, embeddingService, readinessService);
     }
 
@@ -117,7 +119,29 @@ class PolicySyncPipelineServiceTest {
         );
 
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.POLICY_REGION_REBUILD_FAILED);
+        verify(lexicalIndexBuilder, never()).invalidate();
+        verify(lexicalIndexBuilder, never()).refresh();
         verifyNoInteractions(projectionService, embeddingService, readinessService);
+    }
+
+    @Test
+    void projectionFailureKeepsExistingLexicalIndex() {
+        when(regionCodeRepository.count()).thenReturn(1L);
+        when(collectionService.collectAll(eq(PolicyCollectionExecutionType.MANUAL), anyJobProgressConsumer()))
+                .thenReturn(collectionResult("COMPLETED"));
+        when(regionRebuildService.rebuildAll(anyJobProgressConsumer())).thenReturn(regionResult(2650, 0));
+        when(projectionService.rebuildAll(anyProjectionProgressConsumer()))
+                .thenThrow(new IllegalStateException("projection failed"));
+
+        IllegalStateException exception = catchThrowableOfType(
+                () -> service().synchronize(PolicySyncMode.INCREMENTAL, PolicyCollectionExecutionType.MANUAL, null),
+                IllegalStateException.class
+        );
+
+        assertThat(exception).hasMessage("projection failed");
+        verify(lexicalIndexBuilder, never()).invalidate();
+        verify(lexicalIndexBuilder, never()).refresh();
+        verifyNoInteractions(embeddingService, readinessService);
     }
 
     @Test

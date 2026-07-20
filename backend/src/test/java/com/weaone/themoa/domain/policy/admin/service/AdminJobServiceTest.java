@@ -35,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -108,6 +109,19 @@ class AdminJobServiceTest {
         assertThat(status.message()).contains("FULL_REINDEX_COMPLETED");
         verify(policySyncPipelineService).synchronize(eq(PolicySyncMode.FULL_REINDEX), eq(PolicyCollectionExecutionType.MANUAL),
                 anyJobProgressConsumer());
+        verify(policySyncExecutionGuard).release();
+    }
+
+    @Test
+    void failedPolicyCollectionDoesNotInvalidateLexicalIndex() {
+        allowJobStart();
+        when(collectionService.collectAll(anyJobProgressConsumer())).thenReturn(collectionResult("FAILED"));
+
+        AdminJobStatus status = service().start("POLICY_COLLECTION");
+
+        assertThat(status.status()).isEqualTo("FAILED");
+        verify(collectionService).collectAll(anyJobProgressConsumer());
+        verify(lexicalIndexBuilder, never()).invalidate();
         verify(policySyncExecutionGuard).release();
     }
 

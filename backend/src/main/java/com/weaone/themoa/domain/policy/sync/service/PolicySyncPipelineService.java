@@ -72,7 +72,6 @@ public class PolicySyncPipelineService {
         updateStage(progressConsumer, 2, "POLICY_COLLECTION", "정책 수집 중",
                 "정책 API 전체 수집을 실행합니다.");
         PolicyCollectionResult collection = collectionService.collectAll(executionType, progressConsumer);
-        lexicalIndexBuilder.invalidate();
         if ("FAILED".equals(collection.status())) {
             throw new BusinessException(ErrorCode.POLICY_EXTERNAL_API_ERROR);
         }

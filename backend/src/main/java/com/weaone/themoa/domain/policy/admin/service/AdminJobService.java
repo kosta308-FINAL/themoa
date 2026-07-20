@@ -127,10 +127,11 @@ public class AdminJobService {
         job.success = result.insertedCount() + result.updatedCount();
         job.failed = result.failedCount();
         job.message = result.status();
-        lexicalIndexBuilder.invalidate();
         if ("FAILED".equals(result.status())) {
             job.status = "FAILED";
+            return;
         }
+        lexicalIndexBuilder.invalidate();
     }
 
     private void runEmbeddingQueue(MutableJob job) {
