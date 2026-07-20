@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +34,7 @@ public class MemberDemoSeeder implements ApplicationRunner {
     public static final String SOLMIN_EMAIL = "solmin";
 
     private final MemberRepository memberRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
@@ -40,6 +42,7 @@ public class MemberDemoSeeder implements ApplicationRunner {
         if (memberRepository.count() > 0) {
             return;
         }
+        jdbcTemplate.execute("ALTER TABLE member AUTO_INCREMENT = 1");
         LocalDateTime now = LocalDateTime.now();
         String hash = DEMO_PASSWORD_HASH;
 

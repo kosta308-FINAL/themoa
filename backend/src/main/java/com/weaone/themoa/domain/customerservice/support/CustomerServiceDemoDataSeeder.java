@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +37,7 @@ public class CustomerServiceDemoDataSeeder implements ApplicationRunner {
     private final CustomerInquiryAnswerRepository answerRepository;
     private final MemberRepository memberRepository;
     private final NotificationService notificationService;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
@@ -43,6 +45,8 @@ public class CustomerServiceDemoDataSeeder implements ApplicationRunner {
         if (inquiryRepository.count() > 0) {
             return;
         }
+        jdbcTemplate.execute("ALTER TABLE customer_inquiry AUTO_INCREMENT = 1");
+        jdbcTemplate.execute("ALTER TABLE customer_inquiry_answer AUTO_INCREMENT = 1");
         Optional<Member> solmin = memberRepository.findByEmail(MemberDemoSeeder.SOLMIN_EMAIL);
         Optional<Member> admin = memberRepository.findByEmail(MemberDemoSeeder.ADMIN_EMAIL);
         if (solmin.isEmpty() || admin.isEmpty()) {
