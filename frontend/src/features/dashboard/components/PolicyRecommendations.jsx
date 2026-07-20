@@ -1,5 +1,5 @@
-import DashboardIcon from '../../../components/common/DashboardIcon'
-import { policyRecommendations } from '../../../constants/mockDashboard'
+import DashboardIcon from "../../../components/common/DashboardIcon";
+import { policyRecommendations } from "../../../constants/mockDashboard";
 
 function PolicyRecommendations() {
   return (
@@ -23,7 +23,7 @@ function PolicyRecommendations() {
         ))}
       </ul>
     </div>
-  )
+  );
 }
 
-export default PolicyRecommendations
+export default PolicyRecommendations;

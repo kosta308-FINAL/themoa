@@ -1,0 +1,16 @@
+package com.weaone.themoa.domain.policy.rag.dto;
+
+public enum PolicyOfferingType {
+    DIRECT_BENEFIT,
+    GENERAL_SERVICE,
+    JOB_SEEKER_SUPPORT,
+    EMPLOYMENT_OPPORTUNITY,
+    EMPLOYEE_BENEFIT,
+    CAREER_DEVELOPMENT,
+    STARTUP_PROGRAM,
+    STARTUP_FINANCE,
+    EDUCATION_PROGRAM,
+    PARTICIPATION_PROGRAM,
+    VOLUNTEER_PROGRAM,
+    UNKNOWN
+}

@@ -12,6 +12,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -56,6 +57,10 @@ public class Member {
     @Column(name = "card_sync_enabled", nullable = false)
     private boolean cardSyncEnabled;
 
+    /** 수기→카드 전환 시점(백필 경계, entryMode.md §2-1·§3). MANUAL 상태로 남아 있는 동안은 NULL이다. */
+    @Column(name = "card_sync_started_at")
+    private LocalDateTime cardSyncStartedAt;
+
     /** 발급된 Access Token을 만료 전 무효화하는 기준값. 전체 기기 로그아웃·비밀번호 변경에만 올린다. */
     @Column(name = "token_version", nullable = false)
     private int tokenVersion;
@@ -69,7 +74,23 @@ public class Member {
     @Column(name = "last_active_at")
     private LocalDateTime lastActiveAt;
 
-    private Member(String email, String password, String name, Gender gender, LocalDate birthDate) {
+    /** 현재 월급 원본(dailyBudget.md §1). 소비 가이드 진입 시 지연 수집한다. 주기 스냅샷은 {@code budget.salary_amount}. */
+    @Column(name = "salary_amount", precision = 14, scale = 2)
+    private BigDecimal salaryAmount;
+
+    /** 월 저축 목표 원본. 미설정이면 예산 계산에서 0으로 본다. 주기 스냅샷은 {@code budget.savings_goal_amount}. */
+    @Column(name = "savings_target_amount", precision = 14, scale = 2)
+    private BigDecimal savingsTargetAmount;
+
+    /** 명목 월급일(1~31). 없는 날이면 말일로 당긴다. 소비가이드 최초 설정에서만 저장하고 MVP에서 일반 수정은 없다. */
+    @Column(name = "payday")
+    private Integer payday;
+
+    /** 가입일(dayguide.md §3.4·§8): 수기 모드 사용자의 카테고리 도넛 주기 이동 하한 계산에 쓰인다. */
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    private Member(String email, String password, String name, Gender gender, LocalDate birthDate, LocalDateTime now) {
         this.email = email;
         this.password = password;
         this.name = name;
@@ -79,11 +100,13 @@ public class Member {
         this.cardSyncEnabled = true;
         this.tokenVersion = 0;
         this.loginFailCount = 0;
+        this.createdAt = now;
     }
 
     /** 일반 가입 회원. 비밀번호는 해시만 받는다. */
-    public static Member signUp(String email, String passwordHash, String name, Gender gender, LocalDate birthDate) {
-        return new Member(email, passwordHash, name, gender, birthDate);
+    public static Member signUp(String email, String passwordHash, String name, Gender gender, LocalDate birthDate,
+                                 LocalDateTime now) {
+        return new Member(email, passwordHash, name, gender, birthDate, now);
     }
 
     public boolean isLocked(LocalDateTime now) {
@@ -131,5 +154,60 @@ public class Member {
 
     public boolean isReturningAfterAbsence(LocalDateTime now, long absenceDays) {
         return lastActiveAt != null && lastActiveAt.isBefore(now.minusDays(absenceDays));
+    }
+
+    /**
+     * 소비 가이드 최초 설정(S-00A, MOA-S-BUD-BGT-01). 월급·급여일을 함께 저장한다. 급여일은 MVP에서
+     * 최초 설정 이후 일반 수정 대상이 아니므로(dailyBudget.md §1) 이 메서드로만 채워진다.
+     */
+    public void configureSpendingGuide(BigDecimal salaryAmount, Integer payday) {
+        this.salaryAmount = salaryAmount;
+        this.payday = payday;
+    }
+
+    /** 월급 원본 변경(MOA-S-BUD-BGT-08). 주기 스냅샷 반영 여부는 호출자가 적용 시점에 따라 결정한다. */
+    public void changeSalary(BigDecimal salaryAmount) {
+        this.salaryAmount = salaryAmount;
+    }
+
+    /** 월 저축 목표 원본 변경(MOA-S-BUD-BGT-03). */
+    public void changeSavingsTarget(BigDecimal savingsTargetAmount) {
+        this.savingsTargetAmount = savingsTargetAmount;
+    }
+
+    /** 소비 가이드는 월급·급여일 둘 다 있어야 진입 가능하다(dailyBudget.md §1). */
+    public boolean hasSpendingGuideSetup() {
+        return salaryAmount != null && payday != null;
+    }
+
+    /** 저축 목표 미설정은 0원으로 계산한다(dayguide.md §2.1). */
+    public BigDecimal getSavingsTargetOrZero() {
+        return savingsTargetAmount != null ? savingsTargetAmount : BigDecimal.ZERO;
+    }
+
+    /**
+     * 수기→카드 전환(entryMode.md §2). MANUAL일 때만 CARD로 전이하고 시각을 남긴다. 이미 CARD면 아무 것도
+     * 하지 않는다 — 역전이도 재전환도 없어(§2-1) 이 메서드는 평생 최대 1번만 실제 효과를 낸다.
+     */
+    public void startCardSync(LocalDateTime now) {
+        if (entryMode == EntryMode.MANUAL) {
+            entryMode = EntryMode.CARD;
+            cardSyncStartedAt = now;
+        }
+    }
+
+    /** 카드 자동수집 재개(entryMode.md §2-1). entry_mode는 건드리지 않는다 — 되돌리는 대상은 이 플래그뿐이다. */
+    public void enableCardSync() {
+        cardSyncEnabled = true;
+    }
+
+    /** "수기로 돌아가기" 요청의 실제 구현(entryMode.md §2-1). entry_mode 역전이가 아니라 이 플래그로 표현한다. */
+    public void disableCardSync() {
+        cardSyncEnabled = false;
+    }
+
+    /** 결제수단=카드인 수기 입력 허용 조건(entryMode.md §5-1): 자동수집이 돌지 않는 동안만 허용한다. */
+    public boolean isManualCardEntryAllowed() {
+        return entryMode == EntryMode.MANUAL || !cardSyncEnabled;
     }
 }

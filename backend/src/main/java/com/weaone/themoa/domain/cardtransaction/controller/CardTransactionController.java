@@ -1,18 +1,22 @@
 package com.weaone.themoa.domain.cardtransaction.controller;
 
 import com.weaone.themoa.common.response.ApiResponse;
+import com.weaone.themoa.domain.budget.service.SpendingGuideService;
 import com.weaone.themoa.domain.cardtransaction.dto.request.AmountCorrectionRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.request.CancelAmountCorrectionRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.request.CategoryCorrectionRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.request.MemoUpdateRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.request.RecoveryRequest;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionListResponse;
+import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionResponse;
+import com.weaone.themoa.domain.cardtransaction.dto.response.CategoryAnalysisResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CategorySummaryListResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.RecoveryStatusResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.SyncResponse;
 import com.weaone.themoa.domain.cardtransaction.service.CardTransactionCorrectionService;
 import com.weaone.themoa.domain.cardtransaction.service.CardTransactionQueryService;
 import com.weaone.themoa.domain.cardtransaction.service.CardTransactionSyncService;
+import com.weaone.themoa.domain.cardtransaction.service.CategoryAnalysisService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
@@ -28,15 +32,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-
 /**
- * 거래 조회 + 건별 사용자 정정(category.md §2-④, cardtransaction.md §3-4·§4). 카드 수집 거래(source=SYNC)는
- * 삭제 API를 제공하지 않는다(§6-3) — 카드사 원장이 정본이라 삭제하면 롤링 윈도우 재수집이 되살린다.
+ * 거래 조회 + 건별 사용자 정정(category.md §2-④, cardtransaction.md §3-4·§4) + 수기 입력 생성(entryMode.md
+ * §5). 카드 수집 거래(source=SYNC)는 삭제 API를 제공하지 않는다(§6-3) — 카드사 원장이 정본이라 삭제하면
+ * 롤링 윈도우 재수집이 되살린다.
  */
 @RestController
 @RequestMapping("/api/card-transactions")
@@ -46,6 +48,8 @@ public class CardTransactionController {
     private final CardTransactionQueryService cardTransactionQueryService;
     private final CardTransactionCorrectionService cardTransactionCorrectionService;
     private final CardTransactionSyncService cardTransactionSyncService;
+    private final SpendingGuideService spendingGuideService;
+    private final CategoryAnalysisService categoryAnalysisService;
 
     @Operation(summary = "카드 거래내역 조회",
             description = "로그인 사용자의 카드 거래내역을 최신순으로 페이지 조회합니다. 먼저 /api/auth/login으로 로그인하고, 필요하면 /api/card-transactions/sync로 거래내역을 동기화하세요.")
@@ -58,14 +62,34 @@ public class CardTransactionController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "카테고리별 소비 비중/내역 조회",
-            description = "고정지출 태그 거래를 제외하고, 순액(부분취소 반영)이 0원보다 큰 소비만 카테고리별로 집계합니다(category.md §6). canceledTotal은 이 주기 결제 중 취소된 금액입니다.")
+    @Operation(summary = "거래 상세 조회(S-02)",
+            description = "카드 수집·수기 거래 공통 상세를 조회합니다. 로그인 회원 소유가 아니면 404를 반환합니다.")
+    @GetMapping("/{transactionId}")
+    public ResponseEntity<ApiResponse<CardTransactionResponse>> detail(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
+            @Parameter(description = "조회할 거래 ID") @PathVariable Long transactionId) {
+        CardTransactionResponse response = cardTransactionQueryService.getDetail(memberId, transactionId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "카테고리별 소비 비중/내역 조회(S-01 도넛)",
+            description = "budgetId 생략 시 현재 급여 주기를 집계합니다. 고정지출 태그 거래를 제외하고, 순액(부분취소 반영)이 0원보다 큰 소비만 카테고리별로 집계합니다(category.md §6, dayguide.md §3.4). canceledTotal은 이 주기 결제 중 취소된 금액입니다.")
     @GetMapping("/category-summary")
     public ResponseEntity<ApiResponse<CategorySummaryListResponse>> categorySummary(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
-            @Parameter(description = "집계 시작일(포함)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @Parameter(description = "집계 종료일(포함)") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        CategorySummaryListResponse response = cardTransactionQueryService.summarizeByCategory(memberId, startDate, endDate);
+            @Parameter(description = "조회할 예산 주기 ID(생략 시 현재 주기)") @RequestParam(required = false) Long budgetId) {
+        CategorySummaryListResponse response = spendingGuideService.getCategorySummary(memberId, budgetId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "카테고리 소비 상세 조회",
+            description = "선택 급여주기와 직전 급여주기의 카테고리별 소비 비교, 선택 카테고리의 최근 최대 4개 급여주기 추이, 초·중·후반·평일/주말 분포, 규칙 기반 인사이트를 반환합니다. budgetId 생략 시 현재 급여 주기를, categoryId 생략 시 소비액이 가장 큰 카테고리를 기본으로 조회합니다.")
+    @GetMapping("/category-analysis")
+    public ResponseEntity<ApiResponse<CategoryAnalysisResponse>> categoryAnalysis(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
+            @Parameter(description = "조회할 급여 주기 ID(생략 시 현재 주기)") @RequestParam(required = false) Long budgetId,
+            @Parameter(description = "상세 분석할 카테고리 ID(생략 시 서버가 기본 카테고리를 선택)") @RequestParam(required = false) Long categoryId) {
+        CategoryAnalysisResponse response = categoryAnalysisService.analyze(memberId, budgetId, categoryId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

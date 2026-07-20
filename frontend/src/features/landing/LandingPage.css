@@ -175,7 +175,11 @@
 .blob-1 {
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(79, 98, 232, 0.18) 0%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(79, 98, 232, 0.18) 0%,
+    transparent 70%
+  );
   top: -200px;
   right: -100px;
 }
@@ -183,7 +187,11 @@
 .blob-2 {
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.12) 0%,
+    transparent 70%
+  );
   bottom: 0;
   left: -100px;
 }
@@ -196,7 +204,11 @@
     linear-gradient(90deg, var(--border) 1px, transparent 1px);
   background-size: 48px 48px;
   opacity: 0.4;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 80%);
+  mask-image: radial-gradient(
+    ellipse 80% 60% at 50% 0%,
+    black 30%,
+    transparent 80%
+  );
 }
 
 /* ─── Hero Split Layout ──────────────────────────────────── */
@@ -227,7 +239,9 @@
   border: 1px solid var(--border);
   border-radius: 28px;
   padding: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.04),
+    0 1px 3px rgba(0, 0, 0, 0.02);
   width: 100%;
   max-width: 460px;
 }
@@ -255,7 +269,6 @@
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -280,7 +293,6 @@
 .gradient-text {
   color: var(--accent);
 }
-
 
 .hero-desc {
   font-size: 16px;
@@ -551,7 +563,7 @@
 }
 
 .feature-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -771,7 +783,11 @@
 }
 
 .bar-normal {
-  background: linear-gradient(180deg, var(--accent-light), rgba(79, 98, 232, 0.12));
+  background: linear-gradient(
+    180deg,
+    var(--accent-light),
+    rgba(79, 98, 232, 0.12)
+  );
   border: 1px solid rgba(79, 98, 232, 0.15);
 }
 
@@ -930,7 +946,12 @@
 .cta-box {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--accent) 0%, #6272e8 50%, var(--violet) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--accent) 0%,
+    #6272e8 50%,
+    var(--violet) 100%
+  );
   border-radius: var(--radius-xl);
   padding: 72px 48px;
   text-align: center;

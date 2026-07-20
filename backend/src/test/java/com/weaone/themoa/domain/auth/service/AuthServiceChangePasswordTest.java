@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +49,7 @@ class AuthServiceChangePasswordTest {
 
     private Member member(String encodedPassword) {
         Member member = Member.signUp("user@example.com", encodedPassword, "닉네임", Gender.MALE,
-                LocalDate.of(2000, 1, 1));
+                LocalDate.of(2000, 1, 1), LocalDateTime.now());
         ReflectionTestUtils.setField(member, "id", MEMBER_ID);
         return member;
     }

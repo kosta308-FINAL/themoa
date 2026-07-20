@@ -57,7 +57,7 @@ class AuthServiceTest {
     }
 
     private Member existingMember() {
-        return Member.signUp(EMAIL, PASSWORD_HASH, "닉네임", Gender.MALE, ADULT_BIRTH_DATE);
+        return Member.signUp(EMAIL, PASSWORD_HASH, "닉네임", Gender.MALE, ADULT_BIRTH_DATE, LocalDateTime.now());
     }
 
     private IssuedTokens issuedTokens() {

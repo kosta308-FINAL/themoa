@@ -1,7 +1,5 @@
 package com.weaone.themoa.domain.fixedexpense.dto.response;
 
-import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
-
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -12,10 +10,9 @@ public record FixedExpenseListResponse(
         List<FixedExpenseResponse> items
 ) {
 
-    public static FixedExpenseListResponse from(List<FixedExpense> fixedExpenses) {
-        List<FixedExpenseResponse> items = fixedExpenses.stream().map(FixedExpenseResponse::from).toList();
-        BigDecimal total = fixedExpenses.stream()
-                .map(FixedExpense::getExpectedAmountKrw)
+    public static FixedExpenseListResponse from(List<FixedExpenseResponse> items) {
+        BigDecimal total = items.stream()
+                .map(FixedExpenseResponse::expectedAmountKrw)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         return new FixedExpenseListResponse(items.size(), total, items);
     }

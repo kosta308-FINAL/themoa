@@ -9,8 +9,8 @@ import com.weaone.themoa.domain.fixedexpense.dto.response.FixedExpenseListRespon
 import com.weaone.themoa.domain.fixedexpense.dto.response.FixedExpenseResponse;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
 import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseConfirmationService;
-import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseCyclePolicy;
 import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseDetectionService;
+import com.weaone.themoa.domain.fixedexpense.service.FixedExpensePaymentStatusService;
 import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseRegistrationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -39,13 +39,16 @@ public class FixedExpenseController {
     private final FixedExpenseRegistrationService fixedExpenseRegistrationService;
     private final FixedExpenseConfirmationService fixedExpenseConfirmationService;
     private final FixedExpenseDetectionService fixedExpenseDetectionService;
+    private final FixedExpensePaymentStatusService fixedExpensePaymentStatusService;
 
-    @Operation(summary = "고정지출 목록", description = "등록된(ACTIVE) 고정지출과 이번 달 합계를 조회합니다.")
+    @Operation(summary = "고정지출 목록", description = "등록된(ACTIVE) 고정지출과 이번 달 합계를 조회합니다. 카드 연동 항목은 이번 주기 이행 상태 배지(paymentStatus)도 함께 내려줍니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<FixedExpenseListResponse>> list(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId) {
-        FixedExpenseListResponse response = FixedExpenseListResponse.from(fixedExpenseRegistrationService.list(memberId));
-        return ResponseEntity.ok(ApiResponse.success(response));
+        List<FixedExpenseResponse> items = fixedExpenseRegistrationService.list(memberId).stream()
+                .map(fixedExpense -> FixedExpenseResponse.from(fixedExpense, fixedExpensePaymentStatusService.resolve(fixedExpense)))
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(FixedExpenseListResponse.from(items)));
     }
 
     @Operation(summary = "고정지출 상세", description = "고정지출 1건의 상세 정보를 조회합니다.")
@@ -53,8 +56,9 @@ public class FixedExpenseController {
     public ResponseEntity<ApiResponse<FixedExpenseResponse>> get(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
             @PathVariable Long fixedExpenseId) {
+        FixedExpense fixedExpense = fixedExpenseRegistrationService.get(memberId, fixedExpenseId);
         FixedExpenseResponse response = FixedExpenseResponse.from(
-                fixedExpenseRegistrationService.get(memberId, fixedExpenseId));
+                fixedExpense, fixedExpensePaymentStatusService.resolve(fixedExpense));
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -64,7 +68,9 @@ public class FixedExpenseController {
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
             @Valid @RequestBody FixedExpenseDirectRegisterRequest request) {
         FixedExpense fixedExpense = fixedExpenseRegistrationService.registerDirect(memberId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(FixedExpenseResponse.from(fixedExpense)));
+        FixedExpenseResponse response = FixedExpenseResponse.from(
+                fixedExpense, fixedExpensePaymentStatusService.resolve(fixedExpense));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
     @Operation(summary = "추천 후보 승인 등록", description = "탐지된 추천 후보를 고정지출로 확정 등록합니다(경로 A). 먼저 /api/fixed-expense-candidates에서 candidateId를 확인하세요.")
@@ -74,7 +80,9 @@ public class FixedExpenseController {
             @PathVariable Long candidateId,
             @Valid @RequestBody FixedExpenseCandidateRegisterRequest request) {
         FixedExpense fixedExpense = fixedExpenseRegistrationService.registerFromCandidate(memberId, candidateId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(FixedExpenseResponse.from(fixedExpense)));
+        FixedExpenseResponse response = FixedExpenseResponse.from(
+                fixedExpense, fixedExpensePaymentStatusService.resolve(fixedExpense));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
     @Operation(summary = "고정지출 수정", description = "금액·결제일을 수정합니다.")
@@ -107,7 +115,7 @@ public class FixedExpenseController {
     @PostMapping("/detect")
     public ResponseEntity<Void> detectNow(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId) {
-        fixedExpenseDetectionService.detectForMember(memberId, FixedExpenseCyclePolicy.currentYearMonth());
+        fixedExpenseDetectionService.detectForMember(memberId);
         return ResponseEntity.noContent().build();
     }
 

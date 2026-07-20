@@ -10,6 +10,7 @@ import com.weaone.themoa.domain.cardconnection.repository.CardConnectionReposito
 import com.weaone.themoa.domain.cardtransaction.client.CodefApprovalListClient;
 import com.weaone.themoa.domain.cardtransaction.client.CodefApprovalListCommand;
 import com.weaone.themoa.domain.cardtransaction.client.CodefApprovalRecord;
+import com.weaone.themoa.domain.cardtransaction.support.BackfillWindowPolicy;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +40,6 @@ public class CardTransactionSyncService {
     private static final int BATCH_WINDOW_DAYS = 15;
     private static final long ON_DEMAND_THROTTLE_MINUTES = 30;
     private static final long INACTIVITY_LIMIT_DAYS = 30;
-    private static final long RECOVERY_CALENDAR_CAP_MONTHS = 3;
 
     private final CardConnectionRepository cardConnectionRepository;
     private final MemberRepository memberRepository;
@@ -172,7 +172,7 @@ public class CardTransactionSyncService {
         if (mode == RecoveryMode.CURRENT_MONTH) {
             return firstDayOfMonth;
         }
-        LocalDate calendarCap = firstDayOfMonth.minusMonths(RECOVERY_CALENDAR_CAP_MONTHS);
+        LocalDate calendarCap = BackfillWindowPolicy.calendarFloor(end);
         LocalDateTime lastSuccessfulSyncAt = connection.getLastSuccessfulSyncAt();
         if (lastSuccessfulSyncAt == null) {
             return calendarCap;

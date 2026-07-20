@@ -1,16 +1,17 @@
-import { NavLink, useNavigate } from 'react-router-dom'
-import DashboardIcon from '../common/DashboardIcon'
-import { navItems } from '../../constants/mockDashboard'
-import { useAuth } from '../../hooks/useAuth'
+import { NavLink, useNavigate } from "react-router-dom";
+import DashboardIcon from "../common/DashboardIcon";
+import NotificationBell from "./NotificationBell";
+import { navItems } from "../../constants/dashboardNavigation";
+import { useAuth } from "../../hooks/useAuth";
 
 function DashboardTopNav() {
-  const { logout } = useAuth()
-  const navigate = useNavigate()
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logout()
-    navigate('/')
-  }
+    await logout();
+    navigate("/");
+  };
 
   return (
     <nav className="dash-topnav">
@@ -27,8 +28,10 @@ function DashboardTopNav() {
           {navItems.map((item, idx) => (
             <NavLink
               key={item.key}
-              to={idx === 0 ? '/dashboard' : `/dashboard/${item.key}`}
-              className={({ isActive }) => `dash-nav-item${isActive ? ' active' : ''}`}
+              to={idx === 0 ? "/dashboard" : `/dashboard/${item.key}`}
+              className={({ isActive }) =>
+                `dash-nav-item${isActive ? " active" : ""}`
+              }
               end={idx === 0}
             >
               <DashboardIcon name={item.icon} />
@@ -36,12 +39,17 @@ function DashboardTopNav() {
             </NavLink>
           ))}
         </div>
-        <button type="button" className="dash-logout-btn" onClick={handleLogout}>
+        <NotificationBell />
+        <button
+          type="button"
+          className="dash-logout-btn"
+          onClick={handleLogout}
+        >
           로그아웃
         </button>
       </div>
     </nav>
-  )
+  );
 }
 
-export default DashboardTopNav
+export default DashboardTopNav;

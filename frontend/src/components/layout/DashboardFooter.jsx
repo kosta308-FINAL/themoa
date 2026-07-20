@@ -14,7 +14,7 @@ function DashboardFooter() {
       </div>
       <p className="dash-footer-copyright">© 더모아. All rights reserved.</p>
     </footer>
-  )
+  );
 }
 
-export default DashboardFooter
+export default DashboardFooter;

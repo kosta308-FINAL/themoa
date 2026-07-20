@@ -1,5 +1,5 @@
-import DashboardIcon from '../../../components/common/DashboardIcon'
-import { statsStrip } from '../../../constants/mockDashboard'
+import DashboardIcon from "../../../components/common/DashboardIcon";
+import { statsStrip } from "../../../constants/mockDashboard";
 
 function StatsStrip() {
   return (
@@ -19,7 +19,7 @@ function StatsStrip() {
         </div>
       ))}
     </div>
-  )
+  );
 }
 
-export default StatsStrip
+export default StatsStrip;

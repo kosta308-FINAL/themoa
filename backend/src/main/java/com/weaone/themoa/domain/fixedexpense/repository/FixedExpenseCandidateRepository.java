@@ -13,7 +13,8 @@ public interface FixedExpenseCandidateRepository extends JpaRepository<FixedExpe
 
     Optional<FixedExpenseCandidate> findByIdAndMember_Id(Long id, Long memberId);
 
-    List<FixedExpenseCandidate> findByMember_IdAndStatus(Long memberId, FixedExpenseCandidateStatus status);
+    /** 소비가이드 요약(dayguide.md §8.2)에서 상위 3건만 보여줄 수 있도록 점수 내림차순으로 정렬한다. */
+    List<FixedExpenseCandidate> findByMember_IdAndStatusOrderByScoreDescIdDesc(Long memberId, FixedExpenseCandidateStatus status);
 
     List<FixedExpenseCandidate> findByStatus(FixedExpenseCandidateStatus status);
 }

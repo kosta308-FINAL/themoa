@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CardTransactionTest {
 
     private Member member() {
-        return Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1));
+        return Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1), LocalDateTime.now());
     }
 
     private Category category(CategoryCode code) {
@@ -122,5 +122,50 @@ class CardTransactionTest {
 
         assertThat(transaction.getMerchant()).isEqualTo(merchant);
         assertThat(transaction.getMerchantAlias()).isEqualTo(alias);
+    }
+
+    @Test
+    @DisplayName("수기 입력은 카드 전용 컬럼이 비어 있고 카테고리는 사용자정정으로 확정된다")
+    void manualCreatesEntryWithoutCardOnlyFields() {
+        CardTransaction transaction = CardTransaction.manual(member(), category(CategoryCode.FOOD),
+                PaymentMethod.CASH, LocalDate.of(2026, 7, 10), LocalDateTime.of(2026, 7, 10, 12, 30),
+                BigDecimal.valueOf(9000), "편의점", "점심");
+
+        assertThat(transaction.getSource()).isEqualTo(TransactionSource.MANUAL);
+        assertThat(transaction.getPaymentMethod()).isEqualTo(PaymentMethod.CASH);
+        assertThat(transaction.getCard()).isNull();
+        assertThat(transaction.getApprovalNo()).isNull();
+        assertThat(transaction.isCategoryUserCorrected()).isTrue();
+        assertThat(transaction.getMemo()).isEqualTo("점심");
+        assertThat(transaction.getNetAmount()).isEqualByComparingTo("9000");
+    }
+
+    @Test
+    @DisplayName("대체(soft 보존)는 replaced_at·replacedByTransaction만 세팅한다")
+    void replaceSoftPreservesRow() {
+        CardTransaction manualEntry = CardTransaction.manual(member(), category(CategoryCode.FOOD),
+                PaymentMethod.CARD, LocalDate.of(2026, 7, 10), LocalDateTime.of(2026, 7, 10, 12, 30),
+                BigDecimal.valueOf(9000), "카드결제", null);
+        CardTransaction syncEntry = approvedTransaction(BigDecimal.valueOf(9000));
+        LocalDateTime now = LocalDateTime.of(2026, 7, 15, 9, 0);
+
+        manualEntry.replace(syncEntry, now);
+
+        assertThat(manualEntry.getReplacedAt()).isEqualTo(now);
+        assertThat(manualEntry.getReplacedByTransaction()).isEqualTo(syncEntry);
+    }
+
+    @Test
+    @DisplayName("짝을 못 찾은 대체는 replacedByTransaction이 NULL로 남는다 — 미연동 카드 신호")
+    void replaceWithoutMatchLeavesReplacedByNull() {
+        CardTransaction manualEntry = CardTransaction.manual(member(), category(CategoryCode.FOOD),
+                PaymentMethod.CARD, LocalDate.of(2026, 7, 10), LocalDateTime.of(2026, 7, 10, 12, 30),
+                BigDecimal.valueOf(9000), "카드결제", null);
+        LocalDateTime now = LocalDateTime.of(2026, 7, 15, 9, 0);
+
+        manualEntry.replace(null, now);
+
+        assertThat(manualEntry.getReplacedAt()).isEqualTo(now);
+        assertThat(manualEntry.getReplacedByTransaction()).isNull();
     }
 }

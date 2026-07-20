@@ -43,7 +43,7 @@ public class FixedExpenseMatchingService {
         if (candidates.isEmpty()) {
             return;
         }
-        String yearMonth = FixedExpenseCyclePolicy.yearMonthOf(transaction.getUsedDate());
+        String yearMonth = FixedExpenseCyclePolicy.yearMonthOf(transaction.getUsedDate(), transaction.getMember().getPayday());
         for (FixedExpense fixedExpense : candidates) {
             if (fixedExpensePaymentRepository.existsByFixedExpense_IdAndYearMonth(fixedExpense.getId(), yearMonth)) {
                 continue; // 조건④: 이번 주기 이미 이행
@@ -90,7 +90,7 @@ public class FixedExpenseMatchingService {
     /** F-05 "이 거래예요" 확인(사용자 수동 매칭). 자동 매칭과 동일한 태깅·이행기록 경로를 재사용한다. */
     @Transactional
     public void confirmMatch(CardTransaction transaction, FixedExpense fixedExpense) {
-        String yearMonth = FixedExpenseCyclePolicy.yearMonthOf(transaction.getUsedDate());
+        String yearMonth = FixedExpenseCyclePolicy.yearMonthOf(transaction.getUsedDate(), transaction.getMember().getPayday());
         tagAndRecord(transaction, fixedExpense, yearMonth);
     }
 

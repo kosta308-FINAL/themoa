@@ -1,33 +1,35 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { login as requestLogin } from '../../api/authApi'
-import { useAuth } from '../../hooks/useAuth'
-import { getApiErrorMessage } from '../../utils/apiError'
-import AuthLayout from './components/AuthLayout'
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { login as requestLogin } from "../../api/authApi";
+import { useAuth } from "../../hooks/useAuth";
+import { getApiErrorMessage } from "../../utils/apiError";
+import AuthLayout from "./components/AuthLayout";
 
 function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const { login } = useAuth()
-  const navigate = useNavigate()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (submitting) return
-    setError('')
-    setSubmitting(true)
+    e.preventDefault();
+    if (submitting) return;
+    setError("");
+    setSubmitting(true);
     try {
-      const res = await requestLogin(email.trim(), password)
-      login(res.data.data)
-      navigate('/dashboard')
+      const res = await requestLogin(email.trim(), password);
+      login(res.data.data);
+      navigate("/dashboard");
     } catch (err) {
-      setError(getApiErrorMessage(err, '이메일 또는 비밀번호가 올바르지 않습니다.'))
+      setError(
+        getApiErrorMessage(err, "이메일 또는 비밀번호가 올바르지 않습니다."),
+      );
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   return (
     <AuthLayout>
@@ -70,7 +72,7 @@ function LoginPage() {
         </label>
 
         <button type="submit" className="auth-submit" disabled={submitting}>
-          {submitting ? '로그인 중…' : '로그인'}
+          {submitting ? "로그인 중…" : "로그인"}
         </button>
       </form>
 
@@ -78,7 +80,7 @@ function LoginPage() {
         아직 계정이 없나요? <Link to="/signup">회원가입</Link>
       </p>
     </AuthLayout>
-  )
+  );
 }
 
-export default LoginPage
+export default LoginPage;

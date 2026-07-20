@@ -15,10 +15,16 @@ public record FixedExpenseResponse(
         BigDecimal expectedAmount,
         String expectedCurrency,
         BigDecimal expectedAmountKrw,
-        String status
+        String status,
+        String paymentStatus
 ) {
 
-    public static FixedExpenseResponse from(FixedExpense fixedExpense) {
+    /**
+     * @param paymentStatus 이번 주기 이행 상태 배지(view/fixedExpense.md §4) — {@code PAID}/{@code DUE_SOON}/
+     *                       {@code MISSED} 중 하나거나, 카드 미연동·이체형이면 null(배지 없음).
+     *                       {@link com.weaone.themoa.domain.fixedexpense.service.FixedExpensePaymentStatusService}가 계산한다.
+     */
+    public static FixedExpenseResponse from(FixedExpense fixedExpense, String paymentStatus) {
         return new FixedExpenseResponse(
                 fixedExpense.getId(),
                 fixedExpense.getName(),
@@ -30,7 +36,8 @@ public record FixedExpenseResponse(
                 fixedExpense.getExpectedAmount(),
                 fixedExpense.getExpectedCurrency(),
                 fixedExpense.getExpectedAmountKrw(),
-                fixedExpense.getStatus().name()
+                fixedExpense.getStatus().name(),
+                paymentStatus
         );
     }
 }

@@ -1,0 +1,77 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3307/themoa?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: themoa
+    password: local-db-password
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: Asia/Seoul
+
+  mail:
+    username: local@example.com
+    password: local-mail-password
+
+  ai:
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY:}
+
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+
+    vectorstore:
+      qdrant:
+        enabled: ${RAG_ENABLED:false}
+        host: ${QDRANT_HOST:localhost}
+        port: ${QDRANT_GRPC_PORT:6334}
+        api-key: ${QDRANT_API_KEY:}
+        collection-name: ${QDRANT_COLLECTION_NAME:youthcenter_policies}
+        initialize-schema: ${QDRANT_AUTO_CREATE_COLLECTION:true}
+
+app:
+  auth:
+    jwt:
+      secret: ${JWT_SECRET:}
+
+  codef:
+    client-id: local-codef-client-id
+    client-secret: local-codef-client-secret
+    public-key: local-codef-public-key
+    service-type: DEMO
+    call-timeout: 30s
+    approval-list-timeout: 180s
+
+  exchange-rate:
+    auth-key: local-exim-api-key
+
+  policy:
+    local-tools:
+      enabled: ${POLICY_LOCAL_TOOLS_ENABLED:false}
+
+  youth-center:
+    enabled: true
+    api-key: ${YOUTH_CENTER_API_KEY:}
+    collection:
+      enabled: true
+      page-size: 100
+      max-pages: 1000
+
+  rag:
+    enabled: ${RAG_ENABLED:false}
+
+  region-sync:
+    enabled: ${SGIS_REGION_SYNC_ENABLED:false}
+    sgis:
+      consumer-key: ${SGIS_CONSUMER_KEY:}
+      consumer-secret: ${SGIS_CONSUMER_SECRET:}

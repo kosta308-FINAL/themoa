@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -242,7 +243,7 @@ class MerchantIdentityServiceTest {
     @DisplayName("새 표기를 그 사용자 소유로 저장한다")
     void learnTermSavesNewTerm() {
         MerchantAlias alias = aliasWithId(1L, "Claude 구독");
-        Member member = Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1));
+        Member member = Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1), LocalDateTime.now());
         given(billerRepository.existsByNameNormalized(RAW_NAME)).willReturn(false);
         given(merchantAliasRepository.findById(1L)).willReturn(Optional.of(alias));
         given(merchantAliasTermsRepository.findByMember_IdAndAliasText(MEMBER_ID, RAW_NAME)).willReturn(Optional.empty());
