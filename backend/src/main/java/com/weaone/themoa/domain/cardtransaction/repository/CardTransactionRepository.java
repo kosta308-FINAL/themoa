@@ -61,8 +61,19 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
     /** 학습 루프 2단계(merchant.md §3): 같은 원본 가맹점(merchant)의 이 회원 거래 전체 재태깅 대상. */
     List<CardTransaction> findByMember_IdAndMerchant_Id(Long memberId, Long merchantId);
 
-    /** F-05 미납 확인 후보(troubleshooting/billerProblem.md §6): 미태깅 + 금액오차 + 결제일 윈도우. */
-    @Query("select t from CardTransaction t where t.member.id = :memberId and t.fixedExpense is null "
+    /**
+     * F-05 미납 확인 후보(troubleshooting/billerProblem.md §6): 미태깅 + 금액오차 + 결제일 윈도우.
+     * 컨트롤러에서 세션 밖에 {@code CardTransactionResponse.from}으로 변환하므로 category·card 체인·
+     * merchantAlias·merchant를 미리 fetch join 한다.
+     */
+    @Query("select t from CardTransaction t "
+            + "join fetch t.category "
+            + "left join fetch t.card c "
+            + "left join fetch c.cardConnection cc "
+            + "left join fetch cc.cardIssuer "
+            + "left join fetch t.merchantAlias "
+            + "left join fetch t.merchant "
+            + "where t.member.id = :memberId and t.fixedExpense is null "
             + "and t.status <> :canceled and t.usedDate between :startDate and :endDate "
             + "and t.amount between :minAmount and :maxAmount order by t.usedDate desc")
     List<CardTransaction> findMissedPaymentCandidates(@Param("memberId") Long memberId,

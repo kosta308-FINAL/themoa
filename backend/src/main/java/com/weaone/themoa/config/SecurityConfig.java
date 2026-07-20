@@ -74,6 +74,7 @@ public class SecurityConfig {
             auth.requestMatchers(POLICY_DETAIL_ENDPOINT).permitAll();
             auth.requestMatchers(POLICY_ADMIN_ENDPOINT).permitAll();
         }
+                    auth.requestMatchers("/api/admin/**").hasRole("ADMIN");
                     auth.anyRequest().authenticated();
                 })
                 .exceptionHandling(handler -> handler

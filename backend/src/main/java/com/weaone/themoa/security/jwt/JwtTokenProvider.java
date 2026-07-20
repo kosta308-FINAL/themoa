@@ -22,6 +22,9 @@ public class JwtTokenProvider {
     /** 발급 시점의 member.token_version 스냅샷. 매 요청 현재 값과 대조해 강제 무효화를 감지한다. */
     private static final String CLAIM_TOKEN_VERSION = "ver";
 
+    /** 발급 시점의 member.role 스냅샷. /api/admin/** 인가에 사용한다(customerservice.md §3-2). */
+    private static final String CLAIM_ROLE = "role";
+
     /** HMAC-SHA256 최소 키 길이. */
     private static final int MIN_KEY_BYTES = 32;
 
@@ -37,12 +40,13 @@ public class JwtTokenProvider {
         this.accessTokenValidity = properties.jwt().accessTokenValidity();
     }
 
-    public String createAccessToken(Long memberId, int tokenVersion, Instant issuedAt) {
+    public String createAccessToken(Long memberId, int tokenVersion, String role, Instant issuedAt) {
         Instant expiresAt = issuedAt.plus(accessTokenValidity);
         return Jwts.builder()
                 .subject(String.valueOf(memberId))
                 .id(UUID.randomUUID().toString())
                 .claim(CLAIM_TOKEN_VERSION, tokenVersion)
+                .claim(CLAIM_ROLE, role)
                 .issuedAt(Date.from(issuedAt))
                 .expiration(Date.from(expiresAt))
                 .signWith(secretKey)
@@ -61,7 +65,8 @@ public class JwtTokenProvider {
                     .getPayload();
             return new AccessTokenClaims(
                     Long.valueOf(claims.getSubject()),
-                    claims.get(CLAIM_TOKEN_VERSION, Integer.class)
+                    claims.get(CLAIM_TOKEN_VERSION, Integer.class),
+                    claims.get(CLAIM_ROLE, String.class)
             );
         } catch (JwtException | IllegalArgumentException | NullPointerException e) {
             throw new BusinessException(ErrorCode.AUTH_INVALID_ACCESS_TOKEN);

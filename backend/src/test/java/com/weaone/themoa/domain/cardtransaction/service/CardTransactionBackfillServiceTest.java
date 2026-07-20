@@ -18,7 +18,7 @@ import com.weaone.themoa.domain.category.entity.Category;
 import com.weaone.themoa.domain.category.entity.CategoryCode;
 import com.weaone.themoa.domain.member.entity.Gender;
 import com.weaone.themoa.domain.member.entity.Member;
-import com.weaone.themoa.domain.notification.entity.NotificationType;
+import com.weaone.themoa.domain.notification.entity.NotificationTypeCode;
 import com.weaone.themoa.domain.notification.service.NotificationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -112,7 +112,7 @@ class CardTransactionBackfillServiceTest {
 
         assertThat(connection.getInitialSyncStatus()).isEqualTo(InitialSyncStatus.COMPLETED);
         assertThat(connection.getLastSuccessfulSyncAt()).isNotNull();
-        then(notificationService).should(never()).createIfAbsent(any(), any(), any(), any(), any());
+        then(notificationService).should(never()).createIfAbsent(any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -175,10 +175,10 @@ class CardTransactionBackfillServiceTest {
 
         assertThat(manualEntry.getReplacedAt()).isNotNull();
         assertThat(manualEntry.getReplacedByTransaction()).isEqualTo(syncMatch);
-        then(notificationService).should().createIfAbsent(eq(member), eq(NotificationType.BACKFILL_RECALCULATED),
-                any(), eq(null), any());
+        then(notificationService).should().createIfAbsent(eq(member), eq(NotificationTypeCode.BACKFILL_RECALCULATED),
+                any(), eq(null), eq(null), any());
         then(notificationService).should(never())
-                .createIfAbsent(any(), eq(NotificationType.UNLINKED_CARD_SUSPECTED), any(), any(), any());
+                .createIfAbsent(any(), eq(NotificationTypeCode.UNLINKED_CARD_SUSPECTED), any(), any(), any(), any());
     }
 
     @Test
@@ -204,8 +204,8 @@ class CardTransactionBackfillServiceTest {
 
         assertThat(manualEntry.getReplacedAt()).isNotNull();
         assertThat(manualEntry.getReplacedByTransaction()).isNull();
-        then(notificationService).should().createIfAbsent(eq(member), eq(NotificationType.UNLINKED_CARD_SUSPECTED),
-                any(), eq(null), any());
+        then(notificationService).should().createIfAbsent(eq(member), eq(NotificationTypeCode.UNLINKED_CARD_SUSPECTED),
+                any(), eq(null), eq(null), any());
     }
 
     @Test

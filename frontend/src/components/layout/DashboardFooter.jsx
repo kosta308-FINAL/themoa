@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 function DashboardFooter() {
   return (
     <footer className="dash-footer">
@@ -9,7 +11,7 @@ function DashboardFooter() {
         <nav className="dash-footer-links">
           <a href="#">이용약관</a>
           <a href="#">개인정보처리방침</a>
-          <a href="#">고객센터</a>
+          <Link to="/dashboard/customer-service">고객센터</Link>
         </nav>
       </div>
       <p className="dash-footer-copyright">© 더모아. All rights reserved.</p>

@@ -36,11 +36,12 @@ class JwtTokenProviderTest {
     void createAndParse() {
         JwtTokenProvider provider = provider(secret("themoa-test-signing-key-32bytes-min!"));
 
-        String token = provider.createAccessToken(42L, 3, Instant.now());
+        String token = provider.createAccessToken(42L, 3, "USER", Instant.now());
 
         AccessTokenClaims claims = provider.parse(token);
         assertThat(claims.memberId()).isEqualTo(42L);
         assertThat(claims.tokenVersion()).isEqualTo(3);
+        assertThat(claims.role()).isEqualTo("USER");
     }
 
     @Test
@@ -49,7 +50,7 @@ class JwtTokenProviderTest {
         JwtTokenProvider provider = provider(secret("themoa-test-signing-key-32bytes-min!"));
         Instant longAgo = Instant.now().minus(ACCESS_TOKEN_VALIDITY).minusSeconds(60);
 
-        String token = provider.createAccessToken(1L, 0, longAgo);
+        String token = provider.createAccessToken(1L, 0, "USER", longAgo);
 
         assertThatThrownBy(() -> provider.parse(token))
                 .isInstanceOf(BusinessException.class)
@@ -60,7 +61,7 @@ class JwtTokenProviderTest {
     @DisplayName("다른 키로 서명된 토큰은 401로 거부한다")
     void rejectsForgedSignature() {
         String token = provider(secret("themoa-test-signing-key-32bytes-min!"))
-                .createAccessToken(1L, 0, Instant.now());
+                .createAccessToken(1L, 0, "USER", Instant.now());
         JwtTokenProvider otherProvider = provider(secret("another-signing-key-that-is-32bytes!!"));
 
         assertThatThrownBy(() -> otherProvider.parse(token))

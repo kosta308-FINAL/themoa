@@ -16,7 +16,7 @@ import com.weaone.themoa.domain.cardtransaction.event.InitialCardBackfillComplet
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
 import com.weaone.themoa.domain.cardtransaction.support.BackfillWindowPolicy;
 import com.weaone.themoa.domain.member.entity.Member;
-import com.weaone.themoa.domain.notification.entity.NotificationType;
+import com.weaone.themoa.domain.notification.entity.NotificationTypeCode;
 import com.weaone.themoa.domain.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -183,14 +183,16 @@ public class CardTransactionBackfillService {
     private void notifyBackfillRecalculated(Member member, CardConnection connection, LocalDate start, LocalDate end) {
         String message = start + " ~ " + end + " 사이의 카드 내역이 반영되어 이전 소비 통계가 갱신되었습니다.";
         String dedupKey = "BACKFILL_RECALCULATED:conn=" + connection.getId() + ":start=" + start;
-        notificationService.createIfAbsent(member, NotificationType.BACKFILL_RECALCULATED, message, null, dedupKey);
+        notificationService.createIfAbsent(member, NotificationTypeCode.BACKFILL_RECALCULATED, message, null, null,
+                dedupKey);
     }
 
     /** 짝 없는 대체 = 연동하지 않은 카드가 있다는 신호(§4-2). 별도 탐지 로직 없이 이 조건으로 안내한다. */
     private void notifyUnlinkedCardSuspected(Member member) {
         String message = "연동되지 않은 카드로 결제한 내역이 있을 수 있습니다. 사용 중인 카드를 모두 연결해 주세요.";
         String dedupKey = "UNLINKED_CARD_SUSPECTED:member=" + member.getId();
-        notificationService.createIfAbsent(member, NotificationType.UNLINKED_CARD_SUSPECTED, message, null, dedupKey);
+        notificationService.createIfAbsent(member, NotificationTypeCode.UNLINKED_CARD_SUSPECTED, message, null, null,
+                dedupKey);
     }
 
     /** 서버 재시작 등으로 FETCHING/ANALYZING에 오래 멈춘 백필을 FAILED로 정리한다(erd.md 카드사 커넥션 §비고). */

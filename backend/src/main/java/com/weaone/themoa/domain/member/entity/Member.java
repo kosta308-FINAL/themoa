@@ -43,6 +43,11 @@ public class Member {
     @Column(nullable = false, length = 30)
     private String name;
 
+    /** 고객센터 관리자 API 인가(customerservice.md §3-2). 가입 요청으로 받지 않으며 전 회원 기본값은 USER다. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private Role role = Role.USER;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private Gender gender;
@@ -153,6 +158,15 @@ public class Member {
 
     /** 전체 기기 로그아웃·비밀번호 변경 전용. 올리면 이 회원의 모든 기기 Access Token이 즉시 무효가 된다. */
     public void increaseTokenVersion() {
+        tokenVersion++;
+    }
+
+    /**
+     * 관리자 지정·해제(erd.md §1). 운영자가 DB에서 직접 처리하는 범위라 별도 API는 없다.
+     * role 클레임이 담긴 기존 Access Token을 즉시 무효화하기 위해 token_version도 함께 올린다.
+     */
+    public void changeRole(Role role) {
+        this.role = role;
         tokenVersion++;
     }
 

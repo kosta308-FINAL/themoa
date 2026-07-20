@@ -2,15 +2,20 @@ import { useCallback, useEffect, useState } from "react";
 import AuthContext from "./AuthContext";
 import { logout as requestLogout } from "../api/authApi";
 import { setSessionExpiredHandler } from "../api/axiosInstance";
+import { isAdminAccessToken } from "../utils/accessToken";
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() =>
     Boolean(localStorage.getItem("accessToken")),
   );
+  const [isAdmin, setIsAdmin] = useState(() => isAdminAccessToken());
 
   /** Refresh Token까지 만료되어 axiosInstance가 세션을 강제 종료한 경우를 반영한다. */
   useEffect(() => {
-    setSessionExpiredHandler(() => setIsAuthenticated(false));
+    setSessionExpiredHandler(() => {
+      setIsAuthenticated(false);
+      setIsAdmin(false);
+    });
     return () => setSessionExpiredHandler(null);
   }, []);
 
@@ -18,6 +23,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(({ accessToken }) => {
     localStorage.setItem("accessToken", accessToken);
     setIsAuthenticated(true);
+    setIsAdmin(isAdminAccessToken());
   }, []);
 
   /** 서버의 Refresh Token을 무효화하고 로컬 토큰을 지운다. 서버 호출이 실패해도 로컬 세션은 끝낸다. */
@@ -29,11 +35,12 @@ export function AuthProvider({ children }) {
     } finally {
       localStorage.removeItem("accessToken");
       setIsAuthenticated(false);
+      setIsAdmin(false);
     }
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isAdmin, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -5,7 +5,7 @@ import { navItems } from "../../constants/dashboardNavigation";
 import { useAuth } from "../../hooks/useAuth";
 
 function DashboardTopNav() {
-  const { logout } = useAuth();
+  const { logout, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -38,6 +38,17 @@ function DashboardTopNav() {
               <span>{item.label}</span>
             </NavLink>
           ))}
+          {isAdmin && (
+            <NavLink
+              to="/admin/customer-service"
+              className={({ isActive }) =>
+                `dash-nav-item${isActive ? " active" : ""}`
+              }
+            >
+              <DashboardIcon name="settings" />
+              <span>고객센터 관리</span>
+            </NavLink>
+          )}
         </div>
         <NotificationBell />
         <button

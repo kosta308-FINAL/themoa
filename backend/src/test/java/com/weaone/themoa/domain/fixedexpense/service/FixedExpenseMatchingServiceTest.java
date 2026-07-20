@@ -16,7 +16,7 @@ import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.merchant.entity.Merchant;
 import com.weaone.themoa.domain.merchant.entity.MerchantAlias;
 import com.weaone.themoa.domain.merchant.repository.BillerRepository;
-import com.weaone.themoa.domain.notification.entity.NotificationType;
+import com.weaone.themoa.domain.notification.entity.NotificationTypeCode;
 import com.weaone.themoa.domain.notification.service.NotificationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -111,7 +111,7 @@ class FixedExpenseMatchingServiceTest {
 
         assertThat(tx.getFixedExpense()).isEqualTo(fixedExpense);
         then(fixedExpensePaymentRepository).should().save(any());
-        then(notificationService).should(never()).createIfAbsent(any(), any(), any(), any(), any());
+        then(notificationService).should(never()).createIfAbsent(any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -169,8 +169,8 @@ class FixedExpenseMatchingServiceTest {
 
         assertThat(tx.getFixedExpense()).isNull();
         then(fixedExpensePaymentRepository).should(never()).save(any());
-        then(notificationService).should().createIfAbsent(eq(member), eq(NotificationType.AMOUNT_CHANGE), any(),
-                eq(fixedExpense), eq("AMOUNT_CHANGE:fe=100:2026-07"));
+        then(notificationService).should().createIfAbsent(eq(member), eq(NotificationTypeCode.AMOUNT_CHANGE), any(),
+                eq(fixedExpense), eq(null), eq("AMOUNT_CHANGE:fe=100:2026-07"));
     }
 
     @Test

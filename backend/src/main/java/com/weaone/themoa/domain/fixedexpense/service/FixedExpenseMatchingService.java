@@ -10,7 +10,7 @@ import com.weaone.themoa.domain.fixedexpense.entity.FixedExpenseStatus;
 import com.weaone.themoa.domain.fixedexpense.repository.FixedExpensePaymentRepository;
 import com.weaone.themoa.domain.fixedexpense.repository.FixedExpenseRepository;
 import com.weaone.themoa.domain.merchant.repository.BillerRepository;
-import com.weaone.themoa.domain.notification.entity.NotificationType;
+import com.weaone.themoa.domain.notification.entity.NotificationTypeCode;
 import com.weaone.themoa.domain.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -117,7 +117,7 @@ public class FixedExpenseMatchingService {
     private void notifyAmountChange(FixedExpense fixedExpense, String yearMonth) {
         String dedupKey = "AMOUNT_CHANGE:fe=" + fixedExpense.getId() + ":" + yearMonth;
         String message = fixedExpense.getName() + " 결제 금액이 평소와 달라요. 구독료가 바뀌었다면 등록된 금액을 업데이트해 주세요.";
-        notificationService.createIfAbsent(fixedExpense.getMember(), NotificationType.AMOUNT_CHANGE, message,
-                fixedExpense, dedupKey);
+        notificationService.createIfAbsent(fixedExpense.getMember(), NotificationTypeCode.AMOUNT_CHANGE, message,
+                fixedExpense, null, dedupKey);
     }
 }

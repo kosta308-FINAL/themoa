@@ -108,14 +108,21 @@ function SpendingGuidePage() {
     ? data.today
     : dayItems && { items: dayItems, totalCount: dayItems.length };
   const isDayReady = isSelectedToday || (!isDayLoading && !dayError);
-  // surplus_fund(erd.md §6) 합계를 반환하는 조회 API가 아직 없어 누적 잉여금·최근 주기는
-  // 빈 상태로 둔다(가짜 숫자 금지). 저축 목표 여부만 실제 summary.savingsGoalAmount로 판단한다.
+  // 완료된 주기의 surplus_fund(erd.md §6) 합계를 반환하는 조회 API가 아직 없어
+  // 완료 주기 누적치는 빈 상태로 둔다(가짜 숫자 금지). 반면 진행 중인 이번 주기는
+  // summary.remainingAmount(예산 - 현재까지 사용액)로 실시간 계산이 가능하므로 바로 보여준다.
   const surplusSummary = {
     hasSavingsGoal: toNumber(summary?.savingsGoalAmount) > 0,
     savingsTargetAmount: toNumber(summary?.savingsGoalAmount),
     completedCycleCount: 0,
     totalSurplusAmount: 0,
     recentCycle: null,
+    ongoingCycle: summary
+      ? {
+          yearMonth: summary.cycleStartDate,
+          amount: toNumber(summary.remainingAmount),
+        }
+      : null,
   };
   const showInitialSync =
     INITIAL_SYNC_IN_PROGRESS.has(initialSyncState?.overallStatus) ||
@@ -185,6 +192,12 @@ function SpendingGuidePage() {
               >
                 <DashboardIcon name="chevron-right" size={16} />
               </button>
+              {toNumber(summary.salaryAmount) > 0 && (
+                <span className="spending-day-nav-salary">
+                  <DashboardIcon name="wallet" size={14} />
+                  이번 달 월급 {formatWon(summary.salaryAmount)}
+                </span>
+              )}
             </div>
             <div className="spending-day-nav-side spending-day-nav-right">
               <button
