@@ -82,6 +82,10 @@ public class CoachingCard {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    /** 사용자가 이 카드를 넘긴 시각(§5). null이면 이번 주기 목록에 그대로 노출된다. */
+    @Column(name = "dismissed_at")
+    private LocalDateTime dismissedAt;
+
     private CoachingCard(Member member, String yearMonth, String title, String body,
                           CoachingCardTargetType targetType, Category category, MerchantAlias merchantAlias,
                           BigDecimal estimatedSaving, short displayOrder, LocalDateTime createdAt) {
@@ -109,5 +113,9 @@ public class CoachingCard {
                                                  short displayOrder, LocalDateTime createdAt) {
         return new CoachingCard(member, yearMonth, title, body, CoachingCardTargetType.MERCHANT_ALIAS, null,
                 merchantAlias, estimatedSaving, displayOrder, createdAt);
+    }
+
+    public void markDismissed(LocalDateTime now) {
+        this.dismissedAt = now;
     }
 }

@@ -3,6 +3,7 @@ package com.weaone.themoa.domain.budget.service;
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.budget.dto.request.IncomeTypeUpdateRequest;
+import com.weaone.themoa.domain.budget.dto.request.PaydayUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.SalaryUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.SavingsGoalUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.SpendingGuideSetupRequest;
@@ -120,6 +121,18 @@ public class SpendingGuideService {
             LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
             budgetCycleService.getOrCreateCurrentBudget(member, today).applySalary(request.amount());
         }
+    }
+
+    /**
+     * 급여일 변경(payday.md §급여일 변경, dailyBudget.md §1 후속 범위). 월급·저축목표와 달리 적용 시점
+     * 선택지가 없다 — 항상 다음 주기부터만 적용된다. 진행 중인 주기의 날짜 범위({@code cycle_start_date}·
+     * {@code cycle_end_date})는 이미 확정돼 절대 다시 계산하지 않으므로, 여기서는 예약만 남기고
+     * 실제 승격은 다음 주기가 열릴 때 {@link BudgetCycleService#ensurePaydayPromoted}가 수행한다.
+     */
+    @Transactional
+    public void changePayday(Long memberId, PaydayUpdateRequest request) {
+        Member member = getMember(memberId);
+        member.requestPaydayChange(request.payday());
     }
 
     /** 저축 목표 설정·수정(MOA-S-BUD-BGT-03). 규칙은 월급과 동일. */
@@ -377,6 +390,7 @@ public class SpendingGuideService {
                 : List.of();
 
         return SpendingGuideSummaryResponse.ready(member.getIncomeType(), member.getHourlyWage(), workSchedule,
+                member.getPayday(), member.getPendingPayday(),
                 budget.getYearMonth(), cycleStart, cycleEnd, remainingDays,
                 budget.getSalaryAmount(), budget.getSavingsGoalAmount(), budget.getExpectedFixedExpenseTotal(),
                 available, daily, todayNetSpend, todayAvailable, remaining, overCycleBudget, cycleOverspent,

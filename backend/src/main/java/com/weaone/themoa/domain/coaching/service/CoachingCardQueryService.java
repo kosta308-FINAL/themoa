@@ -1,7 +1,7 @@
 package com.weaone.themoa.domain.coaching.service;
 
 import com.weaone.themoa.domain.budget.entity.Budget;
-import com.weaone.themoa.domain.budget.service.BudgetCyclePolicy;
+import com.weaone.themoa.domain.budget.service.BudgetCycleService;
 import com.weaone.themoa.domain.budget.service.SpendingGuideService;
 import com.weaone.themoa.domain.coaching.dto.response.CoachingCardListResponse;
 import com.weaone.themoa.domain.coaching.dto.response.CoachingCardResponse;
@@ -29,17 +29,19 @@ public class CoachingCardQueryService {
 
     private final CoachingCardRepository coachingCardRepository;
     private final SpendingGuideService spendingGuideService;
+    private final BudgetCycleService budgetCycleService;
 
-    @Transactional(readOnly = true)
+    /** readOnly가 아니다 — budgetCycleService 경유 호출이 급여 주기 생성·급여일 승격(쓰기)을 유발할 수 있다. */
+    @Transactional
     public CoachingCardListResponse list(Long memberId, Long budgetId) {
         Budget budget = spendingGuideService.getBudgetOrCurrent(memberId, budgetId);
         Member member = budget.getMember();
-        String analyzedYearMonth = HabitCoachingCandidateExtractionService
-                .previousCompletedCycle(member.getPayday(), budget.getCycleStartDate())
+        String analyzedYearMonth = budgetCycleService
+                .previousCompletedCycle(member, budget.getCycleStartDate())
                 .yearMonth();
 
         List<CoachingCardResponse> items = coachingCardRepository
-                .findByMember_IdAndYearMonthOrderByDisplayOrderAsc(memberId, analyzedYearMonth).stream()
+                .findByMember_IdAndYearMonthAndDismissedAtIsNullOrderByDisplayOrderAsc(memberId, analyzedYearMonth).stream()
                 .map(CoachingCardResponse::from)
                 .toList();
         String emptyReason = items.isEmpty() ? resolveEmptyReason(member) : null;

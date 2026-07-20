@@ -1,5 +1,7 @@
 package com.weaone.themoa.domain.coaching.service;
 
+import com.weaone.themoa.domain.budget.service.BudgetCyclePolicy;
+import com.weaone.themoa.domain.budget.service.BudgetCycleService;
 import com.weaone.themoa.domain.category.entity.Category;
 import com.weaone.themoa.domain.category.entity.CategoryCode;
 import com.weaone.themoa.domain.category.repository.CategoryRepository;
@@ -51,10 +53,13 @@ class HabitCoachingCardBatchServiceTest {
     private HabitCoachingLlmClient habitCoachingLlmClient;
     @Mock
     private HabitCoachingTemplateCardFactory templateCardFactory;
+    @Mock
+    private BudgetCycleService budgetCycleService;
 
     private HabitCoachingCardBatchService service() {
         return new HabitCoachingCardBatchService(memberRepository, categoryRepository, merchantAliasRepository,
-                coachingCardRepository, candidateExtractionService, habitCoachingLlmClient, templateCardFactory);
+                coachingCardRepository, candidateExtractionService, habitCoachingLlmClient, templateCardFactory,
+                budgetCycleService);
     }
 
     private Member member(int payday) {
@@ -62,6 +67,10 @@ class HabitCoachingCardBatchServiceTest {
         ReflectionTestUtils.setField(member, "id", MEMBER_ID);
         member.configureSpendingGuide(IncomeType.SALARY, BigDecimal.valueOf(3_000_000), null, payday);
         return member;
+    }
+
+    private BudgetCyclePolicy.BudgetCycle previousCycle() {
+        return new BudgetCyclePolicy.BudgetCycle("2026-06", LocalDate.of(2026, 6, 25), LocalDate.of(2026, 7, 24));
     }
 
     private HabitCoachingCandidate categoryCandidate() {
@@ -75,6 +84,7 @@ class HabitCoachingCardBatchServiceTest {
     void skipsWhenAlreadyGeneratedForYearMonth() {
         Member member = member(25);
         given(memberRepository.getReferenceById(MEMBER_ID)).willReturn(member);
+        given(budgetCycleService.previousCompletedCycle(eq(member), any())).willReturn(previousCycle());
         given(coachingCardRepository.existsByMember_IdAndYearMonth(eq(MEMBER_ID), any())).willReturn(true);
 
         service().generateForMember(MEMBER_ID, LocalDate.of(2026, 7, 25));
@@ -88,6 +98,7 @@ class HabitCoachingCardBatchServiceTest {
     void savesNothingWhenNoCandidates() {
         Member member = member(25);
         given(memberRepository.getReferenceById(MEMBER_ID)).willReturn(member);
+        given(budgetCycleService.previousCompletedCycle(eq(member), any())).willReturn(previousCycle());
         given(coachingCardRepository.existsByMember_IdAndYearMonth(eq(MEMBER_ID), any())).willReturn(false);
         given(candidateExtractionService.extractTopCandidates(eq(member), any(), any())).willReturn(List.of());
 
@@ -105,6 +116,7 @@ class HabitCoachingCardBatchServiceTest {
         ReflectionTestUtils.setField(category, "id", 10L);
 
         given(memberRepository.getReferenceById(MEMBER_ID)).willReturn(member);
+        given(budgetCycleService.previousCompletedCycle(eq(member), any())).willReturn(previousCycle());
         given(coachingCardRepository.existsByMember_IdAndYearMonth(eq(MEMBER_ID), any())).willReturn(false);
         given(candidateExtractionService.extractTopCandidates(eq(member), any(), any())).willReturn(List.of(candidate));
         given(habitCoachingLlmClient.generateDrafts(List.of(candidate))).willReturn(List.of(
@@ -130,6 +142,7 @@ class HabitCoachingCardBatchServiceTest {
         CoachingCardDraft templateDraft = new CoachingCardDraft(candidate.targetRef(), "템플릿 제목", "템플릿 본문 142500원");
 
         given(memberRepository.getReferenceById(MEMBER_ID)).willReturn(member);
+        given(budgetCycleService.previousCompletedCycle(eq(member), any())).willReturn(previousCycle());
         given(coachingCardRepository.existsByMember_IdAndYearMonth(eq(MEMBER_ID), any())).willReturn(false);
         given(candidateExtractionService.extractTopCandidates(eq(member), any(), any())).willReturn(List.of(candidate));
         given(habitCoachingLlmClient.generateDrafts(List.of(candidate))).willReturn(List.of(
@@ -154,6 +167,7 @@ class HabitCoachingCardBatchServiceTest {
         CoachingCardDraft templateDraft = new CoachingCardDraft(candidate.targetRef(), "템플릿 제목", "템플릿 본문 142500원");
 
         given(memberRepository.getReferenceById(MEMBER_ID)).willReturn(member);
+        given(budgetCycleService.previousCompletedCycle(eq(member), any())).willReturn(previousCycle());
         given(coachingCardRepository.existsByMember_IdAndYearMonth(eq(MEMBER_ID), any())).willReturn(false);
         given(candidateExtractionService.extractTopCandidates(eq(member), any(), any())).willReturn(List.of(candidate));
         given(habitCoachingLlmClient.generateDrafts(List.of(candidate))).willReturn(List.of());

@@ -20,6 +20,8 @@ public record SpendingGuideSummaryResponse(
         IncomeType incomeType,
         BigDecimal hourlyWage,
         List<WorkScheduleItemResponse> workSchedule,
+        Integer payday,
+        Integer pendingPayday,
 
         String yearMonth,
         LocalDate cycleStartDate,
@@ -50,7 +52,7 @@ public record SpendingGuideSummaryResponse(
     /** 월급·급여일 중 하나라도 없어 소비 가이드 계산이 불가능한 상태(S-00A로 유도). */
     public static SpendingGuideSummaryResponse setupRequired(List<String> missingFields) {
         return new SpendingGuideSummaryResponse(true, missingFields,
-                null, null, List.of(),
+                null, null, List.of(), null, null,
                 null, null, null, null,
                 null, null, null, null,
                 null, null, null, null,
@@ -59,13 +61,14 @@ public record SpendingGuideSummaryResponse(
 
     public static SpendingGuideSummaryResponse ready(
             IncomeType incomeType, BigDecimal hourlyWage, List<WorkScheduleItemResponse> workSchedule,
+            Integer payday, Integer pendingPayday,
             String yearMonth, LocalDate cycleStartDate, LocalDate cycleEndDate, int remainingDays,
             BigDecimal salaryAmount, BigDecimal savingsGoalAmount, BigDecimal expectedFixedExpenseTotal,
             BigDecimal availableAmount, BigDecimal dailyRecommendedAmount, BigDecimal todayNetSpend,
             BigDecimal todayAvailableAmount, BigDecimal remainingAmount, boolean overCycleBudget,
             BigDecimal cycleOverspentAmount, boolean budgetUnaffordable) {
         return new SpendingGuideSummaryResponse(false, List.of(),
-                incomeType, hourlyWage, workSchedule,
+                incomeType, hourlyWage, workSchedule, payday, pendingPayday,
                 yearMonth, cycleStartDate, cycleEndDate, remainingDays,
                 salaryAmount, savingsGoalAmount, expectedFixedExpenseTotal, availableAmount,
                 dailyRecommendedAmount, todayNetSpend, todayAvailableAmount, remainingAmount,

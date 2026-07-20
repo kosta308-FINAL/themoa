@@ -3,6 +3,7 @@ package com.weaone.themoa.domain.budget.controller;
 import com.weaone.themoa.common.response.ApiResponse;
 import com.weaone.themoa.domain.budget.dto.request.IncomeAdjustmentCreateRequest;
 import com.weaone.themoa.domain.budget.dto.request.IncomeTypeUpdateRequest;
+import com.weaone.themoa.domain.budget.dto.request.PaydayUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.SalaryUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.SavingsGoalUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.SpendingGuideSetupRequest;
@@ -71,6 +72,16 @@ public class SpendingGuideController {
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
             @Valid @RequestBody SalaryUpdateRequest request) {
         spendingGuideService.changeSalary(memberId, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "급여일 변경",
+            description = "명목 급여일을 바꿉니다. 진행 중인 주기는 그대로 두고 다음 주기부터만 적용됩니다 — 적용 시점 선택지가 없습니다.")
+    @PatchMapping("/payday")
+    public ResponseEntity<Void> changePayday(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
+            @Valid @RequestBody PaydayUpdateRequest request) {
+        spendingGuideService.changePayday(memberId, request);
         return ResponseEntity.noContent().build();
     }
 
