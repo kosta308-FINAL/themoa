@@ -3260,6 +3260,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-left: 6px;
+  padding-left: 14px;
+  border-left: 1px solid var(--spending-border);
   color: var(--spending-muted);
   font-size: 13px;
   font-weight: 600;

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import DashboardIcon from "../../../components/common/DashboardIcon";
 import { formatWon, serviceInitial, toneForId } from "../fixedExpenseUtils";
 
+const PAGE_SIZE = 2;
+
 function MoreDotsIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -21,6 +23,7 @@ function FixedExpenseSuggestions({
   onReclassifyHabit,
 }) {
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [page, setPage] = useState(0);
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -34,14 +37,28 @@ function FixedExpenseSuggestions({
     return () => document.removeEventListener("mousedown", closeIfOutside);
   }, [openMenuId]);
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil((candidates?.length || 0) / PAGE_SIZE),
+  );
+  const currentPage = Math.min(page, totalPages - 1);
+
   if (!candidates?.length) return null;
 
+  const visibleCandidates = candidates.slice(
+    currentPage * PAGE_SIZE,
+    currentPage * PAGE_SIZE + PAGE_SIZE,
+  );
+
   return (
-    <section className="fx-panel" aria-label="새로 발견한 고정지출">
+    <section
+      className="fx-panel fx-suggestion-panel"
+      aria-label="새로 발견한 고정지출"
+    >
       <div className="fx-panel-head">
         <div className="fx-panel-title">
           <span className="fx-panel-title-icon fx-tone-orange">
-            <DashboardIcon name="sparkle" size={18} />
+            <DashboardIcon name="sparkle" size={16} />
           </span>
           <div>
             <h2>새로 발견한 고정지출</h2>
@@ -51,7 +68,7 @@ function FixedExpenseSuggestions({
         <span className="fx-panel-count">{candidates.length}건</span>
       </div>
       <div className="fx-suggestion-list">
-        {candidates.map((candidate) => {
+        {visibleCandidates.map((candidate) => {
           const isPending = pendingId === candidate.id;
           const isMenuOpen = openMenuId === candidate.id;
           return (
@@ -136,6 +153,33 @@ function FixedExpenseSuggestions({
           );
         })}
       </div>
+      {totalPages > 1 && (
+        <div className="fx-suggestion-pagination">
+          <button
+            type="button"
+            className="fx-suggestion-page-nav"
+            aria-label="이전 추천 보기"
+            disabled={currentPage === 0}
+            onClick={() => setPage((current) => Math.max(0, current - 1))}
+          >
+            <DashboardIcon name="chevron-left" size={15} />
+          </button>
+          <span className="fx-suggestion-page-indicator">
+            {currentPage + 1} / {totalPages}
+          </span>
+          <button
+            type="button"
+            className="fx-suggestion-page-nav"
+            aria-label="다음 추천 보기"
+            disabled={currentPage === totalPages - 1}
+            onClick={() =>
+              setPage((current) => Math.min(totalPages - 1, current + 1))
+            }
+          >
+            <DashboardIcon name="chevron-right" size={15} />
+          </button>
+        </div>
+      )}
     </section>
   );
 }
