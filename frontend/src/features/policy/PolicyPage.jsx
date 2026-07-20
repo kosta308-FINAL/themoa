@@ -1,7 +1,5 @@
 import { Link } from 'react-router-dom'
 import DashboardIcon from '../../components/common/DashboardIcon'
-import DashboardTopNav from '../../components/layout/DashboardTopNav'
-import DashboardFooter from '../../components/layout/DashboardFooter'
 import PolicyDetailPanel from './components/PolicyDetailPanel'
 import PolicySearchForm from './components/PolicySearchForm'
 import PolicySearchResults from './components/PolicySearchResults'
@@ -24,7 +22,6 @@ function PolicyPage() {
 
   return (
     <div className="policy-page">
-      <DashboardTopNav />
       <main className="policy-main">
         <section className="policy-header">
           <div>
@@ -67,7 +64,6 @@ function PolicyPage() {
           <PolicyDetailPanel selected={search.selected} detailLoading={search.detailLoading} />
         </section>
       </main>
-      <DashboardFooter />
     </div>
   )
 }
