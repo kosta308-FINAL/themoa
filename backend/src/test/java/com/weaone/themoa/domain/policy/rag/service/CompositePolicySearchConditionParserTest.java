@@ -8,8 +8,14 @@ import com.weaone.themoa.domain.policy.policy.region.RegionNormalizer;
 import com.weaone.themoa.domain.policy.policy.region.UserRegionTextResolver;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchCondition;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.ObjectProvider;
 
 import java.util.List;
@@ -17,13 +23,12 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class CompositePolicySearchConditionParserTest {
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final UserRegionTextResolver regionResolver = resolver();
     private final UserEmploymentStatusDetector employmentDetector = new UserEmploymentStatusDetector();
     private final RuleBasedPolicySearchConditionParser ruleParser =
@@ -82,14 +87,20 @@ class CompositePolicySearchConditionParserTest {
 
     private CompositePolicySearchConditionParser parser(CompositePolicySearchConditionParser.OpenAiPolicySearchAnalysis analysis) {
         @SuppressWarnings("unchecked")
-        ObjectProvider<ChatClient.Builder> provider = mock(ObjectProvider.class);
-        ChatClient.Builder builder = mock(ChatClient.Builder.class, RETURNS_DEEP_STUBS);
-        when(provider.getIfAvailable()).thenReturn(builder);
-        when(builder.build().prompt().system(anyString()).user(anyString()).call()
-                .entity(eq(CompositePolicySearchConditionParser.OpenAiPolicySearchAnalysis.class)))
-                .thenReturn(analysis);
+        ObjectProvider<ChatModel> provider = mock(ObjectProvider.class);
+        ChatModel chatModel = mock(ChatModel.class);
+        when(provider.getIfAvailable()).thenReturn(chatModel);
+        when(chatModel.call(any(Prompt.class))).thenReturn(response(analysis));
         return new CompositePolicySearchConditionParser(provider, ruleParser, validator,
                 new PolicyIntentPolarityDetector(), "test-key");
+    }
+
+    private ChatResponse response(CompositePolicySearchConditionParser.OpenAiPolicySearchAnalysis analysis) {
+        try {
+            return new ChatResponse(List.of(new Generation(new AssistantMessage(objectMapper.writeValueAsString(analysis)))));
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private CompositePolicySearchConditionParser.OpenAiPolicySearchAnalysis openAi(String rawRegionText,

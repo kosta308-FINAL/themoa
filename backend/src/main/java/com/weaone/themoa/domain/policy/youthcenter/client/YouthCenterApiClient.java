@@ -1,7 +1,7 @@
 package com.weaone.themoa.domain.policy.youthcenter.client;
 
-import com.weaone.themoa.domain.policy.common.exception.YouthCenterApiException;
-import com.weaone.themoa.domain.policy.common.util.SecretMasker;
+import com.weaone.themoa.common.exception.YouthCenterApiException;
+import com.weaone.themoa.common.util.SecretMasker;
 import com.weaone.themoa.domain.policy.youthcenter.config.YouthCenterApiProperties;
 import com.weaone.themoa.domain.policy.youthcenter.dto.request.YouthPolicyDetailRequest;
 import com.weaone.themoa.domain.policy.youthcenter.dto.request.YouthPolicyListRequest;
