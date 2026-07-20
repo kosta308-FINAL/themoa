@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { getCategoryAnalysis } from "../../api/spendingGuideApi";
+import {
+  getCategoryAnalysis,
+  getSpendingTransactions,
+} from "../../api/spendingGuideApi";
+import {
+  formatTime,
+  paymentLabel,
+  transactionAmount,
+} from "./spendingGuideUtils";
 import "./CategoryDetailPage.css";
 
 // 인접 색상 간 구분이 최대가 되도록 고정된 순서의 카테고리 팔레트(색약 대비 검증됨)
@@ -145,6 +153,12 @@ const ICONS = {
       <path d="M12 11v5m0-8h.01" />
     </>
   ),
+  receipt: (
+    <>
+      <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" />
+      <path d="M9 8h6M9 12h6" />
+    </>
+  ),
 };
 
 function Icon({ name, small = false }) {
@@ -170,6 +184,7 @@ function CategoryDetailPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState("");
+  const [categoryTx, setCategoryTx] = useState({ items: [], status: "idle" });
 
   const load = useCallback(async (budgetId, categoryId) => {
     setIsLoading(true);
@@ -193,6 +208,36 @@ function CategoryDetailPage() {
   }, [load, initialBudgetId]);
 
   const cycle = analysis?.cycle;
+  const budgetId = cycle?.budgetId;
+
+  const loadCategoryTx = useCallback((targetBudgetId, categoryId) => {
+    setCategoryTx((prev) => ({ items: prev.items, status: "loading" }));
+    return getSpendingTransactions({
+      budgetId: targetBudgetId,
+      categoryId,
+      size: 30,
+    })
+      .then((data) =>
+        setCategoryTx({ items: data?.items ?? [], status: "success" }),
+      )
+      .catch((error) =>
+        setCategoryTx({
+          items: [],
+          status: "error",
+          error: errorMessage(error, "결제내역을 불러오지 못했어요."),
+        }),
+      );
+  }, []);
+
+  useEffect(() => {
+    const run = () => {
+      if (budgetId && selectedCategoryId) {
+        loadCategoryTx(budgetId, selectedCategoryId);
+      }
+    };
+    run();
+  }, [budgetId, selectedCategoryId, loadCategoryTx]);
+
   const selectedCategory = analysis?.selectedCategory;
   const categories = useMemo(() => analysis?.categories ?? [], [analysis]);
 
@@ -378,99 +423,166 @@ function CategoryDetailPage() {
 
         {analysis && !noCategorySpend && (
           <>
-            <section className="panel" aria-labelledby="comparisonTitle">
-              <div className="panel-head">
-                <div className="panel-title">
-                  <span className="badge-icon">
-                    <Icon name="chart" />
-                  </span>
-                  <div>
-                    <h2 id="comparisonTitle">카테고리별 변화</h2>
-                    <p>
-                      이전 급여주기와 비교해 소비가 어디에서 달라졌는지
-                      보여드려요
-                    </p>
+            <div className="comparison-layout">
+              <section
+                className="panel comparison-panel"
+                aria-labelledby="comparisonTitle"
+              >
+                <div className="panel-head">
+                  <div className="panel-title">
+                    <span className="badge-icon">
+                      <Icon name="chart" />
+                    </span>
+                    <div>
+                      <h2 id="comparisonTitle">카테고리별 변화</h2>
+                      <p>이전 급여주기와 비교해 어디서 달라졌는지 보여드려요</p>
+                    </div>
+                  </div>
+                  <div className="comparison-legend" aria-label="비교 범례">
+                    <span>
+                      <i />
+                      이번 주기
+                    </span>
+                    <span>
+                      <i />
+                      이전 주기
+                    </span>
                   </div>
                 </div>
-                <div className="comparison-legend" aria-label="비교 범례">
-                  <span>
-                    <i />
-                    이번 주기
-                  </span>
-                  <span>
-                    <i />
-                    이전 주기
-                  </span>
+                <div className="category-table-head">
+                  <span>카테고리</span>
+                  <span>소비 규모</span>
+                  <span>이번 주기</span>
                 </div>
-              </div>
-              <div className="category-table-head">
-                <span>카테고리</span>
-                <span>소비 규모</span>
-                <span>이번 주기</span>
-                <span>변화</span>
-              </div>
-              <div>
-                {coloredCategories.map((row) => (
-                  <button
-                    type="button"
-                    key={row.categoryId}
-                    className={`category-row${row.categoryId === selectedCategoryId ? " active" : ""}`}
-                    style={{ "--accent": row.color }}
-                    onClick={() => handleSelectCategory(row.categoryId)}
-                  >
-                    <span className="category-name">
-                      <i className="category-dot" />
-                      <span>
-                        {row.categoryName}
-                        <small>
-                          전체 소비의 {toNumber(row.selectedShare)}%
-                        </small>
+                <div>
+                  {coloredCategories.map((row) => (
+                    <button
+                      type="button"
+                      key={row.categoryId}
+                      className={`category-row${row.categoryId === selectedCategoryId ? " active" : ""}`}
+                      style={{ "--accent": row.color }}
+                      onClick={() => handleSelectCategory(row.categoryId)}
+                    >
+                      <span className="category-name">
+                        <i className="category-dot" />
+                        <span>
+                          {row.categoryName}
+                          <small>
+                            전체 소비의 {toNumber(row.selectedShare)}%
+                          </small>
+                        </span>
                       </span>
+                      <span className="bar-pair">
+                        <i className="bar-track">
+                          <i
+                            className="bar-fill"
+                            style={{
+                              width: `${(toNumber(row.selectedAmount) / maxAmount) * 100}%`,
+                            }}
+                          />
+                        </i>
+                        <i className="bar-track">
+                          <i
+                            className="bar-fill previous"
+                            style={{
+                              width: `${(toNumber(row.previousAmount) / maxAmount) * 100}%`,
+                            }}
+                          />
+                        </i>
+                      </span>
+                      <span className="amount-delta">
+                        <strong>{formatWon(row.selectedAmount)}</strong>
+                        {row.changeStatus === "INCREASED" && (
+                          <span className="delta up">
+                            ↑ {formatDelta(row.changeAmount)}
+                          </span>
+                        )}
+                        {row.changeStatus === "DECREASED" && (
+                          <span className="delta down">
+                            ↓ {formatDelta(row.changeAmount)}
+                          </span>
+                        )}
+                        {row.changeStatus === "NEW" && (
+                          <span className="delta up">NEW</span>
+                        )}
+                        {row.changeStatus === "UNCHANGED" && (
+                          <span className="delta">변동 없음</span>
+                        )}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <section
+                className="panel transactions-panel"
+                aria-labelledby="categoryTxTitle"
+              >
+                <div className="panel-head">
+                  <div className="panel-title">
+                    <span
+                      className="badge-icon"
+                      style={{
+                        color: selectedColor,
+                        background: `color-mix(in srgb, ${selectedColor} 12%, white)`,
+                      }}
+                    >
+                      <Icon name="receipt" />
                     </span>
-                    <span className="bar-pair">
-                      <i className="bar-track">
-                        <i
-                          className="bar-fill"
-                          style={{
-                            width: `${(toNumber(row.selectedAmount) / maxAmount) * 100}%`,
-                          }}
-                        />
-                      </i>
-                      <i className="bar-track">
-                        <i
-                          className="bar-fill previous"
-                          style={{
-                            width: `${(toNumber(row.previousAmount) / maxAmount) * 100}%`,
-                          }}
-                        />
-                      </i>
-                    </span>
-                    <span className="amount-cell">
-                      <strong>{formatWon(row.selectedAmount)}</strong>
-                      <span>이전 {formatWon(row.previousAmount)}</span>
-                    </span>
-                    <span className="delta-cell">
-                      {row.changeStatus === "INCREASED" && (
-                        <span className="delta up">
-                          ↑ {formatDelta(row.changeAmount)}
-                        </span>
-                      )}
-                      {row.changeStatus === "DECREASED" && (
-                        <span className="delta down">
-                          ↓ {formatDelta(row.changeAmount)}
-                        </span>
-                      )}
-                      {row.changeStatus === "NEW" && (
-                        <span className="delta up">NEW</span>
-                      )}
-                      {row.changeStatus === "UNCHANGED" && (
-                        <span className="delta">변동 없음</span>
-                      )}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
+                    <div>
+                      <h2 id="categoryTxTitle">
+                        {selectedCategory
+                          ? `${selectedCategory.categoryName} 결제내역`
+                          : "카테고리 결제내역"}
+                      </h2>
+                      <p>이번 급여주기에 결제된 내역이에요</p>
+                    </div>
+                  </div>
+                </div>
+                {categoryTx.status === "loading" &&
+                  categoryTx.items.length === 0 && (
+                    <div className="page-loading" role="status">
+                      <span className="spinner" />
+                      불러오는 중이에요...
+                    </div>
+                  )}
+                {categoryTx.status === "error" && (
+                  <div className="page-error">
+                    <span>{categoryTx.error}</span>
+                  </div>
+                )}
+                {categoryTx.status === "success" &&
+                  categoryTx.items.length === 0 && (
+                    <p className="empty-note">
+                      이번 급여주기에 결제 내역이 없어요.
+                    </p>
+                  )}
+                {categoryTx.items.length > 0 && (
+                  <div className="tx-list">
+                    {categoryTx.items.map((tx) => {
+                      const isRefund = toNumber(tx.netAmount) < 0;
+                      return (
+                        <div className="transaction-row" key={tx.id}>
+                          <span className="tx-info">
+                            <span className="tx-name">
+                              {tx.merchantDisplayName || tx.merchantNameRaw}
+                            </span>
+                            <span className="tx-meta">
+                              {formatTime(tx.usedAt)} · {paymentLabel(tx)}
+                            </span>
+                          </span>
+                          <span
+                            className={`tx-amount${isRefund ? " refund" : ""}`}
+                          >
+                            {transactionAmount(tx.netAmount)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            </div>
 
             <div className="detail-tabs" aria-label="분석할 카테고리 선택">
               {coloredCategories.map((item) => (
