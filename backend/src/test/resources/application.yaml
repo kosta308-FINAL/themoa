@@ -1,0 +1,66 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3307/themoa?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useUnicode=true&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: 1111
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        hbm2ddl:
+          halt_on_error: true
+
+  # 테스트에서는 실제 메일을 보내지 않는다. 값은 컨텍스트 기동용 더미다.
+  mail:
+    host: localhost
+    port: 2525
+    username: test@example.com
+    password: test
+
+  ai:
+    # 테스트 전용 더미값. 실제 Gemini 호출은 컨텍스트 기동 테스트에서 일어나지 않는다.
+    google:
+      genai:
+        api-key: test-gemini-api-key
+        chat:
+          model: gemini-2.5-flash-lite
+
+app:
+  auth:
+    jwt:
+      # 테스트 전용 키. 운영 키가 아니며 운영 환경은 JWT_SECRET 환경변수로 주입한다.
+      secret: dGVzdC1vbmx5LWp3dC1zaWduaW5nLWtleS0zMi1ieXRlcy1taW5pbXVt
+      access-token-validity: 30m
+    refresh:
+      validity: 5d
+      cookie-path: /api/auth
+      cookie-secure: false
+    email-verification:
+      code-ttl: 5m
+      resend-cooldown: 60s
+      max-verify-attempts: 5
+      verified-ttl: 30m
+      from: test@example.com
+  codef:
+    # 테스트 전용 더미값. 실제 CODEF 호출은 컨텍스트 기동 테스트에서 일어나지 않는다.
+    client-id: test-client-id
+    client-secret: test-client-secret
+    public-key: dGVzdC1vbmx5LXB1YmxpYy1rZXk=
+    service-type: DEMO
+    call-timeout: 30s
+    approval-list-timeout: 5m
+  card-connection:
+    login-fail-cooldown: 5m
+    max-login-fail-count: 3
+  exchange-rate:
+    # 테스트 전용 더미값. 실제 환율 API 호출은 컨텍스트 기동 테스트에서 일어나지 않는다.
+    auth-key: test-exim-auth-key
+    base-url: https://oapi.koreaexim.go.kr
+    call-timeout: 5s
+  customer-service:
+    privacy-policy-version: 2026-07-20
+    storage:
+      provider: LOCAL
+      local-root: ./.local-storage/customer-service-test
