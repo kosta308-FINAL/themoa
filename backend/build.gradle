@@ -47,6 +47,8 @@ dependencies {
     implementation 'org.springframework.ai:spring-ai-starter-vector-store-qdrant'
     implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    // 맞춤형 금융상품 추천 LLM 이유 생성(financial_rag 이식)
+    implementation 'com.openai:openai-java:4.42.0'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
