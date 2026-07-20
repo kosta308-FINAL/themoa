@@ -3,6 +3,7 @@ package com.weaone.themoa.config;
 import com.weaone.themoa.domain.policy.policy.service.RegionRebuildProperties;
 import com.weaone.themoa.domain.policy.rag.config.RagProperties;
 import com.weaone.themoa.domain.policy.region.config.RegionSyncProperties;
+import com.weaone.themoa.domain.policy.sync.config.PolicySyncProperties;
 import com.weaone.themoa.domain.policy.youthcenter.config.YouthCenterApiProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -12,7 +13,8 @@ import org.springframework.context.annotation.Configuration;
         YouthCenterApiProperties.class,
         RagProperties.class,
         RegionSyncProperties.class,
-        RegionRebuildProperties.class
+        RegionRebuildProperties.class,
+        PolicySyncProperties.class
 })
 public class PolicyPropertiesBindingConfig {
 }

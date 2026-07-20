@@ -1,11 +1,12 @@
 package com.weaone.themoa.domain.policy.admin.service;
 
+import com.weaone.themoa.common.dto.JobProgressUpdate;
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.policy.admin.dto.AdminJobStatus;
-import com.weaone.themoa.common.dto.JobProgressUpdate;
-import com.weaone.themoa.domain.policy.policy.service.PolicyCollectionResult;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
+import com.weaone.themoa.domain.policy.policy.service.PolicyCollectionExecutionType;
+import com.weaone.themoa.domain.policy.policy.service.PolicyCollectionResult;
 import com.weaone.themoa.domain.policy.policy.service.PolicyRegionRebuildResult;
 import com.weaone.themoa.domain.policy.policy.service.PolicyRegionRebuildService;
 import com.weaone.themoa.domain.policy.policy.service.YouthCenterPolicyCollectionService;
@@ -15,14 +16,17 @@ import com.weaone.themoa.domain.policy.rag.service.PolicyEmbeddingService;
 import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndex;
 import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndexBuilder;
 import com.weaone.themoa.domain.policy.rag.service.PolicySearchProjectionService;
-import com.weaone.themoa.domain.policy.rag.dto.SearchReadinessResponse;
 import com.weaone.themoa.domain.policy.region.config.RegionSyncProperties;
 import com.weaone.themoa.domain.policy.region.service.RegionSynchronizationResult;
 import com.weaone.themoa.domain.policy.region.service.RegionSynchronizationService;
 import com.weaone.themoa.domain.policy.rag.service.SearchReadinessService;
-import org.springframework.stereotype.Service;
+import com.weaone.themoa.domain.policy.sync.service.PolicySyncExecutionGuard;
+import com.weaone.themoa.domain.policy.sync.service.PolicySyncMode;
+import com.weaone.themoa.domain.policy.sync.service.PolicySyncPipelineResult;
+import com.weaone.themoa.domain.policy.sync.service.PolicySyncPipelineService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -41,13 +45,14 @@ public class AdminJobService {
     private final RegionSynchronizationService regionSynchronizationService;
     private final PolicySearchProjectionService projectionService;
     private final PolicyLexicalIndexBuilder lexicalIndexBuilder;
-    private final SearchReadinessService readinessService;
     private final RegionCodeRepository regionCodeRepository;
-    private final RegionSyncProperties regionSyncProperties;
+    private final PolicySyncPipelineService policySyncPipelineService;
+    private final PolicySyncExecutionGuard policySyncExecutionGuard;
     private final TaskExecutor adminJobExecutor;
     private final Map<String, MutableJob> jobs = new ConcurrentHashMap<>();
 
-    public AdminJobService(YouthCenterPolicyCollectionService collectionService, PolicyEmbeddingService embeddingService,
+    public AdminJobService(YouthCenterPolicyCollectionService collectionService,
+                           PolicyEmbeddingService embeddingService,
                            PolicyRegionRebuildService regionRebuildService,
                            RegionSynchronizationService regionSynchronizationService,
                            PolicySearchProjectionService projectionService,
@@ -55,6 +60,8 @@ public class AdminJobService {
                            SearchReadinessService readinessService,
                            RegionCodeRepository regionCodeRepository,
                            RegionSyncProperties regionSyncProperties,
+                           PolicySyncPipelineService policySyncPipelineService,
+                           PolicySyncExecutionGuard policySyncExecutionGuard,
                            @Qualifier("adminJobExecutor") TaskExecutor adminJobExecutor) {
         this.collectionService = collectionService;
         this.embeddingService = embeddingService;
@@ -62,125 +69,41 @@ public class AdminJobService {
         this.regionSynchronizationService = regionSynchronizationService;
         this.projectionService = projectionService;
         this.lexicalIndexBuilder = lexicalIndexBuilder;
-        this.readinessService = readinessService;
         this.regionCodeRepository = regionCodeRepository;
-        this.regionSyncProperties = regionSyncProperties;
+        this.policySyncPipelineService = policySyncPipelineService;
+        this.policySyncExecutionGuard = policySyncExecutionGuard;
         this.adminJobExecutor = adminJobExecutor;
     }
 
     public AdminJobStatus start(String type) {
-        if (jobs.values().stream().anyMatch(job -> job.type.equals(type) && "RUNNING".equals(job.status))) {
+        if (!policySyncExecutionGuard.tryAcquire()) {
             throw new BusinessException(ErrorCode.POLICY_JOB_ALREADY_RUNNING);
         }
         MutableJob job = new MutableJob(UUID.randomUUID().toString(), type);
         jobs.put(job.id, job);
-        CompletableFuture.runAsync(() -> run(job), runnable -> adminJobExecutor.execute(runnable));
+        try {
+            CompletableFuture.runAsync(() -> run(job), runnable -> adminJobExecutor.execute(runnable));
+        } catch (RuntimeException ex) {
+            policySyncExecutionGuard.release();
+            throw ex;
+        }
         return job.snapshot();
     }
 
     private void run(MutableJob job) {
         try {
             switch (job.type) {
-                case "POLICY_COLLECTION" -> {
-                    job.update(new JobProgressUpdate("CONNECTING", "온통청년 연결 중", 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, "온통청년 API 연결 중"));
-                    PolicyCollectionResult result = collectionService.collectAll(job::update);
-                    job.processed = result.receivedCount();
-                    job.success = result.insertedCount() + result.updatedCount();
-                    job.failed = result.failedCount();
-                    job.message = result.status();
-                    lexicalIndexBuilder.invalidate();
-                    if ("FAILED".equals(result.status())) {
-                        job.status = "FAILED";
-                    }
-                }
-                case "EMBEDDING_QUEUE" -> {
-                    job.update(new JobProgressUpdate("QUEUEING", "임베딩 대기열 등록 중", 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, "활성 정책을 조회하고 있습니다."));
-                    EmbeddingQueueResult result = embeddingService.queueAll(false, job::update);
-                    job.total = result.activePolicyCount();
-                    job.success = result.newlyQueuedCount() + result.requeuedCount();
-                    job.remaining = result.pendingCountAfter();
-                    job.message = "QUEUE_COMPLETED";
-                }
-                case "EMBEDDING_PROCESS" -> {
-                    long initialPending = embeddingService.pendingCount();
-                    int batchSize = Math.max(1, embeddingService.batchSize());
-                    int totalBatches = (int) Math.ceil((double) initialPending / batchSize);
-                    job.total = initialPending;
-                    job.remaining = initialPending;
-                    job.totalBatches = totalBatches;
-                    job.update(new JobProgressUpdate("PREPARING", "임베딩 준비 중", initialPending, 0, 0, 0, 0, 0, 0, totalBatches, null, 0, 0, "PENDING 임베딩을 준비하고 있습니다."));
-                    EmbeddingProcessResult result = embeddingService.processPending(progress -> {
-                        job.update(new JobProgressUpdate("PROCESSING", "OpenAI 임베딩 생성 중", initialPending,
-                                progress.processedCount(), progress.successCount(), progress.failedCount(), 0, 0,
-                                Math.min(totalBatches, (int) Math.ceil((double) progress.processedCount() / batchSize)),
-                                totalBatches, null, 0, 0, "임베딩을 처리하고 있습니다."));
-                        job.remaining = progress.pendingCountAfter();
-                    });
-                    job.processed = result.processedCount();
-                    job.success = result.successCount();
-                    job.failed = result.failedCount();
-                    job.remaining = result.pendingCountAfter();
-                    job.message = result.message();
-                    if (initialPending > 0 && result.processedCount() == 0 && !"COMPLETED".equals(result.message())) {
-                        throw new BusinessException(ErrorCode.POLICY_VECTOR_STORE_NOT_READY);
-                    }
-                }
-                case "EMBEDDING_RETRY_FAILED" -> {
-                    int count = embeddingService.retryFailed();
-                    job.success = count;
-                    job.message = "FAILED_REQUEUED";
-                }
-                case "POLICY_REGION_REBUILD" -> {
-                    if (regionCodeRepository.count() <= 0) {
-                        throw new BusinessException(ErrorCode.POLICY_REGION_CATALOG_NOT_READY);
-                    }
-                    job.update(new JobProgressUpdate("REBUILDING", "지역 재계산 중", 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, "정책 지역을 다시 계산합니다."));
-                    PolicyRegionRebuildResult result = regionRebuildService.rebuildAll(job::update);
-                    job.total = result.totalCount();
-                    job.processed = result.processedCount();
-                    job.success = result.changedCount();
-                    job.failed = result.failedCount();
-                    job.remaining = Math.max(0, result.totalCount() - result.processedCount());
-                    job.message = "REGION_REBUILD_COMPLETED changed=" + result.changedCount()
-                            + ", nationwideToRegion=" + result.nationwideToRegionCount()
-                            + ", nationwideToUnknown=" + result.nationwideToUnknownCount()
-                            + ", unchanged=" + result.unchangedCount()
-                            + ", pendingQueued=" + result.pendingQueuedCount();
-                }
-                case "REGION_CATALOG_SYNC" -> {
-                    job.update(new JobProgressUpdate("AUTHENTICATING", "SGIS 인증 중", 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, "SGIS 인증 중입니다."));
-                    RegionSynchronizationResult result = regionSynchronizationService.synchronize(job::update);
-                    job.total = result.provinceReceivedCount() + result.childReceivedCount();
-                    job.processed = job.total;
-                    job.success = result.insertedCount() + result.updatedCount() + result.unchangedCount();
-                    job.failed = result.failedCount();
-                    job.remaining = 0;
-                    job.message = "REGION_CATALOG_SYNC_COMPLETED provinces=" + result.provinceReceivedCount()
-                            + ", children=" + result.childReceivedCount()
-                            + ", inserted=" + result.insertedCount()
-                            + ", updated=" + result.updatedCount()
-                            + ", unchanged=" + result.unchangedCount()
-                            + ", failedProvinceCodes=" + result.failedProvinceCodes();
-                }
-                case "REGION_CATALOG_REPAIR" -> {
-                    job.update(new JobProgressUpdate("REPAIRING", "지역 카탈로그 복구 중", 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, "SGIS 표준 지역을 다시 upsert합니다."));
-                    RegionSynchronizationResult result = regionSynchronizationService.synchronize(job::update);
-                    job.total = result.provinceReceivedCount();
-                    job.processed = result.provinceReceivedCount();
-                    job.success = result.insertedCount() + result.updatedCount() + result.unchangedCount();
-                    job.failed = result.failedCount();
-                    job.remaining = 0;
-                    job.message = "REGION_CATALOG_REPAIR_COMPLETED inserted=" + result.insertedCount()
-                            + ", updated=" + result.updatedCount()
-                            + ", unchanged=" + result.unchangedCount()
-                            + ", failedProvinceCodes=" + result.failedProvinceCodes()
-                            + ". 기존 FK 연결 지역은 삭제하지 않았습니다.";
-                }
+                case "POLICY_COLLECTION" -> runPolicyCollection(job);
+                case "POLICY_SYNC" -> runPolicySync(job, PolicySyncMode.INCREMENTAL);
+                case "EMBEDDING_QUEUE" -> runEmbeddingQueue(job);
+                case "EMBEDDING_PROCESS" -> runEmbeddingProcess(job);
+                case "EMBEDDING_RETRY_FAILED" -> runEmbeddingRetryFailed(job);
+                case "POLICY_REGION_REBUILD" -> runPolicyRegionRebuild(job);
+                case "REGION_CATALOG_SYNC" -> runRegionCatalogSync(job);
+                case "REGION_CATALOG_REPAIR" -> runRegionCatalogRepair(job);
                 case "SEARCH_PROJECTION_REBUILD" -> runSearchProjectionRebuild(job);
                 case "SEARCH_INDEX_REFRESH" -> runSearchIndexRefresh(job);
-                case "FULL_REINDEX" -> {
-                    runFullReindex(job);
-                }
+                case "FULL_REINDEX" -> runPolicySync(job, PolicySyncMode.FULL_REINDEX);
                 default -> throw new BusinessException(ErrorCode.POLICY_ADMIN_OPERATION_NOT_SUPPORTED);
             }
             if ("RUNNING".equals(job.status)) {
@@ -191,7 +114,117 @@ public class AdminJobService {
             job.status = "FAILED";
             job.completedAt = Instant.now();
             job.message = ex.getMessage();
+        } finally {
+            policySyncExecutionGuard.release();
         }
+    }
+
+    private void runPolicyCollection(MutableJob job) {
+        job.update(new JobProgressUpdate("CONNECTING", "정책 API 연결 중", 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0,
+                "온통청년 API 연결 중"));
+        PolicyCollectionResult result = collectionService.collectAll(job::update);
+        job.processed = result.receivedCount();
+        job.success = result.insertedCount() + result.updatedCount();
+        job.failed = result.failedCount();
+        job.message = result.status();
+        lexicalIndexBuilder.invalidate();
+        if ("FAILED".equals(result.status())) {
+            job.status = "FAILED";
+        }
+    }
+
+    private void runEmbeddingQueue(MutableJob job) {
+        job.update(new JobProgressUpdate("QUEUEING", "Embedding 대기열 등록 중", 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0,
+                "활성 정책을 조회하고 있습니다."));
+        EmbeddingQueueResult result = embeddingService.queueAll(false, job::update);
+        job.total = result.activePolicyCount();
+        job.success = result.newlyQueuedCount() + result.requeuedCount();
+        job.remaining = result.pendingCountAfter();
+        job.message = "QUEUE_COMPLETED";
+    }
+
+    private void runEmbeddingProcess(MutableJob job) {
+        long initialPending = embeddingService.pendingCount();
+        int batchSize = Math.max(1, embeddingService.batchSize());
+        int totalBatches = (int) Math.ceil((double) initialPending / batchSize);
+        job.total = initialPending;
+        job.remaining = initialPending;
+        job.totalBatches = totalBatches;
+        job.update(new JobProgressUpdate("PREPARING", "Embedding 준비 중", initialPending, 0, 0, 0, 0, 0, 0,
+                totalBatches, null, 0, 0, "PENDING Embedding을 준비하고 있습니다."));
+        EmbeddingProcessResult result = embeddingService.processPending(progress -> {
+            job.update(new JobProgressUpdate("PROCESSING", "OpenAI Embedding 생성 중", initialPending,
+                    progress.processedCount(), progress.successCount(), progress.failedCount(), 0, 0,
+                    Math.min(totalBatches, (int) Math.ceil((double) progress.processedCount() / batchSize)),
+                    totalBatches, null, 0, 0, "Embedding을 처리하고 있습니다."));
+            job.remaining = progress.pendingCountAfter();
+        });
+        job.processed = result.processedCount();
+        job.success = result.successCount();
+        job.failed = result.failedCount();
+        job.remaining = result.pendingCountAfter();
+        job.message = result.message();
+        if (initialPending > 0 && result.processedCount() == 0 && !"COMPLETED".equals(result.message())) {
+            throw new BusinessException(ErrorCode.POLICY_VECTOR_STORE_NOT_READY);
+        }
+    }
+
+    private void runEmbeddingRetryFailed(MutableJob job) {
+        int count = embeddingService.retryFailed();
+        job.success = count;
+        job.message = "FAILED_REQUEUED";
+    }
+
+    private void runPolicyRegionRebuild(MutableJob job) {
+        if (regionCodeRepository.count() <= 0) {
+            throw new BusinessException(ErrorCode.POLICY_REGION_CATALOG_NOT_READY);
+        }
+        job.update(new JobProgressUpdate("REBUILDING", "정책 지역 재계산 중", 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0,
+                "정책 지역을 다시 계산합니다."));
+        PolicyRegionRebuildResult result = regionRebuildService.rebuildAll(job::update);
+        job.total = result.totalCount();
+        job.processed = result.processedCount();
+        job.success = result.changedCount();
+        job.failed = result.failedCount();
+        job.remaining = Math.max(0, result.totalCount() - result.processedCount());
+        job.message = "REGION_REBUILD_COMPLETED changed=" + result.changedCount()
+                + ", nationwideToRegion=" + result.nationwideToRegionCount()
+                + ", nationwideToUnknown=" + result.nationwideToUnknownCount()
+                + ", unchanged=" + result.unchangedCount()
+                + ", pendingQueued=" + result.pendingQueuedCount();
+    }
+
+    private void runRegionCatalogSync(MutableJob job) {
+        job.update(new JobProgressUpdate("AUTHENTICATING", "SGIS 인증 중", 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0,
+                "SGIS 인증 중입니다."));
+        RegionSynchronizationResult result = regionSynchronizationService.synchronize(job::update);
+        job.total = result.provinceReceivedCount() + result.childReceivedCount();
+        job.processed = job.total;
+        job.success = result.insertedCount() + result.updatedCount() + result.unchangedCount();
+        job.failed = result.failedCount();
+        job.remaining = 0;
+        job.message = "REGION_CATALOG_SYNC_COMPLETED provinces=" + result.provinceReceivedCount()
+                + ", children=" + result.childReceivedCount()
+                + ", inserted=" + result.insertedCount()
+                + ", updated=" + result.updatedCount()
+                + ", unchanged=" + result.unchangedCount()
+                + ", failedProvinceCodes=" + result.failedProvinceCodes();
+    }
+
+    private void runRegionCatalogRepair(MutableJob job) {
+        job.update(new JobProgressUpdate("REPAIRING", "지역 카탈로그 복구 중", 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0,
+                "SGIS 기준 지역을 다시 upsert합니다."));
+        RegionSynchronizationResult result = regionSynchronizationService.synchronize(job::update);
+        job.total = result.provinceReceivedCount();
+        job.processed = result.provinceReceivedCount();
+        job.success = result.insertedCount() + result.updatedCount() + result.unchangedCount();
+        job.failed = result.failedCount();
+        job.remaining = 0;
+        job.message = "REGION_CATALOG_REPAIR_COMPLETED inserted=" + result.insertedCount()
+                + ", updated=" + result.updatedCount()
+                + ", unchanged=" + result.unchangedCount()
+                + ", failedProvinceCodes=" + result.failedProvinceCodes()
+                + ". 기존 FK 연결 지역은 삭제하지 않습니다.";
     }
 
     private void runSearchProjectionRebuild(MutableJob job) {
@@ -229,88 +262,35 @@ public class AdminJobService {
                 + ", builtAt=" + index.builtAt();
     }
 
-    private void runFullReindex(MutableJob job) {
-        updateFullReindexStage(job, 1, "CHECKING_REGION_CATALOG", "지역 카탈로그 준비 상태 확인 중",
-                "지역 카탈로그 준비 상태를 확인합니다.");
-        ensureRegionCatalogReady(job);
-
-        updateFullReindexStage(job, 2, "POLICY_COLLECTION", "정책 수집 중", "정책 API 전체 수집을 실행합니다.");
-        PolicyCollectionResult collection = collectionService.collectAll(job::update);
-        lexicalIndexBuilder.invalidate();
-        if ("FAILED".equals(collection.status())) {
-            throw new BusinessException(ErrorCode.POLICY_EXTERNAL_API_ERROR);
-        }
-
-        updateFullReindexStage(job, 3, "POLICY_REGION_REBUILD", "정책 지역 계산 중", "저장된 지역 코드를 기준으로 정책 대상 지역을 재분류합니다.");
-        PolicyRegionRebuildResult region = regionRebuildService.rebuildAll(job::update);
-        if (region.failedCount() > 0) {
-            throw new BusinessException(ErrorCode.POLICY_REGION_REBUILD_FAILED);
-        }
-
-        updateFullReindexStage(job, 4, "SEARCH_PROJECTION_REBUILD", "Search Projection 생성 중", "Search Projection 전체 재생성을 실행합니다.");
-        PolicySearchProjectionService.ProjectionRebuildResult projection = projectionService.rebuildAll(progress -> job.update(new JobProgressUpdate(
-                "SEARCH_PROJECTION_REBUILD", "Search Projection 생성 중",
-                progress.total(), progress.processed(), progress.processed(), 0, 0, 0,
-                0, 0, null, 0, 0, "Search Projection 생성 중")));
-
-        updateFullReindexStage(job, 5, "SEARCH_INDEX_REFRESH", "검색 인덱스 생성 중", "Lexical Index를 갱신합니다.");
-        PolicyLexicalIndex index = lexicalIndexBuilder.refresh();
-
-        updateFullReindexStage(job, 6, "EMBEDDING_QUEUE", "Embedding 대기열 등록 중", "전체 정책 Embedding 대기열을 등록합니다.");
-        EmbeddingQueueResult queue = embeddingService.queueAll(true, job::update);
-
-        updateFullReindexStage(job, 7, "EMBEDDING_PROCESS", "Embedding 처리 중", "PENDING Embedding을 처리합니다.");
-        long initialPending = embeddingService.pendingCount();
-        int batchSize = Math.max(1, embeddingService.batchSize());
-        int totalBatches = (int) Math.ceil((double) initialPending / batchSize);
-        EmbeddingProcessResult process = embeddingService.processPending(progress -> job.update(new JobProgressUpdate(
-                "EMBEDDING_PROCESS", "Embedding 처리 중", initialPending,
-                progress.processedCount(), progress.successCount(), progress.failedCount(), 0, 0,
-                Math.min(totalBatches, (int) Math.ceil((double) progress.processedCount() / batchSize)),
-                totalBatches, null, 0, 0, "Embedding 처리 중")));
-        if (process.failedCount() > 0) {
-            throw new BusinessException(ErrorCode.POLICY_VECTOR_STORE_NOT_READY);
-        }
-        if (initialPending > 0 && process.processedCount() == 0 && !"COMPLETED".equals(process.message())) {
-            throw new BusinessException(ErrorCode.POLICY_VECTOR_STORE_NOT_READY);
-        }
-
-        updateFullReindexStage(job, 8, "SEARCH_READINESS_CHECK", "검색 준비 상태 확인 중", "최종 검색 준비 상태를 확인합니다.");
-        SearchReadinessResponse readiness = readinessService.readiness();
-        if (!readiness.ready()) {
-            throw new BusinessException(ErrorCode.POLICY_SEARCH_NOT_READY);
-        }
-
-        job.total = queue.activePolicyCount();
-        job.processed = collection.receivedCount() + region.processedCount() + projection.processed() + process.processedCount();
-        job.success = collection.insertedCount() + collection.updatedCount() + region.changedCount()
-                + projection.processed() + index.size() + process.successCount();
-        job.failed = collection.failedCount() + region.failedCount() + process.failedCount();
-        job.remaining = process.pendingCountAfter();
-        job.message = "FULL_REINDEX_COMPLETED projectionCount=" + projection.processed()
-                + ", indexDocumentCount=" + index.size()
-                + ", syncedEmbeddingCount=" + readiness.syncedEmbeddingCount();
-    }
-
-    private void ensureRegionCatalogReady(MutableJob job) {
-        if (regionCodeRepository.count() > 0) {
-            return;
-        }
-        if (!regionSyncProperties.enabled() || !regionSyncProperties.credentialsConfigured()) {
-            throw new BusinessException(ErrorCode.POLICY_REGION_SYNC_CONFIG_REQUIRED);
-        }
-        job.update(new JobProgressUpdate("REGION_CATALOG_SYNC", "전국 행정지역 동기화 중",
-                8, 1, 1, 0, 0, 0, 0, 0, null, 0, 0,
-                "지역 카탈로그가 비어 있어 먼저 전국 행정지역을 동기화합니다."));
-        RegionSynchronizationResult result = regionSynchronizationService.synchronize(job::update);
-        if (result.failedCount() > 0 || regionCodeRepository.count() <= 0) {
-            throw new BusinessException(ErrorCode.POLICY_REGION_SYNC_FAILED);
-        }
-    }
-
-    private void updateFullReindexStage(MutableJob job, int step, String stage, String stageLabel, String message) {
-        job.update(new JobProgressUpdate(stage, stageLabel, 8, step - 1, step - 1, 0, 8 - step + 1,
-                0, 0, 0, null, 0, 0, message));
+    private void runPolicySync(MutableJob job, PolicySyncMode mode) {
+        PolicySyncPipelineResult result = policySyncPipelineService.synchronize(
+                mode,
+                PolicyCollectionExecutionType.MANUAL,
+                job::update
+        );
+        job.total = result.embeddingQueue().activePolicyCount();
+        job.processed = result.collection().receivedCount()
+                + result.regionRebuild().processedCount()
+                + result.projectionRebuild().processed()
+                + result.embeddingProcess().processedCount();
+        job.success = result.collection().insertedCount()
+                + result.collection().updatedCount()
+                + result.regionRebuild().changedCount()
+                + result.projectionRebuild().processed()
+                + result.lexicalIndexDocumentCount()
+                + result.embeddingProcess().successCount();
+        job.failed = result.collection().failedCount()
+                + result.regionRebuild().failedCount()
+                + result.embeddingProcess().failedCount();
+        job.remaining = result.embeddingProcess().pendingCountAfter();
+        String prefix = mode == PolicySyncMode.FULL_REINDEX ? "FULL_REINDEX_COMPLETED" : "POLICY_SYNC_COMPLETED";
+        job.message = prefix
+                + " projectionCount=" + result.projectionRebuild().processed()
+                + ", indexDocumentCount=" + result.lexicalIndexDocumentCount()
+                + ", queuedEmbeddingCount=" + (result.embeddingQueue().newlyQueuedCount() + result.embeddingQueue().requeuedCount())
+                + ", embeddingSuccess=" + result.embeddingProcess().successCount()
+                + ", embeddingFailed=" + result.embeddingProcess().failedCount()
+                + ", syncedEmbeddingCount=" + result.readiness().syncedEmbeddingCount();
     }
 
     public Optional<AdminJobStatus> find(String jobId) {

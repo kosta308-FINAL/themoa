@@ -1,23 +1,29 @@
 package com.weaone.themoa.domain.policy.admin.service;
 
+import com.weaone.themoa.common.exception.BusinessException;
+import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.policy.admin.dto.AdminJobStatus;
-import com.weaone.themoa.domain.policy.rag.dto.SearchReadinessResponse;
-import com.weaone.themoa.domain.policy.rag.service.SearchReadinessService;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
+import com.weaone.themoa.domain.policy.policy.service.PolicyCollectionExecutionType;
 import com.weaone.themoa.domain.policy.policy.service.PolicyCollectionResult;
 import com.weaone.themoa.domain.policy.policy.service.PolicyRegionRebuildResult;
 import com.weaone.themoa.domain.policy.policy.service.PolicyRegionRebuildService;
 import com.weaone.themoa.domain.policy.policy.service.YouthCenterPolicyCollectionService;
+import com.weaone.themoa.domain.policy.rag.dto.SearchReadinessResponse;
 import com.weaone.themoa.domain.policy.rag.service.EmbeddingProcessResult;
 import com.weaone.themoa.domain.policy.rag.service.EmbeddingQueueResult;
 import com.weaone.themoa.domain.policy.rag.service.PolicyEmbeddingService;
 import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndex;
 import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndexBuilder;
 import com.weaone.themoa.domain.policy.rag.service.PolicySearchProjectionService;
+import com.weaone.themoa.domain.policy.rag.service.SearchReadinessService;
 import com.weaone.themoa.domain.policy.region.config.RegionSyncProperties;
 import com.weaone.themoa.domain.policy.region.service.RegionSynchronizationService;
+import com.weaone.themoa.domain.policy.sync.service.PolicySyncExecutionGuard;
+import com.weaone.themoa.domain.policy.sync.service.PolicySyncMode;
+import com.weaone.themoa.domain.policy.sync.service.PolicySyncPipelineResult;
+import com.weaone.themoa.domain.policy.sync.service.PolicySyncPipelineService;
 import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
 import org.springframework.core.task.SyncTaskExecutor;
 
 import java.time.Duration;
@@ -26,9 +32,8 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,9 +47,12 @@ class AdminJobServiceTest {
     private final PolicyLexicalIndexBuilder lexicalIndexBuilder = mock(PolicyLexicalIndexBuilder.class);
     private final SearchReadinessService readinessService = mock(SearchReadinessService.class);
     private final RegionCodeRepository regionCodeRepository = mock(RegionCodeRepository.class);
+    private final PolicySyncPipelineService policySyncPipelineService = mock(PolicySyncPipelineService.class);
+    private final PolicySyncExecutionGuard policySyncExecutionGuard = mock(PolicySyncExecutionGuard.class);
 
     @Test
     void searchProjectionRebuildRefreshesLexicalIndexAndCompletes() {
+        allowJobStart();
         when(projectionService.rebuildAll(anyProjectionProgressConsumer()))
                 .thenReturn(new PolicySearchProjectionService.ProjectionRebuildResult(2650, 2650, 0));
         PolicyLexicalIndex index = index(2650);
@@ -56,10 +64,12 @@ class AdminJobServiceTest {
         assertThat(status.message()).contains("projectionCount=2650", "indexDocumentCount=2650");
         verify(projectionService).rebuildAll(anyProjectionProgressConsumer());
         verify(lexicalIndexBuilder).refresh();
+        verify(policySyncExecutionGuard).release();
     }
 
     @Test
     void searchIndexRefreshBuildsIndexAndCompletes() {
+        allowJobStart();
         PolicyLexicalIndex index = index(2650);
         when(lexicalIndexBuilder.refresh()).thenReturn(index);
 
@@ -68,54 +78,97 @@ class AdminJobServiceTest {
         assertThat(status.status()).isEqualTo("COMPLETED");
         assertThat(status.message()).contains("documentCount=2650");
         verify(lexicalIndexBuilder).refresh();
+        verify(policySyncExecutionGuard).release();
     }
 
     @Test
-    void fullReindexRunsRequiredStepsInOrder() {
-        when(regionCodeRepository.count()).thenReturn(1L);
-        when(collectionService.collectAll(any())).thenReturn(collectionResult("COMPLETED"));
-        when(regionRebuildService.rebuildAll(any())).thenReturn(regionResult(2650, 0));
-        when(projectionService.rebuildAll(anyProjectionProgressConsumer()))
-                .thenReturn(new PolicySearchProjectionService.ProjectionRebuildResult(2650, 2650, 0));
-        PolicyLexicalIndex index = index(2650);
-        when(lexicalIndexBuilder.refresh()).thenReturn(index);
-        when(embeddingService.queueAll(eq(true), any())).thenReturn(new EmbeddingQueueResult(2650, 2650, 0, 0, 2650));
-        when(embeddingService.pendingCount()).thenReturn(2650L);
-        when(embeddingService.batchSize()).thenReturn(100);
-        when(embeddingService.processPending(anyEmbeddingProgressConsumer()))
-                .thenReturn(new EmbeddingProcessResult(2650, 2650, 0, 0, "COMPLETED"));
-        when(readinessService.readiness()).thenReturn(new SearchReadinessResponse(true, 2650, 2650, 2650, 2650, List.of()));
+    void policySyncRunsIncrementalManualPipeline() {
+        allowJobStart();
+        when(policySyncPipelineService.synchronize(eq(PolicySyncMode.INCREMENTAL), eq(PolicyCollectionExecutionType.MANUAL),
+                anyJobProgressConsumer())).thenReturn(syncResult(0));
+
+        AdminJobStatus status = service().start("POLICY_SYNC");
+
+        assertThat(status.status()).isEqualTo("COMPLETED");
+        assertThat(status.message()).contains("POLICY_SYNC_COMPLETED", "queuedEmbeddingCount=12");
+        verify(policySyncPipelineService).synchronize(eq(PolicySyncMode.INCREMENTAL), eq(PolicyCollectionExecutionType.MANUAL),
+                anyJobProgressConsumer());
+        verify(policySyncExecutionGuard).release();
+    }
+
+    @Test
+    void fullReindexRunsFullReindexManualPipeline() {
+        allowJobStart();
+        when(policySyncPipelineService.synchronize(eq(PolicySyncMode.FULL_REINDEX), eq(PolicyCollectionExecutionType.MANUAL),
+                anyJobProgressConsumer())).thenReturn(syncResult(0));
 
         AdminJobStatus status = service().start("FULL_REINDEX");
 
         assertThat(status.status()).isEqualTo("COMPLETED");
-        InOrder order = inOrder(collectionService, regionRebuildService, projectionService, lexicalIndexBuilder,
-                embeddingService, readinessService);
-        order.verify(collectionService).collectAll(any());
-        order.verify(regionRebuildService).rebuildAll(any());
-        order.verify(projectionService).rebuildAll(anyProjectionProgressConsumer());
-        order.verify(lexicalIndexBuilder).refresh();
-        order.verify(embeddingService).queueAll(eq(true), any());
-        order.verify(embeddingService).processPending(anyEmbeddingProgressConsumer());
-        order.verify(readinessService).readiness();
+        assertThat(status.message()).contains("FULL_REINDEX_COMPLETED");
+        verify(policySyncPipelineService).synchronize(eq(PolicySyncMode.FULL_REINDEX), eq(PolicyCollectionExecutionType.MANUAL),
+                anyJobProgressConsumer());
+        verify(policySyncExecutionGuard).release();
     }
 
     @Test
-    void fullReindexFailsWhenMiddleStepFails() {
-        when(regionCodeRepository.count()).thenReturn(1L);
-        when(collectionService.collectAll(any())).thenReturn(collectionResult("COMPLETED"));
-        when(regionRebuildService.rebuildAll(any())).thenReturn(regionResult(2650, 1));
+    void guardFailureThrowsAlreadyRunningBusinessException() {
+        when(policySyncExecutionGuard.tryAcquire()).thenReturn(false);
 
-        AdminJobStatus status = service().start("FULL_REINDEX");
+        BusinessException exception = catchThrowableOfType(
+                () -> service().start("POLICY_SYNC"),
+                BusinessException.class
+        );
+
+        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.POLICY_JOB_ALREADY_RUNNING);
+    }
+
+    @Test
+    void policySyncCompletesWithErrorsWhenIncrementalEmbeddingPartiallyFails() {
+        allowJobStart();
+        when(policySyncPipelineService.synchronize(eq(PolicySyncMode.INCREMENTAL), eq(PolicyCollectionExecutionType.MANUAL),
+                anyJobProgressConsumer())).thenReturn(syncResult(2));
+
+        AdminJobStatus status = service().start("POLICY_SYNC");
+
+        assertThat(status.status()).isEqualTo("COMPLETED_WITH_ERRORS");
+        assertThat(status.failedCount()).isEqualTo(2);
+        verify(policySyncExecutionGuard).release();
+    }
+
+    @Test
+    void releaseGuardAfterManualJobFailure() {
+        allowJobStart();
+        when(policySyncPipelineService.synchronize(eq(PolicySyncMode.INCREMENTAL), eq(PolicyCollectionExecutionType.MANUAL),
+                anyJobProgressConsumer())).thenThrow(new BusinessException(ErrorCode.POLICY_SEARCH_NOT_READY));
+
+        AdminJobStatus status = service().start("POLICY_SYNC");
 
         assertThat(status.status()).isEqualTo("FAILED");
-        assertThat(status.message()).contains("정책 지역 재분류를 완료하지 못했습니다.");
+        assertThat(status.message()).isEqualTo(ErrorCode.POLICY_SEARCH_NOT_READY.getMessage());
+        verify(policySyncExecutionGuard).release();
+    }
+
+    private void allowJobStart() {
+        when(policySyncExecutionGuard.tryAcquire()).thenReturn(true);
     }
 
     private AdminJobService service() {
         return new AdminJobService(collectionService, embeddingService, regionRebuildService, regionSynchronizationService,
                 projectionService, lexicalIndexBuilder, readinessService, regionCodeRepository, regionSyncProperties(),
-                new SyncTaskExecutor());
+                policySyncPipelineService, policySyncExecutionGuard, new SyncTaskExecutor());
+    }
+
+    private PolicySyncPipelineResult syncResult(int embeddingFailedCount) {
+        return new PolicySyncPipelineResult(
+                collectionResult("COMPLETED"),
+                regionResult(2650, 0),
+                new PolicySearchProjectionService.ProjectionRebuildResult(2650, 2650, 0),
+                2650,
+                new EmbeddingQueueResult(2650, 10, 2, 2638, 12),
+                new EmbeddingProcessResult(12, 12 - embeddingFailedCount, embeddingFailedCount, 0, "COMPLETED"),
+                new SearchReadinessResponse(true, 2650, 2650, 2650, 2648, List.of())
+        );
     }
 
     private PolicyCollectionResult collectionResult(String status) {
@@ -139,13 +192,11 @@ class AdminJobServiceTest {
                 new RegionSyncProperties.Sgis("https://sgisapi.mods.go.kr", "", ""));
     }
 
-    @SuppressWarnings("unchecked")
-    private Consumer<PolicySearchProjectionService.ProjectionRebuildProgress> anyProjectionProgressConsumer() {
-        return any(Consumer.class);
+    private Consumer<com.weaone.themoa.common.dto.JobProgressUpdate> anyJobProgressConsumer() {
+        return org.mockito.ArgumentMatchers.<Consumer<com.weaone.themoa.common.dto.JobProgressUpdate>>any();
     }
 
-    @SuppressWarnings("unchecked")
-    private Consumer<PolicyEmbeddingService.EmbeddingProgress> anyEmbeddingProgressConsumer() {
-        return any(Consumer.class);
+    private Consumer<PolicySearchProjectionService.ProjectionRebuildProgress> anyProjectionProgressConsumer() {
+        return org.mockito.ArgumentMatchers.<Consumer<PolicySearchProjectionService.ProjectionRebuildProgress>>any();
     }
 }
