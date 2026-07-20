@@ -1,11 +1,12 @@
 const policyJobs = [
+  ['policy-sync', '지금 동기화'],
   ['policy-collection', '정책 API 수집 실행'],
   ['search-projection-rebuild', 'Search Projection 생성'],
   ['search-index-refresh', '검색 인덱스 갱신'],
   ['embedding-queue', 'Embedding 대기열 등록'],
   ['embedding-process', 'Embedding 처리 실행'],
   ['embedding-retry-failed', '실패 Embedding 재시도'],
-  ['full-reindex', '전체 재색인'],
+  ['full-reindex', '전체 강제 재색인'],
 ]
 
 const regionJobs = [
