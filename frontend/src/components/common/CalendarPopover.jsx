@@ -17,8 +17,9 @@ const buildCalendarDays = (year, month) => {
 
 /**
  * 트리거 요소의 부모(가장 가까운 position: relative 조상)를 기준으로
- * 바로 아래에 펼쳐지는 달력 팝오버. 사용하는 쪽에서 트리거를 감싼
- * 컨테이너에 position: relative를 지정해야 위치가 맞습니다.
+ * 펼쳐지는 달력 팝오버. 사용하는 쪽에서 트리거를 감싼 컨테이너에
+ * position: relative를 지정해야 위치가 맞습니다.
+ * placement="top"이면 트리거 위쪽으로, 기본값("bottom")이면 아래쪽으로 열립니다.
  */
 function CalendarPopover({
   value,
@@ -26,6 +27,7 @@ function CalendarPopover({
   onSelect,
   onClose,
   title = "날짜 선택",
+  placement = "bottom",
 }) {
   const [selYear, selMonth] = (value || max).split("-").map(Number);
   const [maxYear, maxMonth] = max.split("-").map(Number);
@@ -58,7 +60,7 @@ function CalendarPopover({
         onMouseDown={onClose}
       />
       <section
-        className="calendar-popover"
+        className={`calendar-popover${placement === "top" ? " placement-top" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="calendar-popover-title"
