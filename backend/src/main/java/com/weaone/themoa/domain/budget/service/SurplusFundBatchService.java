@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.budget.service;
 
 import com.weaone.themoa.domain.budget.entity.Budget;
 import com.weaone.themoa.domain.budget.entity.SurplusFund;
+import com.weaone.themoa.domain.budget.repository.BudgetIncomeAdjustmentRepository;
 import com.weaone.themoa.domain.budget.repository.BudgetRepository;
 import com.weaone.themoa.domain.budget.repository.SurplusFundRepository;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
@@ -31,6 +32,7 @@ public class SurplusFundBatchService {
     private final BudgetRepository budgetRepository;
     private final SurplusFundRepository surplusFundRepository;
     private final CardTransactionRepository cardTransactionRepository;
+    private final BudgetIncomeAdjustmentRepository budgetIncomeAdjustmentRepository;
 
     /** 알림 배치(04:00) 이후 정리성으로 04:30에 돈다. */
     @Scheduled(cron = "0 30 4 * * *", zone = "Asia/Seoul")
@@ -54,7 +56,9 @@ public class SurplusFundBatchService {
         }
         BigDecimal spentThisCycle = cardTransactionRepository.sumNetSpend(
                 memberId, TransactionStatus.REJECTED, budget.getCycleStartDate(), budget.getCycleEndDate());
-        BigDecimal amount = budget.getRemainingAmount(spentThisCycle); // 음수 그대로 — 0으로 깎지 않는다
+        BigDecimal incomeAdjustmentTotal = budgetIncomeAdjustmentRepository.sumAmountByBudget_Id(budget.getId());
+        // 음수 그대로 — 0으로 깎지 않는다. "수입 직접 입력" 합계도 사용가능금액에 반영해 잉여금에 자연히 흡수된다.
+        BigDecimal amount = budget.getRemainingAmount(spentThisCycle, incomeAdjustmentTotal);
         try {
             surplusFundRepository.save(SurplusFund.accrue(
                     budget.getMember(), budget.getYearMonth(), amount, today, LocalDateTime.now()));

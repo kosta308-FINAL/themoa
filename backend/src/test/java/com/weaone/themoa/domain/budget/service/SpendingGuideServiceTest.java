@@ -4,6 +4,7 @@ import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.budget.dto.response.SpendingGuideSummaryResponse;
 import com.weaone.themoa.domain.budget.entity.Budget;
+import com.weaone.themoa.domain.budget.repository.BudgetIncomeAdjustmentRepository;
 import com.weaone.themoa.domain.budget.repository.BudgetRepository;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CategorySummaryListResponse;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
@@ -11,8 +12,10 @@ import com.weaone.themoa.domain.cardconnection.repository.CardConnectionReposito
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
 import com.weaone.themoa.domain.cardtransaction.support.BackfillWindowPolicy;
 import com.weaone.themoa.domain.member.entity.Gender;
+import com.weaone.themoa.domain.member.entity.IncomeType;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
+import com.weaone.themoa.domain.member.repository.MemberWorkScheduleRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,15 +53,22 @@ class SpendingGuideServiceTest {
     private CardTransactionRepository cardTransactionRepository;
     @Mock
     private CardConnectionRepository cardConnectionRepository;
+    @Mock
+    private MemberWorkScheduleRepository memberWorkScheduleRepository;
+    @Mock
+    private WorkScheduleSalaryCalculator workScheduleSalaryCalculator;
+    @Mock
+    private BudgetIncomeAdjustmentRepository budgetIncomeAdjustmentRepository;
 
     private SpendingGuideService service() {
-        return new SpendingGuideService(memberRepository, budgetRepository, budgetCycleService, cardTransactionRepository, cardConnectionRepository);
+        return new SpendingGuideService(memberRepository, budgetRepository, budgetCycleService, cardTransactionRepository,
+                cardConnectionRepository, memberWorkScheduleRepository, workScheduleSalaryCalculator, budgetIncomeAdjustmentRepository);
     }
 
     private Member member(BigDecimal salary, Integer payday, BigDecimal savingsTarget) {
         Member member = Member.signUp("u@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1), LocalDateTime.now());
         if (salary != null && payday != null) {
-            member.configureSpendingGuide(salary, payday);
+            member.configureSpendingGuide(IncomeType.SALARY, salary, null, payday);
         }
         if (savingsTarget != null) {
             member.changeSavingsTarget(savingsTarget);
@@ -98,6 +108,7 @@ class SpendingGuideServiceTest {
         Budget budget = budget(member, start, end, "1000000", "0", "0");
         given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member));
         given(budgetCycleService.getOrCreateCurrentBudget(any(), any())).willReturn(budget);
+        given(budgetIncomeAdjustmentRepository.sumAmountByBudget_Id(any())).willReturn(BigDecimal.ZERO);
         stubNetSpend(start, today.minusDays(1), "250000"); // 어제까지
         stubNetSpend(today, today, "10000");               // 오늘
         stubNetSpend(start, today, "260000");              // 주기 누적
@@ -127,6 +138,7 @@ class SpendingGuideServiceTest {
         Budget budget = budget(member, start, end, "2000000", "600000", "1500000");
         given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member));
         given(budgetCycleService.getOrCreateCurrentBudget(any(), any())).willReturn(budget);
+        given(budgetIncomeAdjustmentRepository.sumAmountByBudget_Id(any())).willReturn(BigDecimal.ZERO);
         stubNetSpend(start, today.minusDays(1), "0");
         stubNetSpend(today, today, "0");
         stubNetSpend(start, today, "50000");
@@ -214,6 +226,7 @@ class SpendingGuideServiceTest {
                 .willReturn(BigDecimal.ZERO);
         given(cardTransactionRepository.sumNetSpend(eq(MEMBER_ID), eq(TransactionStatus.REJECTED), eq(cycleStart), eq(cycleEnd)))
                 .willReturn(new BigDecimal("300000"));
+        given(budgetIncomeAdjustmentRepository.sumAmountByBudget_Id(any())).willReturn(BigDecimal.ZERO);
 
         CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L);
 

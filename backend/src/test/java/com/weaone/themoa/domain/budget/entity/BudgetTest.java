@@ -22,7 +22,7 @@ class BudgetTest {
         // 월세 500,000 + Claude $22 환산 30,000 = 530,000 (달러 원금 22를 그대로 더한 500,022가 아님)
         Budget budget = budget("2000000", "530000", "0");
 
-        assertThat(budget.getAvailableAmount()).isEqualByComparingTo("1470000");
+        assertThat(budget.getAvailableAmount(BigDecimal.ZERO)).isEqualByComparingTo("1470000");
     }
 
     @Test
@@ -30,7 +30,7 @@ class BudgetTest {
     void availableCanBeNegative() {
         Budget budget = budget("2000000", "1500000", "600000");
 
-        assertThat(budget.getAvailableAmount()).isEqualByComparingTo("-100000");
+        assertThat(budget.getAvailableAmount(BigDecimal.ZERO)).isEqualByComparingTo("-100000");
     }
 
     @Test
@@ -38,7 +38,8 @@ class BudgetTest {
     void remainingCanBeNegative() {
         Budget budget = budget("2000000", "0", "0");
 
-        assertThat(budget.getRemainingAmount(new BigDecimal("2200000"))).isEqualByComparingTo("-200000");
+        assertThat(budget.getRemainingAmount(new BigDecimal("2200000"), BigDecimal.ZERO))
+                .isEqualByComparingTo("-200000");
     }
 
     @Test
@@ -47,7 +48,7 @@ class BudgetTest {
         Budget budget = budget("1000000", "0", "0");
 
         // (1,000,000 − 250,000) / 20 = 37,500
-        assertThat(budget.getDailyRecommendedAmount(new BigDecimal("250000"), 20))
+        assertThat(budget.getDailyRecommendedAmount(new BigDecimal("250000"), 20, BigDecimal.ZERO))
                 .isEqualByComparingTo("37500");
     }
 
@@ -56,7 +57,7 @@ class BudgetTest {
     void dailyRecommendedFlooredAtZero() {
         Budget budget = budget("2000000", "1500000", "600000"); // 월 예산 −100,000
 
-        assertThat(budget.getDailyRecommendedAmount(BigDecimal.ZERO, 25))
+        assertThat(budget.getDailyRecommendedAmount(BigDecimal.ZERO, 25, BigDecimal.ZERO))
                 .isEqualByComparingTo("0");
     }
 }

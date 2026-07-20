@@ -781,6 +781,8 @@
 }
 
 .spending-modal-close {
+  display: grid;
+  place-items: center;
   width: 34px;
   height: 34px;
   border-radius: 9px;
@@ -1179,6 +1181,167 @@
   color: #fff;
   background: var(--spending-green);
   box-shadow: 0 5px 13px rgba(34, 197, 94, 0.22);
+}
+
+.spending-setup-form .wide {
+  grid-column: 1 / -1;
+}
+
+.spending-segmented-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.spending-segmented-toggle button {
+  min-height: 44px;
+  border: 1px solid #d9e5dd;
+  border-radius: 11px;
+  color: var(--spending-muted);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 650;
+}
+.spending-segmented-toggle button.selected {
+  border-color: transparent;
+  color: #fff;
+  background: var(--spending-green);
+  box-shadow: 0 5px 13px rgba(34, 197, 94, 0.22);
+}
+
+.spending-weekday-field > span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--spending-text);
+  font-size: 12px;
+  font-weight: 650;
+}
+.spending-weekday-picker {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 7px;
+}
+.spending-weekday-picker button {
+  min-height: 40px;
+  border-radius: 9px;
+  color: var(--spending-muted);
+  background: #f5f8f6;
+  font-size: 12px;
+  font-weight: 650;
+}
+.spending-weekday-picker button:hover {
+  color: var(--spending-green-dark);
+  background: var(--spending-soft);
+}
+.spending-weekday-picker button.selected {
+  color: #fff;
+  background: var(--spending-green);
+  box-shadow: 0 5px 13px rgba(34, 197, 94, 0.22);
+}
+.spending-weekday-hours {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.spending-weekday-hours li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.spending-weekday-hours li > span {
+  flex: 0 0 44px;
+  color: var(--spending-text);
+  font-size: 12px;
+  font-weight: 650;
+}
+.spending-weekday-hours li input {
+  width: 70px;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid #d9e5dd;
+  border-radius: 9px;
+  text-align: right;
+  font-weight: 700;
+}
+.spending-weekday-hours li em {
+  color: var(--spending-muted);
+  font-size: 12px;
+  font-style: normal;
+}
+.spending-weekday-estimate {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+  color: var(--spending-green-dark);
+  font-size: 11px;
+}
+
+.spending-income-list {
+  padding: 4px 24px 24px;
+  border-top: 1px solid var(--spending-border);
+}
+.spending-income-list > strong {
+  display: block;
+  margin: 16px 0 10px;
+  color: var(--spending-text);
+  font-size: 12px;
+}
+.spending-income-list-empty {
+  padding: 10px 0;
+  color: var(--spending-muted);
+  font-size: 12px;
+}
+.spending-income-list ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.spending-income-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f5f8f6;
+}
+.spending-income-amount {
+  flex: 0 0 auto;
+  color: var(--spending-green-dark);
+  font-size: 13px;
+  font-weight: 700;
+}
+.spending-income-amount.negative {
+  color: #dc4c4c;
+}
+.spending-income-memo {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--spending-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.spending-income-delete {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--spending-muted);
+  background: transparent;
+}
+.spending-income-delete:hover {
+  color: #dc4c4c;
+  background: #fdeaea;
 }
 
 .spending-setup-wide {

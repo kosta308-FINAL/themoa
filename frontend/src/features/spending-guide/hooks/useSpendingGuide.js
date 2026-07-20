@@ -36,6 +36,7 @@ function useSpendingGuide() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEntryOpen, setIsEntryOpen] = useState(false);
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
+  const [isIncomeAdjustmentOpen, setIsIncomeAdjustmentOpen] = useState(false);
   const [detailId, setDetailId] = useState(null);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [pendingCoachId, setPendingCoachId] = useState(null);
@@ -231,6 +232,7 @@ function useSpendingGuide() {
     initialSyncState,
     isBudgetOpen,
     isEntryOpen,
+    isIncomeAdjustmentOpen,
     isLoading,
     isSyncing,
     loadGuide,
@@ -242,6 +244,7 @@ function useSpendingGuide() {
     setEditingTransaction,
     setIsBudgetOpen,
     setIsEntryOpen,
+    setIsIncomeAdjustmentOpen,
   };
 }
 
