@@ -1,10 +1,13 @@
 package com.weaone.themoa.domain.notification.service;
 
+import com.weaone.themoa.domain.customerservice.entity.CustomerInquiry;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.notification.entity.Notification;
 import com.weaone.themoa.domain.notification.entity.NotificationType;
+import com.weaone.themoa.domain.notification.entity.NotificationTypeCode;
 import com.weaone.themoa.domain.notification.repository.NotificationRepository;
+import com.weaone.themoa.domain.notification.repository.NotificationTypeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -21,17 +24,20 @@ import java.time.LocalDateTime;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationTypeRepository notificationTypeRepository;
 
     /** 이미 같은 dedupKey로 쌓인 알림이 있으면 조용히 넘어간다(멱등, 새벽 배치 재실행 대비). */
     @Transactional
-    public void createIfAbsent(Member member, NotificationType type, String message,
-                                FixedExpense fixedExpense, String dedupKey) {
+    public void createIfAbsent(Member member, NotificationTypeCode typeCode, String message,
+                                FixedExpense fixedExpense, CustomerInquiry customerInquiry, String dedupKey) {
         if (notificationRepository.existsByMember_IdAndDedupKey(member.getId(), dedupKey)) {
             return;
         }
+        NotificationType notificationType = notificationTypeRepository.findByCodeAndActiveTrue(typeCode.name())
+                .orElseThrow(() -> new IllegalStateException("알림 유형 마스터 데이터가 시드되지 않았습니다: " + typeCode));
         try {
-            notificationRepository.save(Notification.create(member, type, message, fixedExpense, dedupKey,
-                    LocalDateTime.now()));
+            notificationRepository.save(Notification.create(member, notificationType, message, fixedExpense,
+                    customerInquiry, dedupKey, LocalDateTime.now()));
         } catch (DataIntegrityViolationException e) {
             // 동시 배치 경합으로 이미 다른 스레드가 같은 dedupKey를 저장했다. 무시한다.
         }

@@ -74,7 +74,7 @@ class AuthTokenServiceTest {
     @Test
     @DisplayName("발급 시 Refresh Token은 원문이 아니라 해시로 저장된다")
     void issueStoresHashOnly() {
-        given(jwtTokenProvider.createAccessToken(anyLong(), anyInt(), any(Instant.class))).willReturn("access-token");
+        given(jwtTokenProvider.createAccessToken(anyLong(), anyInt(), anyString(), any(Instant.class))).willReturn("access-token");
         given(jwtTokenProvider.getAccessTokenValidity()).willReturn(Duration.ofMinutes(30));
         LocalDateTime now = LocalDateTime.now();
 
@@ -98,7 +98,7 @@ class AuthTokenServiceTest {
                 .willReturn(Optional.of(storedToken(oldToken, LocalDateTime.now().plusDays(1))));
         given(refreshTokenRepository.deleteByTokenHash(generator.hash(oldToken))).willReturn(1);
         given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member));
-        given(jwtTokenProvider.createAccessToken(anyLong(), anyInt(), any(Instant.class))).willReturn("access-token");
+        given(jwtTokenProvider.createAccessToken(anyLong(), anyInt(), anyString(), any(Instant.class))).willReturn("access-token");
         given(jwtTokenProvider.getAccessTokenValidity()).willReturn(Duration.ofMinutes(30));
 
         IssuedTokens tokens = authTokenService.rotate(oldToken);

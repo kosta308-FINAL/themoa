@@ -15,6 +15,7 @@ const TYPE_ICON = {
   AMOUNT_CHANGE: "repeat",
   BACKFILL_RECALCULATED: "chart",
   UNLINKED_CARD_SUSPECTED: "card",
+  INQUIRY_ANSWERED: "check",
 };
 
 const formatRelativeTime = (value) => {
@@ -92,6 +93,10 @@ function NotificationBell() {
     setOpen(false);
     if (item.fixedExpenseId) {
       navigate("/dashboard/fixed-expenses");
+    } else if (item.customerInquiryId) {
+      navigate(
+        `/dashboard/customer-service?tab=myList&inquiryId=${item.customerInquiryId}`,
+      );
     }
   };
 

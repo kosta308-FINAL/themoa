@@ -10,6 +10,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -48,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (currentTokenVersion != claims.tokenVersion()) {
                 throw new BusinessException(ErrorCode.AUTH_INVALID_ACCESS_TOKEN);
             }
-            SecurityContextHolder.getContext().setAuthentication(authentication(claims.memberId(), request));
+            SecurityContextHolder.getContext().setAuthentication(authentication(claims, request));
         } catch (BusinessException e) {
             SecurityContextHolder.clearContext();
             errorResponder.respond(response, e.getErrorCode());
@@ -58,9 +60,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private UsernamePasswordAuthenticationToken authentication(Long memberId, HttpServletRequest request) {
+    private UsernamePasswordAuthenticationToken authentication(AccessTokenClaims claims, HttpServletRequest request) {
+        String role = claims.role() != null ? claims.role() : "USER";
+        List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
         UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(memberId, null, List.of());
+                new UsernamePasswordAuthenticationToken(claims.memberId(), null, authorities);
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         return authentication;
     }
