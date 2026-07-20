@@ -37,30 +37,39 @@ function SurplusSummary({ data, onSetGoal }) {
         )}
       </div>
 
-      {data.completedCycleCount > 0 ? (
+      {data.ongoingCycle ? (
         <div className="spending-surplus-body">
           <div className="spending-surplus-main">
-            <span>누적 잉여금</span>
-            <strong className={surplusTone(data.totalSurplusAmount)}>
-              {surplusSign(data.totalSurplusAmount)}
-              {formatWon(data.totalSurplusAmount)}
+            <span>
+              {monthLabel(data.ongoingCycle.yearMonth)} 주기 · 진행 중
+            </span>
+            <strong className={surplusTone(data.ongoingCycle.amount)}>
+              {surplusSign(data.ongoingCycle.amount)}
+              {formatWon(data.ongoingCycle.amount)}
             </strong>
-            <p>완료된 {data.completedCycleCount}개 주기 합산</p>
+            <p>
+              {toNumber(data.ongoingCycle.amount) < 0
+                ? "예산을 초과했어요"
+                : "지금까지 예산보다 덜 썼어요 (주기가 끝나면 확정돼요)"}
+            </p>
           </div>
-          {data.recentCycle && (
-            <div className="spending-surplus-recent">
-              <span>{monthLabel(data.recentCycle.yearMonth)} 주기</span>
-              <strong className={surplusTone(data.recentCycle.amount)}>
-                {surplusSign(data.recentCycle.amount)}
-                {formatWon(data.recentCycle.amount)}
-              </strong>
-              <p>
-                {toNumber(data.recentCycle.amount) < 0
-                  ? "예산을 초과했어요"
-                  : "예산보다 덜 썼어요"}
-              </p>
-            </div>
-          )}
+          <div className="spending-surplus-recent">
+            <span>완료된 주기 합산</span>
+            {data.completedCycleCount > 0 ? (
+              <>
+                <strong className={surplusTone(data.totalSurplusAmount)}>
+                  {surplusSign(data.totalSurplusAmount)}
+                  {formatWon(data.totalSurplusAmount)}
+                </strong>
+                <p>완료된 {data.completedCycleCount}개 주기 합산</p>
+              </>
+            ) : (
+              <>
+                <strong>-</strong>
+                <p>아직 끝난 주기가 없어요</p>
+              </>
+            )}
+          </div>
         </div>
       ) : (
         <div className="spending-surplus-body">

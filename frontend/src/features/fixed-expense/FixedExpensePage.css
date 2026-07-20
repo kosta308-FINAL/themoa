@@ -371,39 +371,45 @@
 /* Suggestions */
 .fx-suggestion-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  padding: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px;
 }
 
 .fx-suggestion-card {
   display: flex;
   flex-direction: column;
-  gap: 13px;
-  padding: 16px;
+  gap: 9px;
+  padding: 11px 12px;
   border: 1px solid #f1e3b8;
-  border-radius: 15px;
+  border-radius: 13px;
   background: linear-gradient(150deg, #fffdf7, #fffaf0);
+  transition: opacity 0.15s ease;
+}
+
+.fx-suggestion-card.is-pending {
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 .fx-suggestion-top {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 9px;
 }
 
 .fx-service-icon {
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  width: 43px;
-  height: 43px;
-  border-radius: 13px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   color: #fff;
   background: #111827;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 800;
-  box-shadow: 0 7px 14px rgba(17, 24, 39, 0.12);
+  box-shadow: 0 5px 10px rgba(17, 24, 39, 0.12);
 }
 
 .fx-service-icon.red {
@@ -423,55 +429,140 @@
 }
 
 .fx-service-info {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
 .fx-service-info strong {
   display: block;
-  font-size: 14px;
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .fx-service-info span {
   display: block;
-  margin-top: 3px;
+  margin-top: 2px;
+  overflow: hidden;
   color: var(--fx-muted);
-  font-size: 12px;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.fx-suggestion-message {
-  margin: 0;
-  color: #594819;
+.fx-suggestion-register {
+  flex: 0 0 auto;
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  color: #fff;
+  background: var(--fx-green-dark);
   font-size: 12px;
-  line-height: 1.5;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.fx-suggestion-register:hover:not(:disabled) {
+  background: var(--fx-green-deep);
+}
+
+.fx-suggestion-register:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .fx-suggestion-actions {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 7px;
-  margin-top: auto;
+  gap: 6px;
 }
 
-.fx-suggestion-actions .fx-primary-button {
-  flex: 1 1 100%;
-}
-
-.fx-suggestion-actions .fx-ghost-button {
+.fx-suggestion-action {
   flex: 1 1 auto;
+  height: 28px;
+  overflow: hidden;
+  padding: 0 8px;
+  border: 1px solid var(--fx-border);
+  border-radius: 8px;
+  color: var(--fx-muted);
+  background: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.fx-suggestion-action:hover:not(:disabled) {
+  border-color: var(--fx-border-strong);
+  color: var(--fx-text);
+  background: #fafdfb;
+}
+
+.fx-suggestion-action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.fx-more-menu-wrap {
+  position: relative;
+  flex: 0 0 auto;
 }
 
 .fx-more-button {
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 28px;
+  height: 28px;
   border: 1px solid #eadfbf;
-  border-radius: 11px;
+  border-radius: 8px;
   color: var(--fx-muted);
   background: #fff;
+}
+
+.fx-more-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.fx-more-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 5;
+  min-width: 140px;
+  padding: 5px;
+  border: 1px solid var(--fx-border);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 26px rgba(22, 101, 52, 0.14);
+}
+
+.fx-more-menu-item {
+  width: 100%;
+  padding: 8px 9px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--fx-text);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.fx-more-menu-item:hover {
+  background: var(--fx-green-pale);
+}
+
+.fx-more-menu-item.danger {
+  color: var(--fx-red);
+}
+
+.fx-more-menu-item.danger:hover {
+  background: var(--fx-red-soft);
 }
 
 /* Content grid */
@@ -1094,6 +1185,10 @@
   .fx-summary-hero,
   .fx-content-grid {
     grid-template-columns: 1fr;
+  }
+
+  .fx-suggestion-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

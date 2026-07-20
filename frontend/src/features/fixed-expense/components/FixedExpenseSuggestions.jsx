@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import DashboardIcon from "../../../components/common/DashboardIcon";
 import { formatWon, serviceInitial, toneForId } from "../fixedExpenseUtils";
 
@@ -19,6 +20,20 @@ function FixedExpenseSuggestions({
   onReject,
   onReclassifyHabit,
 }) {
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!openMenuId) return undefined;
+    const closeIfOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", closeIfOutside);
+    return () => document.removeEventListener("mousedown", closeIfOutside);
+  }, [openMenuId]);
+
   if (!candidates?.length) return null;
 
   return (
@@ -36,63 +51,90 @@ function FixedExpenseSuggestions({
         <span className="fx-panel-count">{candidates.length}건</span>
       </div>
       <div className="fx-suggestion-list">
-        {candidates.map((candidate) => (
-          <article className="fx-suggestion-card" key={candidate.id}>
-            <div className="fx-suggestion-top">
-              <span
-                className={`fx-service-icon ${toneForId(candidate.recurringGroupId)}`}
-              >
-                {serviceInitial(candidate.merchantAliasName)}
-              </span>
-              <div className="fx-service-info">
-                <strong>{candidate.merchantAliasName}</strong>
-                <span>
-                  매월 {candidate.avgPayDay}일쯤 ·{" "}
-                  {formatWon(candidate.avgAmount)}
+        {candidates.map((candidate) => {
+          const isPending = pendingId === candidate.id;
+          const isMenuOpen = openMenuId === candidate.id;
+          return (
+            <article
+              className={`fx-suggestion-card${isPending ? " is-pending" : ""}`}
+              key={candidate.id}
+            >
+              <div className="fx-suggestion-top">
+                <span
+                  className={`fx-service-icon ${toneForId(candidate.recurringGroupId)}`}
+                >
+                  {serviceInitial(candidate.merchantAliasName)}
                 </span>
+                <div className="fx-service-info">
+                  <strong>{candidate.merchantAliasName}</strong>
+                  <span>
+                    매월 {candidate.avgPayDay}일쯤 ·{" "}
+                    {formatWon(candidate.avgAmount)}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="fx-suggestion-register"
+                  disabled={isPending}
+                  onClick={() => onRegister(candidate)}
+                >
+                  등록
+                </button>
               </div>
-            </div>
-            <p className="fx-suggestion-message">
-              {candidate.recommendMessage ||
-                "최근 몇 달 동안 비슷한 날짜에 같은 금액이 결제됐어요. 고정지출로 등록할까요?"}
-            </p>
-            <div className="fx-suggestion-actions">
-              <button
-                type="button"
-                className="fx-primary-button"
-                disabled={pendingId === candidate.id}
-                onClick={() => onRegister(candidate)}
-              >
-                등록
-              </button>
-              <button
-                type="button"
-                className="fx-ghost-button"
-                disabled={pendingId === candidate.id}
-                onClick={() => onSnooze(candidate.id)}
-              >
-                나중에
-              </button>
-              <button
-                type="button"
-                className="fx-ghost-button"
-                disabled={pendingId === candidate.id}
-                onClick={() => onReclassifyHabit(candidate.id)}
-              >
-                습관적 소비로 분류
-              </button>
-              <button
-                type="button"
-                className="fx-more-button"
-                disabled={pendingId === candidate.id}
-                aria-label="이 추천 거절"
-                onClick={() => onReject(candidate.id)}
-              >
-                <MoreDotsIcon />
-              </button>
-            </div>
-          </article>
-        ))}
+
+              <div className="fx-suggestion-actions">
+                <button
+                  type="button"
+                  className="fx-suggestion-action"
+                  disabled={isPending}
+                  onClick={() => onSnooze(candidate.id)}
+                >
+                  나중에
+                </button>
+                <button
+                  type="button"
+                  className="fx-suggestion-action"
+                  disabled={isPending}
+                  onClick={() => onReclassifyHabit(candidate.id)}
+                >
+                  습관적 소비로 분류
+                </button>
+                <div
+                  className="fx-more-menu-wrap"
+                  ref={isMenuOpen ? menuRef : undefined}
+                >
+                  <button
+                    type="button"
+                    className="fx-more-button"
+                    disabled={isPending}
+                    aria-label="추가 옵션"
+                    aria-expanded={isMenuOpen}
+                    onClick={() =>
+                      setOpenMenuId(isMenuOpen ? null : candidate.id)
+                    }
+                  >
+                    <MoreDotsIcon />
+                  </button>
+                  {isMenuOpen && (
+                    <div className="fx-more-menu" role="menu">
+                      <button
+                        type="button"
+                        className="fx-more-menu-item danger"
+                        role="menuitem"
+                        onClick={() => {
+                          setOpenMenuId(null);
+                          onReject(candidate.id);
+                        }}
+                      >
+                        이 추천 거절하기
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );

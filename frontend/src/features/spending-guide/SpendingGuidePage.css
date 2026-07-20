@@ -3256,6 +3256,14 @@
 .spending-day-nav-right {
   justify-content: flex-end;
 }
+.spending-day-nav-salary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--spending-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
 .spending-day-nav-label {
   display: flex;
   align-items: center;

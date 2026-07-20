@@ -11,11 +11,13 @@ import SpendingHistoryPage from "../features/spending-guide/SpendingHistoryPage"
 import CategoryDetailPage from "../features/spending-guide/CategoryDetailPage";
 import FixedExpensePage from "../features/fixed-expense/FixedExpensePage";
 import MyPage from "../features/mypage/MyPage";
+import CustomerServicePage from "../features/customer-service/CustomerServicePage";
 import ProtectedRoute from "./ProtectedRoute";
 import DashboardLayout from "../components/layout/DashboardLayout";
 
 const policyLocalToolsEnabled =
-  import.meta.env.DEV && import.meta.env.VITE_POLICY_LOCAL_TOOLS_ENABLED === "true";
+  import.meta.env.DEV &&
+  import.meta.env.VITE_POLICY_LOCAL_TOOLS_ENABLED === "true";
 
 function AppRouter() {
   return (
@@ -44,6 +46,7 @@ function AppRouter() {
           />
           <Route path="fixed-expenses" element={<FixedExpensePage />} />
           <Route path="mypage" element={<MyPage />} />
+          <Route path="customer-service" element={<CustomerServicePage />} />
         </Route>
       </Route>
     </Routes>
