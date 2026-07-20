@@ -7,6 +7,7 @@ import com.weaone.themoa.domain.coaching.entity.CoachingCard;
 import com.weaone.themoa.domain.coaching.entity.CoachingCardTargetType;
 import com.weaone.themoa.domain.coaching.repository.CoachingCardRepository;
 import com.weaone.themoa.domain.member.entity.Gender;
+import com.weaone.themoa.domain.member.entity.IncomeType;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
 import com.weaone.themoa.domain.merchant.repository.MerchantAliasRepository;
@@ -59,7 +60,7 @@ class HabitCoachingCardBatchServiceTest {
     private Member member(int payday) {
         Member member = Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1), LocalDateTime.now());
         ReflectionTestUtils.setField(member, "id", MEMBER_ID);
-        member.configureSpendingGuide(BigDecimal.valueOf(3_000_000), payday);
+        member.configureSpendingGuide(IncomeType.SALARY, BigDecimal.valueOf(3_000_000), null, payday);
         return member;
     }
 

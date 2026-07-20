@@ -74,9 +74,18 @@ public class Member {
     @Column(name = "last_active_at")
     private LocalDateTime lastActiveAt;
 
-    /** 현재 월급 원본(dailyBudget.md §1). 소비 가이드 진입 시 지연 수집한다. 주기 스냅샷은 {@code budget.salary_amount}. */
+    /** 소득유형(SALARY=고정 월급, HOURLY=시급제). 최초 설정 이후에도 예산 기준 화면에서 전환할 수 있다. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "income_type", nullable = false, length = 10)
+    private IncomeType incomeType = IncomeType.SALARY;
+
+    /** 현재 월급 원본(dailyBudget.md §1). 소비 가이드 진입 시 지연 수집한다. 주기 스냅샷은 {@code budget.salary_amount}. incomeType=SALARY일 때만 쓴다. */
     @Column(name = "salary_amount", precision = 14, scale = 2)
     private BigDecimal salaryAmount;
+
+    /** 시급(incomeType=HOURLY 전용). 요일별 근무시간과 곱해 급여주기마다 예상 소득을 산출한다. */
+    @Column(name = "hourly_wage", precision = 14, scale = 2)
+    private BigDecimal hourlyWage;
 
     /** 월 저축 목표 원본. 미설정이면 예산 계산에서 0으로 본다. 주기 스냅샷은 {@code budget.savings_goal_amount}. */
     @Column(name = "savings_target_amount", precision = 14, scale = 2)
@@ -159,15 +168,26 @@ public class Member {
     /**
      * 소비 가이드 최초 설정(S-00A, MOA-S-BUD-BGT-01). 월급·급여일을 함께 저장한다. 급여일은 MVP에서
      * 최초 설정 이후 일반 수정 대상이 아니므로(dailyBudget.md §1) 이 메서드로만 채워진다.
+     *
+     * <p>incomeType=SALARY면 salaryAmount, HOURLY면 hourlyWage를 채운다(요일별 근무시간 행 저장은
+     * 호출자가 같은 트랜잭션에서 별도로 처리한다 — Member는 소득유형·시급만 안다).
      */
-    public void configureSpendingGuide(BigDecimal salaryAmount, Integer payday) {
+    public void configureSpendingGuide(IncomeType incomeType, BigDecimal salaryAmount, BigDecimal hourlyWage,
+                                        Integer payday) {
+        this.incomeType = incomeType;
         this.salaryAmount = salaryAmount;
+        this.hourlyWage = hourlyWage;
         this.payday = payday;
     }
 
-    /** 월급 원본 변경(MOA-S-BUD-BGT-08). 주기 스냅샷 반영 여부는 호출자가 적용 시점에 따라 결정한다. */
+    /** 월급 원본 변경(MOA-S-BUD-BGT-08, incomeType=SALARY 전용). 주기 스냅샷 반영 여부는 호출자가 결정한다. */
     public void changeSalary(BigDecimal salaryAmount) {
         this.salaryAmount = salaryAmount;
+    }
+
+    /** 시급 변경(incomeType=HOURLY 전용). 요일별 근무시간 행 교체는 호출자가 같은 트랜잭션에서 처리한다. */
+    public void changeHourlyWage(BigDecimal hourlyWage) {
+        this.hourlyWage = hourlyWage;
     }
 
     /** 월 저축 목표 원본 변경(MOA-S-BUD-BGT-03). */
@@ -175,9 +195,12 @@ public class Member {
         this.savingsTargetAmount = savingsTargetAmount;
     }
 
-    /** 소비 가이드는 월급·급여일 둘 다 있어야 진입 가능하다(dailyBudget.md §1). */
+    /** 소비 가이드는 급여일과, 소득유형에 맞는 소득 입력(월급 또는 시급)이 있어야 진입 가능하다(dailyBudget.md §1). */
     public boolean hasSpendingGuideSetup() {
-        return salaryAmount != null && payday != null;
+        if (payday == null) {
+            return false;
+        }
+        return incomeType == IncomeType.HOURLY ? hourlyWage != null : salaryAmount != null;
     }
 
     /** 저축 목표 미설정은 0원으로 계산한다(dayguide.md §2.1). */

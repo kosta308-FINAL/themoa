@@ -101,22 +101,27 @@ public class Budget {
         this.savingsGoalAmount = savingsGoalAmount;
     }
 
-    /** 월 예산 — 음수를 그대로 흘린다(초과·과다 저축목표 정보를 잃지 않기 위해). */
-    public BigDecimal getAvailableAmount() {
-        return salaryAmount.subtract(expectedFixedExpenseTotal).subtract(savingsGoalAmount);
+    /**
+     * 월 예산 — 음수를 그대로 흘린다(초과·과다 저축목표 정보를 잃지 않기 위해). {@code incomeAdjustmentTotal}은
+     * "수입 직접 입력"(용돈·정부지원금 등 비정기 수입, budget_income_adjustment) 합계로, 호출자가 조회해
+     * 넘긴다 — 이 엔티티는 순수 계산만 하고 직접 DB에 접근하지 않는다.
+     */
+    public BigDecimal getAvailableAmount(BigDecimal incomeAdjustmentTotal) {
+        return salaryAmount.subtract(expectedFixedExpenseTotal).subtract(savingsGoalAmount).add(incomeAdjustmentTotal);
     }
 
     /** 남은 예산 — 음수 그대로. spentThisCycle은 주기 시작~오늘의 순지출 합계. */
-    public BigDecimal getRemainingAmount(BigDecimal spentThisCycle) {
-        return getAvailableAmount().subtract(spentThisCycle);
+    public BigDecimal getRemainingAmount(BigDecimal spentThisCycle, BigDecimal incomeAdjustmentTotal) {
+        return getAvailableAmount(incomeAdjustmentTotal).subtract(spentThisCycle);
     }
 
     /**
      * 하루 권장액 = (월 예산 − 어제까지 누적 순지출) ÷ 오늘 포함 남은 일수. 화면에 내보내는 값이라
      * 여기서만 {@code max(0)} 바닥을 건다("−4,000원까지 쓰세요"는 정보가 0). 중간 계산엔 바닥을 걸지 않는다.
      */
-    public BigDecimal getDailyRecommendedAmount(BigDecimal spentThroughYesterday, int remainingDays) {
-        return getAvailableAmount()
+    public BigDecimal getDailyRecommendedAmount(BigDecimal spentThroughYesterday, int remainingDays,
+                                                 BigDecimal incomeAdjustmentTotal) {
+        return getAvailableAmount(incomeAdjustmentTotal)
                 .subtract(spentThroughYesterday)
                 .divide(BigDecimal.valueOf(remainingDays), 0, RoundingMode.DOWN)
                 .max(BigDecimal.ZERO);

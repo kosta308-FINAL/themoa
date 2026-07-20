@@ -5,11 +5,15 @@ import {
   setupSpendingGuide,
 } from "../../../api/spendingGuideApi";
 import DashboardIcon from "../../../components/common/DashboardIcon";
-import { errorMessage, WON } from "../spendingGuideUtils";
+import { errorMessage } from "../spendingGuideUtils";
+import IncomeProfileFields from "./IncomeProfileFields";
 
 function SpendingGuideSetup({ onComplete, onCardConnected }) {
   const [step, setStep] = useState(1);
+  const [incomeType, setIncomeType] = useState("SALARY");
   const [salaryAmount, setSalaryAmount] = useState("");
+  const [hourlyWage, setHourlyWage] = useState("");
+  const [workSchedule, setWorkSchedule] = useState([]);
   const [payday, setPayday] = useState("");
   const [isPaydayOpen, setIsPaydayOpen] = useState(false);
   const [issuers, setIssuers] = useState([]);
@@ -32,10 +36,13 @@ function SpendingGuideSetup({ onComplete, onCardConnected }) {
     [cardForm.organization, issuers],
   );
 
-  const handleSalaryChange = (event) => {
-    const digits = event.target.value.replace(/\D/g, "").slice(0, 12);
-    setSalaryAmount(digits ? WON.format(Number(digits)) : "");
-  };
+  const isHourly = incomeType === "HOURLY";
+  const canSubmitStep1 = isHourly
+    ? hourlyWage &&
+      workSchedule.length > 0 &&
+      workSchedule.every((item) => item.hours) &&
+      payday
+    : salaryAmount && payday;
 
   const handleSalarySubmit = async (event) => {
     event.preventDefault();
@@ -43,7 +50,15 @@ function SpendingGuideSetup({ onComplete, onCardConnected }) {
     setIsSubmitting(true);
     try {
       await setupSpendingGuide({
-        salaryAmount: Number(salaryAmount.replace(/,/g, "")),
+        incomeType,
+        salaryAmount: isHourly ? null : Number(salaryAmount),
+        hourlyWage: isHourly ? Number(hourlyWage) : null,
+        workSchedule: isHourly
+          ? workSchedule.map((item) => ({
+              dayOfWeek: item.dayOfWeek,
+              hours: Number(item.hours),
+            }))
+          : null,
         payday: Number(payday),
       });
       setStep(2);
@@ -130,19 +145,16 @@ function SpendingGuideSetup({ onComplete, onCardConnected }) {
             <p>월급과 급여일을 기준으로 매일 쓸 수 있는 금액을 계산해드려요.</p>
           </div>
           <form className="spending-setup-form" onSubmit={handleSalarySubmit}>
-            <label>
-              <span>월 실수령액 *</span>
-              <div className="spending-input-suffix">
-                <input
-                  inputMode="numeric"
-                  value={salaryAmount}
-                  onChange={handleSalaryChange}
-                  placeholder="0"
-                  required
-                />
-                <em>원</em>
-              </div>
-            </label>
+            <IncomeProfileFields
+              incomeType={incomeType}
+              onIncomeTypeChange={setIncomeType}
+              salaryAmount={salaryAmount}
+              onSalaryAmountChange={setSalaryAmount}
+              hourlyWage={hourlyWage}
+              onHourlyWageChange={setHourlyWage}
+              workSchedule={workSchedule}
+              onWorkScheduleChange={setWorkSchedule}
+            />
             <label className="spending-payday-field">
               <span>매월 급여일 *</span>
               <button
@@ -199,7 +211,7 @@ function SpendingGuideSetup({ onComplete, onCardConnected }) {
               <button
                 className="spending-setup-action"
                 type="submit"
-                disabled={isSubmitting || !salaryAmount || !payday}
+                disabled={isSubmitting || !canSubmitStep1}
               >
                 {isSubmitting ? "저장 중..." : "다음"}
               </button>

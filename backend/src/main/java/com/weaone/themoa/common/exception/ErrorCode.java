@@ -78,6 +78,11 @@ public enum ErrorCode {
     SPENDING_GUIDE_SETUP_REQUIRED(HttpStatus.BAD_REQUEST, "월급과 급여일을 먼저 설정해 주세요."),
     BUDGET_NOT_FOUND(HttpStatus.NOT_FOUND, "예산 주기를 찾을 수 없습니다."),
     BUDGET_FUTURE_CYCLE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "아직 시작하지 않은 급여 주기입니다."),
+    INCOME_PROFILE_INVALID(HttpStatus.BAD_REQUEST, "소득유형에 맞는 소득 정보를 입력해 주세요."),
+    WORK_SCHEDULE_EMPTY(HttpStatus.BAD_REQUEST, "요일별 근무시간을 하나 이상 입력해 주세요."),
+    INCOME_TYPE_MISMATCH(HttpStatus.BAD_REQUEST, "현재 소득유형과 일치하지 않는 요청입니다."),
+    INCOME_ADJUSTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "수입 보정 내역을 찾을 수 없습니다."),
+    INCOME_ADJUSTMENT_AMOUNT_ZERO(HttpStatus.BAD_REQUEST, "0원은 입력할 수 없습니다."),
 
     // Policy
     POLICY_NOT_FOUND(HttpStatus.NOT_FOUND, "정책을 찾을 수 없습니다."),

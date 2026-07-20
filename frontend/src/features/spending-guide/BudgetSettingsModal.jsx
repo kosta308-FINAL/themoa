@@ -1,13 +1,32 @@
 import { useState } from "react";
-import { updateSalary, updateSavingsGoal } from "../../api/spendingGuideApi";
+import {
+  updateIncomeType,
+  updateSalary,
+  updateSavingsGoal,
+  updateWorkSchedule,
+} from "../../api/spendingGuideApi";
 import DashboardIcon from "../../components/common/DashboardIcon";
+import IncomeProfileFields from "./components/IncomeProfileFields";
 
 const WON = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
 const digits = (value) => value.replace(/\D/g, "").slice(0, 12);
 
 function BudgetSettingsModal({ summary, onClose, onSaved }) {
+  const initialIncomeType =
+    summary.incomeType === "HOURLY" ? "HOURLY" : "SALARY";
+  const [incomeType, setIncomeType] = useState(initialIncomeType);
+  const isHourly = incomeType === "HOURLY";
   const [salary, setSalary] = useState(
     String(Number(summary.salaryAmount || 0)),
+  );
+  const [hourlyWage, setHourlyWage] = useState(
+    String(Number(summary.hourlyWage || 0)),
+  );
+  const [workSchedule, setWorkSchedule] = useState(
+    (summary.workSchedule || []).map((item) => ({
+      dayOfWeek: item.dayOfWeek,
+      hours: String(item.hours),
+    })),
   );
   const [savingsGoal, setSavingsGoal] = useState(
     String(Number(summary.savingsGoalAmount || 0)),
@@ -21,8 +40,32 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
     setError("");
     setIsSubmitting(true);
     try {
+      const typeChanged = incomeType !== initialIncomeType;
+      const incomeUpdate = typeChanged
+        ? updateIncomeType({
+            incomeType,
+            salaryAmount: isHourly ? undefined : Number(salary),
+            hourlyWage: isHourly ? Number(hourlyWage) : undefined,
+            workSchedule: isHourly
+              ? workSchedule.map((item) => ({
+                  dayOfWeek: item.dayOfWeek,
+                  hours: Number(item.hours),
+                }))
+              : undefined,
+            applyFrom,
+          })
+        : isHourly
+          ? updateWorkSchedule({
+              hourlyWage: Number(hourlyWage),
+              workSchedule: workSchedule.map((item) => ({
+                dayOfWeek: item.dayOfWeek,
+                hours: Number(item.hours),
+              })),
+              applyFrom,
+            })
+          : updateSalary({ amount: Number(salary), applyFrom });
       await Promise.all([
-        updateSalary({ amount: Number(salary), applyFrom }),
+        incomeUpdate,
         updateSavingsGoal({ amount: Number(savingsGoal), applyFrom }),
       ]);
       await onSaved();
@@ -53,7 +96,10 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
         <div className="spending-modal-head">
           <div>
             <h2 id="budget-settings-title">예산 기준</h2>
-            <p>월급과 저축 목표의 적용 시점을 선택해 변경해요.</p>
+            <p>
+              {isHourly ? "시급·근무시간" : "월급"}과 저축 목표의 적용 시점을
+              선택해 변경해요.
+            </p>
           </div>
           <button
             type="button"
@@ -65,18 +111,17 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
           </button>
         </div>
         <form className="spending-entry-form" onSubmit={handleSubmit}>
-          <label className="wide">
-            <span>월 실수령액 *</span>
-            <div className="spending-input-suffix">
-              <input
-                inputMode="numeric"
-                value={salary ? WON.format(Number(salary)) : ""}
-                onChange={(event) => setSalary(digits(event.target.value))}
-                required
-              />
-              <em>원</em>
-            </div>
-          </label>
+          <IncomeProfileFields
+            incomeType={incomeType}
+            onIncomeTypeChange={setIncomeType}
+            showTypeToggle
+            salaryAmount={salary}
+            onSalaryAmountChange={setSalary}
+            hourlyWage={hourlyWage}
+            onHourlyWageChange={setHourlyWage}
+            workSchedule={workSchedule}
+            onWorkScheduleChange={setWorkSchedule}
+          />
           <label className="wide">
             <span>월 저축 목표</span>
             <div className="spending-input-suffix">

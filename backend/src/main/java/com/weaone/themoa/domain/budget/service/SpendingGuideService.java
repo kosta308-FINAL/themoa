@@ -2,13 +2,20 @@ package com.weaone.themoa.domain.budget.service;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
+import com.weaone.themoa.domain.budget.dto.request.IncomeTypeUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.SalaryUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.SavingsGoalUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.SpendingGuideSetupRequest;
+import com.weaone.themoa.domain.budget.dto.request.WorkScheduleItem;
+import com.weaone.themoa.domain.budget.dto.request.WorkScheduleUpdateRequest;
+import com.weaone.themoa.domain.budget.dto.request.IncomeAdjustmentCreateRequest;
+import com.weaone.themoa.domain.budget.dto.response.IncomeAdjustmentResponse;
 import com.weaone.themoa.domain.budget.dto.response.RecentDaysResponse;
 import com.weaone.themoa.domain.budget.dto.response.SpendingGuideSummaryResponse;
 import com.weaone.themoa.domain.budget.dto.response.TodayTransactionsResponse;
 import com.weaone.themoa.domain.budget.entity.Budget;
+import com.weaone.themoa.domain.budget.entity.BudgetIncomeAdjustment;
+import com.weaone.themoa.domain.budget.repository.BudgetIncomeAdjustmentRepository;
 import com.weaone.themoa.domain.budget.repository.BudgetRepository;
 import com.weaone.themoa.domain.cardconnection.entity.InitialSyncStatus;
 import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
@@ -19,8 +26,11 @@ import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
 import com.weaone.themoa.domain.cardtransaction.support.BackfillWindowPolicy;
 import com.weaone.themoa.domain.member.entity.EntryMode;
+import com.weaone.themoa.domain.member.entity.IncomeType;
 import com.weaone.themoa.domain.member.entity.Member;
+import com.weaone.themoa.domain.member.entity.MemberWorkSchedule;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
+import com.weaone.themoa.domain.member.repository.MemberWorkScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +69,9 @@ public class SpendingGuideService {
     private final BudgetCycleService budgetCycleService;
     private final CardTransactionRepository cardTransactionRepository;
     private final CardConnectionRepository cardConnectionRepository;
+    private final MemberWorkScheduleRepository memberWorkScheduleRepository;
+    private final WorkScheduleSalaryCalculator workScheduleSalaryCalculator;
+    private final BudgetIncomeAdjustmentRepository budgetIncomeAdjustmentRepository;
 
     /**
      * S-00A 최초 설정. 월급·급여일을 저장하고 현재 주기 예산을 없으면 생성한 뒤 요약을 돌려준다.
@@ -69,13 +83,14 @@ public class SpendingGuideService {
     @Transactional
     public SpendingGuideSummaryResponse setup(Long memberId, SpendingGuideSetupRequest request) {
         Member member = getMember(memberId);
-        member.configureSpendingGuide(request.salaryAmount(), request.payday());
+        applyIncomeProfile(member, request.incomeType(), request.salaryAmount(), request.hourlyWage(),
+                request.workSchedule(), request.payday());
         LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
         if (cardConnectionRepository.existsByMember_IdAndInitialSyncStatus(memberId, InitialSyncStatus.COMPLETED)) {
             budgetCycleService.backfillPastCycles(member, today);
         }
         Budget budget = budgetCycleService.getOrCreateCurrentBudget(member, today);
-        return buildSummary(memberId, budget, today);
+        return buildSummary(member, budget, today);
     }
 
     /** S-01 오늘 현황·예산 기준. 미등록이면 setupRequired로 반환한다. */
@@ -87,7 +102,7 @@ public class SpendingGuideService {
         }
         LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
         Budget budget = budgetCycleService.getOrCreateCurrentBudget(member, today);
-        return buildSummary(memberId, budget, today);
+        return buildSummary(member, budget, today);
     }
 
     /**
@@ -97,6 +112,9 @@ public class SpendingGuideService {
     @Transactional
     public void changeSalary(Long memberId, SalaryUpdateRequest request) {
         Member member = getMember(memberId);
+        if (member.getIncomeType() != IncomeType.SALARY) {
+            throw new BusinessException(ErrorCode.INCOME_TYPE_MISMATCH);
+        }
         member.changeSalary(request.amount());
         if (request.applyFrom() == BudgetApplyScope.CURRENT_CYCLE && member.hasSpendingGuideSetup()) {
             LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
@@ -112,6 +130,78 @@ public class SpendingGuideService {
         if (request.applyFrom() == BudgetApplyScope.CURRENT_CYCLE && member.hasSpendingGuideSetup()) {
             LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
             budgetCycleService.getOrCreateCurrentBudget(member, today).applySavingsGoal(request.amount());
+        }
+    }
+
+    /** 시급·근무스케줄 수정(incomeType=HOURLY 전용). 적용 시점 규칙은 월급 수정과 같다. */
+    @Transactional
+    public void changeWorkSchedule(Long memberId, WorkScheduleUpdateRequest request) {
+        Member member = getMember(memberId);
+        if (member.getIncomeType() != IncomeType.HOURLY) {
+            throw new BusinessException(ErrorCode.INCOME_TYPE_MISMATCH);
+        }
+        member.changeHourlyWage(request.hourlyWage());
+        replaceWorkSchedule(member, request.workSchedule());
+        if (request.applyFrom() == BudgetApplyScope.CURRENT_CYCLE && member.hasSpendingGuideSetup()) {
+            LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
+            Budget budget = budgetCycleService.getOrCreateCurrentBudget(member, today);
+            BigDecimal recalculated = workScheduleSalaryCalculator.calculate(
+                    memberWorkScheduleRepository.findByMember_Id(memberId), request.hourlyWage(),
+                    budget.getCycleStartDate(), budget.getCycleEndDate());
+            budget.applySalary(recalculated);
+        }
+    }
+
+    /**
+     * 소득유형 자체를 전환(HOURLY↔SALARY, 예: 알바에서 정규직으로). 검증·저장 규칙은 최초 설정과 같은
+     * {@link #applyIncomeProfile}을 재사용하고, SALARY로 전환할 때는 반대 유형의 잔존 근무스케줄 행을
+     * 정리한다. 적용 시점 규칙은 월급 수정과 같다.
+     */
+    @Transactional
+    public void changeIncomeType(Long memberId, IncomeTypeUpdateRequest request) {
+        Member member = getMember(memberId);
+        applyIncomeProfile(member, request.incomeType(), request.salaryAmount(), request.hourlyWage(),
+                request.workSchedule(), member.getPayday());
+        if (request.incomeType() != IncomeType.HOURLY) {
+            memberWorkScheduleRepository.deleteByMember_Id(memberId);
+        }
+        if (request.applyFrom() == BudgetApplyScope.CURRENT_CYCLE && member.hasSpendingGuideSetup()) {
+            LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
+            Budget budget = budgetCycleService.getOrCreateCurrentBudget(member, today);
+            BigDecimal recalculated = request.incomeType() == IncomeType.HOURLY
+                    ? workScheduleSalaryCalculator.calculate(memberWorkScheduleRepository.findByMember_Id(memberId),
+                            request.hourlyWage(), budget.getCycleStartDate(), budget.getCycleEndDate())
+                    : request.salaryAmount();
+            budget.applySalary(recalculated);
+        }
+    }
+
+    /** 소득유형별 필수값 검증 후 member에 반영한다(S-00A). HOURLY는 요일별 스케줄도 같은 트랜잭션에서 저장한다. */
+    private void applyIncomeProfile(Member member, IncomeType incomeType, BigDecimal salaryAmount,
+                                     BigDecimal hourlyWage, List<WorkScheduleItem> workSchedule, Integer payday) {
+        if (incomeType == IncomeType.HOURLY) {
+            if (hourlyWage == null) {
+                throw new BusinessException(ErrorCode.INCOME_PROFILE_INVALID);
+            }
+            if (workSchedule == null || workSchedule.isEmpty()) {
+                throw new BusinessException(ErrorCode.WORK_SCHEDULE_EMPTY);
+            }
+            member.configureSpendingGuide(incomeType, null, hourlyWage, payday);
+            replaceWorkSchedule(member, workSchedule);
+        } else {
+            if (salaryAmount == null) {
+                throw new BusinessException(ErrorCode.INCOME_PROFILE_INVALID);
+            }
+            member.configureSpendingGuide(incomeType, salaryAmount, null, payday);
+        }
+    }
+
+    /** 요일별 근무스케줄 전체 교체(개별 UPDATE 대신 삭제 후 재생성). */
+    private void replaceWorkSchedule(Member member, List<WorkScheduleItem> workSchedule) {
+        memberWorkScheduleRepository.deleteByMember_Id(member.getId());
+        LocalDateTime now = LocalDateTime.now();
+        for (WorkScheduleItem item : workSchedule) {
+            memberWorkScheduleRepository.save(MemberWorkSchedule.create(member, item.dayOfWeek(), item.hours(), now));
         }
     }
 
@@ -147,7 +237,8 @@ public class SpendingGuideService {
         Budget budget = budgetCycleService.getOrCreateCurrentBudget(member, today);
         int remainingDays = BudgetCyclePolicy.remainingDays(today, budget.getCycleEndDate());
         BigDecimal spentThroughYesterday = netSpend(memberId, budget.getCycleStartDate(), today.minusDays(1));
-        BigDecimal guideLineAmount = budget.getDailyRecommendedAmount(spentThroughYesterday, remainingDays);
+        BigDecimal guideLineAmount =
+                budget.getDailyRecommendedAmount(spentThroughYesterday, remainingDays, incomeAdjustmentTotal(budget));
         return new RecentDaysResponse(daily, guideLineAmount);
     }
 
@@ -204,7 +295,7 @@ public class SpendingGuideService {
 
     /** 완료된 과거 주기의 예산·사용·결과 한 줄 요약(§3.4). 사용액은 고정지출 태그 거래를 제외한 순지출이다. */
     private CategorySummaryListResponse.CompletedCycleResult completedCycleResult(Long memberId, Budget budget) {
-        BigDecimal budgetAmount = budget.getAvailableAmount();
+        BigDecimal budgetAmount = budget.getAvailableAmount(incomeAdjustmentTotal(budget));
         BigDecimal spentAmount = netSpend(memberId, budget.getCycleStartDate(), budget.getCycleEndDate());
         BigDecimal resultAmount = budgetAmount.subtract(spentAmount);
         String resultType = resultAmount.signum() >= 0 ? "REMAINED" : "EXCEEDED";
@@ -258,7 +349,8 @@ public class SpendingGuideService {
         return Math.max(1, Math.min(requested, max));
     }
 
-    private SpendingGuideSummaryResponse buildSummary(Long memberId, Budget budget, LocalDate today) {
+    private SpendingGuideSummaryResponse buildSummary(Member member, Budget budget, LocalDate today) {
+        Long memberId = member.getId();
         LocalDate cycleStart = budget.getCycleStartDate();
         LocalDate cycleEnd = budget.getCycleEndDate();
         int remainingDays = BudgetCyclePolicy.remainingDays(today, cycleEnd);
@@ -267,8 +359,9 @@ public class SpendingGuideService {
         BigDecimal todayNetSpend = netSpend(memberId, today, today);
         BigDecimal spentThisCycle = netSpend(memberId, cycleStart, today);
 
-        BigDecimal available = budget.getAvailableAmount();
-        BigDecimal daily = budget.getDailyRecommendedAmount(spentThroughYesterday, remainingDays);
+        BigDecimal incomeAdjustmentTotal = incomeAdjustmentTotal(budget);
+        BigDecimal available = budget.getAvailableAmount(incomeAdjustmentTotal);
+        BigDecimal daily = budget.getDailyRecommendedAmount(spentThroughYesterday, remainingDays, incomeAdjustmentTotal);
         // 오늘 사용 가능 = max(0, 하루 권장액 − max(오늘 순사용액, 0)). Type 2 취소로 순사용액이 음수여도 권장액을 넘기지 않는다.
         BigDecimal todayAvailable = daily.subtract(todayNetSpend.max(BigDecimal.ZERO)).max(BigDecimal.ZERO);
         BigDecimal remaining = available.subtract(spentThisCycle);
@@ -277,7 +370,14 @@ public class SpendingGuideService {
         BigDecimal cycleOverspent = overCycleBudget ? remaining.negate() : BigDecimal.ZERO;
         boolean budgetUnaffordable = available.signum() < 0;
 
-        return SpendingGuideSummaryResponse.ready(budget.getYearMonth(), cycleStart, cycleEnd, remainingDays,
+        List<SpendingGuideSummaryResponse.WorkScheduleItemResponse> workSchedule = member.getIncomeType() == IncomeType.HOURLY
+                ? memberWorkScheduleRepository.findByMember_Id(memberId).stream()
+                        .map(SpendingGuideSummaryResponse.WorkScheduleItemResponse::from)
+                        .toList()
+                : List.of();
+
+        return SpendingGuideSummaryResponse.ready(member.getIncomeType(), member.getHourlyWage(), workSchedule,
+                budget.getYearMonth(), cycleStart, cycleEnd, remainingDays,
                 budget.getSalaryAmount(), budget.getSavingsGoalAmount(), budget.getExpectedFixedExpenseTotal(),
                 available, daily, todayNetSpend, todayAvailable, remaining, overCycleBudget, cycleOverspent,
                 budgetUnaffordable);
@@ -291,9 +391,51 @@ public class SpendingGuideService {
         return cardTransactionRepository.sumNetSpend(memberId, TransactionStatus.REJECTED, startDate, endDate);
     }
 
+    /** 그 주기 "수입 직접 입력" 합계. card_transaction 순지출과 별개로 사용가능금액에만 더해진다. */
+    private BigDecimal incomeAdjustmentTotal(Budget budget) {
+        return budgetIncomeAdjustmentRepository.sumAmountByBudget_Id(budget.getId());
+    }
+
+    /** 수입 직접 입력 생성. 항상 현재 급여 주기에 붙는다. */
+    @Transactional
+    public IncomeAdjustmentResponse createIncomeAdjustment(Long memberId, IncomeAdjustmentCreateRequest request) {
+        if (request.amount().signum() == 0) {
+            throw new BusinessException(ErrorCode.INCOME_ADJUSTMENT_AMOUNT_ZERO);
+        }
+        Member member = getMemberWithSetup(memberId);
+        LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
+        Budget budget = budgetCycleService.getOrCreateCurrentBudget(member, today);
+        BudgetIncomeAdjustment adjustment = budgetIncomeAdjustmentRepository.save(
+                BudgetIncomeAdjustment.create(budget, request.amount(), request.memo(), today, LocalDateTime.now()));
+        return IncomeAdjustmentResponse.from(adjustment);
+    }
+
+    /** 이번 급여 주기의 수입 직접 입력 목록(최신순). */
+    @Transactional(readOnly = true)
+    public List<IncomeAdjustmentResponse> listIncomeAdjustments(Long memberId) {
+        Member member = getMemberWithSetup(memberId);
+        LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
+        Budget budget = budgetCycleService.getOrCreateCurrentBudget(member, today);
+        return budgetIncomeAdjustmentRepository.findByBudget_IdOrderByCreatedAtDesc(budget.getId()).stream()
+                .map(IncomeAdjustmentResponse::from)
+                .toList();
+    }
+
+    /** 수입 직접 입력 삭제. 본인 소유가 아니면(다른 회원 소속이거나 미존재) 404. */
+    @Transactional
+    public void deleteIncomeAdjustment(Long memberId, Long adjustmentId) {
+        BudgetIncomeAdjustment adjustment = budgetIncomeAdjustmentRepository
+                .findByIdAndBudget_Member_Id(adjustmentId, memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INCOME_ADJUSTMENT_NOT_FOUND));
+        budgetIncomeAdjustmentRepository.delete(adjustment);
+    }
+
     private List<String> missingFields(Member member) {
         List<String> missing = new ArrayList<>();
-        if (member.getSalaryAmount() == null) {
+        boolean incomeMissing = member.getIncomeType() == IncomeType.HOURLY
+                ? member.getHourlyWage() == null
+                : member.getSalaryAmount() == null;
+        if (incomeMissing) {
             missing.add(FIELD_SALARY);
         }
         if (member.getPayday() == null) {
