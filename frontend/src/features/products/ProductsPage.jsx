@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import Toast from "../../components/common/Toast";
+import { useBookmarks } from "../../hooks/useBookmarks";
 import RecommendForm from "./components/RecommendForm";
 import RecommendResults from "./components/RecommendResults";
 import { useRecommend } from "./hooks/useRecommend";
@@ -6,6 +8,7 @@ import "./ProductsPage.css";
 
 function ProductsPage() {
   const { data, loading, error, searched, runRecommend } = useRecommend();
+  const bookmarks = useBookmarks();
 
   return (
     <main className="dash-main products-page">
@@ -29,9 +32,12 @@ function ProductsPage() {
             loading={loading}
             error={error}
             searched={searched}
+            bookmarks={bookmarks}
           />
         </section>
       </div>
+
+      <Toast toast={bookmarks.toast} onClose={bookmarks.clearToast} />
     </main>
   );
 }

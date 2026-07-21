@@ -217,6 +217,13 @@
   gap: 10px;
 }
 
+/* 금리 + 북마크 버튼을 카드 오른쪽 상단에 묶어 배치한다. */
+.fs-card-head-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .fs-type {
   padding: 4px 10px;
   border-radius: 999px;

@@ -206,6 +206,11 @@
   gap: 10px;
 }
 
+/* 북마크 버튼은 카드 오른쪽 상단에 붙인다. */
+.rec-card-head .bookmark-button {
+  margin-left: auto;
+}
+
 .rec-rank {
   font-size: 13px;
   font-weight: 800;
