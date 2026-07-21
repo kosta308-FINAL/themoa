@@ -7,7 +7,7 @@ import {
   formatWon,
 } from "../mypageUtils";
 
-function ProfileCard({ profile }) {
+function ProfileCard({ profile, onEdit }) {
   const incomeLabel =
     INCOME_TYPE_LABELS[profile.incomeType] || profile.incomeType;
   const incomeValue =
@@ -20,6 +20,14 @@ function ProfileCard({ profile }) {
           <DashboardIcon name="user" size={17} />
         </span>
         <h2>회원 정보</h2>
+        <button
+          type="button"
+          className="mp-ghost-button mp-card-head-action"
+          onClick={onEdit}
+        >
+          <DashboardIcon name="edit" size={14} />
+          정보 수정
+        </button>
       </div>
       <dl className="mp-info-list">
         <div>

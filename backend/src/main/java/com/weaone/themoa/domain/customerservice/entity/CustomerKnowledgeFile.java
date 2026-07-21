@@ -44,6 +44,15 @@ public class CustomerKnowledgeFile {
     @Column(name = "chunk_count", nullable = false)
     private int chunkCount;
 
+    @Column(name = "chunk_max_length")
+    private Integer chunkMaxLength;
+
+    @Column(name = "chunk_overlap_length")
+    private Integer chunkOverlapLength;
+
+    @Column(name = "split_by_markdown_heading")
+    private Boolean splitByMarkdownHeading;
+
     @Lob
     @Column(name = "original_content", nullable = false, columnDefinition = "LONGTEXT")
     private String originalContent;
@@ -66,11 +75,15 @@ public class CustomerKnowledgeFile {
     private LocalDateTime embeddedAt;
 
     private CustomerKnowledgeFile(String title, String category, String originalFilename, long fileSize,
-                                  String originalContent, Member createdBy, LocalDateTime now) {
+                                  String originalContent, int chunkMaxLength, int chunkOverlapLength,
+                                  boolean splitByMarkdownHeading, Member createdBy, LocalDateTime now) {
         this.title = title;
         this.category = category;
         this.originalFilename = originalFilename;
         this.fileSize = fileSize;
+        this.chunkMaxLength = chunkMaxLength;
+        this.chunkOverlapLength = chunkOverlapLength;
+        this.splitByMarkdownHeading = splitByMarkdownHeading;
         this.originalContent = originalContent;
         this.status = CustomerKnowledgeFileStatus.FAILED;
         this.active = true;
@@ -79,8 +92,31 @@ public class CustomerKnowledgeFile {
     }
 
     public static CustomerKnowledgeFile create(String title, String category, String originalFilename, long fileSize,
-                                               String originalContent, Member createdBy, LocalDateTime now) {
-        return new CustomerKnowledgeFile(title, category, originalFilename, fileSize, originalContent, createdBy, now);
+                                               String originalContent, int chunkMaxLength, int chunkOverlapLength,
+                                               boolean splitByMarkdownHeading, Member createdBy, LocalDateTime now) {
+        return new CustomerKnowledgeFile(
+                title,
+                category,
+                originalFilename,
+                fileSize,
+                originalContent,
+                chunkMaxLength,
+                chunkOverlapLength,
+                splitByMarkdownHeading,
+                createdBy,
+                now);
+    }
+
+    public int getChunkMaxLength() {
+        return chunkMaxLength == null ? 1_200 : chunkMaxLength;
+    }
+
+    public int getChunkOverlapLength() {
+        return chunkOverlapLength == null ? 150 : chunkOverlapLength;
+    }
+
+    public boolean isSplitByMarkdownHeading() {
+        return splitByMarkdownHeading == null || splitByMarkdownHeading;
     }
 
     public void updateChunkCount(int chunkCount) {

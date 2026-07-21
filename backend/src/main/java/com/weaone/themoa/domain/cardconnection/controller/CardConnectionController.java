@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -65,6 +66,15 @@ public class CardConnectionController {
             @AuthenticationPrincipal Long memberId,
             @Valid @RequestBody CardSyncSettingRequest request) {
         cardConnectionService.setCardSyncEnabled(memberId, request.enabled(), request.recoveryMode());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "카드 연동 해제", description = "마이페이지: 연동을 해제하면 이후 자동수집·배치 대상에서 제외됩니다. 기존 수집 내역은 유지됩니다.")
+    @DeleteMapping("/{connectionId}")
+    public ResponseEntity<Void> disconnect(
+            @AuthenticationPrincipal Long memberId,
+            @PathVariable Long connectionId) {
+        cardConnectionService.disconnect(memberId, connectionId);
         return ResponseEntity.noContent().build();
     }
 }

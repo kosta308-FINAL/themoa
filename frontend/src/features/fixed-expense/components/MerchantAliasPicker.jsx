@@ -7,14 +7,37 @@ function MerchantAliasPicker({ initialName = "", onChange }) {
   const [suggestions, setSuggestions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const boxRef = useRef(null);
+  const autoResolvedRef = useRef(false);
+
+  const selectAlias = (alias) => {
+    setQuery(alias.canonicalServiceName);
+    setIsOpen(false);
+    onChange({ merchantAliasId: alias.id, name: alias.canonicalServiceName });
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
       searchMerchantAliases(query)
-        .then(setSuggestions)
+        .then((results) => {
+          setSuggestions(results);
+          if (
+            !autoResolvedRef.current &&
+            query === initialName &&
+            query.trim()
+          ) {
+            autoResolvedRef.current = true;
+            const exact = results.find(
+              (alias) =>
+                alias.canonicalServiceName.trim().toLowerCase() ===
+                query.trim().toLowerCase(),
+            );
+            if (exact) selectAlias(exact);
+          }
+        })
         .catch(() => setSuggestions([]));
     }, 200);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   useEffect(() => {
@@ -31,12 +54,6 @@ function MerchantAliasPicker({ initialName = "", onChange }) {
     setQuery(next);
     setIsOpen(true);
     onChange({ merchantAliasId: null, name: next });
-  };
-
-  const selectAlias = (alias) => {
-    setQuery(alias.canonicalServiceName);
-    setIsOpen(false);
-    onChange({ merchantAliasId: alias.id, name: alias.canonicalServiceName });
   };
 
   const trimmedQuery = query.trim();

@@ -31,6 +31,10 @@ const formatDateTime = (value) => {
   if (!matched) return "—";
   return `${matched[1]}. ${Number(matched[2])}. ${Number(matched[3])}. ${matched[4]}:${matched[5]}`;
 };
+const dayOfMonth = (value) => {
+  const matched = String(value || "").match(/^\d{4}-\d{2}-(\d{2})/);
+  return matched ? String(Number(matched[1])) : "";
+};
 const paymentLabel = (transaction) => {
   if (transaction.paymentMethod === "CASH") return "현금";
   if (transaction.paymentMethod === "TRANSFER") return "계좌이체";
@@ -57,6 +61,7 @@ function TransactionDetailModal({
   categories,
   onClose,
   onChanged,
+  onRegisterFixedExpense,
 }) {
   const [transaction, setTransaction] = useState(null);
   const [categoryId, setCategoryId] = useState("");
@@ -156,6 +161,26 @@ function TransactionDetailModal({
       correctTransactionAmount(transactionId, Number(amountInput || 0)),
     );
     if (saved) setAmountOpen(false);
+  };
+
+  const handleRegisterFixedExpense = () => {
+    if (!transaction || !onRegisterFixedExpense) return;
+    const name =
+      transaction.merchantDisplayName || transaction.merchantNameRaw || "";
+    onRegisterFixedExpense({
+      transactionId,
+      name,
+      method: transaction.paymentMethod === "TRANSFER" ? "TRANSFER" : "CARD",
+      merchantAliasId: transaction.merchantAliasId ?? null,
+      merchantName: name,
+      categoryId: transaction.categoryId ? String(transaction.categoryId) : "",
+      amount:
+        transaction.netAmount != null
+          ? String(Math.round(Number(transaction.netAmount)))
+          : "",
+      payDay: dayOfMonth(transaction.usedAt),
+    });
+    onClose();
   };
 
   const handleDelete = async () => {
@@ -389,6 +414,18 @@ function TransactionDetailModal({
                 </>
               )}
             </div>
+            {onRegisterFixedExpense &&
+              (transaction.paymentMethod === "CARD" ||
+                transaction.paymentMethod === "TRANSFER") && (
+                <button
+                  type="button"
+                  className="spending-detail-register-fixed"
+                  onClick={handleRegisterFixedExpense}
+                >
+                  <DashboardIcon name="repeat" size={15} />이 거래로 고정지출
+                  등록
+                </button>
+              )}
             {transaction.source === "MANUAL" && (
               <button
                 type="button"

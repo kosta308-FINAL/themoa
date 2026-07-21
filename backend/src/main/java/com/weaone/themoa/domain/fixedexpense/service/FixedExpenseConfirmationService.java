@@ -31,7 +31,7 @@ public class FixedExpenseConfirmationService {
     private static final String CURRENCY_KRW = "KRW";
     private static final BigDecimal DOMESTIC_TOLERANCE = new BigDecimal("0.10");
     private static final BigDecimal FOREIGN_TOLERANCE = new BigDecimal("0.15");
-    private static final int CANDIDATE_WINDOW_DAYS = 10;
+    private static final int CANDIDATE_WINDOW_DAYS = 3;
 
     private final FixedExpenseRepository fixedExpenseRepository;
     private final CardTransactionRepository cardTransactionRepository;
@@ -46,6 +46,7 @@ public class FixedExpenseConfirmationService {
         LocalDate today = LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL);
         LocalDate expectedDate = expectedDateInMonth(fixedExpense, today);
         LocalDate start = expectedDate.minusDays(CANDIDATE_WINDOW_DAYS);
+        LocalDate end = expectedDate.plusDays(CANDIDATE_WINDOW_DAYS);
 
         BigDecimal tolerance = CURRENCY_KRW.equals(fixedExpense.getExpectedCurrency())
                 ? DOMESTIC_TOLERANCE : FOREIGN_TOLERANCE;
@@ -53,8 +54,10 @@ public class FixedExpenseConfirmationService {
         BigDecimal min = baseAmount.multiply(BigDecimal.ONE.subtract(tolerance));
         BigDecimal max = baseAmount.multiply(BigDecimal.ONE.add(tolerance));
 
+        Long merchantAliasId = fixedExpense.getMerchantAlias() != null
+                ? fixedExpense.getMerchantAlias().getId() : null;
         return cardTransactionRepository.findMissedPaymentCandidates(memberId, TransactionStatus.CANCELED,
-                start, today, min, max);
+                start, end, min, max, merchantAliasId);
     }
 
     /** "이 거래예요" 확정. */

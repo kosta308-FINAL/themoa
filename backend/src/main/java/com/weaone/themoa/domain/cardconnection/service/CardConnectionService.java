@@ -103,6 +103,7 @@ public class CardConnectionService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
         List<CardConnectionResponse> connections = cardConnectionRepository.findByMember_Id(memberId).stream()
+                .filter(connection -> connection.getStatus() != ConnectionStatus.DISCONNECTED)
                 .map(CardConnectionResponse::from)
                 .toList();
         return new CardConnectionListResponse(member.isCardSyncEnabled(), connections);
@@ -170,6 +171,17 @@ public class CardConnectionService {
             throw new BusinessException(ErrorCode.CARD_CONNECTION_RETRY_NOT_ALLOWED);
         }
         eventPublisher.publishEvent(new CardConnectionRetryRequestedEvent(connectionId));
+    }
+
+    /** 카드 연동 해제(마이페이지). 같은 카드사로 다시 연결하면 connect()가 이 행을 재사용한다. */
+    @Transactional
+    public void disconnect(Long memberId, Long connectionId) {
+        CardConnection connection = cardConnectionRepository.findByIdAndMember_Id(connectionId, memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CARD_CONNECTION_NOT_FOUND));
+        if (connection.getStatus() == ConnectionStatus.DISCONNECTED) {
+            throw new BusinessException(ErrorCode.CARD_CONNECTION_ALREADY_DISCONNECTED);
+        }
+        connection.disconnect();
     }
 
     private void rejectIfCoolingDown(Long memberId, CardIssuer cardIssuer, LocalDateTime now) {

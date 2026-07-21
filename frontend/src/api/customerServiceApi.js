@@ -91,10 +91,25 @@ export const getAdminCustomerKnowledgeDocuments = () =>
     .get("/api/admin/customer-service/ai-quality/documents")
     .then(responseData);
 
-export const uploadAdminCustomerKnowledgeDocument = ({ title, category, file }) => {
+export const getAdminCustomerKnowledgeMetadataOptions = () =>
+  axiosInstance
+    .get("/api/admin/customer-service/ai-quality/metadata-options")
+    .then(responseData);
+
+export const uploadAdminCustomerKnowledgeDocument = ({
+  title,
+  category,
+  file,
+  chunkMaxLength,
+  chunkOverlapLength,
+  splitByMarkdownHeading,
+}) => {
   const formData = new FormData();
   formData.append("title", title);
   formData.append("category", category);
+  formData.append("chunkMaxLength", chunkMaxLength);
+  formData.append("chunkOverlapLength", chunkOverlapLength);
+  formData.append("splitByMarkdownHeading", splitByMarkdownHeading);
   formData.append("file", file);
   return axiosInstance
     .post("/api/admin/customer-service/ai-quality/documents", formData, {
@@ -103,9 +118,24 @@ export const uploadAdminCustomerKnowledgeDocument = ({ title, category, file }) 
     .then(responseData);
 };
 
+export const previewAdminCustomerKnowledgeChunks = (request) =>
+  axiosInstance
+    .post(
+      "/api/admin/customer-service/ai-quality/documents/chunk-preview",
+      request,
+    )
+    .then(responseData);
+
+export const createAdminCustomerKnowledgeText = (request) =>
+  axiosInstance
+    .post("/api/admin/customer-service/ai-quality/documents/text", request)
+    .then(responseData);
+
 export const reembedAdminCustomerKnowledgeDocument = (documentId) =>
   axiosInstance
-    .post(`/api/admin/customer-service/ai-quality/documents/${documentId}/reembed`)
+    .post(
+      `/api/admin/customer-service/ai-quality/documents/${documentId}/reembed`,
+    )
     .then(responseData);
 
 export const disableAdminCustomerKnowledgeDocument = (documentId) =>

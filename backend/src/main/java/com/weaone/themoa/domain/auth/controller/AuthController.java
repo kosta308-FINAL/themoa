@@ -6,6 +6,7 @@ import com.weaone.themoa.domain.auth.dto.request.EmailCodeSendRequest;
 import com.weaone.themoa.domain.auth.dto.request.EmailCodeVerifyRequest;
 import com.weaone.themoa.domain.auth.dto.request.LoginRequest;
 import com.weaone.themoa.domain.auth.dto.request.SignupRequest;
+import com.weaone.themoa.domain.auth.dto.request.WithdrawRequest;
 import com.weaone.themoa.domain.auth.dto.response.TokenResponse;
 import com.weaone.themoa.domain.auth.service.AuthService;
 import com.weaone.themoa.domain.auth.service.AuthTokenService;
@@ -21,6 +22,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -101,6 +103,19 @@ public class AuthController {
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
             @Valid @RequestBody ChangePasswordRequest request) {
         authService.changePassword(memberId, request);
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookieFactory.expire().toString())
+                .build();
+    }
+
+    /**
+     * 회원 탈퇴(마이페이지). 비밀번호 확인 후 즉시 처리되며 전 세션이 무효화되어 다시 로그인할 수 없다.
+     */
+    @DeleteMapping("/account")
+    public ResponseEntity<Void> withdraw(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
+            @Valid @RequestBody WithdrawRequest request) {
+        authService.withdraw(memberId, request);
         return ResponseEntity.noContent()
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookieFactory.expire().toString())
                 .build();

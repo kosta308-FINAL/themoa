@@ -6,6 +6,7 @@ import com.weaone.themoa.config.AuthProperties;
 import com.weaone.themoa.domain.auth.dto.request.ChangePasswordRequest;
 import com.weaone.themoa.domain.auth.dto.request.LoginRequest;
 import com.weaone.themoa.domain.auth.dto.request.SignupRequest;
+import com.weaone.themoa.domain.auth.dto.request.WithdrawRequest;
 import com.weaone.themoa.domain.auth.entity.MemberTermsAgreement;
 import com.weaone.themoa.domain.auth.entity.TermsType;
 import com.weaone.themoa.domain.auth.repository.MemberTermsAgreementRepository;
@@ -147,6 +148,22 @@ public class AuthService {
     public void logoutAllDevices(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS));
+        authTokenService.revokeAll(member);
+    }
+
+    /**
+     * 회원 탈퇴(마이페이지). 비밀번호 확인 후 개인정보를 익명화하고 전 세션을 즉시 무효화한다.
+     * 카드연동·거래 등 연관 데이터의 파기는 별도 배치가 처리한다.
+     */
+    @Transactional
+    public void withdraw(Long memberId, WithdrawRequest request) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS));
+        if (member.getPassword() == null
+                || !passwordEncoder.matches(request.password(), member.getPassword())) {
+            throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS);
+        }
+        member.withdraw(LocalDateTime.now());
         authTokenService.revokeAll(member);
     }
 

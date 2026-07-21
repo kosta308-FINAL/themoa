@@ -75,6 +75,17 @@
   width: 15px;
   height: 15px;
 }
+.consume-history-page .icon-spin {
+  animation: consume-history-spin 0.8s linear infinite;
+}
+@keyframes consume-history-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .consume-history-page .page {
   width: min(1240px, 100%);

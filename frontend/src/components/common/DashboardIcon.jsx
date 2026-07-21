@@ -35,7 +35,7 @@ const PATHS = {
   edit: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z",
 };
 
-function DashboardIcon({ name, size = 18 }) {
+function DashboardIcon({ name, size = 18, className }) {
   const d = PATHS[name];
   if (!d) return null;
   return (
@@ -48,6 +48,7 @@ function DashboardIcon({ name, size = 18 }) {
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
+      className={className}
     >
       <path d={d} />
     </svg>

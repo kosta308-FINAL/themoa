@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { getSpendingTransactions } from "../../api/spendingGuideApi";
 import CalendarPopover from "../../components/common/CalendarPopover";
 import DashboardIcon from "../../components/common/DashboardIcon";
+import RegisterExpenseModal from "../fixed-expense/components/RegisterExpenseModal";
 import BudgetSettingsModal from "./BudgetSettingsModal";
 import CardManagementModal from "./CardManagementModal";
 import CategorySummary from "./components/CategorySummary";
@@ -66,6 +67,7 @@ function SpendingGuidePage() {
   const navigate = useNavigate();
   const [isSavingsGoalOpen, setIsSavingsGoalOpen] = useState(false);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
+  const [fixedExpenseInitial, setFixedExpenseInitial] = useState(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(todayDate());
   const [dayItems, setDayItems] = useState(null);
@@ -449,6 +451,11 @@ function SpendingGuidePage() {
                             <DashboardIcon
                               name={hasCardConnection ? "repeat" : "plus"}
                               size={15}
+                              className={
+                                isSyncing
+                                  ? "spending-sync-icon-spin"
+                                  : undefined
+                              }
                             />
                             {hasCardConnection
                               ? isSyncing
@@ -621,6 +628,15 @@ function SpendingGuidePage() {
             setDetailId(null);
             setEditingTransaction(transaction);
           }}
+          onRegisterFixedExpense={setFixedExpenseInitial}
+        />
+      )}
+      {fixedExpenseInitial && (
+        <RegisterExpenseModal
+          initial={fixedExpenseInitial}
+          categories={data.categories}
+          onClose={() => setFixedExpenseInitial(null)}
+          onSaved={loadGuide}
         />
       )}
       {editingTransaction && (
