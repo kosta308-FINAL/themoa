@@ -119,10 +119,10 @@ const nowLocalInputValue = () => {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
 };
 
-function HistoryIcon({ name, small = false }) {
+function HistoryIcon({ name, small = false, spin = false }) {
   return (
     <svg
-      className={`icon${small ? " icon-sm" : ""}`}
+      className={`icon${small ? " icon-sm" : ""}${spin ? " icon-spin" : ""}`}
       viewBox="0 0 24 24"
       aria-hidden="true"
     >
@@ -1077,7 +1077,7 @@ function SpendingHistoryPage() {
                       onClick={handleSync}
                       disabled={isSyncing}
                     >
-                      <HistoryIcon name="repeat" small />
+                      <HistoryIcon name="repeat" small spin={isSyncing} />
                       {isSyncing ? "동기화 중..." : "결제내역 동기화"}
                     </button>
                   </div>

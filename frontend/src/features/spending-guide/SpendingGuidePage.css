@@ -2470,6 +2470,17 @@
   color: #52635a;
   background: #f2f5f3;
 }
+.spending-sync-icon-spin {
+  animation: spending-sync-spin 0.8s linear infinite;
+}
+@keyframes spending-sync-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 .spending-guide .spending-link-button {
   display: inline-flex;
   align-items: center;

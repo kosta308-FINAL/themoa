@@ -449,6 +449,11 @@ function SpendingGuidePage() {
                             <DashboardIcon
                               name={hasCardConnection ? "repeat" : "plus"}
                               size={15}
+                              className={
+                                isSyncing
+                                  ? "spending-sync-icon-spin"
+                                  : undefined
+                              }
                             />
                             {hasCardConnection
                               ? isSyncing

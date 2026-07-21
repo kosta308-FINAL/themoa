@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 
 function Header() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <header className="header">
       <div className="header-inner container">
@@ -24,10 +27,15 @@ function Header() {
           <span className="logo-text">Themore</span>
         </div>
         <div className="header-actions">
-          <Link to="/login" className="btn btn-ghost">
-            로그인
-          </Link>
-          {/* <a href="#" className="btn btn-primary">시작하기</a> */}
+          {isAuthenticated ? (
+            <Link to="/dashboard" className="btn btn-ghost">
+              대시보드로 이동
+            </Link>
+          ) : (
+            <Link to="/login" className="btn btn-ghost">
+              로그인
+            </Link>
+          )}
         </div>
       </div>
     </header>

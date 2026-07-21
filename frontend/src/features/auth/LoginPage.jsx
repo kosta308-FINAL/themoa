@@ -22,7 +22,10 @@ function LoginPage() {
     try {
       const res = await requestLogin(email.trim(), password);
       login(res.data.data);
-      navigate(isAdminAccessToken() ? "/admin/customer-service" : "/dashboard");
+      navigate(
+        isAdminAccessToken() ? "/admin/customer-service" : "/dashboard",
+        { replace: true },
+      );
     } catch (err) {
       setError(
         getApiErrorMessage(err, "이메일 또는 비밀번호가 올바르지 않습니다."),
