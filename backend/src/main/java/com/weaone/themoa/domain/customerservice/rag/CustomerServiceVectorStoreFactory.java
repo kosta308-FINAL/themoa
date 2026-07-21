@@ -33,10 +33,16 @@ public class CustomerServiceVectorStoreFactory {
         if (qdrantClient == null || embeddingModel == null) {
             return null;
         }
-        vectorStore = QdrantVectorStore.builder(qdrantClient, embeddingModel)
+        QdrantVectorStore qdrantVectorStore = QdrantVectorStore.builder(qdrantClient, embeddingModel)
                 .collectionName(properties.collectionName())
                 .initializeSchema(true)
                 .build();
+        try {
+            qdrantVectorStore.afterPropertiesSet();
+        } catch (Exception ex) {
+            throw new IllegalStateException("고객센터 Qdrant 컬렉션을 초기화하지 못했습니다.", ex);
+        }
+        vectorStore = qdrantVectorStore;
         return vectorStore;
     }
 }
