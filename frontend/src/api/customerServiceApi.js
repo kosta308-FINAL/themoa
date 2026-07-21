@@ -9,6 +9,9 @@ export const getFaqs = (params) =>
 export const putFaqFeedback = (faqId, helpful) =>
   axiosInstance.put(`/api/faqs/${faqId}/feedback`, { helpful });
 
+export const askCustomerServiceChat = (request) =>
+  axiosInstance.post("/api/customer-service/chat", request).then(responseData);
+
 // 1:1 문의 - 사용자
 export const getInquiryCategories = () =>
   axiosInstance.get("/api/inquiry-categories").then(responseData);

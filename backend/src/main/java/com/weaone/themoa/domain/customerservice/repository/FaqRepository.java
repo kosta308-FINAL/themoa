@@ -8,10 +8,20 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.util.List;
 
 public interface FaqRepository extends JpaRepository<Faq, Long> {
 
     Optional<Faq> findByIdAndActiveTrue(Long id);
+
+    @Query("""
+            select f from Faq f
+            join fetch f.faqCategory fc
+            where f.active = true
+              and fc.active = true
+            order by fc.displayOrder asc, f.priority desc, f.id asc
+            """)
+    List<Faq> findAllActiveWithCategory();
 
     /**
      * 사용자 노출용 FAQ 검색(customerservice.md §4-1). 활성 카테고리·활성 FAQ만 대상이고,
