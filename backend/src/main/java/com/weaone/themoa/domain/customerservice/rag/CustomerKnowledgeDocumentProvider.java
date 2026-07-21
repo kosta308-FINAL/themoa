@@ -41,12 +41,7 @@ public class CustomerKnowledgeDocumentProvider {
                         String.valueOf(faq.getId()),
                         faq.getFaqCategory().getName(),
                         faq.getQuestion(),
-                        """
-                                질문: %s
-
-                                답변:
-                                %s
-                                """.formatted(faq.getQuestion(), faq.getAnswerMarkdown())))
+                        faqContent(faq)))
                 .toList();
     }
 
@@ -64,15 +59,34 @@ public class CustomerKnowledgeDocumentProvider {
                 String.valueOf(answer.getId()),
                 answer.getInquiry().getInquiryCategory().getName(),
                 answer.getInquiry().getTitle(),
-                """
-                        기존 문의 제목: %s
-                        문의 유형: %s
+                answeredInquiryContent(answer));
+    }
 
-                        고객센터 답변:
-                        %s
-                        """.formatted(
-                        answer.getInquiry().getTitle(),
-                        answer.getInquiry().getInquiryCategory().getName(),
-                        answer.getContentMarkdown()));
+    private String faqContent(Faq faq) {
+        return """
+                문서유형: 고객센터 FAQ
+                카테고리: %s
+                사용자 질문 표현: %s
+
+                운영 기준 및 답변 내용:
+                %s
+                """.formatted(
+                faq.getFaqCategory().getName(),
+                faq.getQuestion(),
+                faq.getAnswerMarkdown()).trim();
+    }
+
+    private String answeredInquiryContent(CustomerInquiryAnswer answer) {
+        return """
+                문서유형: 기존 1:1 문의 답변
+                카테고리: %s
+                기존 문의 제목: %s
+
+                운영 기준 및 관리자 답변:
+                %s
+                """.formatted(
+                answer.getInquiry().getInquiryCategory().getName(),
+                answer.getInquiry().getTitle(),
+                answer.getContentMarkdown()).trim();
     }
 }
