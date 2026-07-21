@@ -164,6 +164,17 @@ app:
     chat-model: ${OPENAI_CHAT_MODEL:gpt-4.1-mini}
     embedding-model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
 
+  # 금융상품 검색(financialsearch).
+  # enabled=false면 순수 LIKE 키워드 검색(1단계). true면 Qdrant 벡터검색까지 하이브리드(2단계).
+  # 벡터검색은 정책 RAG와 "별도 컬렉션"(collection-name)을 쓰며, 켜기 전 /embeddings/rebuild로 데이터 적재 필요.
+  financial:
+    rag:
+      enabled: ${FINANCIAL_RAG_ENABLED:false}
+      collection-name: ${FINANCIAL_QDRANT_COLLECTION:financial_products}
+      top-k: 20
+      retry-top-k: 40
+      minimum-similarity: 0.45
+
   region-sync:
     enabled: ${SGIS_REGION_SYNC_ENABLED:false}
     sync-on-startup: false
