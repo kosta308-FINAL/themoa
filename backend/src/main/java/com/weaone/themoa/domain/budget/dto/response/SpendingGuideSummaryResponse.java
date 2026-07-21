@@ -12,6 +12,11 @@ import java.util.List;
  * S-01 오늘 현황·예산 기준(dayguide.md §3.1). 월급·급여일 미등록도 오류가 아니라
  * {@code setupRequired=true}로 반환한다. 금액은 계산 규칙(dailyBudget.md)에 따라 음수를 그대로 보존하고,
  * 하루 권장액·오늘 사용 가능 금액만 화면용 0 바닥이 이미 적용돼 있다.
+ *
+ * <p>{@code cycleSavingsAmount}는 {@code remainingAmount}(월 예산 − 실사용, 주기 마감 시 {@code surplus_fund}에
+ * 그대로 적립되는 값)와는 다른 지표다 — 날짜별로 재구성한 그날의 하루 권장액과 그날 실사용액의 차이를
+ * 경과일만큼 누적한 "절약 습관" 값이며, 하루 권장액이 매일 재계산되는 적응형 구조라 일반적으로
+ * {@code remainingAmount}와 값이 갈린다(dailyBudget.md §1). 화면 표시용이라 0 바닥을 적용한다.
  */
 public record SpendingGuideSummaryResponse(
         boolean setupRequired,
@@ -37,6 +42,7 @@ public record SpendingGuideSummaryResponse(
         BigDecimal todayNetSpend,
         BigDecimal todayAvailableAmount,
         BigDecimal remainingAmount,
+        BigDecimal cycleSavingsAmount,
 
         boolean overCycleBudget,
         BigDecimal cycleOverspentAmount,
@@ -55,7 +61,7 @@ public record SpendingGuideSummaryResponse(
                 null, null, List.of(), null, null,
                 null, null, null, null,
                 null, null, null, null,
-                null, null, null, null,
+                null, null, null, null, null,
                 false, null, false);
     }
 
@@ -65,13 +71,13 @@ public record SpendingGuideSummaryResponse(
             String yearMonth, LocalDate cycleStartDate, LocalDate cycleEndDate, int remainingDays,
             BigDecimal salaryAmount, BigDecimal savingsGoalAmount, BigDecimal expectedFixedExpenseTotal,
             BigDecimal availableAmount, BigDecimal dailyRecommendedAmount, BigDecimal todayNetSpend,
-            BigDecimal todayAvailableAmount, BigDecimal remainingAmount, boolean overCycleBudget,
-            BigDecimal cycleOverspentAmount, boolean budgetUnaffordable) {
+            BigDecimal todayAvailableAmount, BigDecimal remainingAmount, BigDecimal cycleSavingsAmount,
+            boolean overCycleBudget, BigDecimal cycleOverspentAmount, boolean budgetUnaffordable) {
         return new SpendingGuideSummaryResponse(false, List.of(),
                 incomeType, hourlyWage, workSchedule, payday, pendingPayday,
                 yearMonth, cycleStartDate, cycleEndDate, remainingDays,
                 salaryAmount, savingsGoalAmount, expectedFixedExpenseTotal, availableAmount,
-                dailyRecommendedAmount, todayNetSpend, todayAvailableAmount, remainingAmount,
+                dailyRecommendedAmount, todayNetSpend, todayAvailableAmount, remainingAmount, cycleSavingsAmount,
                 overCycleBudget, cycleOverspentAmount, budgetUnaffordable);
     }
 }

@@ -140,8 +140,10 @@ function SpendingGuidePage() {
   const isDayCategoryReady =
     isSelectedToday || (!isDayCategoryLoading && !dayCategoryError);
   // 완료된 주기의 surplus_fund(erd.md §6) 합계를 반환하는 조회 API가 아직 없어
-  // 완료 주기 누적치는 빈 상태로 둔다(가짜 숫자 금지). 반면 진행 중인 이번 주기는
-  // summary.remainingAmount(예산 - 현재까지 사용액)로 실시간 계산이 가능하므로 바로 보여준다.
+  // 완료 주기 누적치는 빈 상태로 둔다(가짜 숫자 금지). 진행 중인 이번 주기는
+  // summary.cycleSavingsAmount(하루 권장액을 날짜별로 재구성해 실사용액과 비교한 누적 절약액)로
+  // 보여준다 — remainingAmount(예산 - 누적 사용액, 주기 마감 시 그대로 surplus_fund에 적립되는 값)와는
+  // 다른 지표다.
   const surplusSummary = {
     hasSavingsGoal: toNumber(summary?.savingsGoalAmount) > 0,
     savingsTargetAmount: toNumber(summary?.savingsGoalAmount),
@@ -151,7 +153,7 @@ function SpendingGuidePage() {
     ongoingCycle: summary
       ? {
           yearMonth: summary.cycleStartDate,
-          amount: toNumber(summary.remainingAmount),
+          amount: toNumber(summary.cycleSavingsAmount),
         }
       : null,
   };
