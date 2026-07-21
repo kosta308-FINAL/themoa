@@ -143,8 +143,9 @@ function FixedExpensePage() {
     showToast("이미 처리된 추천 후보예요. 최신 상태로 갱신했어요.");
   };
 
-  const handleDetailChanged = async () => {
+  const handleDetailChanged = async (message) => {
     await load();
+    if (message) showToast(message);
   };
 
   const items = expenseList?.items || [];
