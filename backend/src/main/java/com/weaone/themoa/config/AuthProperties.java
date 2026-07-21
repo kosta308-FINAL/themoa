@@ -16,7 +16,8 @@ import java.time.Duration;
 public record AuthProperties(
         @Valid @NotNull Jwt jwt,
         @Valid @NotNull Refresh refresh,
-        @Valid @NotNull EmailVerification emailVerification
+        @Valid @NotNull EmailVerification emailVerification,
+        @Valid @NotNull Terms terms
 ) {
 
     /**
@@ -54,6 +55,15 @@ public record AuthProperties(
             int maxVerifyAttempts,
             @NotNull Duration verifiedTtl,
             @NotBlank String from
+    ) {
+    }
+
+    /**
+     * @param version 회원가입 약관 3종(서비스 이용약관·개인정보 수집이용·데이터 수집활용)에 공통 적용되는
+     *                게시 버전. {@code member_terms_agreement.terms_version}에 그대로 저장된다.
+     */
+    public record Terms(
+            @NotBlank String version
     ) {
     }
 }

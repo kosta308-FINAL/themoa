@@ -43,6 +43,8 @@ app:
       max-verify-attempts: 5
       verified-ttl: 30m
       from: test@example.com
+    terms:
+      version: 2026-07-21
   codef:
     # 테스트 전용 더미값. 실제 CODEF 호출은 컨텍스트 기동 테스트에서 일어나지 않는다.
     client-id: test-client-id

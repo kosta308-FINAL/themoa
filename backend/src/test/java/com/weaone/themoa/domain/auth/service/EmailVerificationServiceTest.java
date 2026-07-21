@@ -44,7 +44,8 @@ class EmailVerificationServiceTest {
                 new AuthProperties.Jwt("ignored", Duration.ofMinutes(30)),
                 new AuthProperties.Refresh(Duration.ofDays(5), "/api/auth", false),
                 new AuthProperties.EmailVerification(Duration.ofMinutes(5), Duration.ofSeconds(60), MAX_ATTEMPTS,
-                        Duration.ofMinutes(30), "test@example.com")
+                        Duration.ofMinutes(30), "test@example.com"),
+                new AuthProperties.Terms("2026-07-21")
         );
         emailVerificationService = new EmailVerificationService(
                 memberRepository, new EmailVerificationStore(properties), mailSender, properties);

@@ -22,7 +22,8 @@ class JwtTokenProviderTest {
                 new AuthProperties.Jwt(base64Secret, ACCESS_TOKEN_VALIDITY),
                 new AuthProperties.Refresh(Duration.ofDays(5), "/api/auth", false),
                 new AuthProperties.EmailVerification(Duration.ofMinutes(5), Duration.ofSeconds(60), 5,
-                        Duration.ofMinutes(30), "test@example.com")
+                        Duration.ofMinutes(30), "test@example.com"),
+                new AuthProperties.Terms("2026-07-21")
         );
         return new JwtTokenProvider(properties);
     }
