@@ -7,11 +7,10 @@ function ComingSoonCard() {
         <span className="mp-card-icon">
           <DashboardIcon name="sparkle" size={17} />
         </span>
-        <h2>북마크 · 금융성향진단</h2>
+        <h2>추가 기능 준비 중</h2>
       </div>
       <p className="mp-empty">
-        정책·금융상품 북마크와 금융성향진단 이력은 준비 중이에요. 곧 만나보실 수
-        있어요.
+        금융상품 북마크와 금융성향진단 이력은 준비 중이에요.
       </p>
     </section>
   );

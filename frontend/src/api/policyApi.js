@@ -30,3 +30,12 @@ export const getPolicyJob = (jobId) =>
 
 export const startPolicyJob = (jobKey) =>
   axiosInstance.post(`/api/policies/admin/jobs/${jobKey}`).then(responseData)
+
+export const getPolicyBookmarks = () =>
+  axiosInstance.get('/api/policies/bookmarks').then(responseData)
+
+export const addPolicyBookmark = (policyId) =>
+  axiosInstance.post(`/api/policies/bookmarks/${policyId}`).then(responseData)
+
+export const deletePolicyBookmark = (policyId) =>
+  axiosInstance.delete(`/api/policies/bookmarks/${policyId}`)

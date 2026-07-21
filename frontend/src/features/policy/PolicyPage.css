@@ -282,6 +282,40 @@
   line-height: 1.5;
 }
 
+.policy-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.policy-bookmark-button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.policy-bookmark-button.active {
+  background: #111827;
+}
+
+.policy-bookmark-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.policy-bookmark-error {
+  margin: 10px 0 0;
+  color: #991b1b;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .policy-empty {
   padding: 22px;
   color: #6b7280;
