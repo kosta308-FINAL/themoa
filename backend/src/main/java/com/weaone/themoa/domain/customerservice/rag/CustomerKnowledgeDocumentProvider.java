@@ -1,8 +1,10 @@
 package com.weaone.themoa.domain.customerservice.rag;
 
 import com.weaone.themoa.domain.customerservice.entity.CustomerInquiryAnswer;
+import com.weaone.themoa.domain.customerservice.entity.CustomerKnowledgeChunk;
 import com.weaone.themoa.domain.customerservice.entity.Faq;
 import com.weaone.themoa.domain.customerservice.repository.CustomerInquiryAnswerRepository;
+import com.weaone.themoa.domain.customerservice.repository.CustomerKnowledgeChunkRepository;
 import com.weaone.themoa.domain.customerservice.repository.FaqRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -20,6 +22,7 @@ public class CustomerKnowledgeDocumentProvider {
     private final CustomerServiceGuideCatalog guideCatalog;
     private final FaqRepository faqRepository;
     private final CustomerInquiryAnswerRepository answerRepository;
+    private final CustomerKnowledgeChunkRepository knowledgeChunkRepository;
 
     @Transactional(readOnly = true)
     public List<CustomerKnowledgeDocument> loadDocuments() {
@@ -27,6 +30,7 @@ public class CustomerKnowledgeDocumentProvider {
         documents.addAll(guideCatalog.documents());
         documents.addAll(faqDocuments());
         documents.addAll(answeredInquiryDocuments());
+        documents.addAll(adminDocumentChunks());
         return documents.stream()
                 .filter(document -> StringUtils.hasText(document.content()))
                 .sorted(Comparator.comparing(CustomerKnowledgeDocument::id))
@@ -88,5 +92,26 @@ public class CustomerKnowledgeDocumentProvider {
                 answer.getInquiry().getInquiryCategory().getName(),
                 answer.getInquiry().getTitle(),
                 answer.getContentMarkdown()).trim();
+    }
+
+    private List<CustomerKnowledgeDocument> adminDocumentChunks() {
+        return knowledgeChunkRepository.findByKnowledgeFile_ActiveTrueOrderByKnowledgeFile_IdAscChunkIndexAsc().stream()
+                .filter(chunk -> StringUtils.hasText(chunk.getContent()))
+                .map(this::adminDocumentChunk)
+                .toList();
+    }
+
+    private CustomerKnowledgeDocument adminDocumentChunk(CustomerKnowledgeChunk chunk) {
+        return new CustomerKnowledgeDocument(
+                adminDocumentKnowledgeId(chunk),
+                CustomerKnowledgeSourceType.ADMIN_DOCUMENT,
+                String.valueOf(chunk.getId()),
+                chunk.getKnowledgeFile().getCategory(),
+                chunk.getKnowledgeFile().getTitle() + " #" + (chunk.getChunkIndex() + 1),
+                chunk.getContent());
+    }
+
+    public static String adminDocumentKnowledgeId(CustomerKnowledgeChunk chunk) {
+        return "admin-document:" + chunk.getId();
     }
 }

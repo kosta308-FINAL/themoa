@@ -122,7 +122,14 @@ public enum ErrorCode {
     CUSTOMER_INQUIRY_ANSWER_CONFLICT(HttpStatus.CONFLICT, "이미 답변이 등록되었거나 화면이 최신 상태가 아닙니다. 새로고침 후 다시 시도해 주세요."),
     CUSTOMER_INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "문의를 찾을 수 없습니다."),
     CUSTOMER_INQUIRY_ATTACHMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "첨부파일을 찾을 수 없습니다."),
-    CUSTOMER_INQUIRY_FILE_STORAGE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "첨부파일을 저장하지 못했습니다.");
+    CUSTOMER_INQUIRY_FILE_STORAGE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "첨부파일을 저장하지 못했습니다."),
+
+    // 고객센터 - AI 지식관리
+    CUSTOMER_KNOWLEDGE_INVALID_REQUEST(HttpStatus.BAD_REQUEST, "고객센터 AI 지식관리 요청 값이 올바르지 않습니다."),
+    CUSTOMER_KNOWLEDGE_FILE_TYPE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "md 또는 txt 파일만 업로드할 수 있습니다."),
+    CUSTOMER_KNOWLEDGE_FILE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "업로드 파일 용량이 허용 범위를 초과했습니다."),
+    CUSTOMER_KNOWLEDGE_DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "고객센터 AI 지식 문서를 찾을 수 없습니다."),
+    CUSTOMER_KNOWLEDGE_EMBEDDING_FAILED(HttpStatus.BAD_GATEWAY, "고객센터 AI 지식 문서를 임베딩하지 못했습니다.");
     private final HttpStatus status;
     private final String message;
 
