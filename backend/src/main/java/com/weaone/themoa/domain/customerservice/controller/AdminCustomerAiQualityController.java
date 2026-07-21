@@ -4,10 +4,12 @@ import com.weaone.themoa.common.response.ApiResponse;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiPreviewRequest;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiSearchRequest;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiSettingsRequest;
+import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerKnowledgeChunkPreviewRequest;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerKnowledgeTextRequest;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiPreviewResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiSearchResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiSettingsResponse;
+import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeChunkPreviewResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeFileResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeMetadataOptionsResponse;
 import com.weaone.themoa.domain.customerservice.service.AdminCustomerAiQualityService;
@@ -84,6 +86,12 @@ public class AdminCustomerAiQualityController {
                 chunkOverlapLength,
                 splitByMarkdownHeading,
                 file));
+    }
+
+    @PostMapping("/documents/chunk-preview")
+    public ApiResponse<AdminCustomerKnowledgeChunkPreviewResponse> previewChunks(
+            @RequestBody AdminCustomerKnowledgeChunkPreviewRequest request) {
+        return ApiResponse.success(aiQualityService.previewChunks(request));
     }
 
     @PostMapping("/documents/text")

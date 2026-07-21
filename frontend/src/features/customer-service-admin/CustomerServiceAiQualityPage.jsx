@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AdminLayout from "../../components/layout/AdminLayout";
 import {
   createAdminCustomerKnowledgeText,
@@ -7,6 +7,7 @@ import {
   getAdminCustomerKnowledgeDocuments,
   getAdminCustomerKnowledgeMetadataOptions,
   previewAdminCustomerAiAnswer,
+  previewAdminCustomerKnowledgeChunks,
   reembedAdminCustomerKnowledgeDocument,
   searchAdminCustomerAiKnowledge,
   updateAdminCustomerAiSettings,
@@ -67,6 +68,12 @@ function CustomerServiceAiQualityPage() {
   const [chunkMaxLength, setChunkMaxLength] = useState(1200);
   const [chunkOverlapLength, setChunkOverlapLength] = useState(150);
   const [splitByMarkdownHeading, setSplitByMarkdownHeading] = useState(true);
+  const [chunkPreview, setChunkPreview] = useState(null);
+  const [chunkPreviewLoading, setChunkPreviewLoading] = useState(false);
+  const [chunkPreviewError, setChunkPreviewError] = useState("");
+  const uploadFileTextRef = useRef("");
+  const chunkPreviewTimerRef = useRef(null);
+  const chunkPreviewRequestIdRef = useRef(0);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busyKey, setBusyKey] = useState("");
@@ -97,19 +104,136 @@ function CustomerServiceAiQualityPage() {
   };
 
   useEffect(() => {
-    Promise.all([
-      loadSettings(),
-      loadDocuments(),
-      loadMetadataOptions(),
-    ]).catch((requestError) => {
-      setError(
-        getApiErrorMessage(
-          requestError,
-          "AI 품질관리 정보를 불러오지 못했어요.",
-        ),
-      );
-    });
+    Promise.all([loadSettings(), loadDocuments(), loadMetadataOptions()]).catch(
+      (requestError) => {
+        setError(
+          getApiErrorMessage(
+            requestError,
+            "AI 품질관리 정보를 불러오지 못했어요.",
+          ),
+        );
+      },
+    );
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (chunkPreviewTimerRef.current) {
+        clearTimeout(chunkPreviewTimerRef.current);
+      }
+    };
+  }, []);
+
+  const scheduleChunkPreview = (content, optionOverrides = {}) => {
+    if (chunkPreviewTimerRef.current) {
+      clearTimeout(chunkPreviewTimerRef.current);
+    }
+    const trimmed = (content || "").trim();
+    const requestId = ++chunkPreviewRequestIdRef.current;
+    if (!trimmed) {
+      setChunkPreview(null);
+      setChunkPreviewError("");
+      setChunkPreviewLoading(false);
+      return;
+    }
+    setChunkPreviewLoading(true);
+    setChunkPreviewError("");
+    const options = {
+      chunkMaxLength: Number(optionOverrides.chunkMaxLength ?? chunkMaxLength),
+      chunkOverlapLength: Number(
+        optionOverrides.chunkOverlapLength ?? chunkOverlapLength,
+      ),
+      splitByMarkdownHeading:
+        optionOverrides.splitByMarkdownHeading ?? splitByMarkdownHeading,
+    };
+    chunkPreviewTimerRef.current = setTimeout(async () => {
+      try {
+        const data = await previewAdminCustomerKnowledgeChunks({
+          content,
+          ...options,
+        });
+        if (chunkPreviewRequestIdRef.current === requestId) {
+          setChunkPreview(data);
+        }
+      } catch (requestError) {
+        if (chunkPreviewRequestIdRef.current === requestId) {
+          setChunkPreview(null);
+          setChunkPreviewError(
+            getApiErrorMessage(requestError, "청킹 미리보기에 실패했어요."),
+          );
+        }
+      } finally {
+        if (chunkPreviewRequestIdRef.current === requestId) {
+          setChunkPreviewLoading(false);
+        }
+      }
+    }, 400);
+  };
+
+  const currentKnowledgeContent = () =>
+    knowledgeInputMode === "text" ? knowledgeText : uploadFileTextRef.current;
+
+  const handleKnowledgeTextChange = (value) => {
+    setKnowledgeText(value);
+    if (knowledgeInputMode === "text") {
+      scheduleChunkPreview(value);
+    }
+  };
+
+  const handleKnowledgeInputModeChange = (mode) => {
+    setKnowledgeInputMode(mode);
+    scheduleChunkPreview(
+      mode === "text" ? knowledgeText : uploadFileTextRef.current,
+    );
+  };
+
+  const handleUploadFileChange = (file) => {
+    setUploadFile(file);
+    if (!file) {
+      uploadFileTextRef.current = "";
+      scheduleChunkPreview("");
+      return;
+    }
+    file
+      .text()
+      .then((text) => {
+        uploadFileTextRef.current = text;
+        scheduleChunkPreview(text);
+      })
+      .catch(() => {
+        uploadFileTextRef.current = "";
+        scheduleChunkPreview("");
+      });
+  };
+
+  const handleChunkMaxLengthChange = (value) => {
+    setChunkMaxLength(value);
+    scheduleChunkPreview(currentKnowledgeContent(), { chunkMaxLength: value });
+  };
+
+  const handleChunkOverlapLengthChange = (value) => {
+    setChunkOverlapLength(value);
+    scheduleChunkPreview(currentKnowledgeContent(), {
+      chunkOverlapLength: value,
+    });
+  };
+
+  const handleSplitByMarkdownHeadingChange = (checked) => {
+    setSplitByMarkdownHeading(checked);
+    scheduleChunkPreview(currentKnowledgeContent(), {
+      splitByMarkdownHeading: checked,
+    });
+  };
+
+  const clearChunkPreview = () => {
+    chunkPreviewRequestIdRef.current += 1;
+    if (chunkPreviewTimerRef.current) {
+      clearTimeout(chunkPreviewTimerRef.current);
+    }
+    setChunkPreview(null);
+    setChunkPreviewError("");
+    setChunkPreviewLoading(false);
+  };
 
   const runSearch = async () => {
     setBusyKey("search");
@@ -195,6 +319,8 @@ function CustomerServiceAiQualityPage() {
       });
       setUploadTitle("");
       setUploadFile(null);
+      uploadFileTextRef.current = "";
+      clearChunkPreview();
       event.target.reset();
       await Promise.all([loadDocuments(), loadMetadataOptions()]);
       setNotice("문서를 청킹하고 Qdrant에 임베딩했어요.");
@@ -226,6 +352,7 @@ function CustomerServiceAiQualityPage() {
       });
       setUploadTitle("");
       setKnowledgeText("");
+      clearChunkPreview();
       await Promise.all([loadDocuments(), loadMetadataOptions()]);
       setNotice("입력한 텍스트를 청킹하고 Qdrant에 임베딩했어요.");
     } catch (requestError) {
@@ -427,8 +554,8 @@ function CustomerServiceAiQualityPage() {
             <div>
               <h2>고객센터 지식 추가</h2>
               <p>
-                파일을 올리거나 일반 텍스트를 입력하면 청킹 후 고객센터
-                Qdrant 컬렉션에 임베딩됩니다.
+                파일을 올리거나 일반 텍스트를 입력하면 청킹 후 고객센터 Qdrant
+                컬렉션에 임베딩됩니다.
               </p>
             </div>
           </div>
@@ -437,14 +564,14 @@ function CustomerServiceAiQualityPage() {
             <button
               type="button"
               className={knowledgeInputMode === "text" ? "active" : ""}
-              onClick={() => setKnowledgeInputMode("text")}
+              onClick={() => handleKnowledgeInputModeChange("text")}
             >
               직접 입력
             </button>
             <button
               type="button"
               className={knowledgeInputMode === "file" ? "active" : ""}
-              onClick={() => setKnowledgeInputMode("file")}
+              onClick={() => handleKnowledgeInputModeChange("file")}
             >
               md/txt 파일
             </button>
@@ -492,7 +619,9 @@ function CustomerServiceAiQualityPage() {
                 className="aiq-knowledge-textarea"
                 placeholder="고객센터에서 답변 근거로 쓸 내용을 자유롭게 입력하세요."
                 value={knowledgeText}
-                onChange={(event) => setKnowledgeText(event.target.value)}
+                onChange={(event) =>
+                  handleKnowledgeTextChange(event.target.value)
+                }
                 rows={8}
               />
             ) : (
@@ -507,7 +636,7 @@ function CustomerServiceAiQualityPage() {
                   type="file"
                   accept=".md,.txt,text/markdown,text/plain"
                   onChange={(event) =>
-                    setUploadFile(event.target.files?.[0] || null)
+                    handleUploadFileChange(event.target.files?.[0] || null)
                   }
                 />
               </label>
@@ -541,11 +670,13 @@ function CustomerServiceAiQualityPage() {
                   max="4000"
                   step="100"
                   value={chunkMaxLength}
-                  onChange={(event) => setChunkMaxLength(event.target.value)}
+                  onChange={(event) =>
+                    handleChunkMaxLengthChange(event.target.value)
+                  }
                 />
                 <small>
-                  한 조각에 담을 최대 글자 수입니다. 값이 작으면 짧은 질문에
-                  잘 맞고, 값이 크면 문맥을 더 오래 유지합니다.
+                  한 조각에 담을 최대 글자 수입니다. 값이 작으면 짧은 질문에 잘
+                  맞고, 값이 크면 문맥을 더 오래 유지합니다.
                 </small>
               </label>
               <label className="aiq-field">
@@ -557,7 +688,7 @@ function CustomerServiceAiQualityPage() {
                   step="50"
                   value={chunkOverlapLength}
                   onChange={(event) =>
-                    setChunkOverlapLength(event.target.value)
+                    handleChunkOverlapLengthChange(event.target.value)
                   }
                 />
                 <small>
@@ -570,7 +701,7 @@ function CustomerServiceAiQualityPage() {
                   type="checkbox"
                   checked={splitByMarkdownHeading}
                   onChange={(event) =>
-                    setSplitByMarkdownHeading(event.target.checked)
+                    handleSplitByMarkdownHeadingChange(event.target.checked)
                   }
                 />
                 <span>
@@ -582,6 +713,43 @@ function CustomerServiceAiQualityPage() {
                 </span>
               </label>
             </div>
+          </div>
+
+          <div className="aiq-chunk-preview">
+            <div className="aiq-chunk-options-heading">
+              <h3>예상 청킹 미리보기</h3>
+              <p>
+                실제로 임베딩되기 전에, 위 옵션으로 나누면 몇 개의 조각으로
+                쪼개지는지 미리 확인할 수 있어요.
+              </p>
+            </div>
+            {chunkPreviewLoading ? (
+              <div className="aiq-empty">청킹 결과를 계산하는 중...</div>
+            ) : chunkPreviewError ? (
+              <div className="aiq-alert">{chunkPreviewError}</div>
+            ) : !chunkPreview ? (
+              <div className="aiq-empty">
+                {knowledgeInputMode === "text"
+                  ? "내용을 입력하면 예상 청크가 여기에 표시됩니다."
+                  : "파일을 선택하면 예상 청크가 여기에 표시됩니다."}
+              </div>
+            ) : (
+              <>
+                <div className="aiq-chunk-preview-summary">
+                  <span>총 {chunkPreview.totalLength.toLocaleString()}자</span>
+                  <span>{chunkPreview.chunkCount}개 청크로 분리 예상</span>
+                </div>
+                <div className="aiq-chunk-list">
+                  {chunkPreview.chunks.map((chunk) => (
+                    <div className="aiq-chunk" key={chunk.chunkIndex}>
+                      <strong>#{chunk.chunkIndex + 1}</strong>
+                      <span>{chunk.length.toLocaleString()}자</span>
+                      <p>{chunk.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </section>
 

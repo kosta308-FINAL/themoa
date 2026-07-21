@@ -118,6 +118,14 @@ export const uploadAdminCustomerKnowledgeDocument = ({
     .then(responseData);
 };
 
+export const previewAdminCustomerKnowledgeChunks = (request) =>
+  axiosInstance
+    .post(
+      "/api/admin/customer-service/ai-quality/documents/chunk-preview",
+      request,
+    )
+    .then(responseData);
+
 export const createAdminCustomerKnowledgeText = (request) =>
   axiosInstance
     .post("/api/admin/customer-service/ai-quality/documents/text", request)
@@ -125,7 +133,9 @@ export const createAdminCustomerKnowledgeText = (request) =>
 
 export const reembedAdminCustomerKnowledgeDocument = (documentId) =>
   axiosInstance
-    .post(`/api/admin/customer-service/ai-quality/documents/${documentId}/reembed`)
+    .post(
+      `/api/admin/customer-service/ai-quality/documents/${documentId}/reembed`,
+    )
     .then(responseData);
 
 export const disableAdminCustomerKnowledgeDocument = (documentId) =>

@@ -5,11 +5,13 @@ import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiPreviewRequest;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiSearchRequest;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiSettingsRequest;
+import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerKnowledgeChunkPreviewRequest;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerKnowledgeTextRequest;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiPreviewResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiSearchResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiSearchResultResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiSettingsResponse;
+import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeChunkPreviewResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeChunkResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeFileResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeMetadataOptionsResponse;
@@ -174,6 +176,20 @@ public class AdminCustomerAiQualityService {
                 content.getBytes(StandardCharsets.UTF_8).length,
                 content,
                 options);
+    }
+
+    public AdminCustomerKnowledgeChunkPreviewResponse previewChunks(AdminCustomerKnowledgeChunkPreviewRequest request) {
+        String content = requireText(request == null ? null : request.content(), 1, 500_000);
+        CustomerKnowledgeChunkingOptions options = CustomerKnowledgeChunkingOptions.normalize(
+                request == null ? null : request.chunkMaxLength(),
+                request == null ? null : request.chunkOverlapLength(),
+                request == null ? null : request.splitByMarkdownHeading());
+        List<String> chunks = chunker.chunk(content, options);
+        List<AdminCustomerKnowledgeChunkPreviewResponse.Item> items = IntStream.range(0, chunks.size())
+                .mapToObj(index -> new AdminCustomerKnowledgeChunkPreviewResponse.Item(
+                        index, chunks.get(index).length(), chunks.get(index)))
+                .toList();
+        return new AdminCustomerKnowledgeChunkPreviewResponse(items.size(), content.length(), items);
     }
 
     private AdminCustomerKnowledgeFileResponse createKnowledgeDocument(Long adminId, String normalizedTitle,
