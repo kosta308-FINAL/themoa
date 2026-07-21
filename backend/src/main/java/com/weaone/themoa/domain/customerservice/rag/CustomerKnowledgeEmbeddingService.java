@@ -70,13 +70,7 @@ public class CustomerKnowledgeEmbeddingService implements ApplicationRunner {
     private Document toVectorDocument(CustomerKnowledgeDocument document) {
         return Document.builder()
                 .id(stableUuid(document.id()))
-                .text("""
-                        제목: %s
-                        분류: %s
-                        출처: %s
-
-                        %s
-                        """.formatted(document.title(), document.category(), document.sourceType().name(), document.content()))
+                .text(document.content())
                 .metadata(Map.of(
                         "sourceType", document.sourceType().name(),
                         "sourceId", document.sourceId(),
