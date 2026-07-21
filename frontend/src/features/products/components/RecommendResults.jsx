@@ -35,7 +35,7 @@ function FeasibilityNotice({ feasibility }) {
 /**
  * 추천 결과 영역. 로딩·오류·검색 전·빈 결과·정상 목록을 분기해서 보여준다.
  */
-function RecommendResults({ loading, error, data, searched }) {
+function RecommendResults({ loading, error, data, searched, bookmarks }) {
   if (loading) {
     return <div className="rec-state">추천 상품을 찾고 있어요…</div>;
   }
@@ -65,6 +65,7 @@ function RecommendResults({ loading, error, data, searched }) {
             key={`${item.company}-${item.productName}-${index}`}
             item={item}
             rank={index + 1}
+            bookmarks={bookmarks}
           />
         ))
       )}

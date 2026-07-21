@@ -1,0 +1,126 @@
+/* 마이페이지 "관심 상품" 카드. 카드 뼈대(mp-card 등)는 MyPage.css 것을 그대로 쓰고,
+   목록 내부 스타일만 여기서 정의한다. */
+
+.mp-financial-bookmark-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mp-financial-bookmark-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--dash-border, #e5ede8);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.mp-financial-bookmark-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mp-financial-bookmark-type {
+  align-self: flex-start;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--dash-accent-light, #e7f9ee);
+  color: var(--dash-accent-dark, #16a34a);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mp-financial-bookmark-item h3 {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.mp-financial-bookmark-sub {
+  font-size: 12px;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.mp-financial-bookmark-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.mp-financial-bookmark-rate {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dash-accent-dark, #16a34a);
+  white-space: nowrap;
+}
+
+.mp-financial-bookmark-side button {
+  padding: 6px 12px;
+  border: 1px solid var(--dash-border, #e5ede8);
+  border-radius: 999px;
+  background: #fff;
+  color: #e11d48;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mp-financial-bookmark-side button:hover:not(:disabled) {
+  border-color: #e11d48;
+  background: #fff1f3;
+}
+
+.mp-financial-bookmark-side button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mp-financial-bookmark-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 24px;
+  text-align: center;
+  color: var(--dash-text-secondary, #6b7a72);
+  font-size: 13px;
+}
+
+.mp-financial-bookmark-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fdeeee;
+  color: #a12c2c;
+  font-size: 13px;
+}
+
+.mp-financial-bookmark-error button {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #fff;
+  color: #a12c2c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .mp-financial-bookmark-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .mp-financial-bookmark-side {
+    align-items: flex-start;
+    flex-direction: row;
+  }
+}

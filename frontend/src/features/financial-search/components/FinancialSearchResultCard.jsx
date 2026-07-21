@@ -1,3 +1,6 @@
+import BookmarkButton from "../../../components/common/BookmarkButton";
+import { bookmarkTargetTypeOf } from "../../../utils/bookmarkTarget";
+
 const PRODUCT_TYPE_LABELS = {
   DEPOSIT: "정기예금",
   SAVING: "적금",
@@ -12,10 +15,12 @@ const LOAN_TYPES = new Set(["MORTGAGE", "RENT", "CREDIT"]);
  * 검색 결과 카드 1건. 대표금리 기준이 상품 성격에 따라 달라서(예·적금=최고금리, 대출=최저금리)
  * 라벨도 그에 맞춰 바꿔 표시한다.
  */
-function FinancialSearchResultCard({ item }) {
+function FinancialSearchResultCard({ item, bookmarks }) {
   const typeLabel = PRODUCT_TYPE_LABELS[item.productType] || item.productType;
   const isLoan = LOAN_TYPES.has(item.productType);
   const rateLabel = isLoan ? "최저" : "최고";
+  const targetType = bookmarkTargetTypeOf(item.productType);
+  const canBookmark = item.id != null;
 
   return (
     <article className="fs-card">
@@ -23,13 +28,22 @@ function FinancialSearchResultCard({ item }) {
         <span className={`fs-type ${isLoan ? "fs-type-loan" : ""}`}>
           {typeLabel}
         </span>
-        {item.representativeRate != null && (
-          <span className="fs-rate">
-            {rateLabel} <strong>{item.representativeRate}%</strong>
-            {item.representativeTermMonth != null &&
-              ` · ${item.representativeTermMonth}개월`}
-          </span>
-        )}
+        <div className="fs-card-head-right">
+          {item.representativeRate != null && (
+            <span className="fs-rate">
+              {rateLabel} <strong>{item.representativeRate}%</strong>
+              {item.representativeTermMonth != null &&
+                ` · ${item.representativeTermMonth}개월`}
+            </span>
+          )}
+          {canBookmark && (
+            <BookmarkButton
+              bookmarked={bookmarks.isBookmarked(targetType, item.id)}
+              busy={bookmarks.isBusy(targetType, item.id)}
+              onToggle={() => bookmarks.toggleBookmark(targetType, item.id)}
+            />
+          )}
+        </div>
       </div>
 
       <h3 className="fs-name">
