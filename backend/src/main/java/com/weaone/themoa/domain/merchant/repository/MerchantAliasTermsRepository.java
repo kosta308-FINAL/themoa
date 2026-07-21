@@ -29,7 +29,8 @@ public interface MerchantAliasTermsRepository extends JpaRepository<MerchantAlia
     /**
      * 관리자 전역 승격 대기목록(manage.html "전역 마스터 승격 대기목록" 확장). 회원 학습 표기를
      * (alias, 표기) 단위로 묶어 학습자 수 내림차순으로 준다. {@code defaultCategory}가 없는 alias도
-     * 빠지지 않도록 left join으로 카테고리를 가져온다.
+     * 빠지지 않도록 left join으로 카테고리를 가져온다. 이미 전역 등록됐거나 관리자가 반려한
+     * (alias, 표기) 조합은 다시 안 뜨도록 둘 다 제외한다.
      */
     @Query("select t.merchantAlias.id as aliasId, t.aliasText as aliasText, "
             + "a.canonicalServiceName as canonicalServiceName, c.name as categoryName, "
@@ -42,6 +43,11 @@ public interface MerchantAliasTermsRepository extends JpaRepository<MerchantAlia
             + "  select g.id from MerchantAliasTerms g "
             + "  where g.member is null "
             + "  and upper(trim(g.aliasText)) = upper(trim(t.aliasText))"
+            + ") "
+            + "and not exists ("
+            + "  select r.id from PromotionCandidateRejection r "
+            + "  where r.merchantAlias.id = t.merchantAlias.id "
+            + "  and upper(trim(r.aliasText)) = upper(trim(t.aliasText))"
             + ") "
             + "group by t.merchantAlias.id, t.aliasText, a.canonicalServiceName, c.name "
             + "order by count(distinct t.member.id) desc")

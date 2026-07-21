@@ -67,6 +67,9 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
     /** 관리자 서비스 병합 대상 조회: 이 서비스로 이미 분류된 거래 전체(회원 구분 없이). */
     List<CardTransaction> findByMerchantAlias_Id(Long merchantAliasId);
 
+    /** 데모 시드 재기동 시 중복 생성 방지용. */
+    boolean existsByApprovalNo(String approvalNo);
+
     /**
      * F-05 미납 확인 후보(troubleshooting/billerProblem.md §6): 미태깅 + 금액오차 + 결제일 윈도우.
      * 가맹점은 미식별(merchantAlias null, biller 경유 포함) 거래이거나 이 고정지출과 같은 alias로

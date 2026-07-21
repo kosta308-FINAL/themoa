@@ -4,6 +4,7 @@ import DashboardIcon from "../../components/common/DashboardIcon";
 import {
   getPromotionCandidates,
   promoteMerchantAliasTerm,
+  rejectMerchantAliasProposal,
   getUnclassifiedMerchants,
   registerQuickMerchantAlias,
   getAllMerchantAliases,
@@ -19,52 +20,34 @@ function formatAmount(value) {
   return `${Math.round(num).toLocaleString()}원`;
 }
 
-/** 같은 canonicalServiceName(연결될 서비스)으로 들어온 여러 원본 표기(variant)를 한 그룹으로 묶는다.
- * "chat-g-p-t" / "ChatGPT구독" / "ai구독"처럼 회원마다 제각각 학습한 표기라도 결국 같은 서비스로
- * 승격될 후보이므로, 관리자 화면에서는 서비스 단위 카드 안에 표기 변형들을 나열해 한눈에 보이게 한다. */
-function groupCandidatesByService(candidates) {
+/** 카드사가 준 원본 표기(aliasText)를 기준으로 묶는다 — 확정된 사실은 이 문자열이고, 서비스명은
+ * 회원이 그 문자열에 붙인 "제안"일 뿐이다. 같은 원본 표기에 서로 다른 서비스명이 제안돼 있으면
+ * (예: 같은 "tving_subscription"을 누구는 "TVING 구독", 누구는 "tving 구독"으로 등록) 그 자체가
+ * 서비스가 중복 생성됐다는 신호라서, 카드 안에 제안된 서비스명 전부를 나란히 보여준다. */
+function groupCandidatesByRawText(candidates) {
   const groups = new Map();
   candidates.forEach((candidate) => {
-    const key = candidate.aliasId;
+    const key = candidate.aliasText;
     if (!groups.has(key)) {
       groups.set(key, {
-        aliasId: candidate.aliasId,
-        canonicalServiceName: candidate.canonicalServiceName,
-        categoryName: candidate.categoryName,
-        variants: [],
+        aliasText: candidate.aliasText,
+        proposals: [],
       });
     }
-    groups.get(key).variants.push({
-      aliasText: candidate.aliasText,
+    groups.get(key).proposals.push({
+      aliasId: candidate.aliasId,
+      canonicalServiceName: candidate.canonicalServiceName,
+      categoryName: candidate.categoryName,
       learnerCount: candidate.learnerCount,
     });
   });
   return Array.from(groups.values())
     .map((group) => ({
       ...group,
-      learnerTotal: group.variants.reduce((sum, v) => sum + v.learnerCount, 0),
+      learnerTotal: group.proposals.reduce((sum, p) => sum + p.learnerCount, 0),
+      hasConflict: group.proposals.length > 1,
     }))
     .sort((a, b) => b.learnerTotal - a.learnerTotal);
-}
-
-/** 공백·특수문자·대소문자만 다른 서비스명을 같은 뭉치로 묶어, 중복 의심 표시에 쓴다.
- * "클로드구독"과 "CLAUDE SUBSCRIPTION"처럼 언어 자체가 다른 표현까지는 못 잡아낸다 —
- * 그런 경우는 관리자가 이름순 목록을 눈으로 보고 직접 골라 병합해야 한다. */
-function normalizeServiceName(name) {
-  return (name || "").replace(/[^\p{L}\p{N}]/gu, "").toLowerCase();
-}
-
-function markLikelyDuplicates(aliases) {
-  const countByKey = new Map();
-  aliases.forEach((alias) => {
-    const key = normalizeServiceName(alias.canonicalServiceName);
-    countByKey.set(key, (countByKey.get(key) || 0) + 1);
-  });
-  return aliases.map((alias) => ({
-    ...alias,
-    likelyDuplicate:
-      countByKey.get(normalizeServiceName(alias.canonicalServiceName)) > 1,
-  }));
 }
 
 function MerchantMasterAdminPage() {
@@ -84,17 +67,8 @@ function MerchantMasterAdminPage() {
   const [isMerging, setIsMerging] = useState(false);
 
   const candidateGroups = useMemo(
-    () => groupCandidatesByService(candidates),
+    () => groupCandidatesByRawText(candidates),
     [candidates],
-  );
-
-  const aliasRows = useMemo(
-    () => markLikelyDuplicates(allAliases),
-    [allAliases],
-  );
-  const duplicateCount = useMemo(
-    () => aliasRows.filter((alias) => alias.likelyDuplicate).length,
-    [aliasRows],
   );
 
   const loadAliases = async () => {
@@ -149,18 +123,37 @@ function MerchantMasterAdminPage() {
       .catch(() => {});
   }, []);
 
-  /** 카드(서비스) 단위로 승격한다 — 이 그룹에 묶인 표기 변형은 이미 같은 서비스로 확인된 것들이므로
-   * 개별 선택 없이 한 번에 전부 전역 마스터로 올린다. */
-  const handlePromoteGroup = async (group) => {
-    setPromotingKey(group.aliasId);
+  /** 원본 표기 하나를, 그 표기에 제안된 서비스명 하나로 전역 기본값으로 승격한다. 같은 표기에 제안이
+   * 여러 개(중복 alias)여도 다른 제안·다른 학습자는 절대 건드리지 않는다 — resolve()가 "내 학습 →
+   * 전역" 순으로 찾기 때문에, 이미 자기 이름으로 학습해 둔 사람은 승격 이후에도 계속 자기 것을 본다.
+   * 전역 승격은 그 표기를 한 번도 학습한 적 없는 새 회원을 위한 기본값일 뿐이다. 같은 실제 서비스를
+   * 아예 하나로 합치고 싶다면(다른 학습자의 화면까지 바꾸고 싶다면) "서비스 중복 탐지 & 병합"에서
+   * 관리자가 그걸 의도했다는 걸 분명히 하고 따로 진행해야 한다. */
+  const handlePromoteProposal = async (group, proposal) => {
+    const key = `${group.aliasText}:${proposal.aliasId}`;
+    setPromotingKey(key);
     setError("");
     try {
-      for (const variant of group.variants) {
-        await promoteMerchantAliasTerm(group.aliasId, variant.aliasText);
-      }
+      await promoteMerchantAliasTerm(proposal.aliasId, group.aliasText);
       await load();
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, "승격에 실패했어요."));
+    } finally {
+      setPromotingKey(null);
+    }
+  };
+
+  /** 이 (표기, 제안 서비스명) 조합이 틀렸다고 판단해 대기목록에서 다시 안 뜨게 반려한다. 학습한
+   * 회원의 개인 표기는 그대로 두므로, 그 회원 본인 화면에는 영향이 없다. */
+  const handleRejectProposal = async (group, proposal) => {
+    const key = `${group.aliasText}:${proposal.aliasId}`;
+    setPromotingKey(key);
+    setError("");
+    try {
+      await rejectMerchantAliasProposal(proposal.aliasId, group.aliasText);
+      await load();
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, "반려에 실패했어요."));
     } finally {
       setPromotingKey(null);
     }
@@ -241,10 +234,10 @@ function MerchantMasterAdminPage() {
               <DashboardIcon name="sparkle" size={18} />
             </span>
             <div className="mma-kpi-body">
-              <span className="mma-kpi-title">전역 승격 대기 서비스</span>
-              <span className="mma-kpi-value">{candidateGroups.length} 개</span>
+              <span className="mma-kpi-title">전역 승격 대기 표기</span>
+              <span className="mma-kpi-value">{candidateGroups.length} 건</span>
               <span className="mma-kpi-hint">
-                표기 {candidates.length}건 발견
+                서비스명 제안 {candidates.length}건
               </span>
             </div>
           </div>
@@ -264,10 +257,10 @@ function MerchantMasterAdminPage() {
               <DashboardIcon name="building" size={18} />
             </span>
             <div className="mma-kpi-body">
-              <span className="mma-kpi-title">중복 의심 서비스</span>
-              <span className="mma-kpi-value danger">{duplicateCount} 개</span>
+              <span className="mma-kpi-title">등록된 전체 서비스</span>
+              <span className="mma-kpi-value">{allAliases.length} 개</span>
               <span className="mma-kpi-hint">
-                전체 서비스 {allAliases.length}개 중
+                아래 목록에서 직접 확인하세요
               </span>
             </div>
           </div>
@@ -284,10 +277,16 @@ function MerchantMasterAdminPage() {
               <div>
                 <div className="mma-panel-title">전역 마스터 승격 대기목록</div>
                 <div className="mma-panel-sub">
-                  같은 서비스를 가리키는 여러 원본 표기를 회원들이 각자 다르게
-                  학습한 경우, 서비스 단위로 묶어 보여줍니다. 카드 하나가 이미
-                  검증된 서비스 하나이므로, 승격은 서비스 단위로 한 번에
-                  이루어집니다.
+                  카드사가 준 원본 표기(고정된 사실) 기준으로 묶고, 회원들이 그
+                  표기에 제안한 서비스명을 나란히 보여줍니다. 승격은 그 표기를
+                  아직 학습한 적 없는 새 회원을 위한 기본값을 정하는 것일 뿐,
+                  이미 다른 이름으로 학습해 둔 회원의 화면은 바꾸지 않습니다
+                  (개인 학습이 항상 전역보다 우선). 제안이 여러 개라고 해서 누가
+                  틀린 건 아니고 — &quot;tving구독&quot;/&quot;티빙
+                  구독&quot;처럼 여럿 다 맞는 이름일 수 있습니다. 이름이 진짜로
+                  틀렸다고 판단되면(오타 등) &quot;반려&quot;로 그 제안만
+                  대기목록에서 뺄 수 있고, 서비스 자체를 하나로 합치고 싶다면
+                  &quot;서비스 중복 탐지 &amp; 병합&quot;에서 따로 진행하세요.
                 </div>
               </div>
             </div>
@@ -299,40 +298,60 @@ function MerchantMasterAdminPage() {
           ) : (
             <div className="mma-group-list">
               {candidateGroups.map((group) => (
-                <div className="mma-group-card" key={group.aliasId}>
+                <div className="mma-group-card" key={group.aliasText}>
                   <div className="mma-group-header">
                     <div className="mma-group-heading">
-                      <span className="mma-badge purple">
-                        {group.canonicalServiceName}
-                      </span>
+                      <code className="mma-rawtext-badge">
+                        {group.aliasText}
+                      </code>
                       <span className="mma-group-meta">
-                        표기 {group.variants.length}종 · 학습 총{" "}
+                        제안된 서비스명 {group.proposals.length}개 · 학습 총{" "}
                         {group.learnerTotal}명
                       </span>
-                      <span className="mma-group-category">
-                        {group.categoryName || "카테고리 미지정"}
-                      </span>
+                      {group.hasConflict && (
+                        <span className="mma-badge purple">제안 여러 개</span>
+                      )}
                     </div>
-                    <button
-                      type="button"
-                      className="mma-btn mma-btn-primary mma-btn-sm"
-                      disabled={promotingKey === group.aliasId}
-                      onClick={() => handlePromoteGroup(group)}
-                    >
-                      {promotingKey === group.aliasId
-                        ? "승격 중..."
-                        : "전역 승격 (Approve)"}
-                    </button>
                   </div>
                   <ul className="mma-variant-list">
-                    {group.variants.map((variant) => (
-                      <li className="mma-variant-row" key={variant.aliasText}>
-                        <code>{variant.aliasText}</code>
-                        <span className="mma-variant-learners">
-                          {variant.learnerCount}명 학습
-                        </span>
-                      </li>
-                    ))}
+                    {group.proposals.map((proposal) => {
+                      const key = `${group.aliasText}:${proposal.aliasId}`;
+                      return (
+                        <li className="mma-variant-row" key={key}>
+                          <span className="mma-badge purple">
+                            {proposal.canonicalServiceName}
+                          </span>
+                          <span className="mma-variant-category">
+                            {proposal.categoryName || "카테고리 미지정"}
+                          </span>
+                          <span className="mma-variant-learners">
+                            {proposal.learnerCount}명 학습
+                          </span>
+                          <button
+                            type="button"
+                            className="mma-btn mma-btn-ghost-red mma-btn-sm"
+                            disabled={promotingKey === key}
+                            onClick={() =>
+                              handleRejectProposal(group, proposal)
+                            }
+                          >
+                            반려
+                          </button>
+                          <button
+                            type="button"
+                            className="mma-btn mma-btn-primary mma-btn-sm"
+                            disabled={promotingKey === key}
+                            onClick={() =>
+                              handlePromoteProposal(group, proposal)
+                            }
+                          >
+                            {promotingKey === key
+                              ? "승격 중..."
+                              : "이 이름으로 승격"}
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ))}
@@ -446,18 +465,16 @@ function MerchantMasterAdminPage() {
                 <div className="mma-panel-sub">
                   가맹점 검색으로 고르지 않고 고정지출 등록 시 이름을 직접
                   입력하면, 같은 실제 서비스라도 이름이 다르면 별개 서비스로
-                  새로 생성됩니다. 합칠 서비스들을 체크하고 그중 남길 서비스를
-                  &quot;병합 대상&quot;으로 지정한 뒤 병합하세요. 배지는
-                  공백·대소문자 차이만 자동으로 잡아낸 힌트이고,
-                  &quot;클로드구독&quot;과 &quot;CLAUDE SUBSCRIPTION&quot;처럼
-                  언어 자체가 다른 표기는 직접 찾아 선택해야 합니다.
+                  새로 생성됩니다. 아래 목록을 직접 훑어 같은 서비스를 찾고,
+                  합칠 서비스들을 체크한 뒤 그중 남길 서비스를 &quot;병합
+                  대상&quot;으로 지정해서 병합하세요.
                 </div>
               </div>
             </div>
           </div>
           {isLoadingAliases ? (
             <div className="mma-empty">불러오는 중...</div>
-          ) : aliasRows.length === 0 ? (
+          ) : allAliases.length === 0 ? (
             <div className="mma-empty">등록된 서비스가 없습니다.</div>
           ) : (
             <>
@@ -472,7 +489,7 @@ function MerchantMasterAdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {aliasRows.map((alias) => {
+                  {allAliases.map((alias) => {
                     const isSelected = selectedAliasIds.includes(alias.aliasId);
                     return (
                       <tr key={alias.aliasId}>
@@ -484,12 +501,7 @@ function MerchantMasterAdminPage() {
                           />
                         </td>
                         <td>
-                          <span className="mma-service-cell">
-                            <code>{alias.canonicalServiceName}</code>
-                            {alias.likelyDuplicate && (
-                              <span className="mma-badge red">중복 의심</span>
-                            )}
-                          </span>
+                          <code>{alias.canonicalServiceName}</code>
                         </td>
                         <td>{alias.categoryName || "미지정"}</td>
                         <td>
@@ -515,7 +527,7 @@ function MerchantMasterAdminPage() {
                   선택 {selectedAliasIds.length}개
                   {targetAliasId &&
                     ` · 병합 대상: ${
-                      aliasRows.find((a) => a.aliasId === targetAliasId)
+                      allAliases.find((a) => a.aliasId === targetAliasId)
                         ?.canonicalServiceName
                     }`}
                 </span>

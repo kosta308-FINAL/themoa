@@ -15,15 +15,18 @@ import com.weaone.themoa.domain.merchant.dto.response.AdminUnclassifiedMerchantR
 import com.weaone.themoa.domain.merchant.entity.Merchant;
 import com.weaone.themoa.domain.merchant.entity.MerchantAlias;
 import com.weaone.themoa.domain.merchant.entity.MerchantAliasTerms;
+import com.weaone.themoa.domain.merchant.entity.PromotionCandidateRejection;
 import com.weaone.themoa.domain.merchant.repository.MerchantAliasRepository;
 import com.weaone.themoa.domain.merchant.repository.MerchantAliasTermsRepository;
 import com.weaone.themoa.domain.merchant.repository.MerchantRepository;
+import com.weaone.themoa.domain.merchant.repository.PromotionCandidateRejectionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -48,6 +51,7 @@ public class AdminMerchantService {
     private final CoachingDismissRepository coachingDismissRepository;
     private final UserMerchantPreferenceRepository userMerchantPreferenceRepository;
     private final RecurringPaymentGroupRepository recurringPaymentGroupRepository;
+    private final PromotionCandidateRejectionRepository promotionCandidateRejectionRepository;
 
     @Transactional(readOnly = true)
     public List<AdminMerchantPromotionCandidateResponse> listPromotionCandidates() {
@@ -81,6 +85,23 @@ public class AdminMerchantService {
             cardTransactionRepository.findByMerchant_IdAndMerchantAliasIsNull(merchant.getId())
                     .forEach(tx -> tx.assignMerchant(merchant, alias));
         });
+    }
+
+    /**
+     * 이 (표기, 제안 서비스명) 조합을 승격 대기목록에서 다시 안 뜨게 반려한다 — "티이이빙"처럼 그 조합
+     * 자체가 틀렸다고 판단될 때 쓴다. 학습한 회원의 개인 표기(merchant_alias_terms)는 손대지 않는다 —
+     * 반려는 관리자의 전역 후보 큐 관점의 판단일 뿐, 그 회원이 자기 화면에서 뭘 보는지와는 무관하다
+     * (개인 학습은 늘 전역보다 우선하므로 그 회원 본인에게는 아무 영향이 없다).
+     */
+    @Transactional
+    public void rejectCandidate(Long aliasId, String aliasText) {
+        if (promotionCandidateRejectionRepository.existsByMerchantAlias_IdAndAliasText(aliasId, aliasText)) {
+            return;
+        }
+        MerchantAlias alias = merchantAliasRepository.findById(aliasId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MERCHANT_ALIAS_NOT_FOUND));
+        promotionCandidateRejectionRepository.save(
+                PromotionCandidateRejection.reject(alias, aliasText, LocalDateTime.now()));
     }
 
     @Transactional(readOnly = true)

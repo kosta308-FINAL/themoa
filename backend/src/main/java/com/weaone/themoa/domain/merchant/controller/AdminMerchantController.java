@@ -45,6 +45,15 @@ public class AdminMerchantController {
         return ResponseEntity.ok(ApiResponse.success());
     }
 
+    @Operation(summary = "표기 반려",
+            description = "이 (표기, 제안 서비스명) 조합이 틀렸다고 판단해 승격 대기목록에서 다시 안 뜨게 합니다. "
+                    + "학습한 회원의 개인 표기는 그대로 두므로 그 회원 본인 화면에는 영향이 없습니다.")
+    @PostMapping("/promotion-candidates/reject")
+    public ResponseEntity<ApiResponse<Void>> reject(@Valid @RequestBody MerchantAliasPromoteRequest request) {
+        adminMerchantService.rejectCandidate(request.aliasId(), request.aliasText());
+        return ResponseEntity.ok(ApiResponse.success());
+    }
+
     @Operation(summary = "미식별 & 기타 가맹점 작업대",
             description = "최근 15일간 전역 alias가 없는 원본 가맹점을 발생 건수 상위로 반환합니다(결제대행사 제외).")
     @GetMapping("/unclassified")
