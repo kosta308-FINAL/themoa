@@ -1,0 +1,131 @@
+.mp-policy-bookmark-card {
+  margin-bottom: 16px;
+}
+
+.mp-policy-bookmark-list {
+  display: grid;
+  gap: 12px;
+}
+
+.mp-policy-bookmark-item {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--mp-border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.mp-policy-bookmark-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mp-policy-bookmark-head h3 {
+  margin: 0;
+  color: var(--mp-text);
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.mp-policy-bookmark-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.mp-policy-bookmark-meta span,
+.mp-policy-bookmark-badge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: var(--mp-green-dark);
+  background: var(--mp-green-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mp-policy-bookmark-meta .mp-policy-bookmark-badge {
+  color: var(--mp-red);
+  background: var(--mp-red-soft);
+}
+
+.mp-policy-bookmark-summary,
+.mp-policy-bookmark-period {
+  margin: 0;
+  color: var(--mp-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.mp-policy-bookmark-period {
+  color: var(--mp-text);
+  font-weight: 700;
+}
+
+.mp-policy-bookmark-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mp-policy-bookmark-actions a,
+.mp-policy-bookmark-actions button,
+.mp-policy-bookmark-error button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.mp-policy-bookmark-actions a {
+  display: inline-flex;
+  align-items: center;
+  color: var(--mp-green-dark);
+  background: var(--mp-green-soft);
+}
+
+.mp-policy-bookmark-actions button,
+.mp-policy-bookmark-error button {
+  color: var(--mp-text);
+  background: var(--mp-green-soft);
+}
+
+.mp-policy-bookmark-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.mp-policy-bookmark-empty {
+  padding: 20px;
+  color: var(--mp-muted);
+  text-align: center;
+}
+
+.mp-policy-bookmark-empty p {
+  margin: 0 0 6px;
+  color: var(--mp-text);
+  font-weight: 700;
+}
+
+.mp-policy-bookmark-empty span {
+  font-size: 13px;
+}
+
+.mp-policy-bookmark-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 12px;
+  color: var(--mp-red);
+  background: var(--mp-red-soft);
+  font-size: 13px;
+}
