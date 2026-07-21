@@ -4,6 +4,7 @@ import LoginPage from "../features/auth/LoginPage";
 import SignupPage from "../features/auth/SignupPage";
 import Dashboard from "../features/dashboard/Dashboard";
 import ProductsPage from "../features/products/ProductsPage";
+import FinancialSearchPage from "../features/financial-search/FinancialSearchPage";
 import PolicyPage from "../features/policy/PolicyPage";
 import PolicyAdminPage from "../features/policy/admin/PolicyAdminPage";
 import SpendingGuidePage from "../features/spending-guide/SpendingGuidePage";
@@ -39,6 +40,7 @@ function AppRouter() {
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="products" element={<ProductsPage />} />
+            <Route path="products/search" element={<FinancialSearchPage />} />
             <Route path="policy" element={<PolicyPage />} />
             <Route path="spending" element={<SpendingGuidePage />} />
             <Route
