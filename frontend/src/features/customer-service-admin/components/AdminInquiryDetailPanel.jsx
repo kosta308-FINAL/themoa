@@ -35,12 +35,18 @@ function formatDateTime(value) {
   ).padStart(2, "0")}`;
 }
 
+function isImageAttachment(attachment) {
+  return Boolean(attachment.contentType?.startsWith("image/"));
+}
+
 function AdminInquiryDetailPanel({ inquiryId, onClose, onAnswered }) {
   const [detail, setDetail] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [answerText, setAnswerText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -78,6 +84,33 @@ function AdminInquiryDetailPanel({ inquiryId, onClose, onAnswered }) {
     } catch {
       setError("첨부파일을 불러오지 못했어요.");
     }
+  };
+
+  const handleAttachmentClick = async (attachment) => {
+    if (!isImageAttachment(attachment)) {
+      handleDownload(attachment);
+      return;
+    }
+    setIsPreviewLoading(true);
+    try {
+      const blob = await downloadAdminInquiryAttachment(
+        inquiryId,
+        attachment.id,
+      );
+      const url = window.URL.createObjectURL(blob);
+      setImagePreview({ url, filename: attachment.originalFilename });
+    } catch {
+      setError("첨부파일을 불러오지 못했어요.");
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
+
+  const closeImagePreview = () => {
+    if (imagePreview) {
+      window.URL.revokeObjectURL(imagePreview.url);
+    }
+    setImagePreview(null);
   };
 
   const handleSubmitAnswer = async () => {
@@ -146,9 +179,11 @@ function AdminInquiryDetailPanel({ inquiryId, onClose, onAnswered }) {
                       key={attachment.id}
                       type="button"
                       className="csa-attachment-chip"
-                      onClick={() => handleDownload(attachment)}
+                      disabled={isPreviewLoading}
+                      onClick={() => handleAttachmentClick(attachment)}
                     >
-                      📎 {attachment.originalFilename}
+                      {isImageAttachment(attachment) ? "🖼" : "📎"}{" "}
+                      {attachment.originalFilename}
                     </button>
                   ))}
                 </div>
@@ -223,6 +258,42 @@ function AdminInquiryDetailPanel({ inquiryId, onClose, onAnswered }) {
           )}
         </div>
       </div>
+
+      {imagePreview && (
+        <div
+          className="csa-image-preview-overlay"
+          onClick={(e) => {
+            e.stopPropagation();
+            closeImagePreview();
+          }}
+        >
+          <div
+            className="csa-image-preview"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="csa-image-preview-header">
+              <span>{imagePreview.filename}</span>
+              <button
+                type="button"
+                className="csa-icon-btn"
+                onClick={closeImagePreview}
+              >
+                ✕
+              </button>
+            </div>
+            <img src={imagePreview.url} alt={imagePreview.filename} />
+            <div className="csa-image-preview-footer">
+              <a
+                className="csa-btn csa-btn-secondary"
+                href={imagePreview.url}
+                download={imagePreview.filename}
+              >
+                다운로드
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

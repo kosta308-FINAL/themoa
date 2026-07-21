@@ -208,6 +208,9 @@
 }
 
 .csa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 34px;
   padding: 0 14px;
   border-radius: 9px;
@@ -216,6 +219,7 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
+  text-decoration: none;
 }
 
 .csa-btn-sm {
@@ -352,6 +356,59 @@
 
 .csa-attachment-chip:hover {
   background: #eef2f1;
+}
+
+.csa-attachment-chip:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.csa-image-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  z-index: 300;
+}
+
+.csa-image-preview {
+  background: var(--surface);
+  border-radius: 12px;
+  max-width: min(720px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+}
+
+.csa-image-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.csa-image-preview img {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  background: #0f172a08;
+}
+
+.csa-image-preview-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
 }
 
 .csa-existing-answer {
