@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -67,7 +69,7 @@ public class CustomerKnowledgeEmbeddingService implements ApplicationRunner {
 
     private Document toVectorDocument(CustomerKnowledgeDocument document) {
         return Document.builder()
-                .id(document.id())
+                .id(stableUuid(document.id()))
                 .text("""
                         제목: %s
                         분류: %s
@@ -78,8 +80,13 @@ public class CustomerKnowledgeEmbeddingService implements ApplicationRunner {
                 .metadata(Map.of(
                         "sourceType", document.sourceType().name(),
                         "sourceId", document.sourceId(),
+                        "knowledgeId", document.id(),
                         "category", document.category(),
                         "title", document.title()))
                 .build();
+    }
+
+    private String stableUuid(String value) {
+        return UUID.nameUUIDFromBytes(value.getBytes(StandardCharsets.UTF_8)).toString();
     }
 }
