@@ -165,7 +165,7 @@ function SignupPage() {
         agreedDataCollection: !!agreements.dataCollection,
       });
       login(res.data.data);
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(
         getApiErrorMessage(

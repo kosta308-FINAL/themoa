@@ -93,6 +93,11 @@ public class CardConnection {
         this.status = ConnectionStatus.LOCKED;
     }
 
+    /** 사용자가 마이페이지에서 직접 연동을 해제했다. 이후 자동수집·배치 대상에서 제외된다. */
+    public void disconnect() {
+        this.status = ConnectionStatus.DISCONNECTED;
+    }
+
     /** CODEF 조회 + 저장 트랜잭션이 전체 성공했을 때만 호출한다(cardtransaction.md §6). 실패 시 앞당기지 않는다. */
     public void markSynced(LocalDateTime now) {
         this.lastSuccessfulSyncAt = now;
