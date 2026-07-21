@@ -235,6 +235,7 @@ function RegisterExpenseModal({
                   id="fx-pay-day"
                   value={form.payDay}
                   onChange={update("payDay")}
+                  disabled={Boolean(initial)}
                   required
                 >
                   <option value="">선택</option>
@@ -257,6 +258,7 @@ function RegisterExpenseModal({
                         : form.amount
                     }
                     onChange={handleAmount}
+                    readOnly={Boolean(initial)}
                     required
                     placeholder="0"
                   />
@@ -264,6 +266,7 @@ function RegisterExpenseModal({
                     aria-label="통화"
                     value={form.currency}
                     onChange={update("currency")}
+                    disabled={Boolean(initial)}
                   >
                     <option value="KRW">KRW</option>
                     <option value="USD">USD</option>

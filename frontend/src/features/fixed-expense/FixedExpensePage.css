@@ -991,9 +991,12 @@
   gap: 8px;
 }
 
-.fx-field input[readonly] {
+.fx-field input[readonly],
+.fx-field input:disabled,
+.fx-field select:disabled {
   color: var(--fx-muted);
   background: var(--fx-page);
+  cursor: not-allowed;
 }
 
 .fx-merchant-picker {
