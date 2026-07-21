@@ -31,3 +31,12 @@ export const registerQuickMerchantAlias = (
     canonicalServiceName,
     categoryId,
   });
+
+export const getAllMerchantAliases = () =>
+  axiosInstance.get("/api/admin/merchants/aliases").then(responseData);
+
+export const mergeMerchantAliases = (targetAliasId, sourceAliasIds) =>
+  axiosInstance.post("/api/admin/merchants/aliases/merge", {
+    targetAliasId,
+    sourceAliasIds,
+  });

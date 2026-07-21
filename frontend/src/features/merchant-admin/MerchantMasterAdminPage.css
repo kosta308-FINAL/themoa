@@ -50,6 +50,11 @@
   color: var(--orange);
 }
 
+.mma-kpi-icon.red {
+  background: var(--red-light);
+  color: var(--red);
+}
+
 .mma-kpi-body {
   display: flex;
   flex-direction: column;
@@ -70,6 +75,10 @@
 
 .mma-kpi-value.warn {
   color: var(--orange);
+}
+
+.mma-kpi-value.danger {
+  color: var(--red);
 }
 
 .mma-kpi-hint {
@@ -125,6 +134,11 @@
 .mma-panel-icon.amber {
   background: var(--amber-soft);
   color: var(--orange);
+}
+
+.mma-panel-icon.red {
+  background: var(--red-light);
+  color: var(--red);
 }
 
 .mma-panel-title {
@@ -198,6 +212,33 @@
 .mma-badge.purple {
   background: var(--purple-soft);
   color: var(--violet);
+}
+
+.mma-badge.red {
+  background: var(--red-light);
+  color: var(--red);
+}
+
+.mma-service-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mma-merge-actionbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-subtle);
+}
+
+.mma-merge-summary {
+  font-size: 12.5px;
+  color: var(--text-2);
+  font-weight: 600;
 }
 
 .mma-group-list {
@@ -298,16 +339,6 @@
 
 .mma-btn-primary:hover {
   background: #166534;
-}
-
-.mma-btn-outline {
-  background: transparent;
-  color: var(--violet);
-  border: 1px solid var(--purple-soft);
-}
-
-.mma-btn-outline:hover {
-  background: var(--purple-soft);
 }
 
 .mma-btn:disabled {

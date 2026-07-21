@@ -5,6 +5,11 @@ import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.category.entity.Category;
 import com.weaone.themoa.domain.category.repository.CategoryRepository;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
+import com.weaone.themoa.domain.coaching.repository.CoachingDismissRepository;
+import com.weaone.themoa.domain.fixedexpense.repository.FixedExpenseRepository;
+import com.weaone.themoa.domain.fixedexpense.repository.RecurringPaymentGroupRepository;
+import com.weaone.themoa.domain.fixedexpense.repository.UserMerchantPreferenceRepository;
+import com.weaone.themoa.domain.merchant.dto.response.AdminMerchantAliasSummaryResponse;
 import com.weaone.themoa.domain.merchant.dto.response.AdminMerchantPromotionCandidateResponse;
 import com.weaone.themoa.domain.merchant.dto.response.AdminUnclassifiedMerchantResponse;
 import com.weaone.themoa.domain.merchant.entity.Merchant;
@@ -39,6 +44,10 @@ public class AdminMerchantService {
     private final MerchantAliasTermsRepository merchantAliasTermsRepository;
     private final CardTransactionRepository cardTransactionRepository;
     private final CategoryRepository categoryRepository;
+    private final FixedExpenseRepository fixedExpenseRepository;
+    private final CoachingDismissRepository coachingDismissRepository;
+    private final UserMerchantPreferenceRepository userMerchantPreferenceRepository;
+    private final RecurringPaymentGroupRepository recurringPaymentGroupRepository;
 
     @Transactional(readOnly = true)
     public List<AdminMerchantPromotionCandidateResponse> listPromotionCandidates() {
@@ -103,5 +112,51 @@ public class AdminMerchantService {
             merchantAliasTermsRepository.save(MerchantAliasTerms.seed(alias, merchant.getMerchantNameRaw()));
         }
         merchant.linkGlobalAlias(alias);
+    }
+
+    /**
+     * 서비스(MerchantAlias) 전체 목록 — 등록 경로가 여러 곳이라(F-03 검색 vs 직접 등록 시 자유 입력) 같은
+     * 실서비스가 이름만 다른 여러 행으로 쌓일 수 있다. 관리자가 이름순으로 훑어 중복을 찾아 병합하는 용도다.
+     */
+    @Transactional(readOnly = true)
+    public List<AdminMerchantAliasSummaryResponse> listAllAliases() {
+        return merchantAliasRepository.findAllWithUsage().stream()
+                .map(row -> new AdminMerchantAliasSummaryResponse(
+                        row.getAliasId(), row.getCanonicalServiceName(), row.getCategoryName(),
+                        row.getFixedExpenseCount(), row.getMerchantCount()))
+                .toList();
+    }
+
+    /**
+     * 중복 생성된 서비스를 하나로 합친다. {@code sourceAliasIds} 아래 있던 원본 가맹점(Merchant)·고정지출·
+     * 회원 학습 표기·카드거래 스냅샷을 전부 {@code targetAliasId}로 옮기고 원본 서비스는 지운다.
+     * 코칭 넘김·선호도·반복결제 그룹은 회원별 UNIQUE라 옮기지 않고 그냥 지운다(다음 주기에 다시 쌓인다).
+     */
+    @Transactional
+    public void mergeAliases(Long targetAliasId, List<Long> sourceAliasIds) {
+        MerchantAlias target = merchantAliasRepository.findById(targetAliasId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MERCHANT_ALIAS_NOT_FOUND));
+
+        for (Long sourceAliasId : sourceAliasIds) {
+            if (sourceAliasId.equals(targetAliasId)) {
+                continue;
+            }
+            MerchantAlias source = merchantAliasRepository.findById(sourceAliasId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.MERCHANT_ALIAS_NOT_FOUND));
+
+            merchantRepository.findByMerchantAlias_Id(sourceAliasId).forEach(m -> m.linkGlobalAlias(target));
+            fixedExpenseRepository.findByMerchantAlias_Id(sourceAliasId).forEach(fe -> fe.reassignMerchantAlias(target));
+            merchantAliasTermsRepository.findByMerchantAlias_Id(sourceAliasId).forEach(t -> t.reassignAlias(target));
+            cardTransactionRepository.findByMerchantAlias_Id(sourceAliasId)
+                    .forEach(tx -> tx.assignMerchant(tx.getMerchant(), target));
+
+            coachingDismissRepository.deleteAll(coachingDismissRepository.findByMerchantAlias_Id(sourceAliasId));
+            userMerchantPreferenceRepository.deleteAll(
+                    userMerchantPreferenceRepository.findByMerchantAlias_Id(sourceAliasId));
+            recurringPaymentGroupRepository.deleteAll(
+                    recurringPaymentGroupRepository.findByMerchantAlias_Id(sourceAliasId));
+
+            merchantAliasRepository.delete(source);
+        }
     }
 }

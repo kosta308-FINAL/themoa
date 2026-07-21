@@ -12,6 +12,9 @@ import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionReposi
 import com.weaone.themoa.domain.category.entity.Category;
 import com.weaone.themoa.domain.category.entity.CategoryCode;
 import com.weaone.themoa.domain.category.repository.CategoryRepository;
+import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
+import com.weaone.themoa.domain.fixedexpense.entity.FixedExpensePaymentMethod;
+import com.weaone.themoa.domain.fixedexpense.repository.FixedExpenseRepository;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
 import com.weaone.themoa.domain.merchant.entity.Merchant;
@@ -57,6 +60,8 @@ public class MerchantAliasPromotionDemoSeeder implements ApplicationRunner {
     private static final String UNCLASSIFIED_APPROVAL_NO = "DEMO-PROMOTE-JAEHOON-001";
     private static final String MULTI_VARIANT_SERVICE = "ChatGPT 구독";
     private static final String[] MULTI_VARIANT_TEXTS = {"chat-g-p-t", "ChatGPT구독", "ai구독"};
+    private static final String DUPLICATE_ALIAS_KO = "클로드구독";
+    private static final String DUPLICATE_ALIAS_EN = "CLAUDE SUBSCRIPTION";
 
     private final MemberRepository memberRepository;
     private final MerchantAliasRepository merchantAliasRepository;
@@ -67,6 +72,7 @@ public class MerchantAliasPromotionDemoSeeder implements ApplicationRunner {
     private final CardConnectionRepository cardConnectionRepository;
     private final CardRepository cardRepository;
     private final CardTransactionRepository cardTransactionRepository;
+    private final FixedExpenseRepository fixedExpenseRepository;
 
     @Override
     @Transactional
@@ -75,6 +81,7 @@ public class MerchantAliasPromotionDemoSeeder implements ApplicationRunner {
         seedSingleLearnerCandidate();
         seedMultiVariantCandidate();
         seedUnclassifiedBeneficiary();
+        seedDuplicateServiceNames();
     }
 
     /** 학습자 2명 — "다수의 회원이 개별 학습" 문구가 가리키는 통상 케이스. */
@@ -157,6 +164,35 @@ public class MerchantAliasPromotionDemoSeeder implements ApplicationRunner {
                 null, "KRW", null, false, TransactionStatus.APPROVED, null, false,
                 MULTI_LEARNER_TEXT, null, null, null, null));
         transaction.assignMerchant(merchant, null);
+    }
+
+    /**
+     * 실제 버그 재현: 고정지출을 등록할 때 기존 서비스를 검색해 고르지 않고 이름을 직접 입력하면, 이미 있는
+     * "Claude 구독"(전역 시드)과는 별개인 새 {@link MerchantAlias}가 그대로 생겨버린다. 박아름·이신규가 각자
+     * "클로드구독"/"CLAUDE SUBSCRIPTION"으로 따로 등록한 상황을 재현해, 관리자 "서비스 중복 탐지 & 병합"
+     * 화면에서 실제로 병합해 볼 수 있게 한다.
+     */
+    private void seedDuplicateServiceNames() {
+        if (merchantAliasRepository.findByCanonicalServiceNameNormalized(DUPLICATE_ALIAS_KO).isPresent()) {
+            return;
+        }
+        Optional<Member> areumOpt = memberRepository.findByEmail("test2");
+        Optional<Member> newbieOpt = memberRepository.findByEmail("test3");
+        if (areumOpt.isEmpty() || newbieOpt.isEmpty()) {
+            return;
+        }
+        Category subscription = categoryRepository.findByCode(CategoryCode.SUBSCRIPTION.name())
+                .orElseThrow(() -> new IllegalStateException(CategoryCode.SUBSCRIPTION + " 카테고리가 시드되지 않았습니다."));
+
+        MerchantAlias koAlias = merchantAliasRepository.save(MerchantAlias.create(DUPLICATE_ALIAS_KO, subscription));
+        MerchantAlias enAlias = merchantAliasRepository.save(MerchantAlias.create(DUPLICATE_ALIAS_EN, subscription));
+
+        fixedExpenseRepository.save(FixedExpense.registerDirect(areumOpt.get(), "클로드 구독료", subscription, koAlias,
+                FixedExpensePaymentMethod.TRANSFER, (short) 15, new BigDecimal("22000.00"), "KRW",
+                new BigDecimal("22000.00"), null, null));
+        fixedExpenseRepository.save(FixedExpense.registerDirect(newbieOpt.get(), "Claude subscription", subscription,
+                enAlias, FixedExpensePaymentMethod.TRANSFER, (short) 20, new BigDecimal("22000.00"), "KRW",
+                new BigDecimal("22000.00"), null, null));
     }
 
     private void learnIfAbsent(MerchantAlias alias, Member member, String aliasText) {

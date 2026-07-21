@@ -12,4 +12,7 @@ public interface RecurringPaymentGroupRepository extends JpaRepository<Recurring
 
     /** biller형은 UNIQUE가 없어(§ erd.md) 금액 유사도로 기존 그룹을 찾는 find-or-create가 필요하다. */
     List<RecurringPaymentGroup> findByMember_IdAndBillerMerchant_Id(Long memberId, Long billerMerchantId);
+
+    /** 관리자 서비스 병합 시 정리 대상(회원별 UNIQUE라 옮기지 않고 지운다 — 다음 동기화 때 재탐지된다). */
+    List<RecurringPaymentGroup> findByMerchantAlias_Id(Long merchantAliasId);
 }

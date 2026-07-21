@@ -23,6 +23,9 @@ public interface MerchantAliasTermsRepository extends JpaRepository<MerchantAlia
 
     Optional<MerchantAliasTerms> findByMember_IdAndAliasText(Long memberId, String aliasText);
 
+    /** 관리자 서비스 병합 대상 조회. */
+    List<MerchantAliasTerms> findByMerchantAlias_Id(Long merchantAliasId);
+
     /**
      * 관리자 전역 승격 대기목록(manage.html "전역 마스터 승격 대기목록" 확장). 회원 학습 표기를
      * (alias, 표기) 단위로 묶어 학습자 수 내림차순으로 준다. {@code defaultCategory}가 없는 alias도
