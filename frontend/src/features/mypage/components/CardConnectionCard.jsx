@@ -43,7 +43,10 @@ function CardConnectionCard({ cardConnections }) {
         </>
       )}
 
-      <Link to="/dashboard/spending" className="mp-ghost-button">
+      <Link
+        to="/dashboard/spending"
+        className="mp-ghost-button mp-card-footer-link"
+      >
         소비가이드에서 카드 관리하기
         <DashboardIcon name="chevron-right" size={14} />
       </Link>
