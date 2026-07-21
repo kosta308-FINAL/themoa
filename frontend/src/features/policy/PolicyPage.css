@@ -66,7 +66,6 @@
   line-height: 1.6;
 }
 
-.policy-admin-link,
 .policy-official-link,
 .policy-primary-button,
 .policy-pagination button,
@@ -82,7 +81,6 @@
   cursor: pointer;
 }
 
-.policy-admin-link,
 .policy-official-link {
   min-height: 40px;
   padding: 0 14px;

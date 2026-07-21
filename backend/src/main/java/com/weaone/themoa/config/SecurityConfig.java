@@ -69,11 +69,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll();
                     auth.requestMatchers(DOCS_ENDPOINTS).permitAll();
-        if (isPolicyLocalToolsEnabled()) {
-            auth.requestMatchers(HttpMethod.POST, "/api/policies/search").permitAll();
-            auth.requestMatchers(POLICY_DETAIL_ENDPOINT).permitAll();
-            auth.requestMatchers(POLICY_ADMIN_ENDPOINT).permitAll();
-        }
+                    auth.requestMatchers(POLICY_ADMIN_ENDPOINT).hasRole("ADMIN");
+                    if (isPolicyLocalToolsEnabled()) {
+                        auth.requestMatchers(HttpMethod.POST, "/api/policies/search").permitAll();
+                        auth.requestMatchers(POLICY_DETAIL_ENDPOINT).permitAll();
+                    }
                     auth.requestMatchers("/api/admin/**").hasRole("ADMIN");
                     // PolicyAdmin* 컨트롤러가 전부 /api/policies/admin 아래 매핑되어 있는데
                     // "/api/admin/**" 패턴은 이 경로를 포함하지 않는다 — 명시적으로 한 번 더 막는다.

@@ -23,6 +23,12 @@ const NAV_ITEMS = [
     to: "/admin/merchants",
     icon: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
   },
+  {
+    key: "policy-management",
+    label: "정책 데이터 관리",
+    to: "/admin/policies",
+    icon: "M4 6c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2zm0 0v6c0 1.1 3.6 2 8 2s8-.9 8-2V6m-16 6v6c0 1.1 3.6 2 8 2s8-.9 8-2v-6",
+  },
 ];
 
 function AdminLayout({ title, subtitle, children }) {

@@ -5,8 +5,6 @@ import com.weaone.themoa.domain.policy.admin.dto.embedding.AdminEmbeddingPageRes
 import com.weaone.themoa.domain.policy.admin.service.AdminEmbeddingReadService;
 import com.weaone.themoa.domain.policy.youthcenter.dto.response.YouthCenterProbeResponse;
 import com.weaone.themoa.domain.policy.youthcenter.service.YouthCenterDiagnosticService;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,8 +12,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@Profile("local")
-@ConditionalOnProperty(prefix = "app.policy.local-tools", name = "enabled", havingValue = "true")
 @RequestMapping("/api/policies/admin")
 public class PolicyAdminEmbeddingController {
     private final AdminEmbeddingReadService embeddingReadService;

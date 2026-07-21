@@ -80,6 +80,42 @@ class SecurityConfigTest {
     }
 
     @Test
+    @DisplayName("non-local profile에서는 정책 관리자 API가 미인증 요청에 401을 반환한다")
+    void policyAdminRequiresAuthenticationInNonLocalProfile() throws Exception {
+        mockMvc.perform(get("/api/policies/admin/status"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("AUTH_INVALID_ACCESS_TOKEN"));
+    }
+
+    @Test
+    @DisplayName("non-local profile에서는 USER가 정책 관리자 API에 접근할 수 없다")
+    void policyAdminRejectsUserInNonLocalProfile() throws Exception {
+        reset(jwtTokenProvider, tokenVersionCache);
+        given(jwtTokenProvider.parse("user-token"))
+                .willReturn(new AccessTokenClaims(7L, 3, "USER"));
+        given(tokenVersionCache.find(7L)).willReturn(Optional.of(3));
+
+        mockMvc.perform(get("/api/policies/admin/status").header("Authorization", "Bearer user-token"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+    }
+
+    @Test
+    @DisplayName("non-local profile에서는 ADMIN이 정책 관리자 API에 접근할 수 있다")
+    void policyAdminAllowsAdminInNonLocalProfile() throws Exception {
+        reset(jwtTokenProvider, tokenVersionCache);
+        given(jwtTokenProvider.parse("admin-token"))
+                .willReturn(new AccessTokenClaims(9L, 5, "ADMIN"));
+        given(tokenVersionCache.find(9L)).willReturn(Optional.of(5));
+
+        mockMvc.perform(get("/api/policies/admin/status").header("Authorization", "Bearer admin-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("admin"));
+    }
+
+    @Test
     @DisplayName("non-local profile에서는 기존 Auth 공개 API가 정상 접근 가능하다")
     void publicAuthApiIsStillPublicInNonLocalProfile() throws Exception {
         mockMvc.perform(post("/api/auth/login"))
