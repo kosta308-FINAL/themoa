@@ -14,15 +14,12 @@ import FixedExpensePage from "../features/fixed-expense/FixedExpensePage";
 import MyPage from "../features/mypage/MyPage";
 import CustomerServicePage from "../features/customer-service/CustomerServicePage";
 import CustomerServiceAdminPage from "../features/customer-service-admin/CustomerServiceAdminPage";
+import CustomerServiceAiQualityPage from "../features/customer-service-admin/CustomerServiceAiQualityPage";
 import MerchantMasterAdminPage from "../features/merchant-admin/MerchantMasterAdminPage";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 import UserOnlyRoute from "./UserOnlyRoute";
 import DashboardLayout from "../components/layout/DashboardLayout";
-
-const policyLocalToolsEnabled =
-  import.meta.env.DEV &&
-  import.meta.env.VITE_POLICY_LOCAL_TOOLS_ENABLED === "true";
 
 function AppRouter() {
   return (
@@ -30,10 +27,6 @@ function AppRouter() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
-
-      {policyLocalToolsEnabled && (
-        <Route path="/dashboard/policy/admin" element={<PolicyAdminPage />} />
-      )}
 
       <Route element={<ProtectedRoute />}>
         <Route element={<UserOnlyRoute />}>
@@ -65,7 +58,12 @@ function AppRouter() {
             path="/admin/customer-service"
             element={<CustomerServiceAdminPage />}
           />
+          <Route
+            path="/admin/customer-service/ai-quality"
+            element={<CustomerServiceAiQualityPage />}
+          />
           <Route path="/admin/merchants" element={<MerchantMasterAdminPage />} />
+          <Route path="/admin/policies" element={<PolicyAdminPage />} />
         </Route>
       </Route>
     </Routes>

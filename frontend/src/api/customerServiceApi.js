@@ -64,3 +64,51 @@ export const upsertAdminInquiryAnswer = (inquiryId, contentMarkdown, version) =>
       version,
     })
     .then(responseData);
+
+// 고객센터 AI 품질관리 - 관리자
+export const getAdminCustomerAiSettings = () =>
+  axiosInstance
+    .get("/api/admin/customer-service/ai-quality/settings")
+    .then(responseData);
+
+export const updateAdminCustomerAiSettings = (request) =>
+  axiosInstance
+    .put("/api/admin/customer-service/ai-quality/settings", request)
+    .then(responseData);
+
+export const searchAdminCustomerAiKnowledge = (request) =>
+  axiosInstance
+    .post("/api/admin/customer-service/ai-quality/search", request)
+    .then(responseData);
+
+export const previewAdminCustomerAiAnswer = (request) =>
+  axiosInstance
+    .post("/api/admin/customer-service/ai-quality/preview", request)
+    .then(responseData);
+
+export const getAdminCustomerKnowledgeDocuments = () =>
+  axiosInstance
+    .get("/api/admin/customer-service/ai-quality/documents")
+    .then(responseData);
+
+export const uploadAdminCustomerKnowledgeDocument = ({ title, category, file }) => {
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("category", category);
+  formData.append("file", file);
+  return axiosInstance
+    .post("/api/admin/customer-service/ai-quality/documents", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then(responseData);
+};
+
+export const reembedAdminCustomerKnowledgeDocument = (documentId) =>
+  axiosInstance
+    .post(`/api/admin/customer-service/ai-quality/documents/${documentId}/reembed`)
+    .then(responseData);
+
+export const disableAdminCustomerKnowledgeDocument = (documentId) =>
+  axiosInstance
+    .delete(`/api/admin/customer-service/ai-quality/documents/${documentId}`)
+    .then(responseData);

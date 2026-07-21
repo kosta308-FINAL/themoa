@@ -6,6 +6,7 @@ import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeCitation;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeDocument;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeRetriever;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeSearchResult;
+import com.weaone.themoa.domain.customerservice.rag.CustomerServiceRagSettingValues;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
@@ -28,7 +29,7 @@ import java.util.stream.Collectors;
 @Service
 public class CustomerServiceChatService {
 
-    private static final String SYSTEM_PROMPT = """
+    public static final String DEFAULT_SYSTEM_PROMPT = """
             당신은 더모아 고객센터 전용 챗봇이다.
             반드시 제공된 고객센터 지식 문서에 근거해서만 답변한다.
             더모아 서비스 사용법, FAQ, 카드 연동, 하루 권장 소비액, 고정지출, 수기 지출,
@@ -48,27 +49,33 @@ public class CustomerServiceChatService {
     });
 
     private final CustomerKnowledgeRetriever retriever;
+    private final CustomerServiceRagSettingService ragSettingService;
     private final ObjectProvider<ChatModel> openAiChatModelProvider;
 
     public CustomerServiceChatService(CustomerKnowledgeRetriever retriever,
+                                      CustomerServiceRagSettingService ragSettingService,
                                       @Qualifier("openAiChatModel") ObjectProvider<ChatModel> openAiChatModelProvider) {
         this.retriever = retriever;
+        this.ragSettingService = ragSettingService;
         this.openAiChatModelProvider = openAiChatModelProvider;
     }
 
     @Transactional(readOnly = true)
     public CustomerServiceChatResponse chat(Long memberId, CustomerServiceChatRequest request) {
-        List<CustomerKnowledgeSearchResult> results = retriever.retrieve(request.message());
+        CustomerServiceRagSettingValues settings = ragSettingService.current();
+        List<CustomerKnowledgeSearchResult> results = retriever.retrieve(
+                request.message(), settings.topK(), settings.minimumSimilarity());
         List<CustomerKnowledgeCitation> citations = citations(results);
         if (results.isEmpty()) {
             return new CustomerServiceChatResponse(request.conversationId(), noGroundingAnswer(), List.of(), true);
         }
-        String answer = generateAnswer(request.message(), results);
+        String answer = generateGroundedAnswer(request.message(), results, settings.systemPrompt());
         boolean needsHumanSupport = answer.contains("1:1 문의") || answer.contains("확인이 필요");
         return new CustomerServiceChatResponse(request.conversationId(), answer, citations, needsHumanSupport);
     }
 
-    private String generateAnswer(String message, List<CustomerKnowledgeSearchResult> results) {
+    public String generateGroundedAnswer(String message, List<CustomerKnowledgeSearchResult> results,
+                                         String systemPrompt) {
         ChatModel chatModel = openAiChatModelProvider.getIfAvailable();
         if (chatModel == null) {
             return templateAnswer(results.get(0).document());
@@ -76,7 +83,7 @@ public class CustomerServiceChatService {
         try {
             return callWithTimeout(() -> ChatClient.builder(chatModel).build()
                     .prompt()
-                    .system(SYSTEM_PROMPT)
+                    .system(StringUtils.hasText(systemPrompt) ? systemPrompt : DEFAULT_SYSTEM_PROMPT)
                     .user("""
                             사용자 질문:
                             %s

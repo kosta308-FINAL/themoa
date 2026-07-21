@@ -21,10 +21,6 @@ function ProfileCard({ profile }) {
         </span>
         <h2>회원 정보</h2>
       </div>
-      <div className="mp-profile-identity">
-        <strong>{profile.name}</strong>
-        <span>{profile.email}</span>
-      </div>
       <dl className="mp-info-list">
         <div>
           <dt>성별</dt>

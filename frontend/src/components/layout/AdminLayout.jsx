@@ -12,10 +12,22 @@ const NAV_ITEMS = [
     icon: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
   },
   {
+    key: "customer-ai-quality",
+    label: "FAQ AI 품질관리",
+    to: "/admin/customer-service/ai-quality",
+    icon: "M12 3a4 4 0 0 0-4 4v1H7a3 3 0 0 0-3 3v5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5a3 3 0 0 0-3-3h-1V7a4 4 0 0 0-4-4zm-2 5V7a2 2 0 1 1 4 0v1",
+  },
+  {
     key: "merchant-master",
     label: "가맹점 & 서비스 마스터",
     to: "/admin/merchants",
     icon: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+  },
+  {
+    key: "policy-management",
+    label: "정책 데이터 관리",
+    to: "/admin/policies",
+    icon: "M4 6c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2zm0 0v6c0 1.1 3.6 2 8 2s8-.9 8-2V6m-16 6v6c0 1.1 3.6 2 8 2s8-.9 8-2v-6",
   },
 ];
 
@@ -52,6 +64,7 @@ function AdminLayout({ title, subtitle, children }) {
             <NavLink
               key={item.key}
               to={item.to}
+              end
               className={({ isActive }) =>
                 `admin-nav-btn${isActive ? " active" : ""}`
               }

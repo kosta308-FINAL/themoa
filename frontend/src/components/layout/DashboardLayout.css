@@ -17,6 +17,14 @@
   -moz-osx-font-smoothing: auto;
 }
 
+/* Outlet 래퍼: 페이지 콘텐츠가 짧아도 footer가 뷰포트 하단에 붙도록 남은 공간을 채운다 */
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 /* globals.css h1-h6 오버라이드 무효화 */
 .dashboard-shell h1,
 .dashboard-shell h2,
