@@ -1,0 +1,178 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: themoa
+
+  # backend 폴더에서 실행하면 .env를 읽고,
+  # 프로젝트 루트에서 실행하면 backend/.env를 읽는다.
+  config:
+    import:
+      - "optional:file:.env[.properties]"
+      - "optional:file:backend/.env[.properties]"
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:default}
+
+  datasource:
+    # docker-compose.yml 기준: localhost:3308 / DB themoa
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3308}/${MYSQL_DATABASE:themoa}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useUnicode=true&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    open-in-view: false
+    show-sql: ${JPA_SHOW_SQL:true}
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: Asia/Seoul
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 30MB
+
+  mail:
+    host: smtp.naver.com
+    port: 465
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+            trust: smtp.naver.com
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+  ai:
+    retry:
+      max-attempts: 3
+      backoff:
+        initial-interval: 2000ms
+        multiplier: 2
+
+    # 습관성 지출 코칭용 Gemini
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          options:
+            model: ${GEMINI_CHAT_MODEL:gemini-2.5-flash-lite}
+            temperature: 0.4
+
+    # 정책 자연어 분석 및 임베딩용 OpenAI
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: ${OPENAI_CHAT_MODEL:gpt-4.1-mini}
+      embedding:
+        options:
+          model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+
+    # Embedding provider는 OpenAI로 고정한다.
+    # chat provider 전역 선택값은 설정하지 않는다.
+    # 프로젝트가 googleGenAiChatModel과 openAiChatModel을 각각 Qualifier로 사용하기 때문이다.
+    model:
+      embedding: ${SPRING_AI_MODEL_EMBEDDING:openai}
+
+    vectorstore:
+      type: ${SPRING_AI_VECTORSTORE_TYPE:qdrant}
+      qdrant:
+        host: ${QDRANT_HOST:localhost}
+        port: ${QDRANT_GRPC_PORT:6334}
+        api-key: ${QDRANT_API_KEY:}
+        collection-name: ${QDRANT_COLLECTION_NAME:youthcenter_policies}
+        use-tls: false
+        initialize-schema: ${QDRANT_AUTO_CREATE_COLLECTION:true}
+
+finlife:
+  base-url: https://finlife.fss.or.kr/finlifeapi
+  api-key: ${FINLIFE_API_KEY}
+  batch:
+    cron: 0 0 4 * * *
+
+openai:
+  api-key: ${OPENAI_API_KEY:}
+  model: gpt-5-mini
+
+app:
+  auth:
+    jwt:
+      secret: ${JWT_SECRET}
+      access-token-validity: 30m
+    refresh:
+      validity: 5d
+      cookie-path: /api/auth
+      cookie-secure: ${COOKIE_SECURE:false}
+    email-verification:
+      code-ttl: 5m
+      resend-cooldown: 60s
+      max-verify-attempts: 5
+      verified-ttl: 30m
+      from: ${MAIL_USERNAME}
+
+  codef:
+    client-id: ${CODEF_CLIENT_ID}
+    client-secret: ${CODEF_CLIENT_SECRET}
+    public-key: ${CODEF_PUBLIC_KEY}
+    service-type: ${CODEF_SERVICE_TYPE:DEMO}
+    call-timeout: 30s
+    approval-list-timeout: 180s
+
+  card-connection:
+    login-fail-cooldown: 5m
+    max-login-fail-count: 3
+
+  exchange-rate:
+    auth-key: ${EXIM_API_KEY}
+    base-url: https://oapi.koreaexim.go.kr
+    call-timeout: 5s
+
+  policy:
+    # local profile + true일 때만 정책 관리자 도구 활성화
+    local-tools:
+      enabled: ${POLICY_LOCAL_TOOLS_ENABLED:false}
+    sync:
+      enabled: ${POLICY_DAILY_SYNC_ENABLED:false}
+      cron: ${POLICY_DAILY_SYNC_CRON:0 0 4 * * *}
+      zone: ${POLICY_DAILY_SYNC_ZONE:Asia/Seoul}
+
+  youth-center:
+    enabled: ${YOUTH_CENTER_ENABLED:true}
+    api-mode: CURRENT
+    current:
+      api-key: ${YOUTH_CENTER_API_KEY}
+    collection:
+      enabled: ${POLICY_COLLECTION_ENABLED:true}
+      page-size: ${POLICY_COLLECTION_PAGE_SIZE:100}
+      max-pages: ${POLICY_COLLECTION_MAX_PAGES:1000}
+
+  rag:
+    enabled: ${RAG_ENABLED:true}
+    collection-name: ${QDRANT_COLLECTION_NAME:youthcenter_policies}
+    chat-model: ${OPENAI_CHAT_MODEL:gpt-4.1-mini}
+    embedding-model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+
+  region-sync:
+    enabled: ${SGIS_REGION_SYNC_ENABLED:false}
+    sync-on-startup: false
+    sgis:
+      consumer-key: ${SGIS_CONSUMER_KEY:}
+      consumer-secret: ${SGIS_CONSUMER_SECRET:}
+
+  customer-service:
+    privacy-policy-version: ${CUSTOMER_SERVICE_PRIVACY_POLICY_VERSION:2026-07-20}
+    storage:
+      provider: ${CUSTOMER_SERVICE_STORAGE_PROVIDER:LOCAL}
+      local-root: ${CUSTOMER_SERVICE_UPLOAD_DIR:./.local-storage/customer-service}
