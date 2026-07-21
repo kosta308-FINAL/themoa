@@ -35,6 +35,11 @@ public interface MerchantAliasTermsRepository extends JpaRepository<MerchantAlia
             + "join t.merchantAlias a "
             + "left join a.defaultCategory c "
             + "where t.member is not null "
+            + "and not exists ("
+            + "  select g.id from MerchantAliasTerms g "
+            + "  where g.member is null "
+            + "  and upper(trim(g.aliasText)) = upper(trim(t.aliasText))"
+            + ") "
             + "group by t.merchantAlias.id, t.aliasText, a.canonicalServiceName, c.name "
             + "order by count(distinct t.member.id) desc")
     List<PromotionCandidate> findPromotionCandidates(Pageable pageable);

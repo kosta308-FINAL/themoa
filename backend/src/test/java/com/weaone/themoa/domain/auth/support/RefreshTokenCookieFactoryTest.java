@@ -19,7 +19,8 @@ class RefreshTokenCookieFactoryTest {
                     new AuthProperties.Jwt("secret", Duration.ofMinutes(30)),
                     new AuthProperties.Refresh(Duration.ofDays(5), "/api/auth", true),
                     new AuthProperties.EmailVerification(Duration.ofMinutes(5), Duration.ofSeconds(60), 5,
-                            Duration.ofMinutes(10), "no-reply@example.com")
+                            Duration.ofMinutes(10), "no-reply@example.com"),
+                    new AuthProperties.Terms("2026-07-21")
             ));
 
     @Test

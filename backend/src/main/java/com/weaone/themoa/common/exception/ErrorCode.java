@@ -24,6 +24,7 @@ public enum ErrorCode {
     AUTH_EMAIL_DUPLICATED(HttpStatus.CONFLICT, "이미 가입된 이메일입니다."),
     AUTH_PASSWORD_CONFIRM_MISMATCH(HttpStatus.BAD_REQUEST, "비밀번호가 서로 일치하지 않습니다."),
     AUTH_UNDERAGE(HttpStatus.BAD_REQUEST, "만 19세 이상만 가입할 수 있습니다."),
+    AUTH_TERMS_REQUIRED(HttpStatus.BAD_REQUEST, "필수 약관에 모두 동의해야 가입할 수 있습니다."),
 
     // 인증 - 이메일 코드 인증
     AUTH_EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "이메일 인증을 먼저 완료해 주세요."),

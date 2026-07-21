@@ -1132,6 +1132,10 @@
   font-size: 12px;
 }
 
+.fx-detail-row:last-child {
+  border-bottom: 0;
+}
+
 .fx-detail-row span {
   color: var(--fx-muted);
 }
@@ -1204,6 +1208,16 @@
   color: var(--fx-muted);
   font-size: 10px;
   line-height: 1.5;
+}
+
+.fx-modal.sm .fx-primary-button,
+.fx-modal.sm .fx-secondary-button,
+.fx-modal.sm .fx-ghost-button,
+.fx-modal.sm .fx-danger-button {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 650;
 }
 
 .fx-toast {
