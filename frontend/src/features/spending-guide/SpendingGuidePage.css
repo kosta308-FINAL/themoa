@@ -6,6 +6,9 @@
   --spending-soft: #e7f9ee;
   --spending-green: #22c55e;
   --spending-green-dark: #15803d;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   background: var(--spending-page);
 }
 
