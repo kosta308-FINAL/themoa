@@ -12,6 +12,9 @@ import org.springframework.beans.factory.ObjectProvider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class SearchReadinessServiceTest {
@@ -38,6 +41,7 @@ class SearchReadinessServiceTest {
 
         assertThat(readiness.ready()).isFalse();
         assertThat(readiness.missingSteps()).contains("SEARCH_PROJECTION_REBUILD", "SEARCH_INDEX_REFRESH");
+        verify(lexicalIndexBuilder, never()).current();
     }
 
     @Test
@@ -54,6 +58,67 @@ class SearchReadinessServiceTest {
 
         assertThat(readiness.ready()).isTrue();
         assertThat(readiness.missingSteps()).isEmpty();
+        verify(lexicalIndexBuilder, never()).current();
+    }
+
+    @Test
+    void projectionExistsAndCachedIndexMissingRecoversIndex() {
+        ragProperties.setEnabled(true);
+        when(regionRepository.count()).thenReturn(20L);
+        when(policyRepository.countByActiveTrue()).thenReturn(2650L);
+        when(projectionRepository.countByProjectionVersion("policy-search-v2")).thenReturn(2650L);
+        when(lexicalIndexBuilder.cachedDocumentCount()).thenReturn(0);
+        PolicyLexicalIndex index = mock(PolicyLexicalIndex.class);
+        when(lexicalIndexBuilder.current()).thenReturn(index);
+        when(index.size()).thenReturn(2650);
+        when(embeddingRepository.countBySyncStatus("SYNCED")).thenReturn(2650L);
+        when(vectorStoreProvider.getIfAvailable()).thenReturn(mock(VectorStore.class));
+
+        SearchReadinessResponse readiness = service().readiness();
+
+        assertThat(readiness.ready()).isTrue();
+        assertThat(readiness.lexicalIndexDocumentCount()).isEqualTo(2650);
+        assertThat(readiness.missingSteps()).isEmpty();
+        verify(lexicalIndexBuilder, times(1)).current();
+    }
+
+    @Test
+    void recoveryFailureKeepsSearchIndexRefreshMissing() {
+        ragProperties.setEnabled(true);
+        when(regionRepository.count()).thenReturn(20L);
+        when(policyRepository.countByActiveTrue()).thenReturn(2650L);
+        when(projectionRepository.countByProjectionVersion("policy-search-v2")).thenReturn(2650L);
+        when(lexicalIndexBuilder.cachedDocumentCount()).thenReturn(0);
+        when(lexicalIndexBuilder.current()).thenThrow(new IllegalStateException("index build failed"));
+        when(embeddingRepository.countBySyncStatus("SYNCED")).thenReturn(2650L);
+        when(vectorStoreProvider.getIfAvailable()).thenReturn(mock(VectorStore.class));
+
+        SearchReadinessResponse readiness = service().readiness();
+
+        assertThat(readiness.ready()).isFalse();
+        assertThat(readiness.lexicalIndexDocumentCount()).isZero();
+        assertThat(readiness.missingSteps()).contains("SEARCH_INDEX_REFRESH");
+        verify(lexicalIndexBuilder, times(1)).current();
+    }
+
+    @Test
+    void recoveredIndexCountMismatchKeepsSearchIndexRefreshMissing() {
+        ragProperties.setEnabled(true);
+        when(regionRepository.count()).thenReturn(20L);
+        when(policyRepository.countByActiveTrue()).thenReturn(2650L);
+        when(projectionRepository.countByProjectionVersion("policy-search-v2")).thenReturn(2650L);
+        when(lexicalIndexBuilder.cachedDocumentCount()).thenReturn(0);
+        PolicyLexicalIndex index = mock(PolicyLexicalIndex.class);
+        when(lexicalIndexBuilder.current()).thenReturn(index);
+        when(index.size()).thenReturn(2649);
+        when(embeddingRepository.countBySyncStatus("SYNCED")).thenReturn(2650L);
+        when(vectorStoreProvider.getIfAvailable()).thenReturn(mock(VectorStore.class));
+
+        SearchReadinessResponse readiness = service().readiness();
+
+        assertThat(readiness.ready()).isFalse();
+        assertThat(readiness.lexicalIndexDocumentCount()).isEqualTo(2649);
+        assertThat(readiness.missingSteps()).contains("SEARCH_INDEX_REFRESH");
     }
 
     private SearchReadinessService service() {

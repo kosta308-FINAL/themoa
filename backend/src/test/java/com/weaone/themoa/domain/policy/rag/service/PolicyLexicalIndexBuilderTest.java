@@ -8,6 +8,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class PolicyLexicalIndexBuilderTest {
@@ -27,5 +29,19 @@ class PolicyLexicalIndexBuilderTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("index build failed");
         assertThat(builder.current()).isSameAs(previousIndex);
+    }
+
+    @Test
+    void currentReusesCachedIndexAfterFirstBuild() {
+        PolicySearchProjectionRepository projectionRepository = mock(PolicySearchProjectionRepository.class);
+        PolicyKeywordNormalizer normalizer = mock(PolicyKeywordNormalizer.class);
+        PolicyLexicalIndexBuilder builder = new PolicyLexicalIndexBuilder(projectionRepository, normalizer);
+        when(projectionRepository.findAllActive()).thenReturn(List.of());
+
+        PolicyLexicalIndex first = builder.current();
+        PolicyLexicalIndex second = builder.current();
+
+        assertThat(second).isSameAs(first);
+        verify(projectionRepository, times(1)).findAllActive();
     }
 }

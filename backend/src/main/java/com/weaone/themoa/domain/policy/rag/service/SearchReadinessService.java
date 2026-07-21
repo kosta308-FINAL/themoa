@@ -6,6 +6,8 @@ import com.weaone.themoa.domain.policy.policy.repository.PolicySearchProjectionR
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
 import com.weaone.themoa.domain.policy.rag.config.RagProperties;
 import com.weaone.themoa.domain.policy.rag.dto.SearchReadinessResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,8 @@ import java.util.List;
 
 @Service
 public class SearchReadinessService {
+    private static final Logger log = LoggerFactory.getLogger(SearchReadinessService.class);
+
     private final PolicyRepository policyRepository;
     private final PolicySearchProjectionRepository projectionRepository;
     private final PolicyEmbeddingSyncRepository embeddingSyncRepository;
@@ -43,6 +47,9 @@ public class SearchReadinessService {
         long activePolicyCount = policyRepository.countByActiveTrue();
         long projectionCount = projectionRepository.countByProjectionVersion(PolicySearchProjectionService.VERSION);
         long lexicalIndexDocumentCount = lexicalIndexBuilder.cachedDocumentCount();
+        if (activePolicyCount > 0 && projectionCount > 0 && lexicalIndexDocumentCount <= 0) {
+            lexicalIndexDocumentCount = recoverLexicalIndex();
+        }
         long syncedEmbeddingCount = embeddingSyncRepository.countBySyncStatus("SYNCED");
         long regionCount = regionCodeRepository.count();
 
@@ -75,5 +82,15 @@ public class SearchReadinessService {
 
         return new SearchReadinessResponse(missingSteps.isEmpty(), activePolicyCount, projectionCount,
                 lexicalIndexDocumentCount, syncedEmbeddingCount, List.copyOf(missingSteps));
+    }
+
+    private long recoverLexicalIndex() {
+        try {
+            return lexicalIndexBuilder.current().size();
+        } catch (RuntimeException ex) {
+            log.warn("정책 검색 인덱스 자동 복구에 실패했습니다. errorType={}",
+                    ex.getClass().getSimpleName());
+            return lexicalIndexBuilder.cachedDocumentCount();
+        }
     }
 }
