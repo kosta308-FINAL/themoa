@@ -50,7 +50,11 @@ public class AdminMerchantService {
                 .toList();
     }
 
-    /** 이미 전역 표기로 있으면 아무 것도 하지 않는다(멱등) — 여러 회원이 같은 표기를 각자 학습했어도 승격은 한 번만 실질 반영된다. */
+    /**
+     * 이미 전역 표기로 있으면 아무 것도 하지 않는다(멱등) — 여러 회원이 같은 표기를 각자 학습했어도 승격은 한 번만 실질 반영된다.
+     * 전역 표기 추가에 그치지 않고, 이 원본 가맹점명으로 이미 쌓여 있던 모든 회원의 미분류 거래도 그 자리에서
+     * 소급 재분류한다(다음 동기화까지 기다리지 않아도 됨) — 승격의 효과가 관리자 화면에서 바로 확인돼야 하기 때문이다.
+     */
     @Transactional
     public void promote(Long aliasId, String aliasText) {
         if (merchantAliasTermsRepository.findGlobalByRawName(aliasText).isPresent()) {
@@ -59,6 +63,15 @@ public class AdminMerchantService {
         MerchantAlias alias = merchantAliasRepository.findById(aliasId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MERCHANT_ALIAS_NOT_FOUND));
         merchantAliasTermsRepository.save(MerchantAliasTerms.seed(alias, aliasText));
+        reclassifyExistingTransactions(alias, aliasText);
+    }
+
+    private void reclassifyExistingTransactions(MerchantAlias alias, String aliasText) {
+        merchantRepository.findByMerchantNameRaw(aliasText).ifPresent(merchant -> {
+            merchant.linkGlobalAlias(alias);
+            cardTransactionRepository.findByMerchant_IdAndMerchantAliasIsNull(merchant.getId())
+                    .forEach(tx -> tx.assignMerchant(merchant, alias));
+        });
     }
 
     @Transactional(readOnly = true)

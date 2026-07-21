@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "../../components/layout/AdminLayout";
+import DashboardIcon from "../../components/common/DashboardIcon";
 import {
   getPromotionCandidates,
   promoteMerchantAliasTerm,
@@ -16,6 +17,34 @@ function formatAmount(value) {
   return `${Math.round(num).toLocaleString()}원`;
 }
 
+/** 같은 canonicalServiceName(연결될 서비스)으로 들어온 여러 원본 표기(variant)를 한 그룹으로 묶는다.
+ * "chat-g-p-t" / "ChatGPT구독" / "ai구독"처럼 회원마다 제각각 학습한 표기라도 결국 같은 서비스로
+ * 승격될 후보이므로, 관리자 화면에서는 서비스 단위 카드 안에 표기 변형들을 나열해 한눈에 보이게 한다. */
+function groupCandidatesByService(candidates) {
+  const groups = new Map();
+  candidates.forEach((candidate) => {
+    const key = candidate.aliasId;
+    if (!groups.has(key)) {
+      groups.set(key, {
+        aliasId: candidate.aliasId,
+        canonicalServiceName: candidate.canonicalServiceName,
+        categoryName: candidate.categoryName,
+        variants: [],
+      });
+    }
+    groups.get(key).variants.push({
+      aliasText: candidate.aliasText,
+      learnerCount: candidate.learnerCount,
+    });
+  });
+  return Array.from(groups.values())
+    .map((group) => ({
+      ...group,
+      learnerTotal: group.variants.reduce((sum, v) => sum + v.learnerCount, 0),
+    }))
+    .sort((a, b) => b.learnerTotal - a.learnerTotal);
+}
+
 function MerchantMasterAdminPage() {
   const [candidates, setCandidates] = useState([]);
   const [unclassified, setUnclassified] = useState([]);
@@ -23,8 +52,14 @@ function MerchantMasterAdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [promotingKey, setPromotingKey] = useState(null);
+  const [bulkPromotingId, setBulkPromotingId] = useState(null);
   const [quickForm, setQuickForm] = useState({});
   const [registeringId, setRegisteringId] = useState(null);
+
+  const candidateGroups = useMemo(
+    () => groupCandidatesByService(candidates),
+    [candidates],
+  );
 
   const load = async () => {
     setIsLoading(true);
@@ -73,6 +108,21 @@ function MerchantMasterAdminPage() {
     }
   };
 
+  const handlePromoteGroup = async (group) => {
+    setBulkPromotingId(group.aliasId);
+    setError("");
+    try {
+      for (const variant of group.variants) {
+        await promoteMerchantAliasTerm(group.aliasId, variant.aliasText);
+      }
+      await load();
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, "일괄 승격에 실패했어요."));
+    } finally {
+      setBulkPromotingId(null);
+    }
+  };
+
   const updateQuickForm = (merchantId, patch) => {
     setQuickForm((prev) => ({
       ...prev,
@@ -111,14 +161,27 @@ function MerchantMasterAdminPage() {
       <div className="mma-page">
         <section className="mma-kpi-grid">
           <div className="mma-kpi-card">
-            <span className="mma-kpi-title">전역 승격 대기</span>
-            <span className="mma-kpi-value">{candidates.length} 건</span>
+            <span className="mma-kpi-icon purple">
+              <DashboardIcon name="sparkle" size={18} />
+            </span>
+            <div className="mma-kpi-body">
+              <span className="mma-kpi-title">전역 승격 대기 서비스</span>
+              <span className="mma-kpi-value">{candidateGroups.length} 개</span>
+              <span className="mma-kpi-hint">
+                표기 {candidates.length}건 발견
+              </span>
+            </div>
           </div>
           <div className="mma-kpi-card">
-            <span className="mma-kpi-title">최근 15일 미식별 가맹점</span>
-            <span className="mma-kpi-value warn">
-              {unclassified.length} 건
+            <span className="mma-kpi-icon amber">
+              <DashboardIcon name="search" size={18} />
             </span>
+            <div className="mma-kpi-body">
+              <span className="mma-kpi-title">최근 15일 미식별 가맹점</span>
+              <span className="mma-kpi-value warn">
+                {unclassified.length} 건
+              </span>
+            </div>
           </div>
         </section>
 
@@ -126,77 +189,103 @@ function MerchantMasterAdminPage() {
 
         <section className="mma-panel">
           <div className="mma-panel-header">
-            <div>
-              <div className="mma-panel-title">
-                ⭐ 전역 마스터 승격 대기목록
-              </div>
-              <div className="mma-panel-sub">
-                다수의 회원이 개별 학습한 가맹점 표기(per-user terms) 중 검증된
-                항목을 전역 마스터(member_id IS NULL)로 승격합니다.
+            <div className="mma-panel-heading">
+              <span className="mma-panel-icon purple">
+                <DashboardIcon name="sparkle" size={18} />
+              </span>
+              <div>
+                <div className="mma-panel-title">전역 마스터 승격 대기목록</div>
+                <div className="mma-panel-sub">
+                  같은 서비스를 가리키는 여러 원본 표기를 회원들이 각자 다르게
+                  학습한 경우, 서비스 단위로 묶어 보여줍니다. 표기별로 개별
+                  승격하거나 한 번에 전체 승격할 수 있습니다.
+                </div>
               </div>
             </div>
           </div>
           {isLoading ? (
             <div className="mma-empty">불러오는 중...</div>
-          ) : candidates.length === 0 ? (
+          ) : candidateGroups.length === 0 ? (
             <div className="mma-empty">승격 대기 중인 표기가 없습니다.</div>
           ) : (
-            <table className="mma-table">
-              <thead>
-                <tr>
-                  <th>원본 가맹점 표기</th>
-                  <th>연결될 서비스</th>
-                  <th>학습 회원 수</th>
-                  <th>카테고리</th>
-                  <th>승인</th>
-                </tr>
-              </thead>
-              <tbody>
-                {candidates.map((candidate) => {
-                  const key = `${candidate.aliasId}:${candidate.aliasText}`;
-                  return (
-                    <tr key={key}>
-                      <td>
-                        <code>{candidate.aliasText}</code>
-                      </td>
-                      <td>
-                        <span className="mma-badge purple">
-                          {candidate.canonicalServiceName}
-                        </span>
-                      </td>
-                      <td>
-                        <strong>{candidate.learnerCount} 명</strong> 학습
-                      </td>
-                      <td>{candidate.categoryName || "미지정"}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="mma-btn mma-btn-primary mma-btn-sm"
-                          disabled={promotingKey === key}
-                          onClick={() => handlePromote(candidate)}
-                        >
-                          {promotingKey === key
-                            ? "승격 중..."
-                            : "승격 (Approve)"}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="mma-group-list">
+              {candidateGroups.map((group) => (
+                <div className="mma-group-card" key={group.aliasId}>
+                  <div className="mma-group-header">
+                    <div className="mma-group-heading">
+                      <span className="mma-badge purple">
+                        {group.canonicalServiceName}
+                      </span>
+                      <span className="mma-group-meta">
+                        표기 {group.variants.length}종 · 학습 총{" "}
+                        {group.learnerTotal}명
+                      </span>
+                      <span className="mma-group-category">
+                        {group.categoryName || "카테고리 미지정"}
+                      </span>
+                    </div>
+                    {group.variants.length > 1 && (
+                      <button
+                        type="button"
+                        className="mma-btn mma-btn-outline mma-btn-sm"
+                        disabled={bulkPromotingId === group.aliasId}
+                        onClick={() => handlePromoteGroup(group)}
+                      >
+                        {bulkPromotingId === group.aliasId
+                          ? "전체 승격 중..."
+                          : `표기 ${group.variants.length}종 전체 승격`}
+                      </button>
+                    )}
+                  </div>
+                  <ul className="mma-variant-list">
+                    {group.variants.map((variant) => {
+                      const key = `${group.aliasId}:${variant.aliasText}`;
+                      return (
+                        <li className="mma-variant-row" key={key}>
+                          <code>{variant.aliasText}</code>
+                          <span className="mma-variant-learners">
+                            {variant.learnerCount}명 학습
+                          </span>
+                          <button
+                            type="button"
+                            className="mma-btn mma-btn-primary mma-btn-sm"
+                            disabled={
+                              promotingKey === key ||
+                              bulkPromotingId === group.aliasId
+                            }
+                            onClick={() =>
+                              handlePromote({
+                                aliasId: group.aliasId,
+                                aliasText: variant.aliasText,
+                              })
+                            }
+                          >
+                            {promotingKey === key ? "승격 중..." : "승격"}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
           )}
         </section>
 
         <section className="mma-panel">
           <div className="mma-panel-header">
-            <div>
-              <div className="mma-panel-title">
-                🔍 미식별 & &apos;기타&apos; 가맹점 작업대
-              </div>
-              <div className="mma-panel-sub">
-                최근 15일간 전역 alias가 없는 상위 원본 가맹점 리스트입니다.
-                바로 마스터에 등록하세요.
+            <div className="mma-panel-heading">
+              <span className="mma-panel-icon amber">
+                <DashboardIcon name="search" size={18} />
+              </span>
+              <div>
+                <div className="mma-panel-title">
+                  미식별 &amp; &apos;기타&apos; 가맹점 작업대
+                </div>
+                <div className="mma-panel-sub">
+                  최근 15일간 전역 alias가 없는 상위 원본 가맹점 리스트입니다.
+                  바로 마스터에 등록하세요.
+                </div>
               </div>
             </div>
           </div>

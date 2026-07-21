@@ -1,37 +1,59 @@
 .mma-page {
-  --green: #22c55e;
   --green-dark: #15803d;
-  --green-soft: #e7f9ee;
-  --surface: #ffffff;
-  --border: #e5ede8;
-  --text: #16241c;
-  --text-2: #637169;
-  --text-3: #96a29b;
-  --yellow: #b8860b;
-  --purple: #7c3aed;
-  --purple-soft: #f2edff;
-  --radius: 16px;
-  --shadow: 0 8px 30px rgba(22, 101, 52, 0.06), 0 2px 8px rgba(0, 0, 0, 0.02);
+  --surface: var(--bg-card);
+  --text: var(--text-primary);
+  --text-2: var(--text-secondary);
+  --text-3: var(--text-muted);
+  --amber-soft: var(--orange-light);
+  --purple-soft: var(--violet-light);
+  --radius: var(--radius-lg);
+  --shadow: var(--shadow-md);
 
   color: var(--text);
 }
 
 .mma-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
 
 .mma-kpi-card {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 14px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px 20px;
   box-shadow: var(--shadow);
+}
+
+.mma-kpi-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.mma-kpi-icon.purple {
+  background: var(--purple-soft);
+  color: var(--violet);
+}
+
+.mma-kpi-icon.amber {
+  background: var(--amber-soft);
+  color: var(--orange);
+}
+
+.mma-kpi-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .mma-kpi-title {
@@ -47,7 +69,12 @@
 }
 
 .mma-kpi-value.warn {
-  color: var(--yellow);
+  color: var(--orange);
+}
+
+.mma-kpi-hint {
+  font-size: 11.5px;
+  color: var(--text-3);
 }
 
 .mma-alert {
@@ -71,6 +98,33 @@
 .mma-panel-header {
   padding: 18px 22px;
   border-bottom: 1px solid var(--border);
+}
+
+.mma-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.mma-panel-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.mma-panel-icon.purple {
+  background: var(--purple-soft);
+  color: var(--violet);
+}
+
+.mma-panel-icon.amber {
+  background: var(--amber-soft);
+  color: var(--orange);
 }
 
 .mma-panel-title {
@@ -143,7 +197,81 @@
 
 .mma-badge.purple {
   background: var(--purple-soft);
-  color: var(--purple);
+  color: var(--violet);
+}
+
+.mma-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+}
+
+.mma-group-card {
+  background: var(--surface);
+  padding: 16px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mma-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mma-group-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mma-group-meta {
+  font-size: 12px;
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+.mma-group-category {
+  font-size: 11.5px;
+  color: var(--text-3);
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.mma-variant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mma-variant-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-subtle);
+  border-radius: 10px;
+}
+
+.mma-variant-row code {
+  background: transparent;
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.mma-variant-learners {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-2);
+  white-space: nowrap;
 }
 
 .mma-btn {
@@ -170,6 +298,16 @@
 
 .mma-btn-primary:hover {
   background: #166534;
+}
+
+.mma-btn-outline {
+  background: transparent;
+  color: var(--violet);
+  border: 1px solid var(--purple-soft);
+}
+
+.mma-btn-outline:hover {
+  background: var(--purple-soft);
 }
 
 .mma-btn:disabled {

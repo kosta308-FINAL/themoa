@@ -61,6 +61,9 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
     /** 학습 루프 2단계(merchant.md §3): 같은 원본 가맹점(merchant)의 이 회원 거래 전체 재태깅 대상. */
     List<CardTransaction> findByMember_IdAndMerchant_Id(Long memberId, Long merchantId);
 
+    /** 관리자 전역 승격 소급 재분류 대상: 회원 구분 없이 이 원본 가맹점(merchant)의 미분류 거래 전체. */
+    List<CardTransaction> findByMerchant_IdAndMerchantAliasIsNull(Long merchantId);
+
     /**
      * F-05 미납 확인 후보(troubleshooting/billerProblem.md §6): 미태깅 + 금액오차 + 결제일 윈도우.
      * 가맹점은 미식별(merchantAlias null, biller 경유 포함) 거래이거나 이 고정지출과 같은 alias로

@@ -35,7 +35,8 @@ public class AdminMerchantController {
     }
 
     @Operation(summary = "표기 전역 승격",
-            description = "회원 학습 표기를 전역 시드(member_id=NULL)로 승격합니다. 이미 전역에 있으면 아무 일도 하지 않습니다.")
+            description = "회원 학습 표기를 전역 시드(member_id=NULL)로 승격합니다. 이미 전역에 있으면 아무 일도 하지 않습니다. "
+                    + "이 원본 가맹점명으로 이미 쌓여 있던 다른 회원들의 미분류 거래도 그 자리에서 함께 재분류됩니다.")
     @PostMapping("/promotion-candidates/promote")
     public ResponseEntity<ApiResponse<Void>> promote(@Valid @RequestBody MerchantAliasPromoteRequest request) {
         adminMerchantService.promote(request.aliasId(), request.aliasText());
