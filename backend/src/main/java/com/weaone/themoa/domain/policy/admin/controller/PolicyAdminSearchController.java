@@ -10,8 +10,6 @@ import com.weaone.themoa.domain.policy.admin.dto.response.AdminSearchProjectionR
 import com.weaone.themoa.domain.policy.admin.dto.response.AdminSearchQualitySuiteResponse;
 import com.weaone.themoa.domain.policy.admin.service.AdminSearchDiagnosticService;
 import com.weaone.themoa.domain.policy.admin.service.AdminSearchIndexService;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,8 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@Profile("local")
-@ConditionalOnProperty(prefix = "app.policy.local-tools", name = "enabled", havingValue = "true")
 @RequestMapping("/api/policies/admin")
 public class PolicyAdminSearchController {
     private final AdminSearchIndexService searchIndexService;
