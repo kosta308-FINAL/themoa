@@ -10,6 +10,7 @@ import com.weaone.themoa.domain.budget.service.BudgetCyclePolicy;
 import com.weaone.themoa.domain.cardconnection.entity.Card;
 import com.weaone.themoa.domain.cardconnection.entity.CardConnection;
 import com.weaone.themoa.domain.cardconnection.entity.CardIssuer;
+import com.weaone.themoa.domain.cardconnection.entity.ConnectionStatus;
 import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
 import com.weaone.themoa.domain.cardconnection.repository.CardIssuerRepository;
 import com.weaone.themoa.domain.cardconnection.repository.CardRepository;
@@ -41,6 +42,7 @@ import com.weaone.themoa.domain.fixedexpense.repository.FixedExpenseRepository;
 import com.weaone.themoa.domain.fixedexpense.repository.RecurringPaymentGroupRepository;
 import com.weaone.themoa.domain.fixedexpense.repository.RecurringPaymentGroupTransactionRepository;
 import com.weaone.themoa.domain.fixedexpense.repository.UserMerchantPreferenceRepository;
+import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseCyclePolicy;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
 import com.weaone.themoa.domain.member.support.MemberDemoSeeder;
@@ -86,6 +88,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FixedExpenseHabitDemoDataSeeder implements ApplicationRunner {
 
     private static final String KRW = "KRW";
+    private static final String CLAUDE_LEARNED_RAW_NAME = "ANTHROPIC* CLAUDE JUL";
+    private static final String CLAUDE_MISSED_APPROVAL_NO = "DEMO-CLAUDE-MISSED-001";
 
     private final MemberRepository memberRepository;
     private final CategoryRepository categoryRepository;
@@ -117,6 +121,7 @@ public class FixedExpenseHabitDemoDataSeeder implements ApplicationRunner {
     @Transactional
     public void run(ApplicationArguments args) {
         if (recurringPaymentGroupRepository.count() > 0) {
+            seedClaudeMissedPaymentTopUp();
             return;
         }
         Optional<Member> solminOpt = memberRepository.findByEmail(MemberDemoSeeder.SOLMIN_EMAIL);
@@ -144,7 +149,7 @@ public class FixedExpenseHabitDemoDataSeeder implements ApplicationRunner {
         seedExchangeRateCache(completedCyclesAsc);
 
         // ── 반복결제 탐지 후보 5종(이름형) + biller형 1종 = 후보상태 5가지 전부 커버 ──
-        seedClaudeCandidatePending(solmin, card, categories, completedCyclesAsc);
+        seedClaudeCandidatePending(solmin, card, categories, completedCyclesAsc, cycle0, today);
         seedCoupangWowRegistered(solmin, card, categories, completedCyclesAsc, cycle0);
         seedRedCrossSnoozed(solmin, card, categories, completedCyclesAsc, cycle0);
         seedAppleClassifiedHabit(solmin, card, categories, completedCyclesAsc);
@@ -200,10 +205,11 @@ public class FixedExpenseHabitDemoDataSeeder implements ApplicationRunner {
         }
     }
 
-    // ══════════════════════════ ①Claude 구독 — PENDING ══════════════════════════
+    // ══════════════════════════ ①Claude 구독 — PENDING + 미납 확인 학습 흐름 ══════════════════════════
 
     private void seedClaudeCandidatePending(Member member, Card card, Map<CategoryCode, Category> categories,
-                                             List<BudgetCyclePolicy.BudgetCycle> completedCyclesAsc) {
+                                             List<BudgetCyclePolicy.BudgetCycle> completedCyclesAsc,
+                                             BudgetCyclePolicy.BudgetCycle cycle0, LocalDate today) {
         MerchantAlias claudeAlias = findAliasOrThrow("Claude 구독");
         Merchant claudeMerchant = merchantRepository.save(Merchant.observe("CLAUDE.AI SUBSCRIPTION", claudeAlias));
         BigDecimal[] krwAmounts = {new BigDecimal("30190.60"), new BigDecimal("30619.60"), new BigDecimal("30481.00")};
@@ -229,6 +235,52 @@ public class FixedExpenseHabitDemoDataSeeder implements ApplicationRunner {
         fixedExpenseCandidateRepository.save(FixedExpenseCandidate.create(member, group,
                 categories.get(CategoryCode.SUBSCRIPTION), new BigDecimal("88.50"),
                 "Claude.ai 구독료가 3개월 연속 비슷한 날짜·금액으로 결제됐어요. 고정지출로 등록할까요?"));
+
+        seedClaudeMissedPaymentCandidate(member, card, categories.get(CategoryCode.SUBSCRIPTION), cycle0, today);
+    }
+
+    private void seedClaudeMissedPaymentTopUp() {
+        Optional<Member> solminOpt = memberRepository.findByEmail(MemberDemoSeeder.SOLMIN_EMAIL);
+        if (solminOpt.isEmpty()
+                || merchantAliasRepository.findByCanonicalServiceNameNormalized("Claude 구독").isEmpty()
+                || merchantAliasTermsRepository.findGlobalByRawName(CLAUDE_LEARNED_RAW_NAME).isPresent()) {
+            return;
+        }
+        Member solmin = solminOpt.get();
+        Optional<Card> cardOpt = findDemoCard(solmin.getId());
+        Optional<Category> subscriptionOpt = categoryRepository.findByCode(CategoryCode.SUBSCRIPTION.name());
+        if (cardOpt.isEmpty() || subscriptionOpt.isEmpty()) {
+            return;
+        }
+
+        LocalDate today = LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL);
+        BudgetCyclePolicy.BudgetCycle cycle0 = BudgetCyclePolicy.cycleOf(solmin.getPayday(), today);
+        seedClaudeMissedPaymentCandidate(solmin, cardOpt.get(), subscriptionOpt.get(), cycle0, today);
+    }
+
+    private Optional<Card> findDemoCard(Long memberId) {
+        return cardConnectionRepository.findByMember_IdAndStatus(memberId, ConnectionStatus.ACTIVE).stream()
+                .findFirst()
+                .flatMap(connection -> cardRepository.findByCardConnection_IdAndCardNumberMasked(
+                        connection.getId(), "1234-****-****-5678"));
+    }
+
+    private void seedClaudeMissedPaymentCandidate(Member member, Card card, Category category,
+                                                   BudgetCyclePolicy.BudgetCycle cycle0, LocalDate today) {
+        LocalDate usedDate = clampDate(cycle0.cycleStartDate().plusDays(5), cycle0.cycleStartDate(), today);
+        LocalDateTime usedAt = usedDate.atTime(3, 8);
+        if (cardTransactionRepository.findByMember_IdAndCard_IdAndUsedDateAndUsedAtAndApprovalNo(
+                member.getId(), card.getId(), usedDate, usedAt, CLAUDE_MISSED_APPROVAL_NO).isPresent()) {
+            return;
+        }
+
+        Merchant learnedMerchant = merchantRepository.findByMerchantNameRaw(CLAUDE_LEARNED_RAW_NAME)
+                .orElseGet(() -> merchantRepository.save(Merchant.observe(CLAUDE_LEARNED_RAW_NAME, null)));
+        CardTransaction missedCandidate = cardTransactionRepository.save(CardTransaction.sync(member, card, category,
+                CLAUDE_MISSED_APPROVAL_NO, usedDate, usedAt, new BigDecimal("30430.00"),
+                new BigDecimal("22.00"), "USD", new BigDecimal("1383.18"), false, TransactionStatus.APPROVED,
+                null, false, CLAUDE_LEARNED_RAW_NAME, null, null, null, null));
+        missedCandidate.assignMerchant(learnedMerchant, null);
     }
 
     // ══════════════════════════ ②쿠팡와우 — REGISTERED (+이행 내역) ══════════════════════════
