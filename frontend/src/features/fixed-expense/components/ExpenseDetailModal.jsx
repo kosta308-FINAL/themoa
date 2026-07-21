@@ -45,7 +45,7 @@ function MissedPaymentSection({ fixedExpenseId, onConfirmed }) {
     setConfirmingId(transactionId);
     try {
       await confirmMissedPayment(fixedExpenseId, transactionId);
-      await onConfirmed();
+      await onConfirmed("결제를 확인했어요.");
       setState({ items: null, error: "", loading: false });
     } catch (error) {
       setState((current) => ({
@@ -86,7 +86,9 @@ function MissedPaymentSection({ fixedExpenseId, onConfirmed }) {
                   disabled={confirmingId === transaction.id}
                   onClick={() => confirm(transaction.id)}
                 >
-                  이 거래예요
+                  {confirmingId === transaction.id
+                    ? "확인 중..."
+                    : "이 거래예요"}
                 </button>
               </div>
             ))}
@@ -127,7 +129,7 @@ function ExpenseDetailModal({ expense, onClose, onChanged }) {
         expectedCurrency: editForm.currency,
         expectedPayDay: Number(editForm.payDay),
       });
-      await onChanged();
+      await onChanged("금액·결제일을 수정했어요.");
       onClose();
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, "수정하지 못했어요."));
@@ -141,7 +143,7 @@ function ExpenseDetailModal({ expense, onClose, onChanged }) {
     setIsCanceling(true);
     try {
       await cancelFixedExpense(expense.id);
-      await onChanged();
+      await onChanged("고정지출을 해지했어요.");
       onClose();
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, "해지하지 못했어요."));

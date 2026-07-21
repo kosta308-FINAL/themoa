@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import DashboardIcon from "../../../components/common/DashboardIcon";
 import { getApiErrorMessage } from "../../../utils/apiError";
 import {
+  confirmMissedPayment,
   registerFixedExpenseDirect,
   registerFixedExpenseFromCandidate,
 } from "../../../api/fixedExpenseApi";
@@ -12,23 +13,26 @@ const WON = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
 
 function RegisterExpenseModal({
   candidate = null,
+  initial = null,
   categories,
   onClose,
   onSaved,
   onStale,
 }) {
   const [form, setForm] = useState({
-    name: candidate?.merchantAliasName || "",
-    method: "CARD",
-    merchantAliasId: null,
-    merchantName: candidate?.merchantAliasName || "",
+    name: candidate?.merchantAliasName || initial?.name || "",
+    method: candidate ? "CARD" : initial?.method || "CARD",
+    merchantAliasId: initial?.merchantAliasId ?? null,
+    merchantName: candidate?.merchantAliasName || initial?.merchantName || "",
     categoryId: candidate?.recommendedCategoryId
       ? String(candidate.recommendedCategoryId)
-      : "",
-    payDay: candidate?.avgPayDay ? String(candidate.avgPayDay) : "",
+      : initial?.categoryId || "",
+    payDay: candidate?.avgPayDay
+      ? String(candidate.avgPayDay)
+      : initial?.payDay || "",
     amount: candidate?.avgAmount
       ? String(Math.round(Number(candidate.avgAmount)))
-      : "",
+      : initial?.amount || "",
     currency: "KRW",
   });
   const [error, setError] = useState("");
@@ -64,7 +68,7 @@ function RegisterExpenseModal({
           expectedPayDay: Number(form.payDay),
         });
       } else {
-        await registerFixedExpenseDirect({
+        const created = await registerFixedExpenseDirect({
           name: form.name.trim(),
           categoryId: Number(form.categoryId),
           paymentMethod: form.method,
@@ -75,6 +79,15 @@ function RegisterExpenseModal({
           expectedCurrency: form.currency,
           expectedPayDay: Number(form.payDay),
         });
+        if (initial?.transactionId) {
+          // 실거래에서 등록한 경우 그 거래를 바로 이번 달 이행으로 확정한다 —
+          // 안 그러면 방금 쓴 데이터로 만든 항목이 "미납"으로 보이는 모순이 생긴다.
+          try {
+            await confirmMissedPayment(created.id, initial.transactionId);
+          } catch {
+            // 등록 자체는 이미 성공했으니 확정 실패는 조용히 넘어간다(F-05에서 다시 시도 가능).
+          }
+        }
       }
       await onSaved();
       onClose();
@@ -114,9 +127,17 @@ function RegisterExpenseModal({
         <div className="fx-modal-head">
           <div>
             <h2 id="fx-register-title">
-              {candidate ? "추천 후보 등록" : "고정지출 등록"}
+              {candidate
+                ? "추천 후보 등록"
+                : initial
+                  ? "거래로 고정지출 등록"
+                  : "고정지출 등록"}
             </h2>
-            <p>매달 반복되는 금액과 결제일을 입력해주세요.</p>
+            <p>
+              {initial
+                ? "선택한 거래 정보를 바탕으로 채웠어요. 결제일을 확인해주세요."
+                : "매달 반복되는 금액과 결제일을 입력해주세요."}
+            </p>
           </div>
           <button
             type="button"
@@ -149,7 +170,7 @@ function RegisterExpenseModal({
                       name="fx-method"
                       value="CARD"
                       checked={isCard}
-                      disabled={Boolean(candidate)}
+                      disabled={Boolean(candidate || initial)}
                       onChange={update("method")}
                     />
                     <span>
@@ -163,7 +184,7 @@ function RegisterExpenseModal({
                       name="fx-method"
                       value="TRANSFER"
                       checked={!isCard}
-                      disabled={Boolean(candidate)}
+                      disabled={Boolean(candidate || initial)}
                       onChange={update("method")}
                     />
                     <span>
@@ -176,7 +197,7 @@ function RegisterExpenseModal({
               {isCard && (
                 <div className="fx-field full">
                   <span className="fx-field-label">서비스/가맹점 *</span>
-                  {candidate ? (
+                  {candidate || (initial && form.merchantAliasId) ? (
                     <input value={form.merchantName} readOnly />
                   ) : (
                     <MerchantAliasPicker
@@ -214,6 +235,7 @@ function RegisterExpenseModal({
                   id="fx-pay-day"
                   value={form.payDay}
                   onChange={update("payDay")}
+                  disabled={Boolean(initial)}
                   required
                 >
                   <option value="">선택</option>
@@ -236,6 +258,7 @@ function RegisterExpenseModal({
                         : form.amount
                     }
                     onChange={handleAmount}
+                    readOnly={Boolean(initial)}
                     required
                     placeholder="0"
                   />
@@ -243,6 +266,7 @@ function RegisterExpenseModal({
                     aria-label="통화"
                     value={form.currency}
                     onChange={update("currency")}
+                    disabled={Boolean(initial)}
                   >
                     <option value="KRW">KRW</option>
                     <option value="USD">USD</option>

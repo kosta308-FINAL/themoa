@@ -1,4 +1,5 @@
-.fixed-expense {
+.fixed-expense,
+.fx-modal-backdrop {
   --fx-page: #f8fbf9;
   --fx-border: #e5ede8;
   --fx-border-strong: #d5e4da;
@@ -21,6 +22,8 @@
   --fx-shadow:
     0 8px 30px rgba(22, 101, 52, 0.07), 0 2px 8px rgba(0, 0, 0, 0.025);
   --fx-radius: 18px;
+}
+.fixed-expense {
   background: var(--fx-page);
 }
 
@@ -988,9 +991,12 @@
   gap: 8px;
 }
 
-.fx-field input[readonly] {
+.fx-field input[readonly],
+.fx-field input:disabled,
+.fx-field select:disabled {
   color: var(--fx-muted);
   background: var(--fx-page);
+  cursor: not-allowed;
 }
 
 .fx-merchant-picker {
@@ -1132,6 +1138,10 @@
   font-size: 12px;
 }
 
+.fx-detail-row:last-child {
+  border-bottom: 0;
+}
+
 .fx-detail-row span {
   color: var(--fx-muted);
 }
@@ -1204,6 +1214,16 @@
   color: var(--fx-muted);
   font-size: 10px;
   line-height: 1.5;
+}
+
+.fx-modal.sm .fx-primary-button,
+.fx-modal.sm .fx-secondary-button,
+.fx-modal.sm .fx-ghost-button,
+.fx-modal.sm .fx-danger-button {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 650;
 }
 
 .fx-toast {

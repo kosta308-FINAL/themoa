@@ -2,9 +2,14 @@ package com.weaone.themoa.domain.auth.service;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
+import com.weaone.themoa.config.AuthProperties;
 import com.weaone.themoa.domain.auth.dto.request.ChangePasswordRequest;
 import com.weaone.themoa.domain.auth.dto.request.LoginRequest;
 import com.weaone.themoa.domain.auth.dto.request.SignupRequest;
+import com.weaone.themoa.domain.auth.dto.request.WithdrawRequest;
+import com.weaone.themoa.domain.auth.entity.MemberTermsAgreement;
+import com.weaone.themoa.domain.auth.entity.TermsType;
+import com.weaone.themoa.domain.auth.repository.MemberTermsAgreementRepository;
 import com.weaone.themoa.domain.auth.support.EmailNormalizer;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
@@ -26,17 +31,25 @@ public class AuthService {
     private static final int MIN_SIGNUP_AGE = 19;
 
     private final MemberRepository memberRepository;
+    private final MemberTermsAgreementRepository memberTermsAgreementRepository;
     private final EmailVerificationService emailVerificationService;
     private final AuthTokenService authTokenService;
     private final LoginAttemptService loginAttemptService;
     private final PasswordEncoder passwordEncoder;
+    private final AuthProperties authProperties;
 
     /**
      * 이메일 인증을 마친 사용자만 회원이 된다. 생성 즉시 토큰을 발급해 자동 로그인시킨다.
      * user_policy_profile은 여기서 만들지 않는다(정책 추천 진입 시 지연 생성).
+     *
+     * <p>필수 약관(서비스 이용약관·개인정보 수집이용) 동의를 가장 먼저 검증한다 — 이메일 등 개인정보를
+     * 저장하기 전에 동의부터 확정짓는다(개인정보보호법의 "수집 전 동의" 원칙).
      */
     @Transactional
     public IssuedTokens signUp(SignupRequest request) {
+        if (!Boolean.TRUE.equals(request.agreedServiceTerms()) || !Boolean.TRUE.equals(request.agreedPrivacyPolicy())) {
+            throw new BusinessException(ErrorCode.AUTH_TERMS_REQUIRED);
+        }
         if (!request.password().equals(request.passwordConfirm())) {
             throw new BusinessException(ErrorCode.AUTH_PASSWORD_CONFIRM_MISMATCH);
         }
@@ -66,9 +79,23 @@ public class AuthService {
             // 동시 가입으로 UNIQUE 제약에 걸린 경우. 선조회만으로는 막을 수 없다.
             throw new BusinessException(ErrorCode.AUTH_EMAIL_DUPLICATED);
         }
+        saveTermsAgreements(member, request, now);
 
         member.recordLoginSuccess(now);
         return authTokenService.issue(member, now);
+    }
+
+    /**
+     * 필수 2종은 항상 저장하고, 선택 동의(데이터 수집·활용)는 사용자가 체크한 경우에만 행을 만든다.
+     * 미체크는 "행이 없다"로 표현하며 별도의 거부 행을 남기지 않는다(erd.md §1).
+     */
+    private void saveTermsAgreements(Member member, SignupRequest request, LocalDateTime now) {
+        String version = authProperties.terms().version();
+        memberTermsAgreementRepository.save(MemberTermsAgreement.agree(member, TermsType.SERVICE_TERMS, version, now));
+        memberTermsAgreementRepository.save(MemberTermsAgreement.agree(member, TermsType.PRIVACY_POLICY, version, now));
+        if (Boolean.TRUE.equals(request.agreedDataCollection())) {
+            memberTermsAgreementRepository.save(MemberTermsAgreement.agree(member, TermsType.DATA_COLLECTION, version, now));
+        }
     }
 
     /**
@@ -121,6 +148,22 @@ public class AuthService {
     public void logoutAllDevices(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS));
+        authTokenService.revokeAll(member);
+    }
+
+    /**
+     * 회원 탈퇴(마이페이지). 비밀번호 확인 후 개인정보를 익명화하고 전 세션을 즉시 무효화한다.
+     * 카드연동·거래 등 연관 데이터의 파기는 별도 배치가 처리한다.
+     */
+    @Transactional
+    public void withdraw(Long memberId, WithdrawRequest request) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS));
+        if (member.getPassword() == null
+                || !passwordEncoder.matches(request.password(), member.getPassword())) {
+            throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS);
+        }
+        member.withdraw(LocalDateTime.now());
         authTokenService.revokeAll(member);
     }
 

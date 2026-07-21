@@ -61,7 +61,8 @@ class AuthControllerTest {
                 new AuthProperties.Jwt("ignored", Duration.ofMinutes(30)),
                 new AuthProperties.Refresh(Duration.ofDays(5), "/api/auth", false),
                 new AuthProperties.EmailVerification(Duration.ofMinutes(5), Duration.ofSeconds(60), 5,
-                        Duration.ofMinutes(30), "test@example.com")
+                        Duration.ofMinutes(30), "test@example.com"),
+                new AuthProperties.Terms("2026-07-21")
         );
         AuthController controller = new AuthController(
                 authService, authTokenService, emailVerificationService,
@@ -77,7 +78,8 @@ class AuthControllerTest {
 
     private String signupBody() throws Exception {
         return objectMapper.writeValueAsString(new SignupRequest(
-                "user@example.com", VALID_PASSWORD, VALID_PASSWORD, "닉네임", Gender.MALE, LocalDate.of(1996, 5, 20)));
+                "user@example.com", VALID_PASSWORD, VALID_PASSWORD, "닉네임", Gender.MALE, LocalDate.of(1996, 5, 20),
+                true, true, false));
     }
 
     @Test
@@ -117,7 +119,22 @@ class AuthControllerTest {
     @DisplayName("비밀번호 형식이 규칙에 맞지 않으면 400을 반환한다")
     void signUpRejectsWeakPassword() throws Exception {
         String body = objectMapper.writeValueAsString(new SignupRequest(
-                "user@example.com", "onlyletters", "onlyletters", "닉네임", Gender.MALE, LocalDate.of(1996, 5, 20)));
+                "user@example.com", "onlyletters", "onlyletters", "닉네임", Gender.MALE, LocalDate.of(1996, 5, 20),
+                true, true, false));
+
+        mockMvc.perform(post("/api/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+    }
+
+    @Test
+    @DisplayName("필수 약관 동의 값이 없으면 400을 반환한다")
+    void signUpRejectsMissingTermsAgreement() throws Exception {
+        String body = objectMapper.writeValueAsString(new SignupRequest(
+                "user@example.com", VALID_PASSWORD, VALID_PASSWORD, "닉네임", Gender.MALE, LocalDate.of(1996, 5, 20),
+                null, true, false));
 
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)

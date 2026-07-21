@@ -58,7 +58,7 @@ const scheduleBadge = (daysLeft) => {
 
 /** 서버가 계산한 이번 주기 이행 상태(view/fixedExpense.md §4). 카드 미연동·이체형은 null(배지 없음). */
 const PAYMENT_STATUS_BADGE = {
-  PAID: { label: "정상", tone: "paid" },
+  PAID: { label: "결제완료", tone: "paid" },
   DUE_SOON: { label: "결제예정", tone: "today" },
   MISSED: { label: "미납", tone: "missed" },
 };

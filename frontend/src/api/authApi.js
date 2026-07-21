@@ -10,7 +10,8 @@ export const verifyEmailCode = (email, code) =>
 
 /**
  * 일반 회원가입. 성공 시 201 + { accessToken, expiresIn } (Refresh는 HttpOnly 쿠키).
- * @param {{ email, password, passwordConfirm, nickname, gender: 'MALE'|'FEMALE', birthDate: 'YYYY-MM-DD' }} payload
+ * @param {{ email, password, passwordConfirm, nickname, gender: 'MALE'|'FEMALE', birthDate: 'YYYY-MM-DD',
+ *   agreedServiceTerms: boolean, agreedPrivacyPolicy: boolean, agreedDataCollection: boolean }} payload
  */
 export const signup = (payload) =>
   axiosInstance.post("/api/auth/signup", payload);
@@ -24,3 +25,21 @@ export const logout = () => axiosInstance.post("/api/auth/logout");
 
 /** Refresh rotation. 쿠키의 Refresh Token으로 새 Access Token을 받는다. */
 export const refresh = () => axiosInstance.post("/api/auth/refresh");
+
+/**
+ * 비밀번호 변경. 성공 시 이 기기를 포함한 전 세션이 즉시 무효화되어 재로그인이 필요하다.
+ * @param {{ currentPassword, newPassword, newPasswordConfirm }} payload
+ */
+export const changePassword = (payload) =>
+  axiosInstance.patch("/api/auth/password", payload);
+
+/** 전체 기기 로그아웃. 이 회원의 모든 기기 세션이 즉시 무효화된다(이 기기 포함). */
+export const logoutAllDevices = () =>
+  axiosInstance.post("/api/auth/logout-all");
+
+/**
+ * 회원 탈퇴. 비밀번호 확인 후 즉시 처리되며 전 세션이 무효화되어 다시 로그인할 수 없다.
+ * @param {{ password: string }} payload
+ */
+export const withdrawAccount = (payload) =>
+  axiosInstance.delete("/api/auth/account", { data: payload });

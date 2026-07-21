@@ -112,6 +112,10 @@ public class Member {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    /** 탈퇴 시각. 채워지면 email·name·password가 익명화된 상태다. 연관 데이터 파기는 별도 배치가 처리한다. */
+    @Column(name = "withdrawn_at")
+    private LocalDateTime withdrawnAt;
+
     private Member(String email, String password, String name, Gender gender, LocalDate birthDate, LocalDateTime now) {
         this.email = email;
         this.password = password;
@@ -267,5 +271,17 @@ public class Member {
     /** 결제수단=카드인 수기 입력 허용 조건(entryMode.md §5-1): 자동수집이 돌지 않는 동안만 허용한다. */
     public boolean isManualCardEntryAllowed() {
         return entryMode == EntryMode.MANUAL || !cardSyncEnabled;
+    }
+
+    /**
+     * 회원 탈퇴. 개인정보(이메일·닉네임·비밀번호)를 익명화해 로그인을 막는다 — 이메일이 바뀌므로
+     * {@code findByEmail}로 다시 찾을 수 없다. 세션 무효화(Refresh Token 삭제·token_version 증가)는
+     * 호출자(AuthService)가 이어서 처리한다. 카드연동·거래 등 연관 데이터의 파기는 별도 배치가 담당한다.
+     */
+    public void withdraw(LocalDateTime now) {
+        this.email = "withdrawn-" + id + "@deleted.themore.local";
+        this.name = "탈퇴한 회원";
+        this.password = null;
+        this.withdrawnAt = now;
     }
 }

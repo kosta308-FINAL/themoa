@@ -6,6 +6,8 @@ import DashboardIcon from "../../components/common/DashboardIcon";
 import { useAuth } from "../../hooks/useAuth";
 import { getApiErrorMessage } from "../../utils/apiError";
 import AuthLayout from "./components/AuthLayout";
+import TermsAgreement from "./components/TermsAgreement";
+import { REQUIRED_TERMS_KEYS } from "./constants/terms";
 
 const formatBirthDate = (iso) => {
   const [year, month, day] = iso.split("-");
@@ -29,7 +31,10 @@ function SignupPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // step 1 — 이메일 인증
+  // step 1 — 약관 동의
+  const [agreements, setAgreements] = useState({});
+
+  // step 2 — 이메일 인증
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
@@ -38,7 +43,7 @@ function SignupPage() {
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
-  // step 2 — 기본 정보
+  // step 3 — 기본 정보
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [nickname, setNickname] = useState("");
@@ -51,7 +56,7 @@ function SignupPage() {
   const normalizedEmail = email.trim().toLowerCase();
 
   useEffect(() => {
-    if (!codeSent || step !== 1) return;
+    if (!codeSent || step !== 2) return;
     const id = setInterval(() => {
       setCodeTtl((s) => (s > 0 ? s - 1 : 0));
       setResendLeft((s) => (s > 0 ? s - 1 : 0));
@@ -92,7 +97,7 @@ function SignupPage() {
     setVerifying(true);
     try {
       await verifyEmailCode(normalizedEmail, code.trim());
-      setStep(2);
+      setStep(3);
     } catch (err) {
       setError(
         getApiErrorMessage(err, "인증 코드가 올바르지 않거나 만료되었습니다."),
@@ -126,6 +131,21 @@ function SignupPage() {
     return Object.keys(errors).length === 0;
   };
 
+  const handleAgreementChange = (key, value) => {
+    setAgreements((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleContinueToEmail = (e) => {
+    e.preventDefault();
+    const missingRequired = REQUIRED_TERMS_KEYS.some((key) => !agreements[key]);
+    if (missingRequired) {
+      setError("필수 약관에 모두 동의해야 다음으로 진행할 수 있어요.");
+      return;
+    }
+    setError("");
+    setStep(2);
+  };
+
   const handleSignup = async (e) => {
     e.preventDefault();
     if (submitting) return;
@@ -140,9 +160,12 @@ function SignupPage() {
         nickname: nickname.trim(),
         gender,
         birthDate,
+        agreedServiceTerms: !!agreements.service,
+        agreedPrivacyPolicy: !!agreements.privacy,
+        agreedDataCollection: !!agreements.dataCollection,
       });
       login(res.data.data);
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(
         getApiErrorMessage(
@@ -163,28 +186,62 @@ function SignupPage() {
       <div className="auth-head">
         <h2 className="auth-title">3분이면 시작할 수 있어요</h2>
         <p className="auth-sub">
-          이메일 인증 후 기본 정보만 입력하면 가입이 끝나요.
+          약관 동의 후 이메일 인증과 기본 정보만 입력하면 가입이 끝나요.
         </p>
       </div>
 
       <ol className="auth-steps">
         <li className={step === 1 ? "current" : "done"}>
           <span className="auth-step-num">{step > 1 ? "✓" : "1"}</span>
+          약관 동의
+        </li>
+        <li className={step === 2 ? "current" : step > 2 ? "done" : ""}>
+          <span className="auth-step-num">{step > 2 ? "✓" : "2"}</span>
           이메일 인증
         </li>
-        <li className={step === 2 ? "current" : ""}>
-          <span className="auth-step-num">2</span>
+        <li className={step === 3 ? "current" : ""}>
+          <span className="auth-step-num">3</span>
           기본 정보
         </li>
       </ol>
 
       {step === 1 && (
+        <form className="auth-form" onSubmit={handleContinueToEmail} noValidate>
+          {error && (
+            <p className="auth-error" role="alert">
+              {error}
+            </p>
+          )}
+
+          <TermsAgreement
+            agreements={agreements}
+            onChange={handleAgreementChange}
+          />
+
+          <button type="submit" className="auth-submit">
+            다음
+          </button>
+        </form>
+      )}
+
+      {step === 2 && (
         <form className="auth-form" onSubmit={handleVerifyCode} noValidate>
           {error && (
             <p className="auth-error" role="alert">
               {error}
             </p>
           )}
+
+          <button
+            type="button"
+            className="auth-back"
+            onClick={() => {
+              setError("");
+              setStep(1);
+            }}
+          >
+            ← 이전
+          </button>
 
           <div className="auth-field">
             <span className="auth-field-label">이메일</span>
@@ -265,13 +322,24 @@ function SignupPage() {
         </form>
       )}
 
-      {step === 2 && (
+      {step === 3 && (
         <form className="auth-form" onSubmit={handleSignup} noValidate>
           {error && (
             <p className="auth-error" role="alert">
               {error}
             </p>
           )}
+
+          <button
+            type="button"
+            className="auth-back"
+            onClick={() => {
+              setError("");
+              setStep(2);
+            }}
+          >
+            ← 이전
+          </button>
 
           <div className="auth-verified">
             <span>{normalizedEmail}</span>

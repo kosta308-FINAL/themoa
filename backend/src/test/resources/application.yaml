@@ -43,6 +43,8 @@ app:
       max-verify-attempts: 5
       verified-ttl: 30m
       from: test@example.com
+    terms:
+      version: 2026-07-21
   codef:
     # 테스트 전용 더미값. 실제 CODEF 호출은 컨텍스트 기동 테스트에서 일어나지 않는다.
     client-id: test-client-id
@@ -61,6 +63,12 @@ app:
     call-timeout: 5s
   customer-service:
     privacy-policy-version: 2026-07-20
+    rag:
+      enabled: false
+      embed-on-startup: false
+      collection-name: customer_service_knowledge_test
+      top-k: 6
+      minimum-similarity: 0.45
     storage:
       provider: LOCAL
       local-root: ./.local-storage/customer-service-test

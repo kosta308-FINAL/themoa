@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import DashboardIcon from "../../components/common/DashboardIcon";
+import MarkdownContent from "../../components/common/MarkdownContent";
+import { askCustomerServiceChat } from "../../api/customerServiceApi";
 import FaqPanel from "./components/FaqPanel";
 import InquiryForm from "./components/InquiryForm";
 import MyInquiryList from "./components/MyInquiryList";
@@ -17,7 +19,11 @@ const QUICK_TAGS = [
 function CustomerServicePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "faq");
+  const [searchMode, setSearchMode] = useState("chat");
   const [searchTerm, setSearchTerm] = useState("");
+  const [chatAnswer, setChatAnswer] = useState(null);
+  const [chatError, setChatError] = useState("");
+  const [isChatLoading, setIsChatLoading] = useState(false);
   const [myListRefreshKey, setMyListRefreshKey] = useState(0);
   const [focusInquiryId] = useState(searchParams.get("inquiryId"));
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -29,7 +35,39 @@ function CustomerServicePage() {
 
   const handleSearchTag = (tag) => {
     setSearchTerm(tag);
+    if (searchMode === "chat") {
+      handleChatSubmit(tag);
+      return;
+    }
     switchTab("faq");
+  };
+
+  const handleHeroSearch = () => {
+    if (searchMode === "chat") {
+      handleChatSubmit(searchTerm);
+      return;
+    }
+    switchTab("faq");
+  };
+
+  const handleChatSubmit = async (message) => {
+    const normalized = (message || "").trim();
+    if (!normalized || isChatLoading) return;
+    setChatError("");
+    setIsChatLoading(true);
+    try {
+      const response = await askCustomerServiceChat({
+        message: normalized,
+        conversationId: chatAnswer?.conversationId || null,
+      });
+      setChatAnswer(response);
+    } catch (requestError) {
+      setChatError(
+        "챗봇 답변을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+      );
+    } finally {
+      setIsChatLoading(false);
+    }
   };
 
   const handleInquirySubmitted = () => {
@@ -65,24 +103,53 @@ function CustomerServicePage() {
           </div>
           <h1>무엇을 도와드릴까요?</h1>
           <p>
-            자주 묻는 질문(FAQ)에서 빠르게 해결하거나, 해결되지 않은 문제는 1:1
-            문의를 남겨주시면 앱 내 알림으로 답변드리겠습니다.
+            챗봇에게 먼저 물어보거나, 일반검색으로 FAQ를 빠르게 찾아보세요.
+            해결되지 않은 문제는 1:1 문의로 이어서 도와드리겠습니다.
           </p>
+
+          <div className="cs-search-mode" aria-label="고객센터 검색 모드">
+            <button
+              type="button"
+              className={`cs-mode-btn ${searchMode === "chat" ? "active" : ""}`}
+              onClick={() => setSearchMode("chat")}
+            >
+              챗봇
+            </button>
+            <button
+              type="button"
+              className={`cs-mode-btn ${searchMode === "faq" ? "active" : ""}`}
+              onClick={() => setSearchMode("faq")}
+            >
+              일반검색
+            </button>
+          </div>
 
           <div className="cs-search-box">
             <DashboardIcon name="search" size={18} />
             <input
               type="text"
-              placeholder="궁금한 답변이나 키워드를 검색해보세요 (예: 카드연동, 하루권장액, 수기지출)"
+              placeholder={
+                searchMode === "chat"
+                  ? "궁금한 내용을 문장으로 물어보세요 (예: 정책 추천은 지역을 꼭 입력해야 하나요?)"
+                  : "궁금한 답변이나 키워드를 검색해보세요 (예: 카드연동, 하루권장액, 수기지출)"
+              }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleHeroSearch();
+              }}
             />
             <button
               type="button"
               className="cs-search-btn"
-              onClick={() => switchTab("faq")}
+              onClick={handleHeroSearch}
+              disabled={isChatLoading}
             >
-              검색하기
+              {searchMode === "chat"
+                ? isChatLoading
+                  ? "답변 중..."
+                  : "질문하기"
+                : "검색하기"}
             </button>
           </div>
 
@@ -99,6 +166,61 @@ function CustomerServicePage() {
               </button>
             ))}
           </div>
+
+          {searchMode === "chat" &&
+            (chatAnswer || chatError || isChatLoading) && (
+              <div className="cs-chat-result">
+                {isChatLoading && (
+                  <div className="cs-chat-loading">
+                    고객센터 지식에서 답변을 찾고 있어요.
+                  </div>
+                )}
+                {chatError && (
+                  <div className="cs-inline-error">{chatError}</div>
+                )}
+                {chatAnswer && !isChatLoading && (
+                  <>
+                    <div className="cs-chat-answer-head">
+                      <span>AI 고객센터 답변</span>
+                      {chatAnswer.needsHumanSupport && (
+                        <button
+                          type="button"
+                          className="cs-chat-link-btn"
+                          onClick={() => switchTab("inquire")}
+                        >
+                          1:1 문의로 이어가기
+                        </button>
+                      )}
+                    </div>
+                    <MarkdownContent
+                      markdown={chatAnswer.answerMarkdown}
+                      className="cs-chat-answer-body"
+                    />
+                    {chatAnswer.citations?.length > 0 && (
+                      <div className="cs-chat-citations">
+                        <span>참고한 고객센터 지식</span>
+                        <div>
+                          {chatAnswer.citations.map((citation) => (
+                            <button
+                              key={`${citation.sourceType}-${citation.sourceId}`}
+                              type="button"
+                              className="cs-citation-chip"
+                              onClick={() => {
+                                setSearchMode("faq");
+                                setSearchTerm(citation.title);
+                                switchTab("faq");
+                              }}
+                            >
+                              {citation.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
         </div>
       </section>
 
@@ -173,7 +295,9 @@ function CustomerServicePage() {
       {/* MAIN GRID CONTENT */}
       <div className="cs-grid">
         <div className="cs-left">
-          {activeTab === "faq" && <FaqPanel searchTerm={searchTerm} />}
+          {activeTab === "faq" && (
+            <FaqPanel searchTerm={searchMode === "faq" ? searchTerm : ""} />
+          )}
 
           {activeTab === "inquire" && (
             <InquiryForm

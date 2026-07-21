@@ -26,7 +26,9 @@
   --radius: 18px;
   --radius-sm: 12px;
 
+  width: 100%;
   max-width: 1280px;
+  align-self: stretch;
   margin: 0 auto;
   padding: 30px 40px 64px;
   color: var(--text);
@@ -86,6 +88,36 @@
   line-height: 1.5;
 }
 
+.cs-search-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(34, 197, 94, 0.24);
+}
+
+.cs-mode-btn {
+  min-width: 84px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.cs-mode-btn.active {
+  color: #fff;
+  background: var(--green-dark);
+  box-shadow: 0 6px 14px rgba(21, 128, 61, 0.16);
+}
+
 .cs-search-box {
   display: flex;
   align-items: center;
@@ -135,6 +167,11 @@
   background: var(--green-deep);
 }
 
+.cs-search-btn:disabled {
+  cursor: wait;
+  opacity: 0.76;
+}
+
 .quick-tags {
   display: flex;
   align-items: center;
@@ -164,6 +201,105 @@
   color: var(--green-dark);
   background: #fff;
   border-color: var(--green);
+}
+
+.cs-chat-result {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid #bce6ca;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 10px 24px rgba(22, 101, 52, 0.08);
+}
+
+.cs-chat-loading {
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.cs-chat-answer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.cs-chat-answer-head span {
+  color: var(--green-deep);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.cs-chat-link-btn {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid #bce6ca;
+  background: var(--green-soft);
+  color: var(--green-dark);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.cs-chat-link-btn:hover {
+  background: #d8f5e2;
+}
+
+.cs-chat-answer-body {
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.cs-chat-answer-body p {
+  margin: 0 0 10px;
+}
+
+.cs-chat-answer-body p:last-child {
+  margin-bottom: 0;
+}
+
+.cs-chat-citations {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-strong);
+}
+
+.cs-chat-citations > span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.cs-chat-citations > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cs-citation-chip {
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: normal;
+  text-align: left;
+}
+
+.cs-citation-chip:hover {
+  border-color: var(--green);
+  color: var(--green-dark);
+  background: var(--green-pale);
 }
 
 /* MAIN TABS */
@@ -215,6 +351,17 @@
   grid-template-columns: minmax(0, 1fr) 340px;
   gap: 28px;
   align-items: start;
+}
+
+/* 탭 전환 시 콘텐츠 높이 차이로 페이지 크기가 출렁이지 않도록 최소 높이 고정 */
+.cs-left {
+  min-height: 960px;
+}
+
+@media (max-width: 960px) {
+  .cs-left {
+    min-height: 0;
+  }
 }
 
 /* PANEL BOX */
@@ -750,6 +897,24 @@ textarea.form-control {
   }
   .cs-page {
     padding: 20px 20px 48px;
+  }
+  .cs-hero {
+    padding: 26px 20px;
+  }
+  .cs-search-box {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+  .cs-search-box input {
+    min-width: calc(100% - 34px);
+  }
+  .cs-search-btn {
+    justify-content: center;
+    width: 100%;
+  }
+  .cs-chat-answer-head {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 

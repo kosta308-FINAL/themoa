@@ -1,6 +1,22 @@
 /* 맞춤형 금융상품 추천. 색상·그림자·radius는 DashboardLayout(.dashboard)의
    green 계열 --dash-* 토큰을 그대로 사용해 대시보드와 동일한 테마를 유지한다. */
 
+.products-nav-link {
+  flex-shrink: 0;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: var(--dash-accent-light);
+  color: var(--dash-accent-dark);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.products-nav-link:hover {
+  background: var(--dash-accent);
+  color: #fff;
+}
+
 .products-layout {
   display: grid;
   grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
@@ -188,6 +204,11 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* 북마크 버튼은 카드 오른쪽 상단에 붙인다. */
+.rec-card-head .bookmark-button {
+  margin-left: auto;
 }
 
 .rec-rank {

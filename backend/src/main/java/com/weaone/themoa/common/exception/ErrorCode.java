@@ -24,6 +24,7 @@ public enum ErrorCode {
     AUTH_EMAIL_DUPLICATED(HttpStatus.CONFLICT, "이미 가입된 이메일입니다."),
     AUTH_PASSWORD_CONFIRM_MISMATCH(HttpStatus.BAD_REQUEST, "비밀번호가 서로 일치하지 않습니다."),
     AUTH_UNDERAGE(HttpStatus.BAD_REQUEST, "만 19세 이상만 가입할 수 있습니다."),
+    AUTH_TERMS_REQUIRED(HttpStatus.BAD_REQUEST, "필수 약관에 모두 동의해야 가입할 수 있습니다."),
 
     // 인증 - 이메일 코드 인증
     AUTH_EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "이메일 인증을 먼저 완료해 주세요."),
@@ -41,6 +42,7 @@ public enum ErrorCode {
     CARD_CONNECTION_EXTERNAL_ERROR(HttpStatus.BAD_GATEWAY, "카드사 연결 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."),
     CARD_CONNECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "연결된 카드사를 찾을 수 없습니다."),
     CARD_CONNECTION_RETRY_NOT_ALLOWED(HttpStatus.CONFLICT, "실패한 초기수집만 다시 시도할 수 있습니다."),
+    CARD_CONNECTION_ALREADY_DISCONNECTED(HttpStatus.CONFLICT, "이미 연동이 해제된 카드사입니다."),
 
     // 가맹점 신원
     MERCHANT_ALIAS_NOT_FOUND(HttpStatus.NOT_FOUND, "가맹점 별칭을 찾을 수 없습니다."),
@@ -121,7 +123,14 @@ public enum ErrorCode {
     CUSTOMER_INQUIRY_ANSWER_CONFLICT(HttpStatus.CONFLICT, "이미 답변이 등록되었거나 화면이 최신 상태가 아닙니다. 새로고침 후 다시 시도해 주세요."),
     CUSTOMER_INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "문의를 찾을 수 없습니다."),
     CUSTOMER_INQUIRY_ATTACHMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "첨부파일을 찾을 수 없습니다."),
-    CUSTOMER_INQUIRY_FILE_STORAGE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "첨부파일을 저장하지 못했습니다.");
+    CUSTOMER_INQUIRY_FILE_STORAGE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "첨부파일을 저장하지 못했습니다."),
+
+    // 고객센터 - AI 지식관리
+    CUSTOMER_KNOWLEDGE_INVALID_REQUEST(HttpStatus.BAD_REQUEST, "고객센터 AI 지식관리 요청 값이 올바르지 않습니다."),
+    CUSTOMER_KNOWLEDGE_FILE_TYPE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "md 또는 txt 파일만 업로드할 수 있습니다."),
+    CUSTOMER_KNOWLEDGE_FILE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "업로드 파일 용량이 허용 범위를 초과했습니다."),
+    CUSTOMER_KNOWLEDGE_DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "고객센터 AI 지식 문서를 찾을 수 없습니다."),
+    CUSTOMER_KNOWLEDGE_EMBEDDING_FAILED(HttpStatus.BAD_GATEWAY, "고객센터 AI 지식 문서를 임베딩하지 못했습니다.");
     private final HttpStatus status;
     private final String message;
 

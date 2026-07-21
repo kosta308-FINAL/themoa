@@ -72,7 +72,7 @@ public class RecommendQueryService {
                 .map(reason -> reason.replaceAll("\\s*\\(\\+\\d+\\)\\s*$", ""))
                 .toList();
         return new Recommendation(
-                r.company(), r.productName(), r.type(), r.score(), r.bestRate(), r.bestRateTerm(),
+                r.id(), r.company(), r.productName(), r.type(), r.score(), r.bestRate(), r.bestRateTerm(),
                 cleaned, r.llmReason(), r.maturityAmountWon(), r.goalMonthlyWon(), r.goalMaturityAmountWon());
     }
 }

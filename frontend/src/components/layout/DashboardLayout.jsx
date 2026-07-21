@@ -29,7 +29,9 @@ function DashboardLayout() {
   return (
     <div className="dashboard dashboard-shell">
       <DashboardTopNav />
-      <Outlet />
+      <div className="dashboard-content">
+        <Outlet />
+      </div>
       <DashboardFooter />
       {showRecovery && (
         <RecoverySyncModal onClose={() => setShowRecovery(false)} />
