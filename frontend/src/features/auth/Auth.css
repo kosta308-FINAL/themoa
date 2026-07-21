@@ -289,6 +289,20 @@
   cursor: default;
 }
 
+.auth-back {
+  align-self: flex-start;
+  padding: 2px 0;
+  background: none;
+  color: var(--auth-sub);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth-back:hover {
+  color: var(--auth-ink);
+  text-decoration: underline;
+}
+
 .auth-submit {
   margin-top: 4px;
   padding: 13px;
@@ -336,7 +350,7 @@
   text-decoration: underline;
 }
 
-/* ─── Signup steps (실제 가입 순서: ① 이메일 인증 → ② 기본 정보) ─── */
+/* ─── Signup steps (실제 가입 순서: ① 약관 동의 → ② 이메일 인증 → ③ 기본 정보) ─── */
 .auth-steps {
   display: flex;
   gap: 20px;
@@ -478,7 +492,7 @@
   box-shadow: inset 0 0 0 2px var(--auth-accent);
 }
 
-/* ─── 약관 동의 (step 3) ────────────────────────────────── */
+/* ─── 약관 동의 (step 1) ────────────────────────────────── */
 .auth-terms {
   display: flex;
   flex-direction: column;

@@ -232,6 +232,17 @@ function SignupPage() {
             </p>
           )}
 
+          <button
+            type="button"
+            className="auth-back"
+            onClick={() => {
+              setError("");
+              setStep(1);
+            }}
+          >
+            ← 이전
+          </button>
+
           <div className="auth-field">
             <span className="auth-field-label">이메일</span>
             <div className="auth-row">
@@ -318,6 +329,17 @@ function SignupPage() {
               {error}
             </p>
           )}
+
+          <button
+            type="button"
+            className="auth-back"
+            onClick={() => {
+              setError("");
+              setStep(2);
+            }}
+          >
+            ← 이전
+          </button>
 
           <div className="auth-verified">
             <span>{normalizedEmail}</span>
