@@ -197,7 +197,10 @@ function MyPage() {
 
               {activeTab === "cards" && (
                 <div className="mp-tab-panel">
-                  <CardConnectionCard cardConnections={cardConnections} />
+                  <CardConnectionCard
+                    cardConnections={cardConnections}
+                    onChanged={load}
+                  />
                 </div>
               )}
 

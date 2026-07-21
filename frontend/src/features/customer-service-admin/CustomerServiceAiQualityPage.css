@@ -124,9 +124,15 @@
 .aiq-actions,
 .aiq-document-actions {
   display: flex;
+  align-items: flex-start;
   gap: 10px;
   justify-content: flex-end;
   margin-top: 16px;
+}
+
+.aiq-document-actions {
+  flex-shrink: 0;
+  margin-top: 0;
 }
 
 .aiq-btn {
@@ -248,7 +254,8 @@
   border-radius: 8px;
   background: #0f172a;
   color: #e2e8f0;
-  font-family: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  font-family:
+    Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.7;
   white-space: pre-wrap;
@@ -259,6 +266,67 @@
   grid-template-columns: minmax(180px, 1fr) 180px minmax(220px, 1fr) auto;
   gap: 12px;
   align-items: center;
+}
+
+.aiq-file-picker {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  height: 42px;
+  border: 1px solid #dbe4ee;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.aiq-file-picker:hover {
+  border-color: #94a3b8;
+}
+
+.aiq-file-picker:has(input:focus-visible) {
+  border-color: #15803d;
+  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.15);
+}
+
+.aiq-file-picker-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  background: #f1f5f9;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 800;
+  border-right: 1px solid #dbe4ee;
+  white-space: nowrap;
+}
+
+.aiq-file-picker:hover .aiq-file-picker-btn {
+  background: #e2e8f0;
+}
+
+.aiq-file-picker-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  color: #64748b;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aiq-file-picker input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .aiq-document-item {

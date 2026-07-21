@@ -36,7 +36,9 @@ function formatScore(value) {
 }
 
 function CustomerServiceAiQualityPage() {
-  const [query, setQuery] = useState("처음 카드동기화 했는데 1분넘도록 동기화가 안됨");
+  const [query, setQuery] = useState(
+    "처음 카드동기화 했는데 1분넘도록 동기화가 안됨",
+  );
   const [topK, setTopK] = useState(6);
   const [minimumSimilarity, setMinimumSimilarity] = useState(0.45);
   const [systemPrompt, setSystemPrompt] = useState("");
@@ -70,7 +72,10 @@ function CustomerServiceAiQualityPage() {
   useEffect(() => {
     Promise.all([loadSettings(), loadDocuments()]).catch((requestError) => {
       setError(
-        getApiErrorMessage(requestError, "AI 품질관리 정보를 불러오지 못했어요."),
+        getApiErrorMessage(
+          requestError,
+          "AI 품질관리 정보를 불러오지 못했어요.",
+        ),
       );
     });
   }, []);
@@ -88,7 +93,9 @@ function CustomerServiceAiQualityPage() {
       });
       setSearchResult(data);
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError, "Qdrant 검색 테스트에 실패했어요."));
+      setError(
+        getApiErrorMessage(requestError, "Qdrant 검색 테스트에 실패했어요."),
+      );
     } finally {
       setBusyKey("");
     }
@@ -129,7 +136,9 @@ function CustomerServiceAiQualityPage() {
       setSystemPrompt(data.systemPrompt || "");
       setNotice("운영 기본값을 저장했어요.");
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError, "운영 기본값 저장에 실패했어요."));
+      setError(
+        getApiErrorMessage(requestError, "운영 기본값 저장에 실패했어요."),
+      );
     } finally {
       setBusyKey("");
     }
@@ -156,7 +165,12 @@ function CustomerServiceAiQualityPage() {
       await loadDocuments();
       setNotice("문서를 청킹하고 Qdrant에 임베딩했어요.");
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError, "문서 업로드 또는 임베딩에 실패했어요."));
+      setError(
+        getApiErrorMessage(
+          requestError,
+          "문서 업로드 또는 임베딩에 실패했어요.",
+        ),
+      );
     } finally {
       setBusyKey("");
     }
@@ -184,7 +198,9 @@ function CustomerServiceAiQualityPage() {
     try {
       await disableAdminCustomerKnowledgeDocument(documentId);
       await loadDocuments();
-      setNotice("문서를 비활성화했어요. 다음 검색부터 컨텍스트 후보에서 제외됩니다.");
+      setNotice(
+        "문서를 비활성화했어요. 다음 검색부터 컨텍스트 후보에서 제외됩니다.",
+      );
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, "문서 비활성화에 실패했어요."));
     } finally {
@@ -222,7 +238,10 @@ function CustomerServiceAiQualityPage() {
           <div className="aiq-panel-heading">
             <div>
               <h2>Qdrant 검색 / 답변 테스트</h2>
-              <p>관리자가 입력한 질문으로 검색 점수와 최종 답변을 함께 확인합니다.</p>
+              <p>
+                관리자가 입력한 질문으로 검색 점수와 최종 답변을 함께
+                확인합니다.
+              </p>
             </div>
             <button
               type="button"
@@ -307,7 +326,10 @@ function CustomerServiceAiQualityPage() {
             ) : (
               <div className="aiq-result-list">
                 {searchResult.results.map((item) => (
-                  <article className="aiq-result-item" key={`${item.sourceType}-${item.sourceId}-${item.rank}`}>
+                  <article
+                    className="aiq-result-item"
+                    key={`${item.sourceType}-${item.sourceId}-${item.rank}`}
+                  >
                     <div className="aiq-result-meta">
                       <strong>#{item.rank}</strong>
                       <span>score {formatScore(item.score)}</span>
@@ -329,7 +351,9 @@ function CustomerServiceAiQualityPage() {
             {answerPreview ? (
               <pre className="aiq-answer-preview">{answerPreview}</pre>
             ) : (
-              <div className="aiq-empty">답변까지 실행하면 여기에 결과가 표시됩니다.</div>
+              <div className="aiq-empty">
+                답변까지 실행하면 여기에 결과가 표시됩니다.
+              </div>
             )}
           </div>
         </section>
@@ -338,7 +362,9 @@ function CustomerServiceAiQualityPage() {
           <div className="aiq-panel-heading">
             <div>
               <h2>md/txt 지식 문서 업로드</h2>
-              <p>업로드한 문서는 청킹 후 고객센터 Qdrant 컬렉션에 임베딩됩니다.</p>
+              <p>
+                업로드한 문서는 청킹 후 고객센터 Qdrant 컬렉션에 임베딩됩니다.
+              </p>
             </div>
           </div>
           <form className="aiq-upload-form" onSubmit={uploadDocument}>
@@ -354,11 +380,19 @@ function CustomerServiceAiQualityPage() {
               value={uploadCategory}
               onChange={(event) => setUploadCategory(event.target.value)}
             />
-            <input
-              type="file"
-              accept=".md,.txt,text/markdown,text/plain"
-              onChange={(event) => setUploadFile(event.target.files?.[0] || null)}
-            />
+            <label className="aiq-file-picker">
+              <span className="aiq-file-picker-btn">파일 선택</span>
+              <span className="aiq-file-picker-name">
+                {uploadFile ? uploadFile.name : "선택된 파일 없음 (.md, .txt)"}
+              </span>
+              <input
+                type="file"
+                accept=".md,.txt,text/markdown,text/plain"
+                onChange={(event) =>
+                  setUploadFile(event.target.files?.[0] || null)
+                }
+              />
+            </label>
             <button
               type="submit"
               className="aiq-btn aiq-btn-primary"
@@ -383,7 +417,9 @@ function CustomerServiceAiQualityPage() {
                   <div className="aiq-document-main">
                     <div className="aiq-document-title-row">
                       <h3>{document.title}</h3>
-                      <span className={`aiq-status ${document.status.toLowerCase()}`}>
+                      <span
+                        className={`aiq-status ${document.status.toLowerCase()}`}
+                      >
                         {STATUS_LABEL[document.status] || document.status}
                       </span>
                     </div>

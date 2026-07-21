@@ -286,6 +286,13 @@
   background: var(--mp-green-soft);
 }
 
+.mp-card-head-action {
+  margin-left: auto;
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 11px;
+}
+
 .mp-card-sub {
   margin-top: -8px;
   color: var(--mp-muted-2);
@@ -459,8 +466,21 @@
   background: var(--mp-green-pale);
 }
 
-.mp-connection-list strong {
-  margin-right: 8px;
+.mp-connection-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mp-connection-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mp-connection-info strong {
   color: var(--mp-text);
   font-size: 13px;
 }
@@ -476,6 +496,7 @@
   border-radius: 999px;
   font-size: 10px;
   font-weight: 750;
+  white-space: nowrap;
 }
 
 .mp-status-active {
@@ -487,6 +508,21 @@
 .mp-status-locked {
   color: var(--mp-red);
   background: var(--mp-red-soft);
+}
+
+.mp-text-danger-button {
+  flex: 0 0 auto;
+  padding: 4px 2px;
+  border: 0;
+  background: transparent;
+  color: var(--mp-red);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mp-text-danger-button:hover {
+  text-decoration: underline;
 }
 
 /* Account management */
@@ -561,6 +597,10 @@
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.2);
 }
 
+.mp-modal-sm {
+  width: min(380px, 100%);
+}
+
 .mp-modal-head {
   display: flex;
   align-items: flex-start;
@@ -598,6 +638,38 @@
 
 .mp-modal .mp-inline-form {
   padding: 22px;
+}
+
+.mp-modal-body {
+  padding: 20px 22px 22px;
+}
+
+.mp-modal-body .mp-inline-form-actions {
+  margin-top: 4px;
+}
+
+.mp-modal-body .mp-form-error {
+  margin-bottom: 12px;
+}
+
+.mp-modal-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 13px 14px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  color: #8c5a13;
+  background: var(--mp-orange-soft);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.mp-modal-warning .icon,
+.mp-modal-warning svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #a96700;
 }
 
 /* Toast */
