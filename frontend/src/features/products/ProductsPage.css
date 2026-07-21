@@ -50,6 +50,14 @@
   gap: 6px;
 }
 
+.rec-form-loading {
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--dash-text-secondary);
+  font-size: 14px;
+}
+
 .rec-field > span {
   font-size: 13px;
   font-weight: 600;
