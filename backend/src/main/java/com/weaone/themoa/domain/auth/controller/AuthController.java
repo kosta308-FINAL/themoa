@@ -4,14 +4,18 @@ import com.weaone.themoa.common.response.ApiResponse;
 import com.weaone.themoa.domain.auth.dto.request.ChangePasswordRequest;
 import com.weaone.themoa.domain.auth.dto.request.EmailCodeSendRequest;
 import com.weaone.themoa.domain.auth.dto.request.EmailCodeVerifyRequest;
+import com.weaone.themoa.domain.auth.dto.request.FindEmailRequest;
 import com.weaone.themoa.domain.auth.dto.request.LoginRequest;
+import com.weaone.themoa.domain.auth.dto.request.PasswordResetRequest;
 import com.weaone.themoa.domain.auth.dto.request.SignupRequest;
 import com.weaone.themoa.domain.auth.dto.request.WithdrawRequest;
+import com.weaone.themoa.domain.auth.dto.response.FindEmailResponse;
 import com.weaone.themoa.domain.auth.dto.response.TokenResponse;
 import com.weaone.themoa.domain.auth.service.AuthService;
 import com.weaone.themoa.domain.auth.service.AuthTokenService;
 import com.weaone.themoa.domain.auth.service.EmailVerificationService;
 import com.weaone.themoa.domain.auth.service.IssuedTokens;
+import com.weaone.themoa.domain.auth.service.PasswordResetService;
 import com.weaone.themoa.domain.auth.support.RefreshTokenCookieFactory;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
@@ -37,6 +41,7 @@ public class AuthController {
     private final AuthService authService;
     private final AuthTokenService authTokenService;
     private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService;
     private final RefreshTokenCookieFactory refreshTokenCookieFactory;
 
     /** 회원가입 전 이메일 인증 코드 발송. */
@@ -64,6 +69,34 @@ public class AuthController {
         IssuedTokens tokens = authService.login(request);
         return tokenResponse(HttpStatus.OK, tokens, refreshTokenCookieFactory.create(
                 tokens.refreshToken(), tokens.refreshTokenValidity()));
+    }
+
+    /** 아이디(이메일) 찾기: 닉네임+출생일이 정확히 1건 일치할 때만 마스킹된 이메일을 내려준다. */
+    @PostMapping("/find-email")
+    public ResponseEntity<ApiResponse<FindEmailResponse>> findEmail(@Valid @RequestBody FindEmailRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(authService.findEmail(request)));
+    }
+
+    /** 비밀번호 찾기 1단계: 가입된 이메일로만 인증 코드를 보낸다(회원가입 코드 발송과 조건이 반대). */
+    @PostMapping("/password/reset/code")
+    public ResponseEntity<ApiResponse<Void>> sendPasswordResetCode(@Valid @RequestBody EmailCodeSendRequest request) {
+        passwordResetService.sendCode(request.email());
+        return ResponseEntity.ok(ApiResponse.success());
+    }
+
+    /** 비밀번호 찾기 2단계: 인증 코드 확인. 통과하면 다음 단계(재설정)에서 1회 소비된다. */
+    @PostMapping("/password/reset/code/verify")
+    public ResponseEntity<ApiResponse<Void>> verifyPasswordResetCode(
+            @Valid @RequestBody EmailCodeVerifyRequest request) {
+        passwordResetService.verifyCode(request.email(), request.code());
+        return ResponseEntity.ok(ApiResponse.success());
+    }
+
+    /** 비밀번호 찾기 3단계: 새 비밀번호로 변경. 성공하면 전 세션이 즉시 무효화되어 재로그인이 필요하다. */
+    @PostMapping("/password/reset")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody PasswordResetRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.noContent().build();
     }
 
     /** Refresh rotation. 기존 토큰은 폐기되고 새 토큰 쌍이 나간다. 프론트가 직접 호출하므로 SameSite=Strict. */
