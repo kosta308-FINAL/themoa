@@ -1,3 +1,6 @@
+import BookmarkButton from "../../../components/common/BookmarkButton";
+import { SAVINGS_PRODUCT } from "../../../utils/bookmarkTarget";
+
 const won = (value) => `${Number(value).toLocaleString("ko-KR")}원`;
 
 const typeLabel = (type) => (type === "DEPOSIT" ? "정기예금" : "적금");
@@ -11,14 +14,23 @@ const homepageSearchUrl = (company) =>
  * 추천 상품 카드 1건. 백엔드 Recommendation DTO를 그대로 렌더링한다.
  * maturityAmountWon·goalMonthlyWon은 적금·목표 입력 시에만 값이 있어 null 분기한다.
  */
-function RecommendResultCard({ item, rank }) {
+function RecommendResultCard({ item, rank, bookmarks }) {
   const rotating = item.productName?.includes("회전");
+  // 추천은 예·적금만 다루므로 북마크 대상 타입은 항상 SAVINGS_PRODUCT다.
+  const canBookmark = item.id != null;
 
   return (
     <article className="rec-card">
       <div className="rec-card-head">
         <span className="rec-rank">{rank}위</span>
         <span className="rec-score">점수 {item.score}</span>
+        {canBookmark && (
+          <BookmarkButton
+            bookmarked={bookmarks.isBookmarked(SAVINGS_PRODUCT, item.id)}
+            busy={bookmarks.isBusy(SAVINGS_PRODUCT, item.id)}
+            onToggle={() => bookmarks.toggleBookmark(SAVINGS_PRODUCT, item.id)}
+          />
+        )}
       </div>
 
       <h3 className="rec-name">

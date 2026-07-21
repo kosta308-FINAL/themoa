@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import Toast from "../../components/common/Toast";
+import { useBookmarks } from "../../hooks/useBookmarks";
 import FinancialSearchForm from "./components/FinancialSearchForm";
 import FinancialSearchResults from "./components/FinancialSearchResults";
 import { useFinancialSearch } from "./hooks/useFinancialSearch";
@@ -6,6 +8,7 @@ import "./FinancialSearchPage.css";
 
 function FinancialSearchPage() {
   const search = useFinancialSearch();
+  const bookmarks = useBookmarks();
 
   return (
     <main className="dash-main financial-search-page">
@@ -37,7 +40,10 @@ function FinancialSearchPage() {
         error={search.error}
         searched={search.searched}
         onSearch={search.runSearch}
+        bookmarks={bookmarks}
       />
+
+      <Toast toast={bookmarks.toast} onClose={bookmarks.clearToast} />
     </main>
   );
 }

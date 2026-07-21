@@ -171,6 +171,7 @@ public class RecommendationService {
         }
 
         return new Recommendation(
+                p.getId(),
                 p.getCompanyName(),
                 p.getProductName(),
                 p.getProductType().name(),

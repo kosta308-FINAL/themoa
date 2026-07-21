@@ -6,6 +6,7 @@ import java.util.List;
 /**
  * 추천 결과 1건.
  *
+ * @param id          상품 PK(savings_product.id). 추천 화면에서 북마크할 때 대상 식별자로 쓴다.
  * @param company     금융회사명
  * @param productName 상품명
  * @param type        예금/적금 (DEPOSIT/SAVING)
@@ -21,6 +22,7 @@ import java.util.List;
  * @param goalMaturityAmountWon goalMonthlyWon으로 넣었을 때 만기 총 수령액(목표금액과 비슷하거나 약간 더 큼).
  */
 public record Recommendation(
+        Long id,
         String company,
         String productName,
         String type,
@@ -35,7 +37,7 @@ public record Recommendation(
 ) {
     /** llmReason만 바꾼 복사본. */
     public Recommendation withLlmReason(String reason) {
-        return new Recommendation(company, productName, type, score, bestRate, bestRateTerm, reasons, reason,
+        return new Recommendation(id, company, productName, type, score, bestRate, bestRateTerm, reasons, reason,
                 maturityAmountWon, goalMonthlyWon, goalMaturityAmountWon);
     }
 }

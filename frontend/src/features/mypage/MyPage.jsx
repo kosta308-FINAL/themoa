@@ -16,6 +16,7 @@ import WithdrawAccountModal from "./components/WithdrawAccountModal";
 import TermsHistoryCard from "./components/TermsHistoryCard";
 import ComingSoonCard from "./components/ComingSoonCard";
 import PolicyBookmarksCard from "./components/PolicyBookmarksCard";
+import FinancialBookmarksCard from "./components/FinancialBookmarksCard";
 import {
   ENTRY_MODE_LABELS,
   INCOME_TYPE_LABELS,
@@ -237,6 +238,7 @@ function MyPage() {
               {activeTab === "soon" && (
                 <div className="mp-tab-panel mp-bookmark-tab">
                   <PolicyBookmarksCard />
+                  <FinancialBookmarksCard />
                   <ComingSoonCard />
                 </div>
               )}
