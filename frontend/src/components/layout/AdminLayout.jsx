@@ -58,6 +58,7 @@ function AdminLayout({ title, subtitle, children }) {
             <NavLink
               key={item.key}
               to={item.to}
+              end
               className={({ isActive }) =>
                 `admin-nav-btn${isActive ? " active" : ""}`
               }
