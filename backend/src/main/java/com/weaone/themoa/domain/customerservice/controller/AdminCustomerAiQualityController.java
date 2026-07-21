@@ -4,10 +4,12 @@ import com.weaone.themoa.common.response.ApiResponse;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiPreviewRequest;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiSearchRequest;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiSettingsRequest;
+import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerKnowledgeTextRequest;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiPreviewResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiSearchResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiSettingsResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeFileResponse;
+import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeMetadataOptionsResponse;
 import com.weaone.themoa.domain.customerservice.service.AdminCustomerAiQualityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -60,13 +62,35 @@ public class AdminCustomerAiQualityController {
         return ApiResponse.success(aiQualityService.documents());
     }
 
+    @GetMapping("/metadata-options")
+    public ApiResponse<AdminCustomerKnowledgeMetadataOptionsResponse> metadataOptions() {
+        return ApiResponse.success(aiQualityService.metadataOptions());
+    }
+
     @PostMapping(value = "/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<AdminCustomerKnowledgeFileResponse> upload(
             @AuthenticationPrincipal Long adminId,
             @RequestParam("title") String title,
             @RequestParam("category") String category,
+            @RequestParam(value = "chunkMaxLength", required = false) Integer chunkMaxLength,
+            @RequestParam(value = "chunkOverlapLength", required = false) Integer chunkOverlapLength,
+            @RequestParam(value = "splitByMarkdownHeading", required = false) Boolean splitByMarkdownHeading,
             @RequestPart("file") MultipartFile file) {
-        return ApiResponse.success(aiQualityService.upload(adminId, title, category, file));
+        return ApiResponse.success(aiQualityService.upload(
+                adminId,
+                title,
+                category,
+                chunkMaxLength,
+                chunkOverlapLength,
+                splitByMarkdownHeading,
+                file));
+    }
+
+    @PostMapping("/documents/text")
+    public ApiResponse<AdminCustomerKnowledgeFileResponse> createText(
+            @AuthenticationPrincipal Long adminId,
+            @RequestBody AdminCustomerKnowledgeTextRequest request) {
+        return ApiResponse.success(aiQualityService.createText(adminId, request));
     }
 
     @PostMapping("/documents/{documentId}/reembed")

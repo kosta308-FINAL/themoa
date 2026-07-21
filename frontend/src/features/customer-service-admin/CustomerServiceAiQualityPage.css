@@ -96,6 +96,12 @@
   font-weight: 800;
 }
 
+.aiq-field small {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .aiq-field input,
 .aiq-field textarea,
 .aiq-upload-form input {
@@ -182,6 +188,34 @@
   color: #15803d;
 }
 
+.aiq-segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 14px;
+  border: 1px solid #dbe4ee;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.aiq-segmented button {
+  min-height: 34px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.aiq-segmented button.active {
+  background: #15803d;
+  color: #fff;
+}
+
 .aiq-empty {
   min-height: 120px;
   display: grid;
@@ -266,6 +300,101 @@
   grid-template-columns: minmax(180px, 1fr) 180px minmax(220px, 1fr) auto;
   gap: 12px;
   align-items: center;
+}
+
+.aiq-upload-form.text-mode {
+  grid-template-columns: minmax(200px, 1fr) minmax(180px, 260px) auto;
+  align-items: start;
+}
+
+.aiq-knowledge-textarea {
+  grid-column: 1 / 3;
+  width: 100%;
+  min-height: 180px;
+  padding: 12px;
+  border: 1px solid #dbe4ee;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+}
+
+.aiq-knowledge-textarea:focus {
+  border-color: #15803d;
+  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.15);
+}
+
+.aiq-chunk-options {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.aiq-chunk-options-heading {
+  margin-bottom: 14px;
+}
+
+.aiq-chunk-options-heading h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.aiq-chunk-options-heading p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.aiq-chunk-option-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(260px, 1.2fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.aiq-toggle-field {
+  min-height: 92px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #dbe4ee;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+}
+
+.aiq-toggle-field input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: #15803d;
+}
+
+.aiq-toggle-field span {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aiq-toggle-field strong {
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.aiq-toggle-field small {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .aiq-file-picker {
@@ -402,8 +531,14 @@
   .aiq-kpi-grid,
   .aiq-results-grid,
   .aiq-form-grid,
-  .aiq-upload-form {
+  .aiq-upload-form,
+  .aiq-upload-form.text-mode,
+  .aiq-chunk-option-grid {
     grid-template-columns: 1fr;
+  }
+
+  .aiq-knowledge-textarea {
+    grid-column: auto;
   }
 
   .aiq-document-item {

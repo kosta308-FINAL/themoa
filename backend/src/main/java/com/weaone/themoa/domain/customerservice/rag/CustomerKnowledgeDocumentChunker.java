@@ -9,16 +9,20 @@ import java.util.List;
 @Component
 public class CustomerKnowledgeDocumentChunker {
 
-    private static final int MAX_CHUNK_LENGTH = 1_200;
-    private static final int OVERLAP_LENGTH = 150;
-
     public List<String> chunk(String content) {
+        return chunk(content, CustomerKnowledgeChunkingOptions.defaults());
+    }
+
+    public List<String> chunk(String content, CustomerKnowledgeChunkingOptions options) {
         if (!StringUtils.hasText(content)) {
             return List.of();
         }
+        CustomerKnowledgeChunkingOptions normalizedOptions = options == null
+                ? CustomerKnowledgeChunkingOptions.defaults()
+                : options;
         List<String> chunks = new ArrayList<>();
-        for (String section : markdownSections(normalize(content))) {
-            appendSection(chunks, section);
+        for (String section : sections(normalize(content), normalizedOptions.splitByMarkdownHeading())) {
+            appendSection(chunks, section, normalizedOptions);
         }
         return chunks.stream()
                 .map(String::trim)
@@ -33,7 +37,10 @@ public class CustomerKnowledgeDocumentChunker {
                 .trim();
     }
 
-    private List<String> markdownSections(String content) {
+    private List<String> sections(String content, boolean splitByMarkdownHeading) {
+        if (!splitByMarkdownHeading) {
+            return List.of(content);
+        }
         List<String> sections = new ArrayList<>();
         StringBuilder current = new StringBuilder();
         for (String line : content.split("\n")) {
@@ -50,8 +57,8 @@ public class CustomerKnowledgeDocumentChunker {
         return sections;
     }
 
-    private void appendSection(List<String> chunks, String section) {
-        if (section.length() <= MAX_CHUNK_LENGTH) {
+    private void appendSection(List<String> chunks, String section, CustomerKnowledgeChunkingOptions options) {
+        if (section.length() <= options.maxChunkLength()) {
             chunks.add(section);
             return;
         }
@@ -61,12 +68,12 @@ public class CustomerKnowledgeDocumentChunker {
             if (!StringUtils.hasText(trimmed)) {
                 continue;
             }
-            if (trimmed.length() > MAX_CHUNK_LENGTH) {
+            if (trimmed.length() > options.maxChunkLength()) {
                 flush(chunks, current);
-                splitLongParagraph(chunks, trimmed);
+                splitLongParagraph(chunks, trimmed, options);
                 continue;
             }
-            if (current.length() + trimmed.length() + 2 > MAX_CHUNK_LENGTH) {
+            if (current.length() + trimmed.length() + 2 > options.maxChunkLength()) {
                 flush(chunks, current);
             }
             if (!current.isEmpty()) {
@@ -77,15 +84,15 @@ public class CustomerKnowledgeDocumentChunker {
         flush(chunks, current);
     }
 
-    private void splitLongParagraph(List<String> chunks, String paragraph) {
+    private void splitLongParagraph(List<String> chunks, String paragraph, CustomerKnowledgeChunkingOptions options) {
         int start = 0;
         while (start < paragraph.length()) {
-            int end = Math.min(start + MAX_CHUNK_LENGTH, paragraph.length());
+            int end = Math.min(start + options.maxChunkLength(), paragraph.length());
             chunks.add(paragraph.substring(start, end).trim());
             if (end == paragraph.length()) {
                 break;
             }
-            start = Math.max(0, end - OVERLAP_LENGTH);
+            start = Math.max(0, end - options.overlapLength());
         }
     }
 

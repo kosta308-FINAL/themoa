@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "../../components/layout/AdminLayout";
 import {
+  createAdminCustomerKnowledgeText,
   disableAdminCustomerKnowledgeDocument,
   getAdminCustomerAiSettings,
   getAdminCustomerKnowledgeDocuments,
+  getAdminCustomerKnowledgeMetadataOptions,
   previewAdminCustomerAiAnswer,
   reembedAdminCustomerKnowledgeDocument,
   searchAdminCustomerAiKnowledge,
@@ -35,6 +37,14 @@ function formatScore(value) {
   return Number(value).toFixed(4);
 }
 
+function formatKnowledgeSourceName(value) {
+  return value === "direct-text.txt" ? "직접 입력" : value;
+}
+
+function formatHeadingSplit(value) {
+  return value ? "제목 기준 분리" : "문단 기준 분리";
+}
+
 function CustomerServiceAiQualityPage() {
   const [query, setQuery] = useState(
     "처음 카드동기화 했는데 1분넘도록 동기화가 안됨",
@@ -45,9 +55,18 @@ function CustomerServiceAiQualityPage() {
   const [searchResult, setSearchResult] = useState(null);
   const [answerPreview, setAnswerPreview] = useState("");
   const [documents, setDocuments] = useState([]);
+  const [metadataOptions, setMetadataOptions] = useState({
+    titles: [],
+    categories: [],
+  });
+  const [knowledgeInputMode, setKnowledgeInputMode] = useState("text");
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadCategory, setUploadCategory] = useState("고객센터 운영정책");
   const [uploadFile, setUploadFile] = useState(null);
+  const [knowledgeText, setKnowledgeText] = useState("");
+  const [chunkMaxLength, setChunkMaxLength] = useState(1200);
+  const [chunkOverlapLength, setChunkOverlapLength] = useState(150);
+  const [splitByMarkdownHeading, setSplitByMarkdownHeading] = useState(true);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busyKey, setBusyKey] = useState("");
@@ -69,8 +88,20 @@ function CustomerServiceAiQualityPage() {
     setDocuments(data || []);
   };
 
+  const loadMetadataOptions = async () => {
+    const data = await getAdminCustomerKnowledgeMetadataOptions();
+    setMetadataOptions({
+      titles: data?.titles || [],
+      categories: data?.categories || [],
+    });
+  };
+
   useEffect(() => {
-    Promise.all([loadSettings(), loadDocuments()]).catch((requestError) => {
+    Promise.all([
+      loadSettings(),
+      loadDocuments(),
+      loadMetadataOptions(),
+    ]).catch((requestError) => {
       setError(
         getApiErrorMessage(
           requestError,
@@ -158,17 +189,50 @@ function CustomerServiceAiQualityPage() {
         title: uploadTitle,
         category: uploadCategory,
         file: uploadFile,
+        chunkMaxLength: Number(chunkMaxLength),
+        chunkOverlapLength: Number(chunkOverlapLength),
+        splitByMarkdownHeading,
       });
       setUploadTitle("");
       setUploadFile(null);
       event.target.reset();
-      await loadDocuments();
+      await Promise.all([loadDocuments(), loadMetadataOptions()]);
       setNotice("문서를 청킹하고 Qdrant에 임베딩했어요.");
     } catch (requestError) {
       setError(
         getApiErrorMessage(
           requestError,
           "문서 업로드 또는 임베딩에 실패했어요.",
+        ),
+      );
+    } finally {
+      setBusyKey("");
+    }
+  };
+
+  const createTextDocument = async (event) => {
+    event.preventDefault();
+    setBusyKey("text");
+    setError("");
+    setNotice("");
+    try {
+      await createAdminCustomerKnowledgeText({
+        title: uploadTitle,
+        category: uploadCategory,
+        content: knowledgeText,
+        chunkMaxLength: Number(chunkMaxLength),
+        chunkOverlapLength: Number(chunkOverlapLength),
+        splitByMarkdownHeading,
+      });
+      setUploadTitle("");
+      setKnowledgeText("");
+      await Promise.all([loadDocuments(), loadMetadataOptions()]);
+      setNotice("입력한 텍스트를 청킹하고 Qdrant에 임베딩했어요.");
+    } catch (requestError) {
+      setError(
+        getApiErrorMessage(
+          requestError,
+          "텍스트 입력 또는 임베딩에 실패했어요.",
         ),
       );
     } finally {
@@ -361,46 +425,164 @@ function CustomerServiceAiQualityPage() {
         <section className="aiq-panel">
           <div className="aiq-panel-heading">
             <div>
-              <h2>md/txt 지식 문서 업로드</h2>
+              <h2>고객센터 지식 추가</h2>
               <p>
-                업로드한 문서는 청킹 후 고객센터 Qdrant 컬렉션에 임베딩됩니다.
+                파일을 올리거나 일반 텍스트를 입력하면 청킹 후 고객센터
+                Qdrant 컬렉션에 임베딩됩니다.
               </p>
             </div>
           </div>
-          <form className="aiq-upload-form" onSubmit={uploadDocument}>
+
+          <div className="aiq-segmented" aria-label="지식 추가 방식">
+            <button
+              type="button"
+              className={knowledgeInputMode === "text" ? "active" : ""}
+              onClick={() => setKnowledgeInputMode("text")}
+            >
+              직접 입력
+            </button>
+            <button
+              type="button"
+              className={knowledgeInputMode === "file" ? "active" : ""}
+              onClick={() => setKnowledgeInputMode("file")}
+            >
+              md/txt 파일
+            </button>
+          </div>
+
+          <datalist id="aiq-title-options">
+            {metadataOptions.titles.map((title) => (
+              <option value={title} key={title} />
+            ))}
+          </datalist>
+          <datalist id="aiq-category-options">
+            {metadataOptions.categories.map((category) => (
+              <option value={category} key={category} />
+            ))}
+          </datalist>
+
+          <form
+            className={
+              knowledgeInputMode === "text"
+                ? "aiq-upload-form text-mode"
+                : "aiq-upload-form"
+            }
+            onSubmit={
+              knowledgeInputMode === "text"
+                ? createTextDocument
+                : uploadDocument
+            }
+          >
             <input
               type="text"
-              placeholder="문서 제목"
+              placeholder="문서 제목 선택 또는 신규 입력"
+              list="aiq-title-options"
               value={uploadTitle}
               onChange={(event) => setUploadTitle(event.target.value)}
             />
             <input
               type="text"
-              placeholder="카테고리"
+              placeholder="카테고리 선택 또는 신규 입력"
+              list="aiq-category-options"
               value={uploadCategory}
               onChange={(event) => setUploadCategory(event.target.value)}
             />
-            <label className="aiq-file-picker">
-              <span className="aiq-file-picker-btn">파일 선택</span>
-              <span className="aiq-file-picker-name">
-                {uploadFile ? uploadFile.name : "선택된 파일 없음 (.md, .txt)"}
-              </span>
-              <input
-                type="file"
-                accept=".md,.txt,text/markdown,text/plain"
-                onChange={(event) =>
-                  setUploadFile(event.target.files?.[0] || null)
-                }
+            {knowledgeInputMode === "text" ? (
+              <textarea
+                className="aiq-knowledge-textarea"
+                placeholder="고객센터에서 답변 근거로 쓸 내용을 자유롭게 입력하세요."
+                value={knowledgeText}
+                onChange={(event) => setKnowledgeText(event.target.value)}
+                rows={8}
               />
-            </label>
+            ) : (
+              <label className="aiq-file-picker">
+                <span className="aiq-file-picker-btn">파일 선택</span>
+                <span className="aiq-file-picker-name">
+                  {uploadFile
+                    ? uploadFile.name
+                    : "선택된 파일 없음 (.md, .txt)"}
+                </span>
+                <input
+                  type="file"
+                  accept=".md,.txt,text/markdown,text/plain"
+                  onChange={(event) =>
+                    setUploadFile(event.target.files?.[0] || null)
+                  }
+                />
+              </label>
+            )}
             <button
               type="submit"
               className="aiq-btn aiq-btn-primary"
               disabled={Boolean(busyKey)}
             >
-              청킹 후 임베딩
+              {knowledgeInputMode === "text"
+                ? "텍스트 임베딩"
+                : "청킹 후 임베딩"}
             </button>
           </form>
+
+          <div className="aiq-chunk-options">
+            <div className="aiq-chunk-options-heading">
+              <h3>청킹 옵션</h3>
+              <p>
+                문서를 너무 작게 자르면 답변 근거가 끊기고, 너무 크게 자르면
+                검색 정확도가 떨어질 수 있어요. 기본값은 일반 고객센터 문서에
+                맞춘 값입니다.
+              </p>
+            </div>
+            <div className="aiq-chunk-option-grid">
+              <label className="aiq-field">
+                <span>청크 최대 길이</span>
+                <input
+                  type="number"
+                  min="300"
+                  max="4000"
+                  step="100"
+                  value={chunkMaxLength}
+                  onChange={(event) => setChunkMaxLength(event.target.value)}
+                />
+                <small>
+                  한 조각에 담을 최대 글자 수입니다. 값이 작으면 짧은 질문에
+                  잘 맞고, 값이 크면 문맥을 더 오래 유지합니다.
+                </small>
+              </label>
+              <label className="aiq-field">
+                <span>청크 겹침 길이</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="800"
+                  step="50"
+                  value={chunkOverlapLength}
+                  onChange={(event) =>
+                    setChunkOverlapLength(event.target.value)
+                  }
+                />
+                <small>
+                  긴 문단을 나눌 때 앞 청크 끝부분을 다음 청크에 다시 붙이는
+                  길이입니다. 경계에서 답변 근거가 끊기는 문제를 줄입니다.
+                </small>
+              </label>
+              <label className="aiq-toggle-field">
+                <input
+                  type="checkbox"
+                  checked={splitByMarkdownHeading}
+                  onChange={(event) =>
+                    setSplitByMarkdownHeading(event.target.checked)
+                  }
+                />
+                <span>
+                  <strong>Markdown 제목 기준으로 먼저 나누기</strong>
+                  <small>
+                    md 파일의 #, ## 제목을 큰 단락 경계로 봅니다. 일반 txt처럼
+                    제목 표시가 없는 문서는 문단 기준으로만 묶입니다.
+                  </small>
+                </span>
+              </label>
+            </div>
+          </div>
         </section>
 
         <section className="aiq-panel">
@@ -425,8 +607,17 @@ function CustomerServiceAiQualityPage() {
                     </div>
                     <div className="aiq-document-meta">
                       <span>{document.category}</span>
-                      <span>{document.originalFilename}</span>
+                      <span>
+                        {formatKnowledgeSourceName(document.originalFilename)}
+                      </span>
                       <span>{document.chunkCount} chunks</span>
+                      <span>최대 {document.chunkMaxLength || 1200}자</span>
+                      <span>겹침 {document.chunkOverlapLength || 150}자</span>
+                      <span>
+                        {formatHeadingSplit(
+                          document.splitByMarkdownHeading ?? true,
+                        )}
+                      </span>
                       <span>{formatDateTime(document.createdAt)}</span>
                     </div>
                     <details>

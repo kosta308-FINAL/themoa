@@ -5,18 +5,21 @@ import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiPreviewRequest;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiSearchRequest;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiSettingsRequest;
+import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerKnowledgeTextRequest;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiPreviewResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiSearchResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiSearchResultResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiSettingsResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeChunkResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeFileResponse;
+import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeMetadataOptionsResponse;
 import com.weaone.themoa.domain.customerservice.entity.CustomerKnowledgeChunk;
 import com.weaone.themoa.domain.customerservice.entity.CustomerKnowledgeFile;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeDocument;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeDocumentChunker;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeDocumentProvider;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeEmbeddingService;
+import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeChunkingOptions;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeRetriever;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeSearchResult;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeSourceType;
@@ -34,8 +37,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 @Service
@@ -45,6 +50,17 @@ public class AdminCustomerAiQualityService {
     private static final long MAX_KNOWLEDGE_FILE_SIZE_BYTES = 2L * 1024 * 1024;
     private static final int TITLE_MAX_LENGTH = 150;
     private static final int CATEGORY_MAX_LENGTH = 80;
+    private static final String TEXT_INPUT_FILENAME = "direct-text.txt";
+    private static final List<String> DEFAULT_CATEGORIES = List.of(
+            "고객센터 운영정책",
+            "사용가이드",
+            "카드연동",
+            "고정지출",
+            "수기지출",
+            "계정관리",
+            "정책추천",
+            "금융상품"
+    );
 
     private final CustomerServiceRagSettingService ragSettingService;
     private final CustomerKnowledgeRetriever retriever;
@@ -105,13 +121,67 @@ public class AdminCustomerAiQualityService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public AdminCustomerKnowledgeMetadataOptionsResponse metadataOptions() {
+        List<CustomerKnowledgeFile> files = knowledgeFileRepository.findAllByOrderByCreatedAtDescIdDesc();
+        Set<String> titles = new LinkedHashSet<>();
+        Set<String> categories = new LinkedHashSet<>(DEFAULT_CATEGORIES);
+        files.forEach(file -> {
+            if (file.isActive()) {
+                titles.add(file.getTitle());
+                categories.add(file.getCategory());
+            }
+        });
+        return new AdminCustomerKnowledgeMetadataOptionsResponse(
+                List.copyOf(titles),
+                List.copyOf(categories));
+    }
+
     @Transactional
-    public AdminCustomerKnowledgeFileResponse upload(Long adminId, String title, String category, MultipartFile file) {
+    public AdminCustomerKnowledgeFileResponse upload(Long adminId, String title, String category,
+                                                     Integer chunkMaxLength, Integer chunkOverlapLength,
+                                                     Boolean splitByMarkdownHeading, MultipartFile file) {
         validateFile(file);
         String normalizedTitle = requireText(title, 1, TITLE_MAX_LENGTH);
         String normalizedCategory = requireText(category, 1, CATEGORY_MAX_LENGTH);
         String content = readText(file);
-        List<String> chunks = chunker.chunk(content);
+        CustomerKnowledgeChunkingOptions options = CustomerKnowledgeChunkingOptions.normalize(
+                chunkMaxLength, chunkOverlapLength, splitByMarkdownHeading);
+        return createKnowledgeDocument(
+                adminId,
+                normalizedTitle,
+                normalizedCategory,
+                safeFilename(file.getOriginalFilename()),
+                file.getSize(),
+                content,
+                options);
+    }
+
+    @Transactional
+    public AdminCustomerKnowledgeFileResponse createText(Long adminId, AdminCustomerKnowledgeTextRequest request) {
+        String normalizedTitle = requireText(request == null ? null : request.title(), 1, TITLE_MAX_LENGTH);
+        String normalizedCategory = requireText(request == null ? null : request.category(), 1, CATEGORY_MAX_LENGTH);
+        String content = requireText(request == null ? null : request.content(), 1, 500_000);
+        CustomerKnowledgeChunkingOptions options = CustomerKnowledgeChunkingOptions.normalize(
+                request == null ? null : request.chunkMaxLength(),
+                request == null ? null : request.chunkOverlapLength(),
+                request == null ? null : request.splitByMarkdownHeading());
+        return createKnowledgeDocument(
+                adminId,
+                normalizedTitle,
+                normalizedCategory,
+                TEXT_INPUT_FILENAME,
+                content.getBytes(StandardCharsets.UTF_8).length,
+                content,
+                options);
+    }
+
+    private AdminCustomerKnowledgeFileResponse createKnowledgeDocument(Long adminId, String normalizedTitle,
+                                                                       String normalizedCategory,
+                                                                       String originalFilename, long fileSize,
+                                                                       String content,
+                                                                       CustomerKnowledgeChunkingOptions options) {
+        List<String> chunks = chunker.chunk(content, options);
         if (chunks.isEmpty()) {
             throw new BusinessException(ErrorCode.CUSTOMER_KNOWLEDGE_INVALID_REQUEST);
         }
@@ -120,9 +190,12 @@ public class AdminCustomerAiQualityService {
         CustomerKnowledgeFile knowledgeFile = knowledgeFileRepository.save(CustomerKnowledgeFile.create(
                 normalizedTitle,
                 normalizedCategory,
-                safeFilename(file.getOriginalFilename()),
-                file.getSize(),
+                originalFilename,
+                fileSize,
                 content,
+                options.maxChunkLength(),
+                options.overlapLength(),
+                options.splitByMarkdownHeading(),
                 admin,
                 now));
         List<CustomerKnowledgeChunk> savedChunks = IntStream.range(0, chunks.size())
