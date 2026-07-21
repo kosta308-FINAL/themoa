@@ -10,7 +10,8 @@ export const verifyEmailCode = (email, code) =>
 
 /**
  * 일반 회원가입. 성공 시 201 + { accessToken, expiresIn } (Refresh는 HttpOnly 쿠키).
- * @param {{ email, password, passwordConfirm, nickname, gender: 'MALE'|'FEMALE', birthDate: 'YYYY-MM-DD' }} payload
+ * @param {{ email, password, passwordConfirm, nickname, gender: 'MALE'|'FEMALE', birthDate: 'YYYY-MM-DD',
+ *   agreedServiceTerms: boolean, agreedPrivacyPolicy: boolean, agreedDataCollection: boolean }} payload
  */
 export const signup = (payload) =>
   axiosInstance.post("/api/auth/signup", payload);

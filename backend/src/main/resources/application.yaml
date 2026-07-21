@@ -121,6 +121,8 @@ app:
       max-verify-attempts: 5
       verified-ttl: 30m
       from: ${MAIL_USERNAME}
+    terms:
+      version: ${AUTH_TERMS_VERSION:2026-07-21}
 
   codef:
     client-id: ${CODEF_CLIENT_ID}

@@ -26,7 +26,9 @@
   --radius: 18px;
   --radius-sm: 12px;
 
+  width: 100%;
   max-width: 1280px;
+  align-self: stretch;
   margin: 0 auto;
   padding: 30px 40px 64px;
   color: var(--text);
@@ -215,6 +217,17 @@
   grid-template-columns: minmax(0, 1fr) 340px;
   gap: 28px;
   align-items: start;
+}
+
+/* 탭 전환 시 콘텐츠 높이 차이로 페이지 크기가 출렁이지 않도록 최소 높이 고정 */
+.cs-left {
+  min-height: 960px;
+}
+
+@media (max-width: 960px) {
+  .cs-left {
+    min-height: 0;
+  }
 }
 
 /* PANEL BOX */

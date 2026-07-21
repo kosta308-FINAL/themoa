@@ -58,7 +58,8 @@ class AuthTokenServiceTest {
                 new AuthProperties.Jwt("ignored", Duration.ofMinutes(30)),
                 new AuthProperties.Refresh(REFRESH_VALIDITY, "/api/auth", false),
                 new AuthProperties.EmailVerification(Duration.ofMinutes(5), Duration.ofSeconds(60), 5,
-                        Duration.ofMinutes(30), "test@example.com")
+                        Duration.ofMinutes(30), "test@example.com"),
+                new AuthProperties.Terms("2026-07-21")
         );
         authTokenService = new AuthTokenService(
                 jwtTokenProvider, refreshTokenRepository, memberRepository, generator, properties);

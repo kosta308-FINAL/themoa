@@ -2,11 +2,15 @@ package com.weaone.themoa.domain.auth.service;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
+import com.weaone.themoa.config.AuthProperties;
 import com.weaone.themoa.domain.auth.dto.request.LoginRequest;
 import com.weaone.themoa.domain.auth.dto.request.SignupRequest;
+import com.weaone.themoa.domain.auth.entity.MemberTermsAgreement;
+import com.weaone.themoa.domain.auth.repository.MemberTermsAgreementRepository;
 import com.weaone.themoa.domain.member.entity.Gender;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -29,6 +34,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -41,6 +47,8 @@ class AuthServiceTest {
     @Mock
     private MemberRepository memberRepository;
     @Mock
+    private MemberTermsAgreementRepository memberTermsAgreementRepository;
+    @Mock
     private EmailVerificationService emailVerificationService;
     @Mock
     private AuthTokenService authTokenService;
@@ -52,8 +60,26 @@ class AuthServiceTest {
     @InjectMocks
     private AuthService authService;
 
+    @BeforeEach
+    void setUpAuthProperties() {
+        // AuthProperties는 @Mock으로 두지 않고 실제 값을 주입한다(레코드 체이닝을 스텁하는 것보다 단순하다).
+        ReflectionTestUtils.setField(authService, "authProperties", new AuthProperties(
+                new AuthProperties.Jwt("ignored", Duration.ofMinutes(30)),
+                new AuthProperties.Refresh(Duration.ofDays(5), "/api/auth", false),
+                new AuthProperties.EmailVerification(Duration.ofMinutes(5), Duration.ofSeconds(60), 5,
+                        Duration.ofMinutes(30), "test@example.com"),
+                new AuthProperties.Terms("2026-07-21")));
+    }
+
     private SignupRequest signupRequest(String password, String passwordConfirm, LocalDate birthDate) {
-        return new SignupRequest("  User@Example.COM ", password, passwordConfirm, "닉네임", Gender.MALE, birthDate);
+        return signupRequest(password, passwordConfirm, birthDate, true, true, false);
+    }
+
+    private SignupRequest signupRequest(String password, String passwordConfirm, LocalDate birthDate,
+                                         boolean agreedServiceTerms, boolean agreedPrivacyPolicy,
+                                         boolean agreedDataCollection) {
+        return new SignupRequest("  User@Example.COM ", password, passwordConfirm, "닉네임", Gender.MALE, birthDate,
+                agreedServiceTerms, agreedPrivacyPolicy, agreedDataCollection);
     }
 
     private Member existingMember() {
@@ -76,6 +102,41 @@ class AuthServiceTest {
         assertThat(tokens.accessToken()).isEqualTo("access-token");
         then(emailVerificationService).should().requireVerified(EMAIL);
         then(memberRepository).should().save(any(Member.class));
+        // 필수 약관 2종만 저장하고, 선택 동의(데이터 수집·활용)는 미체크라 저장하지 않는다.
+        then(memberTermsAgreementRepository).should(times(2)).save(any(MemberTermsAgreement.class));
+    }
+
+    @Test
+    @DisplayName("선택 동의(데이터 수집·활용)까지 체크하면 약관 이력 3행이 저장된다")
+    void signUpSavesOptionalDataCollectionAgreementWhenChecked() {
+        given(memberRepository.existsByEmail(EMAIL)).willReturn(false);
+        given(passwordEncoder.encode(RAW_PASSWORD)).willReturn(PASSWORD_HASH);
+        given(authTokenService.issue(any(Member.class), any(LocalDateTime.class))).willReturn(issuedTokens());
+
+        authService.signUp(signupRequest(RAW_PASSWORD, RAW_PASSWORD, ADULT_BIRTH_DATE, true, true, true));
+
+        then(memberTermsAgreementRepository).should(times(3)).save(any(MemberTermsAgreement.class));
+    }
+
+    @Test
+    @DisplayName("서비스 이용약관에 동의하지 않으면 회원을 만들지 않는다")
+    void signUpRejectsMissingServiceTermsAgreement() {
+        assertThatThrownBy(() -> authService.signUp(
+                signupRequest(RAW_PASSWORD, RAW_PASSWORD, ADULT_BIRTH_DATE, false, true, false)))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.AUTH_TERMS_REQUIRED);
+        then(memberRepository).should(never()).save(any(Member.class));
+        then(memberTermsAgreementRepository).should(never()).save(any(MemberTermsAgreement.class));
+    }
+
+    @Test
+    @DisplayName("개인정보 수집·이용에 동의하지 않으면 회원을 만들지 않는다")
+    void signUpRejectsMissingPrivacyPolicyAgreement() {
+        assertThatThrownBy(() -> authService.signUp(
+                signupRequest(RAW_PASSWORD, RAW_PASSWORD, ADULT_BIRTH_DATE, true, false, false)))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.AUTH_TERMS_REQUIRED);
+        then(memberRepository).should(never()).save(any(Member.class));
     }
 
     @Test
