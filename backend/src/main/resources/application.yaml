@@ -180,7 +180,7 @@ app:
       embed-on-startup: ${CUSTOMER_SERVICE_RAG_EMBED_ON_STARTUP:true}
       collection-name: ${CUSTOMER_SERVICE_QDRANT_COLLECTION_NAME:customer_service_knowledge}
       top-k: ${CUSTOMER_SERVICE_RAG_TOP_K:6}
-      minimum-similarity: ${CUSTOMER_SERVICE_RAG_MINIMUM_SIMILARITY:0.55}
+      minimum-similarity: ${CUSTOMER_SERVICE_RAG_MINIMUM_SIMILARITY:0.45}
     storage:
       provider: ${CUSTOMER_SERVICE_STORAGE_PROVIDER:LOCAL}
       local-root: ${CUSTOMER_SERVICE_UPLOAD_DIR:./.local-storage/customer-service}

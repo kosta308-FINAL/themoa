@@ -1,6 +1,7 @@
 package com.weaone.themoa.domain.customerservice.rag;
 
 import com.weaone.themoa.config.CustomerServiceRagProperties;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class CustomerKnowledgeRetriever {
 
@@ -36,15 +38,18 @@ public class CustomerKnowledgeRetriever {
         if (!vectorResults.isEmpty()) {
             return vectorResults;
         }
+        log.info("Customer service RAG Qdrant result is empty. Use lexical fallback. query='{}'", query);
         return lexicalResults(query);
     }
 
     private List<CustomerKnowledgeSearchResult> vectorResults(String query) {
         if (!properties.enabled()) {
+            log.info("Customer service RAG is disabled. Skip Qdrant search. query='{}'", query);
             return List.of();
         }
         VectorStore vectorStore = vectorStoreFactory.getIfAvailable();
         if (vectorStore == null) {
+            log.info("Customer service VectorStore is not available. Skip Qdrant search. query='{}'", query);
             return List.of();
         }
         try {
@@ -54,11 +59,31 @@ public class CustomerKnowledgeRetriever {
             if (properties.minimumSimilarity() > 0) {
                 builder.similarityThreshold(properties.minimumSimilarity());
             }
-            return vectorStore.similaritySearch(builder.build()).stream()
+            List<CustomerKnowledgeSearchResult> results = vectorStore.similaritySearch(builder.build()).stream()
                     .map(this::fromVectorDocument)
                     .toList();
+            logVectorResults(query, results);
+            return results;
         } catch (RuntimeException ex) {
+            log.warn("Customer service Qdrant search failed. query='{}'", query, ex);
             return List.of();
+        }
+    }
+
+    private void logVectorResults(String query, List<CustomerKnowledgeSearchResult> results) {
+        log.info("Customer service Qdrant search. collection='{}', topK={}, minimumSimilarity={}, query='{}', resultCount={}",
+                properties.collectionName(), properties.topK(), properties.minimumSimilarity(), query, results.size());
+        for (int index = 0; index < results.size(); index++) {
+            CustomerKnowledgeSearchResult result = results.get(index);
+            CustomerKnowledgeDocument document = result.document();
+            log.info("Customer service Qdrant result #{}: score={}, sourceType={}, sourceId={}, category='{}', title='{}', content='{}'",
+                    index + 1,
+                    result.score(),
+                    document.sourceType(),
+                    document.sourceId(),
+                    document.category(),
+                    document.title(),
+                    abbreviate(document.content(), 800));
         }
     }
 
@@ -107,5 +132,13 @@ public class CustomerKnowledgeRetriever {
             }
         }
         return matched.values().stream().mapToInt(Integer::intValue).sum();
+    }
+
+    private String abbreviate(String value, int maxLength) {
+        if (!StringUtils.hasText(value)) {
+            return "";
+        }
+        String normalized = value.replaceAll("\\s+", " ").trim();
+        return normalized.length() <= maxLength ? normalized : normalized.substring(0, maxLength) + "...";
     }
 }

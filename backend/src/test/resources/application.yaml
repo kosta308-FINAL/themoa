@@ -68,7 +68,7 @@ app:
       embed-on-startup: false
       collection-name: customer_service_knowledge_test
       top-k: 6
-      minimum-similarity: 0.55
+      minimum-similarity: 0.45
     storage:
       provider: LOCAL
       local-root: ./.local-storage/customer-service-test
