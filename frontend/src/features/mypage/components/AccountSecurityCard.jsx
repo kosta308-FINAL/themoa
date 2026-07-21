@@ -1,7 +1,11 @@
 import { useState } from "react";
 import DashboardIcon from "../../../components/common/DashboardIcon";
 
-function AccountSecurityCard({ onOpenChangePassword, onLogoutAllDevices }) {
+function AccountSecurityCard({
+  onOpenChangePassword,
+  onLogoutAllDevices,
+  onOpenWithdraw,
+}) {
   const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
 
   const handleLogoutAll = async () => {
@@ -39,6 +43,19 @@ function AccountSecurityCard({ onOpenChangePassword, onLogoutAllDevices }) {
           disabled={isLoggingOutAll}
         >
           {isLoggingOutAll ? "로그아웃 중..." : "전체 기기 로그아웃"}
+        </button>
+      </div>
+      <div className="mp-danger-zone">
+        <div>
+          <strong>회원 탈퇴</strong>
+          <p>탈퇴하면 계정과 데이터가 지체 없이 파기되며 되돌릴 수 없어요.</p>
+        </div>
+        <button
+          type="button"
+          className="mp-text-danger-button"
+          onClick={onOpenWithdraw}
+        >
+          탈퇴하기
         </button>
       </div>
     </section>

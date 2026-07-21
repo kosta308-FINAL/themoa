@@ -11,6 +11,8 @@ import SavingsGoalCard from "./components/SavingsGoalCard";
 import CardConnectionCard from "./components/CardConnectionCard";
 import AccountSecurityCard from "./components/AccountSecurityCard";
 import ChangePasswordModal from "./components/ChangePasswordModal";
+import IncomeSettingsModal from "./components/IncomeSettingsModal";
+import WithdrawAccountModal from "./components/WithdrawAccountModal";
 import TermsHistoryCard from "./components/TermsHistoryCard";
 import ComingSoonCard from "./components/ComingSoonCard";
 import {
@@ -37,6 +39,8 @@ function MyPage() {
   const [pageError, setPageError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isEditingIncome, setIsEditingIncome] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [toast, setToast] = useState("");
   const [activeTab, setActiveTab] = useState("profile");
 
@@ -76,7 +80,7 @@ function MyPage() {
     run();
   }, [load]);
 
-  const handleSavingsGoalSaved = async (message) => {
+  const handleDataSaved = async (message) => {
     await load();
     if (message) showToast(message);
   };
@@ -96,6 +100,11 @@ function MyPage() {
     await endSessionAndRedirect("/");
   };
 
+  const handleWithdrawn = async () => {
+    setIsWithdrawing(false);
+    await endSessionAndRedirect("/login");
+  };
+
   const profile = myPage?.profile;
   const initial = profile?.name ? profile.name.slice(0, 1) : "회";
 
@@ -105,7 +114,9 @@ function MyPage() {
         <div className="mp-page-head">
           <div>
             <h1>마이페이지</h1>
-            <p>회원 정보, 저축목표, 카드 연동, 계정 관리를 한곳에서 확인해요.</p>
+            <p>
+              회원 정보, 저축목표, 카드 연동, 계정 관리를 한곳에서 확인해요.
+            </p>
           </div>
         </div>
 
@@ -169,7 +180,11 @@ function MyPage() {
                 </div>
               </section>
 
-              <div className="mp-tabs" role="tablist" aria-label="마이페이지 섹션">
+              <div
+                className="mp-tabs"
+                role="tablist"
+                aria-label="마이페이지 섹션"
+              >
                 {TABS.map((tab) => (
                   <button
                     key={tab.key}
@@ -187,10 +202,13 @@ function MyPage() {
 
               {activeTab === "profile" && (
                 <div className="mp-tab-panel mp-split">
-                  <ProfileCard profile={profile} />
+                  <ProfileCard
+                    profile={profile}
+                    onEdit={() => setIsEditingIncome(true)}
+                  />
                   <SavingsGoalCard
                     savingsTargetAmount={myPage.savingsTargetAmount}
-                    onSaved={handleSavingsGoalSaved}
+                    onSaved={handleDataSaved}
                   />
                 </div>
               )}
@@ -209,6 +227,7 @@ function MyPage() {
                   <AccountSecurityCard
                     onOpenChangePassword={() => setIsChangingPassword(true)}
                     onLogoutAllDevices={handleLogoutAllDevices}
+                    onOpenWithdraw={() => setIsWithdrawing(true)}
                   />
                   <TermsHistoryCard termsAgreements={myPage.termsAgreements} />
                 </div>
@@ -227,6 +246,21 @@ function MyPage() {
           <ChangePasswordModal
             onClose={() => setIsChangingPassword(false)}
             onChanged={handlePasswordChanged}
+          />
+        )}
+
+        {isEditingIncome && profile && (
+          <IncomeSettingsModal
+            profile={profile}
+            onClose={() => setIsEditingIncome(false)}
+            onSaved={handleDataSaved}
+          />
+        )}
+
+        {isWithdrawing && (
+          <WithdrawAccountModal
+            onClose={() => setIsWithdrawing(false)}
+            onWithdrawn={handleWithdrawn}
           />
         )}
 

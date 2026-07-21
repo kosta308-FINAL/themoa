@@ -36,3 +36,10 @@ export const changePassword = (payload) =>
 /** 전체 기기 로그아웃. 이 회원의 모든 기기 세션이 즉시 무효화된다(이 기기 포함). */
 export const logoutAllDevices = () =>
   axiosInstance.post("/api/auth/logout-all");
+
+/**
+ * 회원 탈퇴. 비밀번호 확인 후 즉시 처리되며 전 세션이 무효화되어 다시 로그인할 수 없다.
+ * @param {{ password: string }} payload
+ */
+export const withdrawAccount = (payload) =>
+  axiosInstance.delete("/api/auth/account", { data: payload });
