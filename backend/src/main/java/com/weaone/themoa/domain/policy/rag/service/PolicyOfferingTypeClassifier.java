@@ -1,6 +1,6 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
-import com.weaone.themoa.domain.policy.policy.domain.PolicySearchProjection;
+import com.weaone.themoa.domain.policy.policy.entity.PolicySearchProjection;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyOfferingType;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyOfferingTypeClassification;
 import org.springframework.stereotype.Component;

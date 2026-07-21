@@ -1,30 +1,29 @@
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
 import DashboardIcon from "../../../components/common/DashboardIcon";
-import {
-  formatShortDate,
-  formatWon,
-  toNumber,
-} from "../spendingGuideUtils";
+import { formatShortDate, formatWon, toNumber } from "../spendingGuideUtils";
 import { EmptyState, LoadingState, SectionError } from "./SpendingGuideCommon";
+
+// 인접 색상 간 구분이 최대가 되도록 고정된 순서의 카테고리 팔레트(색약 대비 검증됨)
+const CATEGORY_COLORS = [
+  "#2a78d6", // blue
+  "#008300", // green
+  "#e87ba4", // magenta
+  "#eda100", // yellow
+  "#1baf7a", // aqua
+  "#eb6834", // orange
+  "#4a3aa7", // violet
+  "#e34948", // red
+];
 
 function CategorySummary({ data, error, onNavigate }) {
   const gradient = useMemo(() => {
     if (!data?.items?.length) return "#edf2ef";
-    const colors = [
-      "#22c55e",
-      "#14b8a6",
-      "#60a5fa",
-      "#f59e0b",
-      "#a78bfa",
-      "#f472b6",
-    ];
     let cursor = 0;
     return `conic-gradient(${data.items
       .map((item, index) => {
         const start = cursor;
         cursor += toNumber(item.percentage);
-        return `${colors[index % colors.length]} ${start}% ${cursor}%`;
+        return `${CATEGORY_COLORS[index % CATEGORY_COLORS.length]} ${start}% ${cursor}%`;
       })
       .join(", ")})`;
   }, [data]);
@@ -69,39 +68,25 @@ function CategorySummary({ data, error, onNavigate }) {
         </button>
       </div>
       <div className="spending-category-layout">
-        <Link
-          className="spending-donut"
-          style={{ background: gradient }}
-          to={`/dashboard/spending/transactions?budgetId=${data.budgetId}`}
-          aria-label="카테고리 소비 상세보기"
-        >
+        <div className="spending-donut" style={{ background: gradient }}>
           <span>
             <strong>{formatWon(data.positiveNetTotal)}</strong>
             <small>양수 순사용액</small>
           </span>
-        </Link>
+        </div>
         <div className="spending-category-legend">
           {data.items.map((item, index) => (
-            <Link
-              to={`/dashboard/spending/transactions?budgetId=${data.budgetId}&categoryId=${item.categoryId}`}
-              key={item.categoryId}
-            >
+            <div key={item.categoryId}>
               <i
                 style={{
-                  background: [
-                    "#22c55e",
-                    "#14b8a6",
-                    "#60a5fa",
-                    "#f59e0b",
-                    "#a78bfa",
-                    "#f472b6",
-                  ][index % 6],
+                  background:
+                    CATEGORY_COLORS[index % CATEGORY_COLORS.length],
                 }}
               />
               <span>{item.categoryName}</span>
               <strong>{formatWon(item.amount)}</strong>
               <small>{toNumber(item.percentage)}%</small>
-            </Link>
+            </div>
           ))}
         </div>
       </div>
@@ -110,4 +95,3 @@ function CategorySummary({ data, error, onNavigate }) {
 }
 
 export default CategorySummary;
-

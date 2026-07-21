@@ -1,0 +1,152 @@
+.calendar-popover-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.calendar-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 50;
+  width: min(320px, calc(100vw - 32px));
+  border: 1px solid #e5ede8;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 20px 50px rgba(22, 101, 52, 0.16);
+}
+
+.calendar-popover.placement-top {
+  top: auto;
+  bottom: calc(100% + 10px);
+}
+
+.calendar-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid #e5ede8;
+}
+
+.calendar-popover-head h2 {
+  font-size: 15px;
+  color: #16241c;
+}
+
+.calendar-popover-close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  color: #637169;
+  background: #f3f7f4;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.calendar-popover-body {
+  padding: 16px 20px 20px;
+}
+
+.calendar-popover-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.calendar-popover-selects {
+  display: flex;
+  gap: 8px;
+}
+
+.calendar-popover-selects select {
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid #e5ede8;
+  border-radius: 8px;
+  color: #16241c;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.calendar-popover-arrow {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #e5ede8;
+  border-radius: 999px;
+  color: #637169;
+  background: #fff;
+}
+
+.calendar-popover-arrow:hover:not(:disabled) {
+  color: #15803d;
+  background: #e7f9ee;
+}
+
+.calendar-popover-arrow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.calendar-popover-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+  color: #637169;
+  font-size: 12px;
+  text-align: center;
+}
+
+.calendar-popover-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-popover-day {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: #16241c;
+  background: transparent;
+  font-size: 13px;
+}
+
+.calendar-popover-day:hover:not(:disabled) {
+  background: #e7f9ee;
+}
+
+.calendar-popover-day.today {
+  color: #15803d;
+  font-weight: 700;
+}
+
+.calendar-popover-day.selected {
+  color: #fff;
+  background: #22c55e;
+  font-weight: 700;
+}
+
+.calendar-popover-day:disabled {
+  color: #637169;
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+@media (max-width: 420px) {
+  .calendar-popover {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}

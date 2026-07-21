@@ -1,15 +1,12 @@
 import { useState } from "react";
 import {
   updateIncomeType,
+  updatePayday,
   updateSalary,
-  updateSavingsGoal,
   updateWorkSchedule,
 } from "../../api/spendingGuideApi";
 import DashboardIcon from "../../components/common/DashboardIcon";
 import IncomeProfileFields from "./components/IncomeProfileFields";
-
-const WON = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
-const digits = (value) => value.replace(/\D/g, "").slice(0, 12);
 
 function BudgetSettingsModal({ summary, onClose, onSaved }) {
   const initialIncomeType =
@@ -28,10 +25,8 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
       hours: String(item.hours),
     })),
   );
-  const [savingsGoal, setSavingsGoal] = useState(
-    String(Number(summary.savingsGoalAmount || 0)),
-  );
   const [applyFrom, setApplyFrom] = useState("CURRENT_CYCLE");
+  const [payday, setPayday] = useState(String(summary.payday || ""));
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -64,16 +59,17 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
               applyFrom,
             })
           : updateSalary({ amount: Number(salary), applyFrom });
+      const paydayChanged = Number(payday) !== Number(summary.payday);
       await Promise.all([
         incomeUpdate,
-        updateSavingsGoal({ amount: Number(savingsGoal), applyFrom }),
+        paydayChanged ? updatePayday({ payday: Number(payday) }) : null,
       ]);
       await onSaved();
       onClose();
     } catch (requestError) {
       setError(
         requestError.response?.data?.message ||
-          "예산 기준을 저장하지 못했습니다.",
+          "소득 정보를 저장하지 못했습니다.",
       );
     } finally {
       setIsSubmitting(false);
@@ -95,10 +91,10 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
       >
         <div className="spending-modal-head">
           <div>
-            <h2 id="budget-settings-title">예산 기준</h2>
+            <h2 id="budget-settings-title">소득 정보 변경</h2>
             <p>
-              {isHourly ? "시급·근무시간" : "월급"}과 저축 목표의 적용 시점을
-              선택해 변경해요.
+              {isHourly ? "시급·근무시간" : "월급"} 정보와 적용 시점을 선택해
+              변경해요.
             </p>
           </div>
           <button
@@ -123,17 +119,6 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
             onWorkScheduleChange={setWorkSchedule}
           />
           <label className="wide">
-            <span>월 저축 목표</span>
-            <div className="spending-input-suffix">
-              <input
-                inputMode="numeric"
-                value={savingsGoal ? WON.format(Number(savingsGoal)) : ""}
-                onChange={(event) => setSavingsGoal(digits(event.target.value))}
-              />
-              <em>원</em>
-            </div>
-          </label>
-          <label className="wide">
             <span>적용 시점 *</span>
             <select
               value={applyFrom}
@@ -150,6 +135,25 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
               계산됩니다.
             </span>
           </div>
+          <label className="wide">
+            <span>급여일 *</span>
+            <input
+              type="number"
+              min="1"
+              max="31"
+              value={payday}
+              onChange={(event) => setPayday(event.target.value)}
+            />
+          </label>
+          <div className="spending-form-notice wide">
+            <DashboardIcon name="info" size={17} />
+            <span>
+              급여일 변경은 항상 다음 급여 주기부터 적용돼요. 진행 중인 이번
+              주기는 그대로 유지됩니다.
+              {summary.pendingPayday != null &&
+                ` (다음 주기부터 ${summary.pendingPayday}일로 변경 예정)`}
+            </span>
+          </div>
           {error && (
             <div className="spending-form-error wide">
               <DashboardIcon name="info" size={16} />
@@ -161,7 +165,7 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
             className="spending-primary wide"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "저장 중..." : "예산 기준 저장"}
+            {isSubmitting ? "저장 중..." : "소득 정보 저장"}
           </button>
         </form>
       </section>

@@ -1,11 +1,11 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyCategory;
-import com.weaone.themoa.domain.policy.policy.domain.PolicySearchProjection;
-import com.weaone.themoa.domain.policy.policy.domain.PolicySource;
-import com.weaone.themoa.domain.policy.policy.domain.PolicySourceSnapshot;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyCategory;
+import com.weaone.themoa.domain.policy.policy.entity.PolicySearchProjection;
+import com.weaone.themoa.domain.policy.policy.entity.PolicySource;
+import com.weaone.themoa.domain.policy.policy.entity.PolicySourceSnapshot;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 

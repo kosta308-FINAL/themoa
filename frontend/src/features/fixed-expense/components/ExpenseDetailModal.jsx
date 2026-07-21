@@ -20,7 +20,11 @@ const PAY_DAYS = Array.from({ length: 31 }, (_, index) => index + 1);
 const WON = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
 
 function MissedPaymentSection({ fixedExpenseId, onConfirmed }) {
-  const [state, setState] = useState({ items: null, error: "", loading: false });
+  const [state, setState] = useState({
+    items: null,
+    error: "",
+    loading: false,
+  });
   const [confirmingId, setConfirmingId] = useState(null);
 
   const load = async () => {
@@ -62,14 +66,15 @@ function MissedPaymentSection({ fixedExpenseId, onConfirmed }) {
         </button>
       </div>
       {state.error && <p className="fx-form-error-text">{state.error}</p>}
-      {state.items && (
-        state.items.length ? (
+      {state.items &&
+        (state.items.length ? (
           <div className="fx-missed-payment-list">
             {state.items.map((transaction) => (
               <div className="fx-missed-payment-row" key={transaction.id}>
                 <div>
                   <strong>
-                    {transaction.merchantDisplayName || transaction.merchantNameRaw}
+                    {transaction.merchantDisplayName ||
+                      transaction.merchantNameRaw}
                   </strong>
                   <span>
                     {transaction.usedDate} · {formatWon(transaction.netAmount)}
@@ -87,9 +92,10 @@ function MissedPaymentSection({ fixedExpenseId, onConfirmed }) {
             ))}
           </div>
         ) : (
-          <p className="fx-missed-payment-empty">비슷한 미태깅 거래를 찾지 못했어요.</p>
-        )
-      )}
+          <p className="fx-missed-payment-empty">
+            비슷한 미태깅 거래를 찾지 못했어요.
+          </p>
+        ))}
     </div>
   );
 }
@@ -144,7 +150,11 @@ function ExpenseDetailModal({ expense, onClose, onChanged }) {
   };
 
   return (
-    <div className="fx-modal-backdrop" role="presentation" onMouseDown={onClose}>
+    <div
+      className="fx-modal-backdrop"
+      role="presentation"
+      onMouseDown={onClose}
+    >
       <section
         className="fx-modal sm"
         role="dialog"
@@ -172,7 +182,9 @@ function ExpenseDetailModal({ expense, onClose, onChanged }) {
               {serviceInitial(expense.merchantAliasName || expense.name)}
             </span>
             <h3>{expense.name}</h3>
-            <strong>{formatAmount(expense.expectedAmount, expense.expectedCurrency)}</strong>
+            <strong>
+              {formatAmount(expense.expectedAmount, expense.expectedCurrency)}
+            </strong>
             {expense.expectedCurrency !== "KRW" && (
               <span className="fx-detail-krw">
                 예상 {formatAmount(expense.expectedAmountKrw, "KRW")}
@@ -202,7 +214,10 @@ function ExpenseDetailModal({ expense, onClose, onChanged }) {
                   id="fx-edit-payday"
                   value={editForm.payDay}
                   onChange={(event) =>
-                    setEditForm((current) => ({ ...current, payDay: event.target.value }))
+                    setEditForm((current) => ({
+                      ...current,
+                      payDay: event.target.value,
+                    }))
                   }
                   required
                 >
@@ -222,7 +237,11 @@ function ExpenseDetailModal({ expense, onClose, onChanged }) {
                 >
                   취소
                 </button>
-                <button type="submit" className="fx-primary-button" disabled={isSaving}>
+                <button
+                  type="submit"
+                  className="fx-primary-button"
+                  disabled={isSaving}
+                >
                   {isSaving ? "저장 중..." : "저장하기"}
                 </button>
               </div>

@@ -47,17 +47,25 @@ function FixedExpensePage() {
     setIsLoading(true);
     setPageError("");
     try {
-      const [expensesResult, candidatesResult, categoriesResult, summaryResult] =
-        await Promise.allSettled([
-          getFixedExpenses(),
-          getFixedExpenseCandidates(),
-          getCategories(),
-          getSpendingGuideSummary(),
-        ]);
-      if (expensesResult.status === "fulfilled") setExpenseList(expensesResult.value);
+      const [
+        expensesResult,
+        candidatesResult,
+        categoriesResult,
+        summaryResult,
+      ] = await Promise.allSettled([
+        getFixedExpenses(),
+        getFixedExpenseCandidates(),
+        getCategories(),
+        getSpendingGuideSummary(),
+      ]);
+      if (expensesResult.status === "fulfilled")
+        setExpenseList(expensesResult.value);
       else
         setPageError(
-          getApiErrorMessage(expensesResult.reason, "고정지출을 불러오지 못했어요."),
+          getApiErrorMessage(
+            expensesResult.reason,
+            "고정지출을 불러오지 못했어요.",
+          ),
         );
       setCandidates(
         candidatesResult.status === "fulfilled" ? candidatesResult.value : [],
@@ -130,6 +138,11 @@ function FixedExpensePage() {
     showToast("고정지출을 등록했어요.");
   };
 
+  const handleRegisterStale = async () => {
+    await load();
+    showToast("이미 처리된 추천 후보예요. 최신 상태로 갱신했어요.");
+  };
+
   const handleDetailChanged = async () => {
     await load();
   };
@@ -174,8 +187,7 @@ function FixedExpensePage() {
             <section className="fx-summary-hero" aria-label="월 고정지출 요약">
               <article className="fx-summary-main">
                 <span className="fx-summary-label">
-                  <DashboardIcon name="repeat" size={15} />
-                  월 예상 고정지출
+                  <DashboardIcon name="repeat" size={15} />월 예상 고정지출
                 </span>
                 <div className="fx-summary-total">
                   <strong>{formatWon(totalExpected)}</strong>
@@ -193,13 +205,22 @@ function FixedExpensePage() {
                   <div>
                     <span>카드 결제</span>
                     <strong>
-                      {items.filter((item) => item.paymentMethod === "CARD").length}건
+                      {
+                        items.filter((item) => item.paymentMethod === "CARD")
+                          .length
+                      }
+                      건
                     </strong>
                   </div>
                   <div>
                     <span>계좌이체</span>
                     <strong>
-                      {items.filter((item) => item.paymentMethod === "TRANSFER").length}건
+                      {
+                        items.filter(
+                          (item) => item.paymentMethod === "TRANSFER",
+                        ).length
+                      }
+                      건
                     </strong>
                   </div>
                 </div>
@@ -236,7 +257,10 @@ function FixedExpensePage() {
                   <div className="fx-salary-empty">
                     <strong>급여 정보가 없어요</strong>
                     <p>월급을 등록하면 급여 대비 고정지출 비율을 보여드려요.</p>
-                    <Link className="fx-secondary-button" to="/dashboard/spending">
+                    <Link
+                      className="fx-secondary-button"
+                      to="/dashboard/spending"
+                    >
                       소비가이드에서 등록하기
                     </Link>
                   </div>
@@ -244,24 +268,25 @@ function FixedExpensePage() {
               </aside>
             </section>
 
-            <FixedExpenseSuggestions
-              candidates={candidates}
-              pendingId={pendingCandidateId}
-              onRegister={(candidate) => setRegisterState({ candidate })}
-              onSnooze={handleCandidateSnooze}
-              onReject={handleCandidateReject}
-              onReclassifyHabit={handleCandidateReclassifyHabit}
-            />
-
             <div className="fx-content-grid">
-              <FixedExpenseList
-                items={items}
-                filter={filter}
-                onFilterChange={setFilter}
-                sort={sort}
-                onSortChange={setSort}
-                onSelect={setDetailExpense}
-              />
+              <div className="fx-main-col">
+                <FixedExpenseSuggestions
+                  candidates={candidates}
+                  pendingId={pendingCandidateId}
+                  onRegister={(candidate) => setRegisterState({ candidate })}
+                  onSnooze={handleCandidateSnooze}
+                  onReject={handleCandidateReject}
+                  onReclassifyHabit={handleCandidateReclassifyHabit}
+                />
+                <FixedExpenseList
+                  items={items}
+                  filter={filter}
+                  onFilterChange={setFilter}
+                  sort={sort}
+                  onSortChange={setSort}
+                  onSelect={setDetailExpense}
+                />
+              </div>
               <UpcomingPayments items={items} />
             </div>
           </>
@@ -274,6 +299,7 @@ function FixedExpensePage() {
           categories={categories}
           onClose={() => setRegisterState(null)}
           onSaved={handleRegisterSaved}
+          onStale={handleRegisterStale}
         />
       )}
 

@@ -5,7 +5,7 @@ public record ResolvedUserRegion(
         String city,
         String district,
         SearchRegionLevel level,
-        com.weaone.themoa.domain.policy.policy.domain.RegionCode region
+        com.weaone.themoa.domain.policy.policy.entity.RegionCode region
 ) {
     public ResolvedUserRegion(String province, String city, String district) {
         this(province, city, district, inferLevel(province, city, district), null);

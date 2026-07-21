@@ -37,7 +37,8 @@ public class CoachingCardController {
         return ResponseEntity.ok(ApiResponse.success(coachingCardQueryService.list(memberId, budgetId)));
     }
 
-    @Operation(summary = "코칭 카드 넘기기", description = "'필요한 소비'(NOT_WASTE)는 다음 주기 톤다운, '그만 보기'(HIDE)는 다음 주기 후보 제외로 반영됩니다.")
+    @Operation(summary = "코칭 카드 넘기기",
+            description = "이 카드는 즉시 목록에서 사라집니다. 추가로 '필요한 소비'(NOT_WASTE)는 다음 주기 톤다운, '그만 보기'(HIDE)는 다음 주기 후보 제외로 반영됩니다.")
     @PostMapping("/{cardId}/dismiss")
     public ResponseEntity<Void> dismiss(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,

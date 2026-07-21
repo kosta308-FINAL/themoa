@@ -46,6 +46,7 @@ public class AuthTokenService {
         String accessToken = jwtTokenProvider.createAccessToken(
                 member.getId(),
                 member.getTokenVersion(),
+                member.getRole().name(),
                 now.atZone(ZoneId.systemDefault()).toInstant()
         );
         String refreshToken = refreshTokenGenerator.generate();

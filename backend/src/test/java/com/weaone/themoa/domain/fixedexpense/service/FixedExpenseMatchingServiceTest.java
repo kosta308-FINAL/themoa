@@ -1,5 +1,7 @@
 package com.weaone.themoa.domain.fixedexpense.service;
 
+import com.weaone.themoa.domain.budget.service.BudgetCyclePolicy;
+import com.weaone.themoa.domain.budget.service.BudgetCycleService;
 import com.weaone.themoa.domain.cardtransaction.entity.CardTransaction;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import com.weaone.themoa.domain.category.entity.Category;
@@ -14,7 +16,7 @@ import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.merchant.entity.Merchant;
 import com.weaone.themoa.domain.merchant.entity.MerchantAlias;
 import com.weaone.themoa.domain.merchant.repository.BillerRepository;
-import com.weaone.themoa.domain.notification.entity.NotificationType;
+import com.weaone.themoa.domain.notification.entity.NotificationTypeCode;
 import com.weaone.themoa.domain.notification.service.NotificationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,16 +51,23 @@ class FixedExpenseMatchingServiceTest {
     private BillerRepository billerRepository;
     @Mock
     private NotificationService notificationService;
+    @Mock
+    private BudgetCycleService budgetCycleService;
 
     private FixedExpenseMatchingService matchingService() {
         return new FixedExpenseMatchingService(fixedExpenseRepository, fixedExpensePaymentRepository,
-                billerRepository, notificationService);
+                billerRepository, notificationService, budgetCycleService);
     }
 
     private Member member() {
         Member member = Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE, LocalDate.of(2000, 1, 1), LocalDateTime.now());
         ReflectionTestUtils.setField(member, "id", MEMBER_ID);
         return member;
+    }
+
+    private void stubYearMonth(Member member, LocalDate usedDate, String yearMonth) {
+        given(budgetCycleService.resolveCycleForDate(eq(member), eq(usedDate)))
+                .willReturn(new BudgetCyclePolicy.BudgetCycle(yearMonth, usedDate.withDayOfMonth(1), usedDate.withDayOfMonth(usedDate.lengthOfMonth())));
     }
 
     private MerchantAlias alias(String name) {
@@ -92,6 +101,7 @@ class FixedExpenseMatchingServiceTest {
         MerchantAlias alias = alias("웨이브");
         FixedExpense fixedExpense = cardFixedExpense(member, alias, BigDecimal.valueOf(6300), (short) 5);
         CardTransaction tx = transaction(member, alias, null, LocalDate.of(2026, 7, 5), BigDecimal.valueOf(6300));
+        stubYearMonth(member, LocalDate.of(2026, 7, 5), "2026-07");
         given(fixedExpenseRepository.findByMember_IdAndMerchantAlias_IdAndStatusAndPaymentMethod(
                 MEMBER_ID, 30L, FixedExpenseStatus.ACTIVE, FixedExpensePaymentMethod.CARD))
                 .willReturn(List.of(fixedExpense));
@@ -101,7 +111,7 @@ class FixedExpenseMatchingServiceTest {
 
         assertThat(tx.getFixedExpense()).isEqualTo(fixedExpense);
         then(fixedExpensePaymentRepository).should().save(any());
-        then(notificationService).should(never()).createIfAbsent(any(), any(), any(), any(), any());
+        then(notificationService).should(never()).createIfAbsent(any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -111,6 +121,7 @@ class FixedExpenseMatchingServiceTest {
         MerchantAlias alias = alias("웨이브");
         FixedExpense fixedExpense = cardFixedExpense(member, alias, BigDecimal.valueOf(6300), (short) 5);
         CardTransaction tx = transaction(member, alias, null, LocalDate.of(2026, 7, 5), BigDecimal.valueOf(6300));
+        stubYearMonth(member, LocalDate.of(2026, 7, 5), "2026-07");
         given(fixedExpenseRepository.findByMember_IdAndMerchantAlias_IdAndStatusAndPaymentMethod(
                 MEMBER_ID, 30L, FixedExpenseStatus.ACTIVE, FixedExpensePaymentMethod.CARD))
                 .willReturn(List.of(fixedExpense));
@@ -129,6 +140,7 @@ class FixedExpenseMatchingServiceTest {
         MerchantAlias alias = alias("웨이브");
         FixedExpense fixedExpense = cardFixedExpense(member, alias, BigDecimal.valueOf(6300), (short) 5);
         CardTransaction tx = transaction(member, alias, null, LocalDate.of(2026, 7, 20), BigDecimal.valueOf(6300));
+        stubYearMonth(member, LocalDate.of(2026, 7, 20), "2026-07");
         given(fixedExpenseRepository.findByMember_IdAndMerchantAlias_IdAndStatusAndPaymentMethod(
                 MEMBER_ID, 30L, FixedExpenseStatus.ACTIVE, FixedExpensePaymentMethod.CARD))
                 .willReturn(List.of(fixedExpense));
@@ -147,6 +159,7 @@ class FixedExpenseMatchingServiceTest {
         MerchantAlias alias = alias("웨이브");
         FixedExpense fixedExpense = cardFixedExpense(member, alias, BigDecimal.valueOf(6300), (short) 5);
         CardTransaction tx = transaction(member, alias, null, LocalDate.of(2026, 7, 5), BigDecimal.valueOf(9000));
+        stubYearMonth(member, LocalDate.of(2026, 7, 5), "2026-07");
         given(fixedExpenseRepository.findByMember_IdAndMerchantAlias_IdAndStatusAndPaymentMethod(
                 MEMBER_ID, 30L, FixedExpenseStatus.ACTIVE, FixedExpensePaymentMethod.CARD))
                 .willReturn(List.of(fixedExpense));
@@ -156,8 +169,8 @@ class FixedExpenseMatchingServiceTest {
 
         assertThat(tx.getFixedExpense()).isNull();
         then(fixedExpensePaymentRepository).should(never()).save(any());
-        then(notificationService).should().createIfAbsent(eq(member), eq(NotificationType.AMOUNT_CHANGE), any(),
-                eq(fixedExpense), eq("AMOUNT_CHANGE:fe=100:2026-07"));
+        then(notificationService).should().createIfAbsent(eq(member), eq(NotificationTypeCode.AMOUNT_CHANGE), any(),
+                eq(fixedExpense), eq(null), eq("AMOUNT_CHANGE:fe=100:2026-07"));
     }
 
     @Test
@@ -172,6 +185,7 @@ class FixedExpenseMatchingServiceTest {
                 (short) 5, BigDecimal.valueOf(6300), "KRW", BigDecimal.valueOf(6300), null, null);
         ReflectionTestUtils.setField(fixedExpense, "id", 200L);
         CardTransaction tx = transaction(member, null, apple, LocalDate.of(2026, 7, 5), BigDecimal.valueOf(6300));
+        stubYearMonth(member, LocalDate.of(2026, 7, 5), "2026-07");
         given(billerRepository.existsByNameNormalized("가맹점")).willReturn(true);
         given(fixedExpenseRepository.findByMember_IdAndBillerMerchant_IdAndStatusAndPaymentMethod(
                 MEMBER_ID, 40L, FixedExpenseStatus.ACTIVE, FixedExpensePaymentMethod.CARD))

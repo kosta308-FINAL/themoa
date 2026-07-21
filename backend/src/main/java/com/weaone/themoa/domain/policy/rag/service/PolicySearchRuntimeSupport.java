@@ -2,7 +2,7 @@ package com.weaone.themoa.domain.policy.rag.service;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
 import com.weaone.themoa.domain.policy.policy.region.RegionMatchEvaluator;
 import com.weaone.themoa.domain.policy.policy.region.ResolvedUserRegion;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;

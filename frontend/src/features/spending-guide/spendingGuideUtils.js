@@ -43,6 +43,13 @@ const todayDate = () => {
   return now.toISOString().slice(0, 10);
 };
 
+const shiftDateBy = (isoDate, deltaDays) => {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const date = new Date(y, m - 1, d + deltaDays);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
 const paymentLabel = (transaction) => {
   if (transaction.paymentMethod === "CASH") return "현금";
   if (transaction.paymentMethod === "TRANSFER") return "계좌이체";
@@ -65,10 +72,8 @@ const transactionVisual = (transaction) => {
     return { icon: "utensils", tone: "orange" };
   if (/교통|택시|주유|차량/.test(category))
     return { icon: "car", tone: "blue" };
-  if (/편의점|마트|쇼핑/.test(category))
-    return { icon: "bag", tone: "orange" };
-  if (toNumber(transaction.netAmount) < 0)
-    return { icon: "card", tone: "red" };
+  if (/편의점|마트|쇼핑/.test(category)) return { icon: "bag", tone: "orange" };
+  if (toNumber(transaction.netAmount) < 0) return { icon: "card", tone: "red" };
   return {
     icon: transaction.paymentMethod === "CARD" ? "card" : "receipt",
     tone: "",
@@ -90,6 +95,7 @@ export {
   formatTime,
   formatWon,
   paymentLabel,
+  shiftDateBy,
   todayDate,
   toNumber,
   transactionAmount,

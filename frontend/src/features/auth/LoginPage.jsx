@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { login as requestLogin } from "../../api/authApi";
 import { useAuth } from "../../hooks/useAuth";
 import { getApiErrorMessage } from "../../utils/apiError";
+import { isAdminAccessToken } from "../../utils/accessToken";
 import AuthLayout from "./components/AuthLayout";
 
 function LoginPage() {
@@ -21,7 +22,7 @@ function LoginPage() {
     try {
       const res = await requestLogin(email.trim(), password);
       login(res.data.data);
-      navigate("/dashboard");
+      navigate(isAdminAccessToken() ? "/admin/customer-service" : "/dashboard");
     } catch (err) {
       setError(
         getApiErrorMessage(err, "이메일 또는 비밀번호가 올바르지 않습니다."),

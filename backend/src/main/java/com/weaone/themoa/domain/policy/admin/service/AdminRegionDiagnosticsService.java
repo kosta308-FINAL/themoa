@@ -1,7 +1,7 @@
 package com.weaone.themoa.domain.policy.admin.service;
 
 import com.weaone.themoa.domain.policy.admin.dto.RegionAnomalyResponse;
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
 import com.weaone.themoa.domain.policy.policy.region.RegionCatalog;
 import com.weaone.themoa.domain.policy.policy.region.PolicyRegionResolution;
 import com.weaone.themoa.domain.policy.policy.region.PolicyRegionResolver;

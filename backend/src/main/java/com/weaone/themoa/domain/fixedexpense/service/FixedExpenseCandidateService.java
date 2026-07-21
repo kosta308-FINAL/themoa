@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.fixedexpense.service;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
+import com.weaone.themoa.domain.budget.service.BudgetCycleService;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpenseCandidate;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpenseCandidateStatus;
 import com.weaone.themoa.domain.fixedexpense.entity.RecurringPaymentGroup;
@@ -15,6 +16,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -28,6 +30,7 @@ public class FixedExpenseCandidateService {
 
     private final FixedExpenseCandidateRepository fixedExpenseCandidateRepository;
     private final UserMerchantPreferenceRepository userMerchantPreferenceRepository;
+    private final BudgetCycleService budgetCycleService;
 
     @Transactional(readOnly = true)
     public List<FixedExpenseCandidate> listPending(Long memberId) {
@@ -47,7 +50,10 @@ public class FixedExpenseCandidateService {
     @Transactional
     public void snooze(Long memberId, Long candidateId) {
         FixedExpenseCandidate candidate = getOwnedCandidate(memberId, candidateId);
-        candidate.snooze(FixedExpenseCyclePolicy.currentYearMonth(candidate.getMember().getPayday()));
+        LocalDate today = LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL);
+        budgetCycleService.ensurePaydayPromoted(candidate.getMember(), today);
+        String currentYearMonth = budgetCycleService.resolveCycleForDate(candidate.getMember(), today).yearMonth();
+        candidate.snooze(currentYearMonth);
     }
 
     /** 습관적 소비로 분류 — 고정지출 아님으로 영구 재분류한다(§3). */

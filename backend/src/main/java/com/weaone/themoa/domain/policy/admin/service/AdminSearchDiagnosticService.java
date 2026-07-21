@@ -10,7 +10,7 @@ import com.weaone.themoa.domain.policy.admin.dto.response.AdminResolvedRegionRes
 import com.weaone.themoa.domain.policy.admin.dto.response.AdminSearchExplainResponse;
 import com.weaone.themoa.domain.policy.admin.dto.response.AdminSearchQualityCaseResponse;
 import com.weaone.themoa.domain.policy.admin.dto.response.AdminSearchQualitySuiteResponse;
-import com.weaone.themoa.domain.policy.policy.domain.RegionCode;
+import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
 import com.weaone.themoa.domain.policy.policy.region.RegionEligiblePolicyCandidate;
 import com.weaone.themoa.domain.policy.policy.region.ResolvedUserRegion;
 import com.weaone.themoa.domain.policy.policy.region.SearchRegionLevel;

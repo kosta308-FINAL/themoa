@@ -1,6 +1,6 @@
 package com.weaone.themoa.domain.policy.policy.repository;
 
-import com.weaone.themoa.domain.policy.policy.domain.PolicyEmbeddingSync;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyEmbeddingSync;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;

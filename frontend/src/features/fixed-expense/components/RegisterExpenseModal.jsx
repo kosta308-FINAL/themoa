@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import DashboardIcon from "../../../components/common/DashboardIcon";
 import { getApiErrorMessage } from "../../../utils/apiError";
 import {
@@ -10,7 +10,13 @@ import MerchantAliasPicker from "./MerchantAliasPicker";
 const PAY_DAYS = Array.from({ length: 31 }, (_, index) => index + 1);
 const WON = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
 
-function RegisterExpenseModal({ candidate = null, categories, onClose, onSaved }) {
+function RegisterExpenseModal({
+  candidate = null,
+  categories,
+  onClose,
+  onSaved,
+  onStale,
+}) {
   const [form, setForm] = useState({
     name: candidate?.merchantAliasName || "",
     method: "CARD",
@@ -20,11 +26,14 @@ function RegisterExpenseModal({ candidate = null, categories, onClose, onSaved }
       ? String(candidate.recommendedCategoryId)
       : "",
     payDay: candidate?.avgPayDay ? String(candidate.avgPayDay) : "",
-    amount: candidate?.avgAmount ? String(Math.round(Number(candidate.avgAmount))) : "",
+    amount: candidate?.avgAmount
+      ? String(Math.round(Number(candidate.avgAmount)))
+      : "",
     currency: "KRW",
   });
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const update = (key) => (event) =>
     setForm((current) => ({ ...current, [key]: event.target.value }));
@@ -39,6 +48,8 @@ function RegisterExpenseModal({ candidate = null, categories, onClose, onSaved }
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setError("");
     setIsSubmitting(true);
     try {
@@ -68,14 +79,31 @@ function RegisterExpenseModal({ candidate = null, categories, onClose, onSaved }
       await onSaved();
       onClose();
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError, "고정지출을 등록하지 못했어요."));
+      if (
+        candidate &&
+        requestError?.response?.data?.code ===
+          "FIXED_EXPENSE_CANDIDATE_NOT_PENDING"
+      ) {
+        // 이미 처리된(중복 요청 등) 후보 - 에러로 가두지 않고 최신 상태로 정리한다.
+        await onStale();
+        onClose();
+        return;
+      }
+      setError(
+        getApiErrorMessage(requestError, "고정지출을 등록하지 못했어요."),
+      );
+      isSubmittingRef.current = false;
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fx-modal-backdrop" role="presentation" onMouseDown={onClose}>
+    <div
+      className="fx-modal-backdrop"
+      role="presentation"
+      onMouseDown={onClose}
+    >
       <section
         className="fx-modal"
         role="dialog"

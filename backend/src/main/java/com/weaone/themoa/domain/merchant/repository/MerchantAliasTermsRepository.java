@@ -1,10 +1,12 @@
 package com.weaone.themoa.domain.merchant.repository;
 
 import com.weaone.themoa.domain.merchant.entity.MerchantAliasTerms;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface MerchantAliasTermsRepository extends JpaRepository<MerchantAliasTerms, Long> {
@@ -20,4 +22,28 @@ public interface MerchantAliasTermsRepository extends JpaRepository<MerchantAlia
     Optional<MerchantAliasTerms> findGlobalByRawName(@Param("rawName") String rawName);
 
     Optional<MerchantAliasTerms> findByMember_IdAndAliasText(Long memberId, String aliasText);
+
+    /**
+     * 관리자 전역 승격 대기목록(manage.html "전역 마스터 승격 대기목록" 확장). 회원 학습 표기를
+     * (alias, 표기) 단위로 묶어 학습자 수 내림차순으로 준다. {@code defaultCategory}가 없는 alias도
+     * 빠지지 않도록 left join으로 카테고리를 가져온다.
+     */
+    @Query("select t.merchantAlias.id as aliasId, t.aliasText as aliasText, "
+            + "a.canonicalServiceName as canonicalServiceName, c.name as categoryName, "
+            + "count(distinct t.member.id) as learnerCount "
+            + "from MerchantAliasTerms t "
+            + "join t.merchantAlias a "
+            + "left join a.defaultCategory c "
+            + "where t.member is not null "
+            + "group by t.merchantAlias.id, t.aliasText, a.canonicalServiceName, c.name "
+            + "order by count(distinct t.member.id) desc")
+    List<PromotionCandidate> findPromotionCandidates(Pageable pageable);
+
+    interface PromotionCandidate {
+        Long getAliasId();
+        String getAliasText();
+        String getCanonicalServiceName();
+        String getCategoryName();
+        long getLearnerCount();
+    }
 }

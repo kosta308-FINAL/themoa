@@ -384,4 +384,3 @@ function SpendingGuideSetup({ onComplete, onCardConnected }) {
 }
 
 export default SpendingGuideSetup;
-

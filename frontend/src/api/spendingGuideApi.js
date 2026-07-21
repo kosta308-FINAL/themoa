@@ -17,6 +17,9 @@ export const updateIncomeType = (payload) =>
 export const updateSavingsGoal = (payload) =>
   axiosInstance.patch("/api/spending-guide/savings-goal", payload);
 
+export const updatePayday = (payload) =>
+  axiosInstance.patch("/api/spending-guide/payday", payload);
+
 export const getTodayTransactions = (limit = 5) =>
   axiosInstance
     .get("/api/spending-guide/transactions/today", { params: { limit } })

@@ -61,8 +61,19 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
     /** 학습 루프 2단계(merchant.md §3): 같은 원본 가맹점(merchant)의 이 회원 거래 전체 재태깅 대상. */
     List<CardTransaction> findByMember_IdAndMerchant_Id(Long memberId, Long merchantId);
 
-    /** F-05 미납 확인 후보(troubleshooting/billerProblem.md §6): 미태깅 + 금액오차 + 결제일 윈도우. */
-    @Query("select t from CardTransaction t where t.member.id = :memberId and t.fixedExpense is null "
+    /**
+     * F-05 미납 확인 후보(troubleshooting/billerProblem.md §6): 미태깅 + 금액오차 + 결제일 윈도우.
+     * 컨트롤러에서 세션 밖에 {@code CardTransactionResponse.from}으로 변환하므로 category·card 체인·
+     * merchantAlias·merchant를 미리 fetch join 한다.
+     */
+    @Query("select t from CardTransaction t "
+            + "join fetch t.category "
+            + "left join fetch t.card c "
+            + "left join fetch c.cardConnection cc "
+            + "left join fetch cc.cardIssuer "
+            + "left join fetch t.merchantAlias "
+            + "left join fetch t.merchant "
+            + "where t.member.id = :memberId and t.fixedExpense is null "
             + "and t.status <> :canceled and t.usedDate between :startDate and :endDate "
             + "and t.amount between :minAmount and :maxAmount order by t.usedDate desc")
     List<CardTransaction> findMissedPaymentCandidates(@Param("memberId") Long memberId,
@@ -323,5 +334,30 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
         String getAliasName();
         long getTransactionCount();
         BigDecimal getNetAmount();
+    }
+
+    /**
+     * 관리자 "미식별 & 기타 가맹점 작업대"(merchant.md §2-1 전역 시드 후보): 최근 N일간 전역 alias가 없는
+     * 원본 가맹점을 발생 건수 상위로 준다. biller(Apple 등)는 이름으로 신원 판별이 안 되고 전역 alias 후보가
+     * 아니라(§5-D) 제외한다.
+     */
+    @Query(value = "select ct.merchant_id as merchantId, m.merchant_name_raw as merchantNameRaw, "
+            + "max(ct.merchant_type_raw) as merchantTypeRaw, count(*) as transactionCount, "
+            + "avg(ct.amount) as averageAmount "
+            + "from card_transaction ct "
+            + "join merchant m on m.id = ct.merchant_id "
+            + "where m.merchant_alias_id is null and ct.replaced_at is null and ct.used_date >= :since "
+            + "and upper(trim(m.merchant_name_raw)) not in (select upper(trim(b.name)) from biller b) "
+            + "group by ct.merchant_id, m.merchant_name_raw "
+            + "order by count(*) desc "
+            + "limit :limit", nativeQuery = true)
+    List<UnclassifiedMerchantRow> findUnclassifiedMerchants(@Param("since") LocalDate since, @Param("limit") int limit);
+
+    interface UnclassifiedMerchantRow {
+        Long getMerchantId();
+        String getMerchantNameRaw();
+        String getMerchantTypeRaw();
+        long getTransactionCount();
+        BigDecimal getAverageAmount();
     }
 }

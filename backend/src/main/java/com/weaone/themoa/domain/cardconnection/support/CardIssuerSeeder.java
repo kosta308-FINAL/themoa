@@ -6,6 +6,7 @@ import com.weaone.themoa.domain.cardconnection.repository.CardIssuerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -14,8 +15,13 @@ import java.util.List;
  * 지원 카드사 화이트리스트 10개 시드(connection.md §2-1). 광주(0316)·수협(0320)·제주(0321)는 인증서 로그인만
  * 지원해 제외, 씨티(0307)는 ID 로그인 시 SMS 2-way 추가인증을 요구해 제외한다(무인 새벽 배치 불가).
  * fx_type·cancel_type·cancel_amount_uncertain 값은 cardtransaction.md §3-5, §4(FX-00)에서 이미 확정된 값이다.
+ *
+ * <p>{@code FixedExpenseHabitDemoDataSeeder}(카드동기화 데모) 등 카드사 FK를 참조하는 시더보다
+ * 먼저 실행돼야 하므로 낮은 순번으로 돈다({@link Order}). {@code @Order}가 없으면
+ * {@code Ordered.LOWEST_PRECEDENCE}로 취급되어 다른 시더들보다 뒤에 실행된다.
  */
 @Component
+@Order(1)
 @RequiredArgsConstructor
 public class CardIssuerSeeder implements ApplicationRunner {
 

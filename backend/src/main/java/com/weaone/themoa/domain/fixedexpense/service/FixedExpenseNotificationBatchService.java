@@ -1,5 +1,6 @@
 package com.weaone.themoa.domain.fixedexpense.service;
 
+import com.weaone.themoa.domain.budget.service.BudgetCycleService;
 import com.weaone.themoa.domain.cardconnection.entity.ConnectionStatus;
 import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
@@ -8,7 +9,7 @@ import com.weaone.themoa.domain.fixedexpense.entity.FixedExpenseStatus;
 import com.weaone.themoa.domain.fixedexpense.repository.FixedExpensePaymentRepository;
 import com.weaone.themoa.domain.fixedexpense.repository.FixedExpenseRepository;
 import com.weaone.themoa.domain.member.entity.Member;
-import com.weaone.themoa.domain.notification.entity.NotificationType;
+import com.weaone.themoa.domain.notification.entity.NotificationTypeCode;
 import com.weaone.themoa.domain.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,7 @@ public class FixedExpenseNotificationBatchService {
     private final FixedExpensePaymentRepository fixedExpensePaymentRepository;
     private final CardConnectionRepository cardConnectionRepository;
     private final NotificationService notificationService;
+    private final BudgetCycleService budgetCycleService;
 
     /** 탐지 배치(03:30) 이후, 매칭 반영이 끝난 시각에 돌도록 04:00으로 잡는다. */
     @Scheduled(cron = "0 0 4 * * *", zone = "Asia/Seoul")
@@ -60,7 +62,8 @@ public class FixedExpenseNotificationBatchService {
         if (member.isReturningAfterAbsence(now, INACTIVITY_LIMIT_DAYS) || fixedExpense.getExpectedPayDay() == null) {
             return;
         }
-        String yearMonth = FixedExpenseCyclePolicy.currentYearMonth(member.getPayday());
+        budgetCycleService.ensurePaydayPromoted(member, today);
+        String yearMonth = budgetCycleService.resolveCycleForDate(member, today).yearMonth();
 
         boolean cardLinked = fixedExpense.getPaymentMethod() == FixedExpensePaymentMethod.CARD
                 && cardConnectionRepository.existsByMember_IdAndStatus(member.getId(), ConnectionStatus.ACTIVE);
@@ -81,7 +84,8 @@ public class FixedExpenseNotificationBatchService {
         }
         String dedupKey = "MISSED_PAYMENT:fe=" + fixedExpense.getId() + ":" + yearMonth;
         String message = "이번 달 " + fixedExpense.getName() + " 결제가 안 보여요. 이 거래인가요?";
-        notificationService.createIfAbsent(member, NotificationType.MISSED_PAYMENT, message, fixedExpense, dedupKey);
+        notificationService.createIfAbsent(member, NotificationTypeCode.MISSED_PAYMENT, message, fixedExpense, null,
+                dedupKey);
     }
 
     private void evaluatePaymentDue(FixedExpense fixedExpense, Member member, LocalDate today, String yearMonth) {
@@ -90,7 +94,8 @@ public class FixedExpenseNotificationBatchService {
         }
         String dedupKey = "PAYMENT_DUE:fe=" + fixedExpense.getId() + ":" + yearMonth;
         String message = "오늘 " + fixedExpense.getName() + " 결제일이에요.";
-        notificationService.createIfAbsent(member, NotificationType.PAYMENT_DUE, message, fixedExpense, dedupKey);
+        notificationService.createIfAbsent(member, NotificationTypeCode.PAYMENT_DUE, message, fixedExpense, null,
+                dedupKey);
     }
 
     /** 없는 날짜(31일 등)는 그 달 말일로 당긴다(erd.md member.payday와 동일한 관례). */

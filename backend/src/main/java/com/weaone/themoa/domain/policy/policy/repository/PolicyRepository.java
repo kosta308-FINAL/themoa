@@ -1,6 +1,6 @@
 package com.weaone.themoa.domain.policy.policy.repository;
 
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;

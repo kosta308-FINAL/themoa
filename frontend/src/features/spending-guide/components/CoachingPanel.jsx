@@ -137,4 +137,3 @@ function CoachingPanel({ data, error, onDismiss, pendingId }) {
 }
 
 export default CoachingPanel;
-

@@ -1,6 +1,6 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
 import com.weaone.themoa.domain.policy.policy.region.RegionCompatibility;
 import com.weaone.themoa.domain.policy.rag.config.RagProperties;
 import com.weaone.themoa.domain.policy.rag.dto.BenefitGroup;

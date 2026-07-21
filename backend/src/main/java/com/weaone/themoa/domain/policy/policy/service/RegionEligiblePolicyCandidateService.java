@@ -1,6 +1,6 @@
 package com.weaone.themoa.domain.policy.policy.service;
 
-import com.weaone.themoa.domain.policy.policy.domain.RegionCode;
+import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
 import com.weaone.themoa.domain.policy.policy.region.RegionCatalog;
 import com.weaone.themoa.domain.policy.policy.region.RegionCompatibility;
 import com.weaone.themoa.domain.policy.policy.region.RegionEligiblePolicyCandidate;

@@ -1,6 +1,6 @@
 package com.weaone.themoa.domain.policy.policy.region;
 
-import com.weaone.themoa.domain.policy.policy.domain.RegionCode;
+import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -30,7 +30,7 @@ public class RegionAliasCatalog {
         if (!StringUtils.hasText(officialName)) {
             return new LinkedHashSet<>();
         }
-        return aliasGenerator.aliasesForSido(new com.weaone.themoa.domain.policy.policy.domain.RegionCode(null, "", officialName, null, "PROVINCE"));
+        return aliasGenerator.aliasesForSido(new com.weaone.themoa.domain.policy.policy.entity.RegionCode(null, "", officialName, null, "PROVINCE"));
     }
 
     public Set<String> aliasesForMunicipality(String provinceName, String municipalityName) {

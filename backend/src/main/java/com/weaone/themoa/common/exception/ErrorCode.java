@@ -46,6 +46,7 @@ public enum ErrorCode {
     MERCHANT_ALIAS_NOT_FOUND(HttpStatus.NOT_FOUND, "가맹점 별칭을 찾을 수 없습니다."),
     MERCHANT_ALIAS_TERM_BILLER_FORBIDDEN(HttpStatus.BAD_REQUEST, "결제대행사 이름은 가맹점 표기로 등록할 수 없습니다."),
     MERCHANT_ALIAS_TERM_CONFLICT(HttpStatus.CONFLICT, "이미 다른 서비스로 등록된 표기입니다."),
+    MERCHANT_NOT_FOUND(HttpStatus.NOT_FOUND, "가맹점을 찾을 수 없습니다."),
 
     // 카드 거래
     CARD_TRANSACTION_NOT_FOUND(HttpStatus.NOT_FOUND, "거래 내역을 찾을 수 없습니다."),
@@ -107,7 +108,20 @@ public enum ErrorCode {
     POLICY_REGION_SYNC_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "정책 지역 동기화 작업을 완료하지 못했습니다."),
     POLICY_EMBEDDING_CONFIG_REQUIRED(HttpStatus.CONFLICT, "정책 임베딩 설정이 필요합니다."),
     POLICY_EMBEDDING_SYNC_NOT_FOUND(HttpStatus.CONFLICT, "정책 임베딩 동기화 정보를 찾을 수 없습니다."),
-    POLICY_QDRANT_ERROR(HttpStatus.BAD_GATEWAY, "정책 벡터 저장소 요청을 처리하지 못했습니다.");
+    POLICY_QDRANT_ERROR(HttpStatus.BAD_GATEWAY, "정책 벡터 저장소 요청을 처리하지 못했습니다."),
+
+    // 고객센터 - FAQ
+    FAQ_NOT_FOUND(HttpStatus.NOT_FOUND, "FAQ를 찾을 수 없습니다."),
+
+    // 고객센터 - 1:1 문의
+    CUSTOMER_INQUIRY_INVALID_REQUEST(HttpStatus.BAD_REQUEST, "요청 값이 올바르지 않습니다."),
+    CUSTOMER_INQUIRY_PRIVACY_REQUIRED(HttpStatus.BAD_REQUEST, "개인정보 수집·이용에 동의해 주세요."),
+    CUSTOMER_INQUIRY_FILE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "첨부파일 개수 또는 용량이 허용 범위를 초과했습니다."),
+    CUSTOMER_INQUIRY_FILE_TYPE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "허용되지 않은 파일 형식입니다."),
+    CUSTOMER_INQUIRY_ANSWER_CONFLICT(HttpStatus.CONFLICT, "이미 답변이 등록되었거나 화면이 최신 상태가 아닙니다. 새로고침 후 다시 시도해 주세요."),
+    CUSTOMER_INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "문의를 찾을 수 없습니다."),
+    CUSTOMER_INQUIRY_ATTACHMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "첨부파일을 찾을 수 없습니다."),
+    CUSTOMER_INQUIRY_FILE_STORAGE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "첨부파일을 저장하지 못했습니다.");
     private final HttpStatus status;
     private final String message;
 

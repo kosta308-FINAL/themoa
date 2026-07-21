@@ -3,8 +3,8 @@ package com.weaone.themoa.domain.policy.policy.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyEmbeddingSync;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyEmbeddingSync;
 import com.weaone.themoa.domain.policy.policy.region.PolicyGeographyClassifier;
 import com.weaone.themoa.domain.policy.policy.region.PolicyRegionClassificationResult;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyEmbeddingSyncRepository;
@@ -88,7 +88,7 @@ public class PolicyApplicabilityClassificationService {
     }
 
     private FieldSource fields(Policy policy) {
-        Optional<com.weaone.themoa.domain.policy.policy.domain.PolicySourceSnapshot> snapshot =
+        Optional<com.weaone.themoa.domain.policy.policy.entity.PolicySourceSnapshot> snapshot =
                 snapshotRepository.findByPolicyId(policy.getId());
         if (snapshot.isPresent()) {
             try {

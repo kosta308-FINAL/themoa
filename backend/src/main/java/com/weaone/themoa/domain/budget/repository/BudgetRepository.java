@@ -38,4 +38,7 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
      */
     List<Budget> findTop4ByMember_IdAndCycleStartDateLessThanEqualOrderByCycleStartDateDesc(
             Long memberId, LocalDate cycleStartDate);
+
+    /** 급여일 변경 승격 시 "이전 주기 종료일"을 알기 위한 조회(payday.md §급여일 변경): 그 회원의 가장 최근 주기. */
+    Optional<Budget> findFirstByMember_IdOrderByCycleStartDateDesc(Long memberId);
 }

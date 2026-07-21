@@ -1,8 +1,8 @@
 package com.weaone.themoa.domain.policy.policy.service;
 
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
-import com.weaone.themoa.domain.policy.policy.domain.PolicyRegion;
-import com.weaone.themoa.domain.policy.policy.domain.RegionCode;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyRegion;
+import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
 import com.weaone.themoa.domain.policy.policy.region.PolicyRegionResolution;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRegionRepository;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;

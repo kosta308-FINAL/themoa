@@ -1,6 +1,6 @@
 package com.weaone.themoa.domain.policy.policy.region;
 
-import com.weaone.themoa.domain.policy.policy.domain.RegionCode;
+import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
 import com.weaone.themoa.domain.policy.policy.repository.RegionExternalCodeRepository;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
 import org.springframework.beans.factory.annotation.Autowired;

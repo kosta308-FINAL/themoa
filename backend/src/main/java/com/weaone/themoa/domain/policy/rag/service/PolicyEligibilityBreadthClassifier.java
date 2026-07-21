@@ -1,7 +1,7 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
-import com.weaone.themoa.domain.policy.policy.domain.Policy;
-import com.weaone.themoa.domain.policy.policy.domain.PolicySearchProjection;
+import com.weaone.themoa.domain.policy.policy.entity.Policy;
+import com.weaone.themoa.domain.policy.policy.entity.PolicySearchProjection;
 import com.weaone.themoa.domain.policy.policy.repository.PolicySearchProjectionRepository;
 import com.weaone.themoa.domain.policy.rag.dto.EligibilityBreadth;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyEligibilityBreadthClassification;

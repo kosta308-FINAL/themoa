@@ -106,7 +106,7 @@ class SecurityConfigTest {
     @DisplayName("유효 JWT는 Security Chain의 JwtAuthenticationFilter를 거쳐 인증 사용자 정보를 저장한다")
     void validTokenAuthenticatesThroughSecurityFilterChain() throws Exception {
         reset(jwtTokenProvider, tokenVersionCache);
-        given(jwtTokenProvider.parse("valid-token")).willReturn(new AccessTokenClaims(7L, 3));
+        given(jwtTokenProvider.parse("valid-token")).willReturn(new AccessTokenClaims(7L, 3, "USER"));
         given(tokenVersionCache.find(7L)).willReturn(Optional.of(3));
 
         mockMvc.perform(get("/api/protected").header("Authorization", "Bearer valid-token"))

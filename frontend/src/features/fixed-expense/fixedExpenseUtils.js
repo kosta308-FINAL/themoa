@@ -20,7 +20,8 @@ const daysInMonth = (year, month) => new Date(year, month, 0).getDate();
 const nextPayDate = (payDay, from = new Date()) => {
   if (!payDay) return null;
   const today = new Date(from.getFullYear(), from.getMonth(), from.getDate());
-  const clampedDay = (year, month) => Math.min(payDay, daysInMonth(year, month));
+  const clampedDay = (year, month) =>
+    Math.min(payDay, daysInMonth(year, month));
   let year = today.getFullYear();
   let month = today.getMonth() + 1;
   let candidate = new Date(year, month - 1, clampedDay(year, month));

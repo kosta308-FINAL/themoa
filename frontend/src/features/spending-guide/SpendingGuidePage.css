@@ -19,6 +19,7 @@
 
 .spending-page-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
@@ -755,7 +756,7 @@
 }
 
 .spending-modal {
-  width: min(620px, 100%);
+  width: min(300px, 100%);
   max-height: calc(100vh - 40px);
   overflow: auto;
   border-radius: 18px;
@@ -2471,12 +2472,15 @@
   align-items: center;
   gap: 4px;
   padding: 3px;
+  border: none;
   color: var(--spending-green-dark);
   background: transparent;
   font-size: 12px;
   font-weight: 750;
+  font-family: inherit;
   white-space: nowrap;
   text-decoration: none;
+  cursor: pointer;
 }
 .spending-guide .spending-ghost-button {
   min-height: 39px;
@@ -2666,7 +2670,7 @@
 .spending-guide .spending-bar-item {
   height: 100%;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) 26px 32px;
+  grid-template-rows: minmax(0, 1fr) 26px 20px 14px;
   align-items: stretch;
   justify-content: stretch;
   justify-items: center;
@@ -2719,12 +2723,19 @@
   font-size: 10px;
   font-weight: 650;
 }
+.spending-guide .spending-bar-amount {
+  grid-row: 4;
+  color: #96a29b;
+  font-size: 9px;
+  font-style: normal;
+  white-space: nowrap;
+}
 .spending-guide .spending-chart-legend {
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 6px;
-  margin-top: -4px;
+  margin-top: 12px;
   color: #96a29b;
   font-size: 10px;
 }
@@ -2824,7 +2835,7 @@
   display: grid;
   gap: 9px;
 }
-.spending-guide .spending-category-legend > a {
+.spending-guide .spending-category-legend > div {
   display: grid;
   grid-template-columns: 10px 1fr auto auto;
   align-items: center;
@@ -3151,46 +3162,147 @@
   padding: 10px 0 0;
 }
 
-.spending-surplus-goal-cta {
+.spending-surplus-goal-badge {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 16px;
-  padding: 12px 13px;
-  border: 1px solid #cce9d6;
-  border-radius: 13px;
-  background: #f1fbf5;
+  gap: 6px;
+}
+.spending-surplus-goal-edit {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--spending-border);
+  border-radius: 999px;
+  color: var(--spending-muted);
+  background: #fff;
+}
+.spending-surplus-goal-edit:hover {
+  color: var(--spending-green-dark);
+  background: var(--spending-soft);
 }
 
-.spending-surplus-goal-icon {
-  width: 30px;
-  height: 30px;
+.spending-settings-button {
+  display: inline-flex;
   flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  border-radius: 9px;
-  color: var(--spending-green-dark);
-  background: #def7e8;
-}
-.spending-surplus-goal-cta > div {
-  flex: 1;
-  min-width: 0;
-}
-.spending-surplus-goal-cta strong {
-  display: block;
-  color: var(--spending-text);
-  font-size: 12px;
-}
-.spending-surplus-goal-cta p {
-  margin-top: 2px;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--spending-border);
+  border-radius: 11px;
   color: var(--spending-muted);
-  font-size: 11px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
-.spending-surplus-goal-cta button {
+.spending-settings-button:hover {
+  color: var(--spending-green-dark);
+  border-color: #cce9d6;
+  background: var(--spending-soft);
+}
+
+.spending-cycle-bottom span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.spending-cycle-savings-edit {
+  width: 18px;
+  height: 18px;
+  display: grid;
   flex: 0 0 auto;
-  min-height: 34px;
-  padding: 0 13px;
-  font-size: 11px;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--spending-muted);
+}
+.spending-cycle-savings-edit:hover {
+  color: var(--spending-green-dark);
+  background: var(--spending-soft);
+}
+.spending-cycle-savings-set {
+  background-color: white;
+  color: var(--spending-green-dark);
+  font-size: 15px;
+  font-weight: 700;
+}
+.spending-cycle-savings-set:hover {
+  text-decoration: underline;
+}
+
+.spending-day-nav {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 10px 16px;
+  border: 1px solid var(--spending-border);
+  border-radius: 14px;
+  background: #fff;
+}
+.spending-day-nav-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.spending-day-nav-left {
+  justify-content: flex-start;
+}
+.spending-day-nav-right {
+  justify-content: flex-end;
+}
+.spending-day-nav-salary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+  padding-left: 14px;
+  border-left: 1px solid var(--spending-border);
+  color: var(--spending-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.spending-day-nav-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 88px;
+  padding: 6px 12px;
+  border: 1px solid var(--spending-border);
+  border-radius: 999px;
+  color: var(--spending-text);
+  background: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  justify-content: center;
+}
+.spending-day-nav-label:hover {
+  color: var(--spending-green-dark);
+  background: var(--spending-soft);
+}
+.spending-day-nav-arrow {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--spending-border);
+  border-radius: 999px;
+  color: var(--spending-muted);
+  background: #fff;
+}
+.spending-day-nav-arrow:hover:not(:disabled) {
+  color: var(--spending-green-dark);
+  background: var(--spending-soft);
+}
+.spending-day-nav-arrow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 @media (max-width: 560px) {
@@ -3206,15 +3318,12 @@
     border-right: 0;
     border-bottom: 1px solid var(--spending-border);
   }
-  .spending-surplus-goal-cta {
-    flex-wrap: wrap;
-  }
-  .spending-surplus-goal-cta button {
-    width: 100%;
-  }
 }
 
 @media (max-width: 560px) {
+  .spending-day-nav {
+    justify-content: center;
+  }
   .spending-guide .spending-card-head,
   .spending-guide .spending-panel-head {
     align-items: flex-start;
