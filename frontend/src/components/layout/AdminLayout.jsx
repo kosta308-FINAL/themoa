@@ -12,6 +12,12 @@ const NAV_ITEMS = [
     icon: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
   },
   {
+    key: "customer-ai-quality",
+    label: "FAQ AI 품질관리",
+    to: "/admin/customer-service/ai-quality",
+    icon: "M12 3a4 4 0 0 0-4 4v1H7a3 3 0 0 0-3 3v5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5a3 3 0 0 0-3-3h-1V7a4 4 0 0 0-4-4zm-2 5V7a2 2 0 1 1 4 0v1",
+  },
+  {
     key: "merchant-master",
     label: "가맹점 & 서비스 마스터",
     to: "/admin/merchants",

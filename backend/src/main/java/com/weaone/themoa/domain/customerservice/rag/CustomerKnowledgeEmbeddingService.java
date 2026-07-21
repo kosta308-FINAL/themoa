@@ -1,7 +1,6 @@
 package com.weaone.themoa.domain.customerservice.rag;
 
 import com.weaone.themoa.config.CustomerServiceRagProperties;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -50,6 +49,19 @@ public class CustomerKnowledgeEmbeddingService implements ApplicationRunner {
             return 0;
         }
         List<CustomerKnowledgeDocument> knowledgeDocuments = documentProvider.loadDocuments();
+        return embedDocuments(knowledgeDocuments);
+    }
+
+    public int embedDocuments(List<CustomerKnowledgeDocument> knowledgeDocuments) {
+        if (!properties.enabled()) {
+            log.info("Customer service RAG is disabled.");
+            return 0;
+        }
+        VectorStore vectorStore = vectorStoreFactory.getIfAvailable();
+        if (vectorStore == null) {
+            log.warn("Customer service VectorStore is not available. Skip embedding.");
+            return 0;
+        }
         List<Document> documents = knowledgeDocuments.stream()
                 .map(this::toVectorDocument)
                 .toList();
@@ -67,7 +79,21 @@ public class CustomerKnowledgeEmbeddingService implements ApplicationRunner {
         }
     }
 
-    private Document toVectorDocument(CustomerKnowledgeDocument document) {
+    public void deleteDocuments(List<String> knowledgeIds) {
+        if (!properties.enabled() || knowledgeIds == null || knowledgeIds.isEmpty()) {
+            return;
+        }
+        VectorStore vectorStore = vectorStoreFactory.getIfAvailable();
+        if (vectorStore == null) {
+            log.warn("Customer service VectorStore is not available. Skip delete.");
+            return;
+        }
+        vectorStore.delete(knowledgeIds.stream()
+                .map(this::stableUuid)
+                .toList());
+    }
+
+    public Document toVectorDocument(CustomerKnowledgeDocument document) {
         return Document.builder()
                 .id(stableUuid(document.id()))
                 .text(document.content())
@@ -80,7 +106,7 @@ public class CustomerKnowledgeEmbeddingService implements ApplicationRunner {
                 .build();
     }
 
-    private String stableUuid(String value) {
+    public String stableUuid(String value) {
         return UUID.nameUUIDFromBytes(value.getBytes(StandardCharsets.UTF_8)).toString();
     }
 }

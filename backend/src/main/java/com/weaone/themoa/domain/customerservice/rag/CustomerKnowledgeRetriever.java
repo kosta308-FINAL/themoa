@@ -34,15 +34,35 @@ public class CustomerKnowledgeRetriever {
         if (!StringUtils.hasText(query)) {
             return List.of();
         }
-        List<CustomerKnowledgeSearchResult> vectorResults = vectorResults(query);
+        List<CustomerKnowledgeSearchResult> vectorResults = vectorResults(query, properties.topK(),
+                properties.minimumSimilarity());
         if (!vectorResults.isEmpty()) {
             return vectorResults;
         }
         log.info("Customer service RAG Qdrant result is empty. Use lexical fallback. query='{}'", query);
-        return lexicalResults(query);
+        return lexicalResults(query, properties.topK());
     }
 
-    private List<CustomerKnowledgeSearchResult> vectorResults(String query) {
+    public List<CustomerKnowledgeSearchResult> retrieve(String query, int topK, double minimumSimilarity) {
+        if (!StringUtils.hasText(query)) {
+            return List.of();
+        }
+        List<CustomerKnowledgeSearchResult> vectorResults = vectorResults(query, topK, minimumSimilarity);
+        if (!vectorResults.isEmpty()) {
+            return vectorResults;
+        }
+        log.info("Customer service RAG Qdrant result is empty. Use lexical fallback. query='{}'", query);
+        return lexicalResults(query, topK);
+    }
+
+    public List<CustomerKnowledgeSearchResult> retrieveVectorOnly(String query, int topK, double minimumSimilarity) {
+        if (!StringUtils.hasText(query)) {
+            return List.of();
+        }
+        return vectorResults(query, topK, minimumSimilarity);
+    }
+
+    private List<CustomerKnowledgeSearchResult> vectorResults(String query, int topK, double minimumSimilarity) {
         if (!properties.enabled()) {
             log.info("Customer service RAG is disabled. Skip Qdrant search. query='{}'", query);
             return List.of();
@@ -55,14 +75,14 @@ public class CustomerKnowledgeRetriever {
         try {
             SearchRequest.Builder builder = SearchRequest.builder()
                     .query(query)
-                    .topK(properties.topK());
-            if (properties.minimumSimilarity() > 0) {
-                builder.similarityThreshold(properties.minimumSimilarity());
+                    .topK(topK);
+            if (minimumSimilarity > 0) {
+                builder.similarityThreshold(minimumSimilarity);
             }
             List<CustomerKnowledgeSearchResult> results = vectorStore.similaritySearch(builder.build()).stream()
                     .map(this::fromVectorDocument)
                     .toList();
-            logVectorResults(query, results);
+            logVectorResults(query, topK, minimumSimilarity, results);
             return results;
         } catch (RuntimeException ex) {
             log.warn("Customer service Qdrant search failed. query='{}'", query, ex);
@@ -70,9 +90,10 @@ public class CustomerKnowledgeRetriever {
         }
     }
 
-    private void logVectorResults(String query, List<CustomerKnowledgeSearchResult> results) {
+    private void logVectorResults(String query, int topK, double minimumSimilarity,
+                                  List<CustomerKnowledgeSearchResult> results) {
         log.info("Customer service Qdrant search. collection='{}', topK={}, minimumSimilarity={}, query='{}', resultCount={}",
-                properties.collectionName(), properties.topK(), properties.minimumSimilarity(), query, results.size());
+                properties.collectionName(), topK, minimumSimilarity, query, results.size());
         for (int index = 0; index < results.size(); index++) {
             CustomerKnowledgeSearchResult result = results.get(index);
             CustomerKnowledgeDocument document = result.document();
@@ -101,7 +122,7 @@ public class CustomerKnowledgeRetriever {
         return new CustomerKnowledgeSearchResult(knowledgeDocument, document.getScore());
     }
 
-    private List<CustomerKnowledgeSearchResult> lexicalResults(String query) {
+    private List<CustomerKnowledgeSearchResult> lexicalResults(String query, int topK) {
         List<String> terms = terms(query);
         if (terms.isEmpty()) {
             return List.of();
@@ -110,7 +131,7 @@ public class CustomerKnowledgeRetriever {
                 .map(document -> new CustomerKnowledgeSearchResult(document, lexicalScore(document, terms)))
                 .filter(result -> result.score() != null && result.score() > 0)
                 .sorted(Comparator.comparing(CustomerKnowledgeSearchResult::score).reversed())
-                .limit(properties.topK())
+                .limit(topK)
                 .toList();
     }
 
