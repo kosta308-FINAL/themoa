@@ -696,21 +696,19 @@ function CustomerServiceAiQualityPage() {
                   길이입니다. 경계에서 답변 근거가 끊기는 문제를 줄입니다.
                 </small>
               </label>
-              <label className="aiq-toggle-field">
-                <input
-                  type="checkbox"
-                  checked={splitByMarkdownHeading}
-                  onChange={(event) =>
-                    handleSplitByMarkdownHeadingChange(event.target.checked)
-                  }
-                />
-                <span>
-                  <strong>Markdown 제목 기준으로 먼저 나누기</strong>
-                  <small>
-                    md 파일의 #, ## 제목을 큰 단락 경계로 봅니다. 일반 txt처럼
-                    제목 표시가 없는 문서는 문단 기준으로만 묶입니다.
-                  </small>
+              <label className="aiq-field aiq-toggle-field">
+                <span>분리 기준</span>
+                <span className="aiq-toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={splitByMarkdownHeading}
+                    onChange={(event) =>
+                      handleSplitByMarkdownHeadingChange(event.target.checked)
+                    }
+                  />
+                  <strong>제목(#) 먼저 나누기</strong>
                 </span>
+                <small>해제하면 단락 기준으로만 나눕니다.</small>
               </label>
             </div>
           </div>

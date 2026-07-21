@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +35,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDate;
 
 /**
  * 거래 조회 + 건별 사용자 정정(category.md §2-④, cardtransaction.md §3-4·§4) + 수기 입력 생성(entryMode.md
@@ -73,12 +76,13 @@ public class CardTransactionController {
     }
 
     @Operation(summary = "카테고리별 소비 비중/내역 조회(S-01 도넛)",
-            description = "budgetId 생략 시 현재 급여 주기를 집계합니다. 고정지출 태그 거래를 제외하고, 순액(부분취소 반영)이 0원보다 큰 소비만 카테고리별로 집계합니다(category.md §6, dayguide.md §3.4). canceledTotal은 이 주기 결제 중 취소된 금액입니다.")
+            description = "budgetId 생략 시, date가 있으면 그 날짜가 속한 급여 주기를, 둘 다 없으면 현재 급여 주기를 집계합니다. 고정지출 태그 거래를 제외하고, 순액(부분취소 반영)이 0원보다 큰 소비만 카테고리별로 집계합니다(category.md §6, dayguide.md §3.4). canceledTotal은 이 주기 결제 중 취소된 금액입니다.")
     @GetMapping("/category-summary")
     public ResponseEntity<ApiResponse<CategorySummaryListResponse>> categorySummary(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
-            @Parameter(description = "조회할 예산 주기 ID(생략 시 현재 주기)") @RequestParam(required = false) Long budgetId) {
-        CategorySummaryListResponse response = spendingGuideService.getCategorySummary(memberId, budgetId);
+            @Parameter(description = "조회할 예산 주기 ID(생략 시 현재 주기 또는 date 기준 주기)") @RequestParam(required = false) Long budgetId,
+            @Parameter(description = "이 날짜가 속한 급여 주기를 조회(budgetId가 있으면 무시됨)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        CategorySummaryListResponse response = spendingGuideService.getCategorySummary(memberId, budgetId, date);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

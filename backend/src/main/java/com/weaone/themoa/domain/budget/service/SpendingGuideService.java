@@ -230,7 +230,7 @@ public class SpendingGuideService {
         int clampedLimit = clamp(limit, TODAY_TRANSACTIONS_DEFAULT_LIMIT, TODAY_TRANSACTIONS_MAX_LIMIT);
         LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
         Page<CardTransactionResponse> page = cardTransactionRepository
-                .findByMember_IdAndFixedExpenseIsNullAndStatusNotAndUsedDateOrderByUsedAtDesc(
+                .findByMember_IdAndStatusNotAndUsedDateOrderByUsedAtDesc(
                         member.getId(), TransactionStatus.REJECTED, today, PageRequest.of(0, clampedLimit))
                 .map(CardTransactionResponse::from);
         return new TodayTransactionsResponse(page.getContent(), page.getTotalElements());
@@ -276,14 +276,15 @@ public class SpendingGuideService {
     }
 
     /**
-     * S-01 카테고리 도넛(dayguide.md §3.4·§8.1·§8.3). {@code budgetId} 생략 시 현재 주기를 조회하고,
-     * 진행 중인 주기이거나 데이터가 일부만 있는 주기는 {@code completedCycleResult=null}이다.
+     * S-01 카테고리 도넛(dayguide.md §3.4·§8.1·§8.3). {@code budgetId} 생략 시, {@code date}가 있으면 그
+     * 날짜가 속한 주기를, 둘 다 없으면 현재 주기를 조회한다. 진행 중인 주기이거나 데이터가 일부만 있는
+     * 주기는 {@code completedCycleResult=null}이다.
      */
     @Transactional(readOnly = true)
-    public CategorySummaryListResponse getCategorySummary(Long memberId, Long budgetId) {
+    public CategorySummaryListResponse getCategorySummary(Long memberId, Long budgetId, LocalDate date) {
         Member member = getMemberWithSetup(memberId);
         LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
-        Budget budget = resolveBudget(member, budgetId, today);
+        Budget budget = resolveBudgetForDate(member, budgetId, date, today);
 
         LocalDate dataStartDate = resolveDataStartDate(member);
         LocalDate earliestCycleStart = BudgetCyclePolicy.cycleOf(member.getPayday(), dataStartDate).cycleStartDate();
@@ -337,6 +338,20 @@ public class SpendingGuideService {
         Member member = getMemberWithSetup(memberId);
         LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
         return resolveBudget(member, budgetId, today);
+    }
+
+    /**
+     * {@code budgetId} 지정 시 그 주기, 미지정이고 {@code date} 지정 시 그 날짜가 속한 주기(§3.4 날짜별
+     * 소비 확인 연동), 둘 다 없으면 현재 주기를 조회한다. date가 속한 주기가 아직 생성되지 않았으면(백필
+     * 범위 밖) BUDGET_NOT_FOUND를 던진다.
+     */
+    private Budget resolveBudgetForDate(Member member, Long budgetId, LocalDate date, LocalDate today) {
+        if (budgetId != null || date == null || date.isAfter(today)) {
+            return resolveBudget(member, budgetId, today);
+        }
+        BudgetCyclePolicy.BudgetCycle cycle = budgetCycleService.resolveCycleForDate(member, date);
+        return budgetRepository.findByMember_IdAndYearMonth(member.getId(), cycle.yearMonth())
+                .orElseThrow(() -> new BusinessException(ErrorCode.BUDGET_NOT_FOUND));
     }
 
     /** {@code budgetId} 미지정 시 현재 주기, 지정 시 본인 소유·이미 시작된 주기만 허용한다(§8.6). */

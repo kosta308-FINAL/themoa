@@ -203,7 +203,7 @@ class SpendingGuideServiceTest {
         given(cardTransactionRepository.sumCanceledAmount(eq(MEMBER_ID), eq(TransactionStatus.REJECTED), any(), any()))
                 .willReturn(BigDecimal.ZERO);
 
-        CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L);
+        CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L, null);
 
         assertThat(response.hasNext()).isFalse();
         assertThat(response.completedCycleResult()).isNull();
@@ -228,7 +228,7 @@ class SpendingGuideServiceTest {
                 .willReturn(new BigDecimal("300000"));
         given(budgetIncomeAdjustmentRepository.sumAmountByBudget_Id(any())).willReturn(BigDecimal.ZERO);
 
-        CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L);
+        CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L, null);
 
         assertThat(response.hasNext()).isTrue();
         assertThat(response.completedCycleResult()).isNotNull();
@@ -253,7 +253,7 @@ class SpendingGuideServiceTest {
         given(cardTransactionRepository.summarizeByCategory(any(), any(), any(), any())).willReturn(List.of());
         given(cardTransactionRepository.sumCanceledAmount(any(), any(), any(), any())).willReturn(BigDecimal.ZERO);
 
-        CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L);
+        CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L, null);
 
         assertThat(response.partialCycle()).isTrue();
         assertThat(response.completedCycleResult()).isNull();
@@ -274,7 +274,7 @@ class SpendingGuideServiceTest {
         given(cardTransactionRepository.summarizeByCategory(any(), any(), any(), any())).willReturn(List.of());
         given(cardTransactionRepository.sumCanceledAmount(any(), any(), any(), any())).willReturn(BigDecimal.ZERO);
 
-        CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L);
+        CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L, null);
 
         assertThat(response.hasPrevious()).isFalse();
     }

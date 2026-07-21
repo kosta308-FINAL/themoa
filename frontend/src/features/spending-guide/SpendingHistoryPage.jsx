@@ -17,7 +17,11 @@ import {
   getSpendingTransactions,
   syncCardTransactions,
 } from "../../api/spendingGuideApi";
-import { shiftDateBy, todayDate } from "./spendingGuideUtils";
+import {
+  netAmountForTotal,
+  shiftDateBy,
+  todayDate,
+} from "./spendingGuideUtils";
 import "./SpendingHistoryPage.css";
 
 const ICONS = {
@@ -259,12 +263,12 @@ function groupTransactions(items) {
     const last = groups.at(-1);
     if (last && last.date === item.usedDate) {
       last.items.push(item);
-      last.total += toNumber(item.netAmount);
+      last.total += netAmountForTotal(item);
     } else {
       groups.push({
         date: item.usedDate,
         items: [item],
-        total: toNumber(item.netAmount),
+        total: netAmountForTotal(item),
       });
     }
   });
@@ -282,6 +286,7 @@ function TransactionGroup({ group, isToday }) {
         {group.items.map((item) => {
           const visual = transactionVisual(item);
           const isManual = item.source === "MANUAL";
+          const isFixedExpense = Boolean(item.fixedExpenseId);
           const badge =
             item.status === "PARTIAL_CANCELED"
               ? "일부 취소됨"
@@ -308,6 +313,9 @@ function TransactionGroup({ group, isToday }) {
               <span className="tx-info">
                 <span className="tx-name">
                   <strong>{item.merchantDisplayName}</strong>
+                  {isFixedExpense && (
+                    <em className="tiny-badge fixed">고정지출</em>
+                  )}
                   {badge && (
                     <em
                       className={`tiny-badge${badge.includes("취소") ? " cancel" : ""}`}
@@ -401,7 +409,7 @@ function SpendingHistoryPage() {
 
   const dayNetTotal = useMemo(
     () =>
-      (dayItems ?? []).reduce((sum, item) => sum + toNumber(item.netAmount), 0),
+      (dayItems ?? []).reduce((sum, item) => sum + netAmountForTotal(item), 0),
     [dayItems],
   );
   const dayGroups = useMemo(
@@ -1077,7 +1085,11 @@ function SpendingHistoryPage() {
                       onClick={handleSync}
                       disabled={isSyncing}
                     >
-                      <HistoryIcon name="repeat" small spin={isSyncing} />
+                      {isSyncing ? (
+                        <span className="sync-spinner" aria-hidden="true" />
+                      ) : (
+                        <HistoryIcon name="repeat" small />
+                      )}
                       {isSyncing ? "동기화 중..." : "결제내역 동기화"}
                     </button>
                   </div>

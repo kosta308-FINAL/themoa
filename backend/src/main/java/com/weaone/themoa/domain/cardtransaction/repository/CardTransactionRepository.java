@@ -158,10 +158,11 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
                                                          @Param("endDate") LocalDate endDate);
 
     /**
-     * S-01 오늘 거래 미리보기(dayguide.md §8.1): 고정지출 태그·거절 제외, 최신순. {@code pageable}로 미리보기
-     * 개수를 제한하면서도 {@code Page.getTotalElements()}로 제한 전 전체 건수를 함께 얻는다.
+     * S-01 오늘 거래 미리보기(dayguide.md §8.1): 거절 제외, 최신순. 고정지출 태그 거래도 표시하되
+     * ({@code fixedExpenseId} 배지) 오늘 순사용액 등 집계에서만 별도로 제외한다(§5). {@code pageable}로
+     * 미리보기 개수를 제한하면서도 {@code Page.getTotalElements()}로 제한 전 전체 건수를 함께 얻는다.
      */
-    Page<CardTransaction> findByMember_IdAndFixedExpenseIsNullAndStatusNotAndUsedDateOrderByUsedAtDesc(
+    Page<CardTransaction> findByMember_IdAndStatusNotAndUsedDateOrderByUsedAtDesc(
             Long memberId, TransactionStatus rejected, LocalDate usedDate, Pageable pageable);
 
     /**
@@ -178,10 +179,10 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
                                             @Param("endDate") LocalDate endDate);
 
     /**
-     * S-04 전체 소비내역(dayguide.md §8.1): 급여 주기 범위 + 선택적 날짜·카테고리 필터. 고정지출 태그·거절
-     * 제외, 최신순 페이지.
+     * S-04 전체 소비내역(dayguide.md §8.1): 급여 주기 범위 + 선택적 날짜·카테고리 필터. 거절 제외, 최신순
+     * 페이지. 고정지출 태그 거래도 목록에는 표시하고(배지) 집계에서만 별도로 제외한다(§5).
      */
-    @Query("select t from CardTransaction t where t.member.id = :memberId and t.fixedExpense is null "
+    @Query("select t from CardTransaction t where t.member.id = :memberId "
             + "and t.status <> :rejected and t.usedDate between :cycleStart and :cycleEnd "
             + "and (:date is null or t.usedDate = :date) "
             + "and (:categoryId is null or t.category.id = :categoryId) "
@@ -210,8 +211,9 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
 
     /**
      * 전체 소비내역 상세 결제내역(consumeHistoryDetail.md §3.2·§5·§7.2): 급여주기 범위 페이지, 정렬은
-     * usedAt DESC, id DESC로 고정한다. 목록 DTO 변환({@link com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionResponse#from})이
-     * category·merchantAlias·merchant·card 연관관계를 전부 읽으므로 N+1을 막기 위해 함께 fetch join한다.
+     * usedAt DESC, id DESC로 고정한다. 거절만 제외하고 고정지출 태그 거래도 목록에는 표시하며(배지) 집계에서만
+     * 별도로 제외한다. 목록 DTO 변환({@link com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionResponse#from})이
+     * category·merchantAlias·merchant·card·fixedExpense 연관관계를 전부 읽으므로 N+1을 막기 위해 함께 fetch join한다.
      * fetch join + Page이므로 count 쿼리를 별도로 준다.
      */
     @Query(value = "select t from CardTransaction t "
@@ -221,11 +223,12 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
             + "left join fetch t.card c "
             + "left join fetch c.cardConnection cc "
             + "left join fetch cc.cardIssuer "
-            + "where t.member.id = :memberId and t.status <> :rejected and t.fixedExpense is null "
+            + "left join fetch t.fixedExpense "
+            + "where t.member.id = :memberId and t.status <> :rejected "
             + "and t.usedDate between :startDate and :endDate "
             + "order by t.usedAt desc, t.id desc",
             countQuery = "select count(t) from CardTransaction t "
-                    + "where t.member.id = :memberId and t.status <> :rejected and t.fixedExpense is null "
+                    + "where t.member.id = :memberId and t.status <> :rejected "
                     + "and t.usedDate between :startDate and :endDate")
     Page<CardTransaction> findConsumptionHistoryPage(@Param("memberId") Long memberId,
                                                        @Param("rejected") TransactionStatus rejected,
