@@ -4,10 +4,12 @@ import { useBookmarks } from "../../hooks/useBookmarks";
 import RecommendForm from "./components/RecommendForm";
 import RecommendResults from "./components/RecommendResults";
 import { useRecommend } from "./hooks/useRecommend";
+import { useRecommendDefaults } from "./hooks/useRecommendDefaults";
 import "./ProductsPage.css";
 
 function ProductsPage() {
   const { data, loading, error, searched, runRecommend } = useRecommend();
+  const { defaults, loading: defaultsLoading } = useRecommendDefaults();
   const bookmarks = useBookmarks();
 
   return (
@@ -25,7 +27,18 @@ function ProductsPage() {
       </div>
 
       <div className="products-layout">
-        <RecommendForm loading={loading} onSubmit={runRecommend} />
+        {/* 기본값이 준비된 뒤에 폼을 올려서, 서버 값을 초기값으로 그대로 쓰게 한다. */}
+        {defaultsLoading ? (
+          <div className="rec-form rec-form-loading">
+            내 정보를 불러오고 있어요…
+          </div>
+        ) : (
+          <RecommendForm
+            loading={loading}
+            defaults={defaults}
+            onSubmit={runRecommend}
+          />
+        )}
         <section className="products-results-col">
           <RecommendResults
             data={data}

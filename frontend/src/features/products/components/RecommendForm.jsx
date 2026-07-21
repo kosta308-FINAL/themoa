@@ -26,16 +26,29 @@ const toIntOrNull = (value) => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
+const FALLBACK_DEPOSIT_WON = "300000";
+
 /**
  * 추천 입력 폼. 값은 내부 상태로만 관리하고, 제출 시 백엔드 RecommendRequest 형태의
  * payload로 변환해 onSubmit으로 넘긴다. 저축목표 모드가 '없음'이면 목표 값은 항상 null로 보낸다.
+ *
+ * 월소득·월 납입가능금액은 서버 기본값(가입 시 월급, 소비내역 연동 잉여금)으로 시작하되
+ * 사용자가 그대로 수정할 수 있다. defaults가 준비된 뒤에 마운트되므로 초기값으로만 쓰면 된다.
  */
-function RecommendForm({ loading, onSubmit }) {
+function RecommendForm({ loading, defaults, onSubmit }) {
   const [age, setAge] = useState("26");
-  const [income, setIncome] = useState("250");
+  const [income, setIncome] = useState(
+    defaults?.monthlyIncomeManwon != null
+      ? String(defaults.monthlyIncomeManwon)
+      : "",
+  );
   const [employment, setEmployment] = useState("직장인");
   const [risk, setRisk] = useState("STABLE");
-  const [deposit, setDeposit] = useState("300000");
+  const [deposit, setDeposit] = useState(
+    defaults?.monthlyDepositWon != null
+      ? String(defaults.monthlyDepositWon)
+      : FALLBACK_DEPOSIT_WON,
+  );
   const [period, setPeriod] = useState("SHORT");
   const [goalMode, setGoalMode] = useState("none"); // none | set
   const [goalAmount, setGoalAmount] = useState("");
