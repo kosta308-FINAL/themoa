@@ -441,6 +441,11 @@
   stroke: #fff;
   stroke-width: 2.5;
 }
+.consume-history-page .line-point.selected {
+  fill: var(--green-deep);
+  stroke: var(--green-deep);
+  stroke-width: 2.5;
+}
 .consume-history-page .line-hit {
   fill: transparent;
   cursor: pointer;
@@ -486,6 +491,12 @@
 }
 .consume-history-page .history-group {
   padding: 0 22px;
+  border-radius: 12px;
+  transition: background-color 1.6s ease;
+}
+.consume-history-page .history-group.highlighted {
+  background-color: var(--green-soft);
+  transition: background-color 0.15s ease;
 }
 .consume-history-page .history-date {
   min-height: 48px;

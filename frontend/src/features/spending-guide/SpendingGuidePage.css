@@ -2731,6 +2731,7 @@
   font-size: 10px;
 }
 .spending-guide .spending-bar-space {
+  position: relative;
   grid-row: 1;
   width: 100%;
   height: auto;
@@ -2741,6 +2742,53 @@
 .spending-guide .spending-bar-space.negative-space {
   grid-row: 2;
   align-items: flex-start;
+}
+.spending-guide .spending-bar-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: max-content;
+  max-width: 168px;
+  padding: 9px 11px;
+  border-radius: var(--radius-sm);
+  background: var(--text-primary);
+  box-shadow: var(--shadow-md);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.45;
+  white-space: normal;
+  text-align: left;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+  pointer-events: none;
+}
+.spending-guide .spending-bar-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  border: 5px solid transparent;
+  border-top-color: var(--text-primary);
+  transform: translateX(-50%);
+}
+.spending-guide .spending-bar-item .spending-bar-tooltip strong {
+  grid-row: auto;
+  padding-top: 0;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.spending-guide .spending-bar-item:hover .spending-bar-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 .spending-guide .spending-bar-space i {
   position: relative;
