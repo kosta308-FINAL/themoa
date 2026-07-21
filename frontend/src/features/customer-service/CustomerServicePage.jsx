@@ -62,7 +62,9 @@ function CustomerServicePage() {
       });
       setChatAnswer(response);
     } catch (requestError) {
-      setChatError("챗봇 답변을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setChatError(
+        "챗봇 답변을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+      );
     } finally {
       setIsChatLoading(false);
     }
@@ -165,55 +167,60 @@ function CustomerServicePage() {
             ))}
           </div>
 
-          {searchMode === "chat" && (chatAnswer || chatError || isChatLoading) && (
-            <div className="cs-chat-result">
-              {isChatLoading && (
-                <div className="cs-chat-loading">고객센터 지식에서 답변을 찾고 있어요.</div>
-              )}
-              {chatError && <div className="cs-inline-error">{chatError}</div>}
-              {chatAnswer && !isChatLoading && (
-                <>
-                  <div className="cs-chat-answer-head">
-                    <span>AI 고객센터 답변</span>
-                    {chatAnswer.needsHumanSupport && (
-                      <button
-                        type="button"
-                        className="cs-chat-link-btn"
-                        onClick={() => switchTab("inquire")}
-                      >
-                        1:1 문의로 이어가기
-                      </button>
-                    )}
+          {searchMode === "chat" &&
+            (chatAnswer || chatError || isChatLoading) && (
+              <div className="cs-chat-result">
+                {isChatLoading && (
+                  <div className="cs-chat-loading">
+                    고객센터 지식에서 답변을 찾고 있어요.
                   </div>
-                  <MarkdownContent
-                    markdown={chatAnswer.answerMarkdown}
-                    className="cs-chat-answer-body"
-                  />
-                  {chatAnswer.citations?.length > 0 && (
-                    <div className="cs-chat-citations">
-                      <span>참고한 고객센터 지식</span>
-                      <div>
-                        {chatAnswer.citations.map((citation) => (
-                          <button
-                            key={`${citation.sourceType}-${citation.sourceId}`}
-                            type="button"
-                            className="cs-citation-chip"
-                            onClick={() => {
-                              setSearchMode("faq");
-                              setSearchTerm(citation.title);
-                              switchTab("faq");
-                            }}
-                          >
-                            {citation.title}
-                          </button>
-                        ))}
-                      </div>
+                )}
+                {chatError && (
+                  <div className="cs-inline-error">{chatError}</div>
+                )}
+                {chatAnswer && !isChatLoading && (
+                  <>
+                    <div className="cs-chat-answer-head">
+                      <span>AI 고객센터 답변</span>
+                      {chatAnswer.needsHumanSupport && (
+                        <button
+                          type="button"
+                          className="cs-chat-link-btn"
+                          onClick={() => switchTab("inquire")}
+                        >
+                          1:1 문의로 이어가기
+                        </button>
+                      )}
                     </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
+                    <MarkdownContent
+                      markdown={chatAnswer.answerMarkdown}
+                      className="cs-chat-answer-body"
+                    />
+                    {chatAnswer.citations?.length > 0 && (
+                      <div className="cs-chat-citations">
+                        <span>참고한 고객센터 지식</span>
+                        <div>
+                          {chatAnswer.citations.map((citation) => (
+                            <button
+                              key={`${citation.sourceType}-${citation.sourceId}`}
+                              type="button"
+                              className="cs-citation-chip"
+                              onClick={() => {
+                                setSearchMode("faq");
+                                setSearchTerm(citation.title);
+                                switchTab("faq");
+                              }}
+                            >
+                              {citation.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
         </div>
       </section>
 
@@ -288,7 +295,9 @@ function CustomerServicePage() {
       {/* MAIN GRID CONTENT */}
       <div className="cs-grid">
         <div className="cs-left">
-          {activeTab === "faq" && <FaqPanel searchTerm={searchTerm} />}
+          {activeTab === "faq" && (
+            <FaqPanel searchTerm={searchMode === "faq" ? searchTerm : ""} />
+          )}
 
           {activeTab === "inquire" && (
             <InquiryForm
