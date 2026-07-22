@@ -40,14 +40,11 @@ import java.util.Optional;
  * 회원 학습 표기(member_id NOT NULL)를 미리 심어 둬, F-05 미납 결제 확인 플로우를 직접 밟지 않아도
  * 앱 기동 직후 대기목록 화면에서 승격 동작을 바로 확인할 수 있게 한다.
  *
- * <p>정재훈({@code test1}, member_id=3)·박아름({@code test2}, member_id=4)에게는 승격 대기목록에 뜨는
- * 표기를 하나도 학습한 적 없는 제3자 입장에서 각각 다른 표기(쿠팡·ANTHROPIC* CLAUDE JUL은 정재훈에게,
- * tving_subscription은 박아름에게)로 이미 결제내역이 쌓여 있게 심어 둔다. 승격 전에는 이
- * 거래들이 merchant_alias 없이 "미식별" 상태로 남아 있다가, 관리자가 각 카드의 승격 버튼을 누르는 순간
+ * <p>정재훈({@code test1}, member_id=3)에게는 승격 대기목록에 뜨는 표기를 하나도 학습한 적 없는 제3자
+ * 입장에서 쿠팡·ANTHROPIC* CLAUDE JUL로 이미 결제내역이 쌓여 있게 심어 둔다. 승격 전에는 이 거래들이
+ * merchant_alias 없이 "미식별" 상태로 남아 있다가, 관리자가 각 카드의 승격 버튼을 누르는 순간
  * {@link com.weaone.themoa.domain.merchant.service.AdminMerchantService#promote}의 소급 재분류 로직이
- * 타서 그 자리에서 즉시 분류된다. tving_subscription은 solmin·정재훈이 서로 다른 서비스명("tving구독"/
- * "티빙 구독")으로 각자 등록한 표기명 충돌 케이스라서, 대기목록 화면에서 "서비스명 충돌" 배지가 뜨는 것과
- * — 둘 중 하나만 승격되고 나머지는 조용히 무시되는 것까지 코드 변경 없이 바로 시연하기 위한 장치다.
+ * 타서 그 자리에서 즉시 분류된다.
  *
  * <p>{@link com.weaone.themoa.domain.member.support.MemberDemoSeeder}(회원)·{@link MerchantAliasSeeder}
  * (전역 alias·카드사)가 먼저 끝나 있어야 하므로 그 사이 순번({@link Order})에 둔다.
@@ -73,16 +70,17 @@ public class MerchantAliasPromotionDemoSeeder implements ApplicationRunner {
      */
     private static final String CLAUDE_TEXT = "ANTHROPIC* CLAUDE JUL";
     /**
-     * 같은 원본 표기를 solmin·정재훈이 서로 다른 서비스명으로 각자 등록한 표기명 충돌 시나리오용.
-     * codefapiResponse.json엔 티빙 결제 사례가 없어 이 문자열은 검증된 실제 값이 아니다 — 다만 같은
-     * 파일에 "Amazon_AWS"처럼 영문+언더스코어 표기가 실제로 관측되는 걸 보면 형식 자체는 그럴듯하다.
-     * DB collation이 utf8mb4_0900_ai_ci(대소문자 구분 안 함)라 "tving구독"/"TVING구독"처럼 대소문자만
-     * 다른 이름은 유니크 제약에서 완전히 같은 값 취급돼 충돌 자체가 안 만들어진다 — 그래서 영문 표기와
-     * 한글 번역명처럼 실제로 다른 문자열을 쓴다.
+     * F-03 검색 드롭다운({@link com.weaone.themoa.domain.merchant.repository.MerchantAliasRepository
+     * #findByCanonicalServiceNameContainingIgnoreCaseOrderByCanonicalServiceNameAsc}, 부분일치 LIKE)
+     * 오염 재현용 — merchant_alias_terms가 하나도 없는(raw text 연결이 전혀 없는), 이름만 다른 중복
+     * 서비스 2개. 둘 다 "멜론"을 포함해야 검색 한 번에 같이 뜬다(부분일치라서 "melon"처럼 영문으로만
+     * 쓰면 "멜론"으로 검색했을 때 안 걸림). Claude 트리오와 안 겹치게 새 서비스로 만든다. solmin이
+     * "고정지출 등록 → 카드형 → 서비스 검색"에서 "멜론"으로 검색하면 이 둘이 같이 뜨는 걸로, "비슷한
+     * 이름 여러 개 중 하나를 잘못 고르거나 또 새로 만들어버릴 수 있다"는 위험을 solmin 계정에서
+     * 직접 테스트할 수 있게 한다.
      */
-    private static final String TVING_TEXT = "tving_subscription";
-    private static final String TVING_ALIAS_SOLMIN = "tving구독";
-    private static final String TVING_ALIAS_JAEHOON = "티빙 구독";
+    private static final String DUPLICATE_ALIAS_MELON_KO = "멜론 정기결제";
+    private static final String DUPLICATE_ALIAS_MELON_VARIANT = "멜론뮤직 구독";
 
     private final MemberRepository memberRepository;
     private final MerchantAliasRepository merchantAliasRepository;
@@ -99,9 +97,9 @@ public class MerchantAliasPromotionDemoSeeder implements ApplicationRunner {
     @Transactional
     public void run(ApplicationArguments args) {
         seedMultiLearnerCandidate();
-        seedConflictingProposalCandidate();
         seedUnclassifiedBeneficiary();
         seedDuplicateServiceNames();
+        seedSearchPickerDuplicateDemo();
     }
 
     /** 학습자 2명, 제안된 서비스명은 1개뿐인 통상 케이스 — 충돌 케이스와 대조하기 위한 정상 대조군. */
@@ -117,36 +115,9 @@ public class MerchantAliasPromotionDemoSeeder implements ApplicationRunner {
     }
 
     /**
-     * 같은 원본 표기 "tving_subscription"을 solmin은 "tving구독"으로, 정재훈은 "티빙 구독"으로 각자 다른
-     * 서비스명으로 등록·학습한 표기명 충돌 케이스 — 대기목록 화면에서 이 표기 카드에 제안된 서비스명이
-     * 2개로 뜨고 "서비스명 충돌" 배지가 붙는 걸 보여준다. 관리자가 둘 중 하나를 승격하면(promote()가 원본
-     * 표기 기준으로 이미 전역 등록됐는지부터 확인하므로) 나머지 하나는 눌러도 조용히 무시된다.
-     */
-    private void seedConflictingProposalCandidate() {
-        if (merchantAliasRepository.findByCanonicalServiceNameNormalized(TVING_ALIAS_SOLMIN).isPresent()) {
-            return;
-        }
-        Optional<Member> solminOpt = memberRepository.findByEmail("solmin");
-        Optional<Member> jaehoonOpt = memberRepository.findByEmail("test1");
-        if (solminOpt.isEmpty() || jaehoonOpt.isEmpty()) {
-            return;
-        }
-        Category subscription = categoryRepository.findByCode(CategoryCode.SUBSCRIPTION.name())
-                .orElseThrow(() -> new IllegalStateException(CategoryCode.SUBSCRIPTION + " 카테고리가 시드되지 않았습니다."));
-
-        MerchantAlias solminAlias = merchantAliasRepository.save(MerchantAlias.create(TVING_ALIAS_SOLMIN, subscription));
-        MerchantAlias jaehoonAlias = merchantAliasRepository.save(MerchantAlias.create(TVING_ALIAS_JAEHOON, subscription));
-
-        learnIfAbsent(solminAlias, solminOpt.get(), TVING_TEXT);
-        learnIfAbsent(jaehoonAlias, jaehoonOpt.get(), TVING_TEXT);
-    }
-
-    /**
-     * 정재훈(member_id=3)·박아름(member_id=4) — 각자 자기 화면에 뜬 원본 표기를 학습한 적 없는 제3자다.
-     * 정재훈은 쿠팡·ANTHROPIC* CLAUDE JUL로, 박아름은 tving_subscription으로 이미 결제내역이
-     * 쌓여 있지만 전역 표기가 없어 미분류 상태다(박아름은 tving 표기명 충돌의 두 학습자 중 한 명이 아니라서
-     * 이 표기의 수혜자 역할을 맡길 수 있다). 관리자가 카드를 승격할 때마다 각자 화면에서 그 거래만
-     * 실시간으로 분류되는 걸 보여준다.
+     * 정재훈(member_id=3) — 승격 대기목록에 뜨는 표기를 하나도 학습한 적 없는 제3자다. 쿠팡·
+     * ANTHROPIC* CLAUDE JUL로 이미 결제내역이 쌓여 있지만 전역 표기가 없어 미분류 상태다. 관리자가
+     * 카드를 승격할 때마다 정재훈 화면에서 그 거래만 실시간으로 분류되는 걸 보여준다.
      */
     private void seedUnclassifiedBeneficiary() {
         Category subscription = categoryRepository.findByCode(CategoryCode.SUBSCRIPTION.name())
@@ -158,12 +129,6 @@ public class MerchantAliasPromotionDemoSeeder implements ApplicationRunner {
                     "DEMO-PROMOTE-JAEHOON-001", new BigDecimal("7890.00"), 10);
             seedUnclassifiedTransaction(jaehoon, card, subscription, CLAUDE_TEXT,
                     "DEMO-PROMOTE-JAEHOON-002", new BigDecimal("22000.00"), 6);
-        });
-
-        memberRepository.findByEmail("test2").ifPresent(areum -> {
-            Card card = ensureDemoCard(areum, "SEED-HYUNDAI-CONNECTED-AREUM-0001", "9012-****-****-5678");
-            seedUnclassifiedTransaction(areum, card, subscription, TVING_TEXT,
-                    "DEMO-PROMOTE-AREUM-001", new BigDecimal("13900.00"), 3);
         });
     }
 
@@ -229,6 +194,35 @@ public class MerchantAliasPromotionDemoSeeder implements ApplicationRunner {
         fixedExpenseRepository.save(FixedExpense.registerDirect(newbieOpt.get(), "Claude subscription", subscription,
                 enAlias, FixedExpensePaymentMethod.TRANSFER, (short) 20, new BigDecimal("22000.00"), "KRW",
                 new BigDecimal("22000.00"), null, null));
+    }
+
+    /**
+     * F-03 검색 드롭다운 오염 재현. 박아름·이신규가 "멜론" 구독을 각자 직접 등록(검색 안 하고 이름
+     * 타이핑)해서 raw text 연결이 하나도 없는 중복 서비스 2개가 이미 있는 상태를 만든다. solmin이
+     * 고정지출을 새로 등록하면서 "멜론"으로 검색하면 이 두 개가 나란히 뜨는 걸 직접 볼 수 있다.
+     */
+    private void seedSearchPickerDuplicateDemo() {
+        if (merchantAliasRepository.findByCanonicalServiceNameNormalized(DUPLICATE_ALIAS_MELON_KO).isPresent()) {
+            return;
+        }
+        Optional<Member> areumOpt = memberRepository.findByEmail("test2");
+        Optional<Member> newbieOpt = memberRepository.findByEmail("test3");
+        if (areumOpt.isEmpty() || newbieOpt.isEmpty()) {
+            return;
+        }
+        Category subscription = categoryRepository.findByCode(CategoryCode.SUBSCRIPTION.name())
+                .orElseThrow(() -> new IllegalStateException(CategoryCode.SUBSCRIPTION + " 카테고리가 시드되지 않았습니다."));
+
+        MerchantAlias koAlias = merchantAliasRepository.save(MerchantAlias.create(DUPLICATE_ALIAS_MELON_KO, subscription));
+        MerchantAlias variantAlias = merchantAliasRepository.save(
+                MerchantAlias.create(DUPLICATE_ALIAS_MELON_VARIANT, subscription));
+
+        fixedExpenseRepository.save(FixedExpense.registerDirect(areumOpt.get(), "멜론 이용료", subscription, koAlias,
+                FixedExpensePaymentMethod.TRANSFER, (short) 10, new BigDecimal("10900.00"), "KRW",
+                new BigDecimal("10900.00"), null, null));
+        fixedExpenseRepository.save(FixedExpense.registerDirect(newbieOpt.get(), "멜론뮤직 이용료", subscription,
+                variantAlias, FixedExpensePaymentMethod.TRANSFER, (short) 25, new BigDecimal("10900.00"), "KRW",
+                new BigDecimal("10900.00"), null, null));
     }
 
     private void learnIfAbsent(MerchantAlias alias, Member member, String aliasText) {

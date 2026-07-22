@@ -59,9 +59,11 @@ public class CardTransactionSyncService {
         return result;
     }
 
-    /** 새벽 저활동 시간대 1회. 마지막 이용 후 30일 이내 사용자만 대상이다. §6 (B). */
-    @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Seoul")
+    /** 저활동 시간대 1회(임시: 오전 9시 15분). 마지막 이용 후 30일 이내 사용자만 대상이다. §6 (B). */
+    @Scheduled(cron = "0 15 9 * * *", zone = "Asia/Seoul")
     public void runNightlyBatch() {
+        // 임시 로깅: 배치 미실행/미동기화 원인 확인용. 원인 파악되면 제거.
+        log.info("[카드동기화-배치] 시작. now={}", LocalDateTime.now(ZONE_SEOUL));
         LocalDateTime activeSince = LocalDateTime.now(ZONE_SEOUL).minusDays(INACTIVITY_LIMIT_DAYS);
         List<CardConnection> connections = cardConnectionRepository
                 .findEligibleForNightlyBatch(ConnectionStatus.ACTIVE, activeSince);
@@ -70,8 +72,19 @@ public class CardTransactionSyncService {
 
         Map<Long, List<CardConnection>> byMember = connections.stream()
                 .collect(Collectors.groupingBy(connection -> connection.getMember().getId()));
-        byMember.forEach((memberId, memberConnections) ->
-                syncForMember(memberId, memberConnections, start, end, false));
+        log.info("[카드동기화-배치] 대상 커넥션={}건, 대상 회원={}명, window={}~{}",
+                connections.size(), byMember.size(), start, end);
+
+        byMember.forEach((memberId, memberConnections) -> {
+            try {
+                SyncSummary result = syncForMember(memberId, memberConnections, start, end, false);
+                log.info("[카드동기화-배치] memberId={} 완료. created={}, updated={}, skipped={}, locked={}",
+                        memberId, result.created(), result.updated(), result.skipped(), result.locked());
+            } catch (RuntimeException e) {
+                log.error("[카드동기화-배치] memberId={} 처리 중 예외 발생, 다음 회원으로 계속 진행합니다.", memberId, e);
+            }
+        });
+        log.info("[카드동기화-배치] 종료. 처리 회원 수={}", byMember.size());
     }
 
     @Transactional(readOnly = true)

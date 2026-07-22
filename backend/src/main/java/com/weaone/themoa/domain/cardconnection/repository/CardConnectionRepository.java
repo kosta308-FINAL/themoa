@@ -27,17 +27,29 @@ public interface CardConnectionRepository extends JpaRepository<CardConnection, 
     List<CardConnection> findByInitialSyncStatusInAndInitialSyncStartedAtBefore(
             List<InitialSyncStatus> statuses, LocalDateTime before);
 
-    /** 온디맨드 수집 대상(cardtransaction.md §6): 새벽 배치와 동일하게 자동수집 OFF 회원은 제외한다. */
+    /**
+     * 온디맨드 수집 대상(cardtransaction.md §6): 새벽 배치와 동일하게 자동수집 OFF 회원은 제외한다.
+     * cardIssuer를 join fetch한다 — open-in-view가 false라 이 쿼리도 배치 쿼리와 동일하게
+     * LazyInitializationException 위험이 있다(troubleshooting/lazyinitialization.md).
+     */
+    @Query("select c from CardConnection c join fetch c.cardIssuer where c.member.id = :memberId "
+            + "and c.status = :status and c.member.cardSyncEnabled = :cardSyncEnabled")
     List<CardConnection> findByMember_IdAndStatusAndMember_CardSyncEnabled(
-            Long memberId, ConnectionStatus status, boolean cardSyncEnabled);
+            @Param("memberId") Long memberId, @Param("status") ConnectionStatus status,
+            @Param("cardSyncEnabled") boolean cardSyncEnabled);
 
     boolean existsByMember_IdAndStatus(Long memberId, ConnectionStatus status);
 
     /** 소비 가이드 최초 설정 시 과거 주기 budget 소급 생성 여부 판단(budget 도메인, dailyBudget.md). */
     boolean existsByMember_IdAndInitialSyncStatus(Long memberId, InitialSyncStatus initialSyncStatus);
 
-    /** 새벽 배치 대상(cardtransaction.md §6): 활성 커넥션 + 자동수집 ON + 마지막 이용 30일 이내. */
-    @Query("select c from CardConnection c where c.status = :status "
+    /**
+     * 새벽 배치 대상(cardtransaction.md §6): 활성 커넥션 + 자동수집 ON + 마지막 이용 30일 이내.
+     * cardIssuer를 join fetch한다 — 조회 트랜잭션과 이후 collect() 트랜잭션이 분리돼 있어
+     * (open-in-view: false) join fetch 없이는 LazyInitializationException("no session")이 난다
+     * (troubleshooting/lazyinitialization.md).
+     */
+    @Query("select c from CardConnection c join fetch c.cardIssuer where c.status = :status "
             + "and c.member.cardSyncEnabled = true and c.member.lastActiveAt >= :activeSince")
     List<CardConnection> findEligibleForNightlyBatch(@Param("status") ConnectionStatus status,
                                                        @Param("activeSince") LocalDateTime activeSince);
