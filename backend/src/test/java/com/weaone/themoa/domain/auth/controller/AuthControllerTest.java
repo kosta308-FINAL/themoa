@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.common.exception.GlobalExceptionHandler;
+import com.weaone.themoa.common.logging.ErrorLogSanitizer;
 import com.weaone.themoa.config.AuthProperties;
 import com.weaone.themoa.domain.auth.dto.request.LoginRequest;
 import com.weaone.themoa.domain.auth.dto.request.SignupRequest;
@@ -13,6 +14,7 @@ import com.weaone.themoa.domain.auth.service.EmailVerificationService;
 import com.weaone.themoa.domain.auth.service.IssuedTokens;
 import com.weaone.themoa.domain.auth.service.PasswordResetService;
 import com.weaone.themoa.domain.auth.support.RefreshTokenCookieFactory;
+import com.weaone.themoa.domain.logging.service.AsyncErrorLogRecorder;
 import com.weaone.themoa.domain.member.entity.Gender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -54,6 +56,8 @@ class AuthControllerTest {
     private EmailVerificationService emailVerificationService;
     @Mock
     private PasswordResetService passwordResetService;
+    @Mock
+    private AsyncErrorLogRecorder asyncErrorLogRecorder;
 
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
@@ -71,7 +75,7 @@ class AuthControllerTest {
                 authService, authTokenService, emailVerificationService, passwordResetService,
                 new RefreshTokenCookieFactory(properties));
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
-                .setControllerAdvice(new GlobalExceptionHandler())
+                .setControllerAdvice(new GlobalExceptionHandler(new ErrorLogSanitizer(), asyncErrorLogRecorder))
                 .build();
     }
 
