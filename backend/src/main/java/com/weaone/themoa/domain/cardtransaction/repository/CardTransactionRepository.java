@@ -64,9 +64,6 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
     /** 관리자 전역 승격 소급 재분류 대상: 회원 구분 없이 이 원본 가맹점(merchant)의 미분류 거래 전체. */
     List<CardTransaction> findByMerchant_IdAndMerchantAliasIsNull(Long merchantId);
 
-    /** 관리자 서비스 병합 대상 조회: 이 서비스로 이미 분류된 거래 전체(회원 구분 없이). */
-    List<CardTransaction> findByMerchantAlias_Id(Long merchantAliasId);
-
     /** 데모 시드 재기동 시 중복 생성 방지용. */
     boolean existsByApprovalNo(String approvalNo);
 

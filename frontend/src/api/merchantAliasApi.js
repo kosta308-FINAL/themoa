@@ -25,6 +25,17 @@ export const rejectMerchantAliasProposal = (aliasId, aliasText) =>
     aliasText,
   });
 
+export const promoteMerchantAliasTermAsNewService = (
+  aliasText,
+  canonicalServiceName,
+  categoryId,
+) =>
+  axiosInstance.post("/api/admin/merchants/promotion-candidates/promote-new", {
+    aliasText,
+    canonicalServiceName,
+    categoryId,
+  });
+
 export const getUnclassifiedMerchants = () =>
   axiosInstance.get("/api/admin/merchants/unclassified").then(responseData);
 
@@ -36,13 +47,4 @@ export const registerQuickMerchantAlias = (
   axiosInstance.post(`/api/admin/merchants/${merchantId}/quick-alias`, {
     canonicalServiceName,
     categoryId,
-  });
-
-export const getAllMerchantAliases = () =>
-  axiosInstance.get("/api/admin/merchants/aliases").then(responseData);
-
-export const mergeMerchantAliases = (targetAliasId, sourceAliasIds) =>
-  axiosInstance.post("/api/admin/merchants/aliases/merge", {
-    targetAliasId,
-    sourceAliasIds,
   });

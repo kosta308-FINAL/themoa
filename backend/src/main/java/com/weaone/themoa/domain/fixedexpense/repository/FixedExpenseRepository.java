@@ -39,7 +39,4 @@ public interface FixedExpenseRepository extends JpaRepository<FixedExpense, Long
 
     /** 새벽 배치(미납·예정일 알림) 전체 스캔용. */
     List<FixedExpense> findByStatus(FixedExpenseStatus status);
-
-    /** 관리자 서비스 병합 대상 조회. */
-    List<FixedExpense> findByMerchantAlias_Id(Long merchantAliasId);
 }

@@ -175,9 +175,4 @@ public class FixedExpense {
     public boolean isActive() {
         return status == FixedExpenseStatus.ACTIVE;
     }
-
-    /** 관리자가 중복 생성된 서비스를 병합할 때만 쓴다(merchant.md 서비스 병합) — 평소엔 등록 시점에 고정된다. */
-    public void reassignMerchantAlias(MerchantAlias merchantAlias) {
-        this.merchantAlias = merchantAlias;
-    }
 }

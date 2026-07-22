@@ -58,9 +58,4 @@ public class MerchantAliasTerms {
     public static MerchantAliasTerms learn(MerchantAlias merchantAlias, Member member, String aliasText) {
         return new MerchantAliasTerms(merchantAlias, member, aliasText);
     }
-
-    /** 관리자가 중복 생성된 서비스를 병합할 때만 쓴다 — 표기 자체는 그대로 두고 가리키는 서비스만 바꾼다. */
-    public void reassignAlias(MerchantAlias merchantAlias) {
-        this.merchantAlias = merchantAlias;
-    }
 }

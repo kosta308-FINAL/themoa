@@ -2,9 +2,8 @@ package com.weaone.themoa.domain.merchant.controller;
 
 import com.weaone.themoa.common.response.ApiResponse;
 import com.weaone.themoa.domain.merchant.dto.request.AdminMerchantQuickAliasRequest;
-import com.weaone.themoa.domain.merchant.dto.request.MerchantAliasMergeRequest;
+import com.weaone.themoa.domain.merchant.dto.request.MerchantAliasPromoteAsNewServiceRequest;
 import com.weaone.themoa.domain.merchant.dto.request.MerchantAliasPromoteRequest;
-import com.weaone.themoa.domain.merchant.dto.response.AdminMerchantAliasSummaryResponse;
 import com.weaone.themoa.domain.merchant.dto.response.AdminMerchantPromotionCandidateResponse;
 import com.weaone.themoa.domain.merchant.dto.response.AdminUnclassifiedMerchantResponse;
 import com.weaone.themoa.domain.merchant.service.AdminMerchantService;
@@ -45,6 +44,17 @@ public class AdminMerchantController {
         return ResponseEntity.ok(ApiResponse.success());
     }
 
+    @Operation(summary = "새 서비스명으로 승격",
+            description = "제안된 이름이 다 마땅치 않을 때, 관리자가 직접 지은 새 서비스명으로 이 표기를 전역 승격합니다. "
+                    + "같은 이름의 서비스가 이미 있으면 재사용합니다.")
+    @PostMapping("/promotion-candidates/promote-new")
+    public ResponseEntity<ApiResponse<Void>> promoteAsNewService(
+            @Valid @RequestBody MerchantAliasPromoteAsNewServiceRequest request) {
+        adminMerchantService.promoteAsNewService(
+                request.aliasText(), request.canonicalServiceName(), request.categoryId());
+        return ResponseEntity.ok(ApiResponse.success());
+    }
+
     @Operation(summary = "표기 반려",
             description = "이 (표기, 제안 서비스명) 조합이 틀렸다고 판단해 승격 대기목록에서 다시 안 뜨게 합니다. "
                     + "학습한 회원의 개인 표기는 그대로 두므로 그 회원 본인 화면에는 영향이 없습니다.")
@@ -66,23 +76,6 @@ public class AdminMerchantController {
     public ResponseEntity<ApiResponse<Void>> quickAlias(@PathVariable Long merchantId,
                                                           @Valid @RequestBody AdminMerchantQuickAliasRequest request) {
         adminMerchantService.quickRegisterGlobalAlias(merchantId, request.canonicalServiceName(), request.categoryId());
-        return ResponseEntity.ok(ApiResponse.success());
-    }
-
-    @Operation(summary = "서비스(MerchantAlias) 전체 목록",
-            description = "등록 경로가 여러 곳(검색 선택/직접 입력)이라 같은 실서비스가 이름만 다르게 중복 생성될 수 있어, "
-                    + "이름순 전체 목록과 사용 건수를 함께 반환합니다. 중복 발견 시 병합 API로 정리합니다.")
-    @GetMapping("/aliases")
-    public ResponseEntity<ApiResponse<List<AdminMerchantAliasSummaryResponse>>> allAliases() {
-        return ResponseEntity.ok(ApiResponse.success(adminMerchantService.listAllAliases()));
-    }
-
-    @Operation(summary = "서비스 병합",
-            description = "중복 생성된 서비스(sourceAliasIds)를 targetAliasId 하나로 합칩니다. "
-                    + "원본 가맹점·고정지출·회원 학습 표기·카드거래는 옮겨지고, source 서비스는 삭제됩니다.")
-    @PostMapping("/aliases/merge")
-    public ResponseEntity<ApiResponse<Void>> mergeAliases(@Valid @RequestBody MerchantAliasMergeRequest request) {
-        adminMerchantService.mergeAliases(request.targetAliasId(), request.sourceAliasIds());
         return ResponseEntity.ok(ApiResponse.success());
     }
 }

@@ -4,11 +4,10 @@ import DashboardIcon from "../../components/common/DashboardIcon";
 import {
   getPromotionCandidates,
   promoteMerchantAliasTerm,
+  promoteMerchantAliasTermAsNewService,
   rejectMerchantAliasProposal,
   getUnclassifiedMerchants,
   registerQuickMerchantAlias,
-  getAllMerchantAliases,
-  mergeMerchantAliases,
 } from "../../api/merchantAliasApi";
 import { getCategories } from "../../api/spendingGuideApi";
 import { getApiErrorMessage } from "../../utils/apiError";
@@ -59,31 +58,12 @@ function MerchantMasterAdminPage() {
   const [promotingKey, setPromotingKey] = useState(null);
   const [quickForm, setQuickForm] = useState({});
   const [registeringId, setRegisteringId] = useState(null);
-
-  const [allAliases, setAllAliases] = useState([]);
-  const [isLoadingAliases, setIsLoadingAliases] = useState(true);
-  const [selectedAliasIds, setSelectedAliasIds] = useState([]);
-  const [targetAliasId, setTargetAliasId] = useState(null);
-  const [isMerging, setIsMerging] = useState(false);
+  const [newServiceForm, setNewServiceForm] = useState({});
 
   const candidateGroups = useMemo(
     () => groupCandidatesByRawText(candidates),
     [candidates],
   );
-
-  const loadAliases = async () => {
-    setIsLoadingAliases(true);
-    try {
-      const data = await getAllMerchantAliases();
-      setAllAliases(data || []);
-    } catch (requestError) {
-      setError(
-        getApiErrorMessage(requestError, "서비스 목록을 불러오지 못했어요."),
-      );
-    } finally {
-      setIsLoadingAliases(false);
-    }
-  };
 
   const load = async () => {
     setIsLoading(true);
@@ -113,11 +93,6 @@ function MerchantMasterAdminPage() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(loadAliases, 0);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
     getCategories()
       .then((data) => setCategories(data || []))
       .catch(() => {});
@@ -126,9 +101,7 @@ function MerchantMasterAdminPage() {
   /** 원본 표기 하나를, 그 표기에 제안된 서비스명 하나로 전역 기본값으로 승격한다. 같은 표기에 제안이
    * 여러 개(중복 alias)여도 다른 제안·다른 학습자는 절대 건드리지 않는다 — resolve()가 "내 학습 →
    * 전역" 순으로 찾기 때문에, 이미 자기 이름으로 학습해 둔 사람은 승격 이후에도 계속 자기 것을 본다.
-   * 전역 승격은 그 표기를 한 번도 학습한 적 없는 새 회원을 위한 기본값일 뿐이다. 같은 실제 서비스를
-   * 아예 하나로 합치고 싶다면(다른 학습자의 화면까지 바꾸고 싶다면) "서비스 중복 탐지 & 병합"에서
-   * 관리자가 그걸 의도했다는 걸 분명히 하고 따로 진행해야 한다. */
+   * 전역 승격은 그 표기를 한 번도 학습한 적 없는 새 회원을 위한 기본값일 뿐이다. */
   const handlePromoteProposal = async (group, proposal) => {
     const key = `${group.aliasText}:${proposal.aliasId}`;
     setPromotingKey(key);
@@ -159,36 +132,37 @@ function MerchantMasterAdminPage() {
     }
   };
 
-  const toggleAliasSelection = (aliasId) => {
-    setSelectedAliasIds((prev) =>
-      prev.includes(aliasId)
-        ? prev.filter((id) => id !== aliasId)
-        : [...prev, aliasId],
-    );
-    setTargetAliasId((prev) => (prev === aliasId ? null : prev));
+  const updateNewServiceForm = (aliasText, patch) => {
+    setNewServiceForm((prev) => ({
+      ...prev,
+      [aliasText]: { ...prev[aliasText], ...patch },
+    }));
   };
 
-  const handleMergeAliases = async () => {
-    const sourceAliasIds = selectedAliasIds.filter(
-      (id) => id !== targetAliasId,
-    );
-    if (!targetAliasId || sourceAliasIds.length === 0) {
-      setError(
-        "병합 대상 서비스 1개와, 그 안에 합칠 서비스를 1개 이상 골라주세요.",
-      );
+  /** 제안된 이름이 다 마땅치 않을 때, 관리자가 새 서비스명을 직접 지어서 이 표기를 그걸로 승격한다.
+   * 기존 제안 중 하나를 고르는 것과 마찬가지로 다른 학습자의 개인 표기는 건드리지 않는다. */
+  const handlePromoteAsNewService = async (group) => {
+    const form = newServiceForm[group.aliasText] || {};
+    const name = (form.name || "").trim();
+    if (!name) {
+      setError("새 서비스명을 입력해 주세요.");
       return;
     }
-    setIsMerging(true);
+    const key = `${group.aliasText}:new`;
+    setPromotingKey(key);
     setError("");
     try {
-      await mergeMerchantAliases(targetAliasId, sourceAliasIds);
-      setSelectedAliasIds([]);
-      setTargetAliasId(null);
-      await loadAliases();
+      await promoteMerchantAliasTermAsNewService(
+        group.aliasText,
+        name,
+        form.categoryId || undefined,
+      );
+      setNewServiceForm((prev) => ({ ...prev, [group.aliasText]: undefined }));
+      await load();
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError, "병합에 실패했어요."));
+      setError(getApiErrorMessage(requestError, "승격에 실패했어요."));
     } finally {
-      setIsMerging(false);
+      setPromotingKey(null);
     }
   };
 
@@ -252,18 +226,6 @@ function MerchantMasterAdminPage() {
               </span>
             </div>
           </div>
-          <div className="mma-kpi-card">
-            <span className="mma-kpi-icon red">
-              <DashboardIcon name="building" size={18} />
-            </span>
-            <div className="mma-kpi-body">
-              <span className="mma-kpi-title">등록된 전체 서비스</span>
-              <span className="mma-kpi-value">{allAliases.length} 개</span>
-              <span className="mma-kpi-hint">
-                아래 목록에서 직접 확인하세요
-              </span>
-            </div>
-          </div>
         </section>
 
         {error && <div className="mma-alert">{error}</div>}
@@ -284,9 +246,9 @@ function MerchantMasterAdminPage() {
                   (개인 학습이 항상 전역보다 우선). 제안이 여러 개라고 해서 누가
                   틀린 건 아니고 — &quot;tving구독&quot;/&quot;티빙
                   구독&quot;처럼 여럿 다 맞는 이름일 수 있습니다. 이름이 진짜로
-                  틀렸다고 판단되면(오타 등) &quot;반려&quot;로 그 제안만
-                  대기목록에서 뺄 수 있고, 서비스 자체를 하나로 합치고 싶다면
-                  &quot;서비스 중복 탐지 &amp; 병합&quot;에서 따로 진행하세요.
+                  틀렸다고 판단되면(오타 등) &quot;반려&quot;로 그 제안만 빼고,
+                  제안된 이름이 다 마땅치 않으면 새 이름을 직접 입력해서 승격할
+                  수 있습니다.
                 </div>
               </div>
             </div>
@@ -353,6 +315,45 @@ function MerchantMasterAdminPage() {
                       );
                     })}
                   </ul>
+                  <div className="mma-quick-form">
+                    <input
+                      type="text"
+                      className="mma-input"
+                      placeholder="제안된 이름이 마땅치 않다면 새 서비스명을 입력하세요"
+                      value={newServiceForm[group.aliasText]?.name || ""}
+                      onChange={(e) =>
+                        updateNewServiceForm(group.aliasText, {
+                          name: e.target.value,
+                        })
+                      }
+                    />
+                    <select
+                      className="mma-select"
+                      value={newServiceForm[group.aliasText]?.categoryId || ""}
+                      onChange={(e) =>
+                        updateNewServiceForm(group.aliasText, {
+                          categoryId: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">카테고리</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="mma-btn mma-btn-primary mma-btn-sm"
+                      disabled={promotingKey === `${group.aliasText}:new`}
+                      onClick={() => handlePromoteAsNewService(group)}
+                    >
+                      {promotingKey === `${group.aliasText}:new`
+                        ? "승격 중..."
+                        : "새 이름으로 승격"}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -449,100 +450,6 @@ function MerchantMasterAdminPage() {
                 })}
               </tbody>
             </table>
-          )}
-        </section>
-
-        <section className="mma-panel">
-          <div className="mma-panel-header">
-            <div className="mma-panel-heading">
-              <span className="mma-panel-icon red">
-                <DashboardIcon name="building" size={18} />
-              </span>
-              <div>
-                <div className="mma-panel-title">
-                  서비스 중복 탐지 &amp; 병합
-                </div>
-                <div className="mma-panel-sub">
-                  가맹점 검색으로 고르지 않고 고정지출 등록 시 이름을 직접
-                  입력하면, 같은 실제 서비스라도 이름이 다르면 별개 서비스로
-                  새로 생성됩니다. 아래 목록을 직접 훑어 같은 서비스를 찾고,
-                  합칠 서비스들을 체크한 뒤 그중 남길 서비스를 &quot;병합
-                  대상&quot;으로 지정해서 병합하세요.
-                </div>
-              </div>
-            </div>
-          </div>
-          {isLoadingAliases ? (
-            <div className="mma-empty">불러오는 중...</div>
-          ) : allAliases.length === 0 ? (
-            <div className="mma-empty">등록된 서비스가 없습니다.</div>
-          ) : (
-            <>
-              <table className="mma-table">
-                <thead>
-                  <tr>
-                    <th>합치기</th>
-                    <th>서비스명</th>
-                    <th>카테고리</th>
-                    <th>사용 현황</th>
-                    <th>병합 대상</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allAliases.map((alias) => {
-                    const isSelected = selectedAliasIds.includes(alias.aliasId);
-                    return (
-                      <tr key={alias.aliasId}>
-                        <td>
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleAliasSelection(alias.aliasId)}
-                          />
-                        </td>
-                        <td>
-                          <code>{alias.canonicalServiceName}</code>
-                        </td>
-                        <td>{alias.categoryName || "미지정"}</td>
-                        <td>
-                          고정지출 {alias.fixedExpenseCount}건 · 가맹점{" "}
-                          {alias.merchantCount}건
-                        </td>
-                        <td>
-                          <input
-                            type="radio"
-                            name="merge-target"
-                            disabled={!isSelected}
-                            checked={targetAliasId === alias.aliasId}
-                            onChange={() => setTargetAliasId(alias.aliasId)}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              <div className="mma-merge-actionbar">
-                <span className="mma-merge-summary">
-                  선택 {selectedAliasIds.length}개
-                  {targetAliasId &&
-                    ` · 병합 대상: ${
-                      allAliases.find((a) => a.aliasId === targetAliasId)
-                        ?.canonicalServiceName
-                    }`}
-                </span>
-                <button
-                  type="button"
-                  className="mma-btn mma-btn-primary mma-btn-sm"
-                  disabled={
-                    isMerging || !targetAliasId || selectedAliasIds.length < 2
-                  }
-                  onClick={handleMergeAliases}
-                >
-                  {isMerging ? "병합 중..." : "선택한 서비스 병합"}
-                </button>
-              </div>
-            </>
           )}
         </section>
       </div>

@@ -36,24 +36,4 @@ public interface MerchantAliasRepository extends JpaRepository<MerchantAlias, Lo
             """)
     List<MerchantAlias> findByCanonicalServiceNameContainingIgnoreCaseOrderByCanonicalServiceNameAsc(
             @Param("query") String query, Pageable pageable);
-
-    /**
-     * 관리자 "서비스 전체 목록 & 병합" 화면(merchant.md 확장). 등록 경로가 여러 곳(F-03 검색, 직접 등록 시
-     * 자유 입력)이라 같은 실서비스가 이름만 다르게 여러 행으로 쌓일 수 있어, 관리자가 눈으로 훑어 중복을
-     * 찾을 수 있도록 이름순 전체 목록 + 사용 건수를 함께 준다.
-     */
-    @Query("select a.id as aliasId, a.canonicalServiceName as canonicalServiceName, c.name as categoryName, "
-            + "(select count(fe) from FixedExpense fe where fe.merchantAlias = a) as fixedExpenseCount, "
-            + "(select count(m) from Merchant m where m.merchantAlias = a) as merchantCount "
-            + "from MerchantAlias a left join a.defaultCategory c "
-            + "order by a.canonicalServiceName asc")
-    List<AliasUsageSummary> findAllWithUsage();
-
-    interface AliasUsageSummary {
-        Long getAliasId();
-        String getCanonicalServiceName();
-        String getCategoryName();
-        long getFixedExpenseCount();
-        long getMerchantCount();
-    }
 }
