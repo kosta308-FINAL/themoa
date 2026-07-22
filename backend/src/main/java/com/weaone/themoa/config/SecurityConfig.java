@@ -43,6 +43,10 @@ public class SecurityConfig {
             "/swagger-ui.html"
     };
 
+    private static final String[] HEALTH_ENDPOINTS = {
+            "/api/health"
+    };
+
     private static final RegexRequestMatcher POLICY_DETAIL_ENDPOINT =
             new RegexRequestMatcher("^/api/policies/[0-9]+$", HttpMethod.GET.name());
     private static final RegexRequestMatcher POLICY_ADMIN_ENDPOINT =
@@ -69,6 +73,7 @@ public class SecurityConfig {
                 }))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(HttpMethod.GET, HEALTH_ENDPOINTS).permitAll();
                     auth.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll();
                     auth.requestMatchers(DOCS_ENDPOINTS).permitAll();
                     auth.requestMatchers(POLICY_ADMIN_ENDPOINT).hasRole("ADMIN");
