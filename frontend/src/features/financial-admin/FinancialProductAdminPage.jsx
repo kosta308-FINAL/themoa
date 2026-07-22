@@ -2,6 +2,7 @@ import AdminLayout from "../../components/layout/AdminLayout";
 import BankLinkManager from "./components/BankLinkManager";
 import CollectResultTable from "./components/CollectResultTable";
 import FinancialStatusDashboard from "./components/FinancialStatusDashboard";
+import SearchQualityInspector from "./components/SearchQualityInspector";
 import { useFinancialProductAdmin } from "./hooks/useFinancialProductAdmin";
 import { useFinancialProductStatus } from "./hooks/useFinancialProductStatus";
 import "./FinancialProductAdminPage.css";
@@ -145,6 +146,8 @@ function FinancialProductAdminPage() {
         </section>
 
         <BankLinkManager />
+
+        <SearchQualityInspector />
       </div>
     </AdminLayout>
   );
