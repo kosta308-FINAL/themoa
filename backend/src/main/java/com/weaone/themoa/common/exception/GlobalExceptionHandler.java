@@ -12,6 +12,7 @@ import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -59,6 +60,13 @@ public class GlobalExceptionHandler {
                 .orElse(ErrorCode.INVALID_INPUT.getMessage());
         return ResponseEntity.status(ErrorCode.INVALID_INPUT.getStatus())
                 .body(ApiResponse.error(ErrorCode.INVALID_INPUT.name(), message));
+    }
+
+    /** 요청 바디 JSON 파싱 실패. 사용자 입력 오류라 400으로 응답하고 DB 에러 이벤트를 발행하지 않는다. */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMessageNotReadable(HttpMessageNotReadableException e) {
+        return ResponseEntity.status(ErrorCode.INVALID_INPUT.getStatus())
+                .body(ApiResponse.error(ErrorCode.INVALID_INPUT.name(), ErrorCode.INVALID_INPUT.getMessage()));
     }
 
     /** 파일당 10MB·요청당 30MB(customerservice.md §5)를 넘는 multipart 요청. */
