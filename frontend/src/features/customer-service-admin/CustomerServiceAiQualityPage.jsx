@@ -69,6 +69,7 @@ function CustomerServiceAiQualityPage() {
   const [uploadFile, setUploadFile] = useState(null);
   const [knowledgeText, setKnowledgeText] = useState("");
   const [chunkMaxLength, setChunkMaxLength] = useState(1200);
+  const [chunkMinLength, setChunkMinLength] = useState(200);
   const [chunkOverlapLength, setChunkOverlapLength] = useState(150);
   const [splitByMarkdownHeading, setSplitByMarkdownHeading] = useState(true);
   const [splitByParagraph, setSplitByParagraph] = useState(false);
@@ -144,13 +145,13 @@ function CustomerServiceAiQualityPage() {
     setChunkPreviewError("");
     const options = {
       chunkMaxLength: Number(optionOverrides.chunkMaxLength ?? chunkMaxLength),
+      chunkMinLength: Number(optionOverrides.chunkMinLength ?? chunkMinLength),
       chunkOverlapLength: Number(
         optionOverrides.chunkOverlapLength ?? chunkOverlapLength,
       ),
       splitByMarkdownHeading:
         optionOverrides.splitByMarkdownHeading ?? splitByMarkdownHeading,
-      splitByParagraph:
-        optionOverrides.splitByParagraph ?? splitByParagraph,
+      splitByParagraph: optionOverrides.splitByParagraph ?? splitByParagraph,
     };
     chunkPreviewTimerRef.current = setTimeout(async () => {
       try {
@@ -215,6 +216,11 @@ function CustomerServiceAiQualityPage() {
   const handleChunkMaxLengthChange = (value) => {
     setChunkMaxLength(value);
     scheduleChunkPreview(currentKnowledgeContent(), { chunkMaxLength: value });
+  };
+
+  const handleChunkMinLengthChange = (value) => {
+    setChunkMinLength(value);
+    scheduleChunkPreview(currentKnowledgeContent(), { chunkMinLength: value });
   };
 
   const handleChunkOverlapLengthChange = (value) => {
@@ -327,6 +333,7 @@ function CustomerServiceAiQualityPage() {
         category: uploadCategory,
         file: uploadFile,
         chunkMaxLength: Number(chunkMaxLength),
+        chunkMinLength: Number(chunkMinLength),
         chunkOverlapLength: Number(chunkOverlapLength),
         splitByMarkdownHeading,
         splitByParagraph,
@@ -361,6 +368,7 @@ function CustomerServiceAiQualityPage() {
         category: uploadCategory,
         content: knowledgeText,
         chunkMaxLength: Number(chunkMaxLength),
+        chunkMinLength: Number(chunkMinLength),
         chunkOverlapLength: Number(chunkOverlapLength),
         splitByMarkdownHeading,
         splitByParagraph,
@@ -695,6 +703,24 @@ function CustomerServiceAiQualityPage() {
                 </small>
               </label>
               <label className="aiq-field">
+                <span>청크 최소 길이</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="1000"
+                  step="50"
+                  value={chunkMinLength}
+                  onChange={(event) =>
+                    handleChunkMinLengthChange(event.target.value)
+                  }
+                />
+                <small>
+                  이보다 짧은 청크는 앞뒤 청크와 자동으로 합쳐집니다. 특히 문단
+                  분리를 켰을 때 문맥 없는 한 줄짜리 청크가 생기는 걸
+                  막아줍니다.
+                </small>
+              </label>
+              <label className="aiq-field">
                 <span>청크 겹침 길이</span>
                 <input
                   type="number"
@@ -724,9 +750,8 @@ function CustomerServiceAiQualityPage() {
                   <strong>제목(#) 먼저 나누기</strong>
                 </span>
                 <small>
-                  문서에 `#`로 시작하는 마크다운 제목 줄이 있을 때만
-                  효과가 있습니다. 제목 줄이 없으면 켜고 꺼도 결과가
-                  같습니다.
+                  문서에 `#`로 시작하는 마크다운 제목 줄이 있을 때만 효과가
+                  있습니다. 제목 줄이 없으면 켜고 꺼도 결과가 같습니다.
                 </small>
               </label>
               <label className="aiq-field aiq-toggle-field">
@@ -742,8 +767,8 @@ function CustomerServiceAiQualityPage() {
                   <strong>문단(빈 줄)마다 청크 나누기</strong>
                 </span>
                 <small>
-                  켜면 빈 줄로 구분된 문단을 서로 합치지 않고 문단 하나당
-                  청크 하나로 만듭니다. 끄면 청크 최대 길이까지 여러 문단을
+                  켜면 빈 줄로 구분된 문단을 서로 합치지 않고 문단 하나당 청크
+                  하나로 만듭니다. 끄면 청크 최대 길이까지 여러 문단을
                   이어붙입니다.
                 </small>
               </label>
@@ -815,6 +840,7 @@ function CustomerServiceAiQualityPage() {
                       </span>
                       <span>{document.chunkCount} chunks</span>
                       <span>최대 {document.chunkMaxLength || 1200}자</span>
+                      <span>최소 {document.chunkMinLength ?? 200}자</span>
                       <span>겹침 {document.chunkOverlapLength || 150}자</span>
                       <span>
                         {formatSplitMode(

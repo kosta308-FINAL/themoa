@@ -66,7 +66,7 @@ class AuthControllerTest {
         );
         AuthController controller = new AuthController(
                 authService, authTokenService, emailVerificationService,
-                new RefreshTokenCookieFactory(properties));
+                new RefreshTokenCookieFactory());
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();

@@ -101,6 +101,7 @@ export const uploadAdminCustomerKnowledgeDocument = ({
   category,
   file,
   chunkMaxLength,
+  chunkMinLength,
   chunkOverlapLength,
   splitByMarkdownHeading,
   splitByParagraph,
@@ -109,6 +110,7 @@ export const uploadAdminCustomerKnowledgeDocument = ({
   formData.append("title", title);
   formData.append("category", category);
   formData.append("chunkMaxLength", chunkMaxLength);
+  formData.append("chunkMinLength", chunkMinLength);
   formData.append("chunkOverlapLength", chunkOverlapLength);
   formData.append("splitByMarkdownHeading", splitByMarkdownHeading);
   formData.append("splitByParagraph", splitByParagraph);

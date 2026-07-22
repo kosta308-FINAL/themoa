@@ -47,6 +47,9 @@ public class CustomerKnowledgeFile {
     @Column(name = "chunk_max_length")
     private Integer chunkMaxLength;
 
+    @Column(name = "chunk_min_length")
+    private Integer chunkMinLength;
+
     @Column(name = "chunk_overlap_length")
     private Integer chunkOverlapLength;
 
@@ -78,14 +81,15 @@ public class CustomerKnowledgeFile {
     private LocalDateTime embeddedAt;
 
     private CustomerKnowledgeFile(String title, String category, String originalFilename, long fileSize,
-                                  String originalContent, int chunkMaxLength, int chunkOverlapLength,
-                                  boolean splitByMarkdownHeading, boolean splitByParagraph, Member createdBy,
-                                  LocalDateTime now) {
+                                  String originalContent, int chunkMaxLength, int chunkMinLength,
+                                  int chunkOverlapLength, boolean splitByMarkdownHeading, boolean splitByParagraph,
+                                  Member createdBy, LocalDateTime now) {
         this.title = title;
         this.category = category;
         this.originalFilename = originalFilename;
         this.fileSize = fileSize;
         this.chunkMaxLength = chunkMaxLength;
+        this.chunkMinLength = chunkMinLength;
         this.chunkOverlapLength = chunkOverlapLength;
         this.splitByMarkdownHeading = splitByMarkdownHeading;
         this.splitByParagraph = splitByParagraph;
@@ -97,9 +101,9 @@ public class CustomerKnowledgeFile {
     }
 
     public static CustomerKnowledgeFile create(String title, String category, String originalFilename, long fileSize,
-                                               String originalContent, int chunkMaxLength, int chunkOverlapLength,
-                                               boolean splitByMarkdownHeading, boolean splitByParagraph,
-                                               Member createdBy, LocalDateTime now) {
+                                               String originalContent, int chunkMaxLength, int chunkMinLength,
+                                               int chunkOverlapLength, boolean splitByMarkdownHeading,
+                                               boolean splitByParagraph, Member createdBy, LocalDateTime now) {
         return new CustomerKnowledgeFile(
                 title,
                 category,
@@ -107,6 +111,7 @@ public class CustomerKnowledgeFile {
                 fileSize,
                 originalContent,
                 chunkMaxLength,
+                chunkMinLength,
                 chunkOverlapLength,
                 splitByMarkdownHeading,
                 splitByParagraph,
@@ -116,6 +121,10 @@ public class CustomerKnowledgeFile {
 
     public int getChunkMaxLength() {
         return chunkMaxLength == null ? 1_200 : chunkMaxLength;
+    }
+
+    public int getChunkMinLength() {
+        return chunkMinLength == null ? 200 : chunkMinLength;
     }
 
     public int getChunkOverlapLength() {

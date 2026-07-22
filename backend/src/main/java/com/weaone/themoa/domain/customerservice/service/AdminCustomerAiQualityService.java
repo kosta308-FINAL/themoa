@@ -141,7 +141,8 @@ public class AdminCustomerAiQualityService {
 
     @Transactional
     public AdminCustomerKnowledgeFileResponse upload(Long adminId, String title, String category,
-                                                     Integer chunkMaxLength, Integer chunkOverlapLength,
+                                                     Integer chunkMaxLength, Integer chunkMinLength,
+                                                     Integer chunkOverlapLength,
                                                      Boolean splitByMarkdownHeading, Boolean splitByParagraph,
                                                      MultipartFile file) {
         validateFile(file);
@@ -149,7 +150,7 @@ public class AdminCustomerAiQualityService {
         String normalizedCategory = requireText(category, 1, CATEGORY_MAX_LENGTH);
         String content = readText(file);
         CustomerKnowledgeChunkingOptions options = CustomerKnowledgeChunkingOptions.normalize(
-                chunkMaxLength, chunkOverlapLength, splitByMarkdownHeading, splitByParagraph);
+                chunkMaxLength, chunkMinLength, chunkOverlapLength, splitByMarkdownHeading, splitByParagraph);
         return createKnowledgeDocument(
                 adminId,
                 normalizedTitle,
@@ -167,6 +168,7 @@ public class AdminCustomerAiQualityService {
         String content = requireText(request == null ? null : request.content(), 1, 500_000);
         CustomerKnowledgeChunkingOptions options = CustomerKnowledgeChunkingOptions.normalize(
                 request == null ? null : request.chunkMaxLength(),
+                request == null ? null : request.chunkMinLength(),
                 request == null ? null : request.chunkOverlapLength(),
                 request == null ? null : request.splitByMarkdownHeading(),
                 request == null ? null : request.splitByParagraph());
@@ -184,6 +186,7 @@ public class AdminCustomerAiQualityService {
         String content = requireText(request == null ? null : request.content(), 1, 500_000);
         CustomerKnowledgeChunkingOptions options = CustomerKnowledgeChunkingOptions.normalize(
                 request == null ? null : request.chunkMaxLength(),
+                request == null ? null : request.chunkMinLength(),
                 request == null ? null : request.chunkOverlapLength(),
                 request == null ? null : request.splitByMarkdownHeading(),
                 request == null ? null : request.splitByParagraph());
@@ -213,6 +216,7 @@ public class AdminCustomerAiQualityService {
                 fileSize,
                 content,
                 options.maxChunkLength(),
+                options.minChunkLength(),
                 options.overlapLength(),
                 options.splitByMarkdownHeading(),
                 options.splitByParagraph(),

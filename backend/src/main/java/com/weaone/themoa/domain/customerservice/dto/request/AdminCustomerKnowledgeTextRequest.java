@@ -5,6 +5,7 @@ public record AdminCustomerKnowledgeTextRequest(
         String category,
         String content,
         Integer chunkMaxLength,
+        Integer chunkMinLength,
         Integer chunkOverlapLength,
         Boolean splitByMarkdownHeading,
         Boolean splitByParagraph
