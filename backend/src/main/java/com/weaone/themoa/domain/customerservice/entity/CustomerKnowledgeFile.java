@@ -53,6 +53,9 @@ public class CustomerKnowledgeFile {
     @Column(name = "split_by_markdown_heading")
     private Boolean splitByMarkdownHeading;
 
+    @Column(name = "split_by_paragraph")
+    private Boolean splitByParagraph;
+
     @Lob
     @Column(name = "original_content", nullable = false, columnDefinition = "LONGTEXT")
     private String originalContent;
@@ -76,7 +79,8 @@ public class CustomerKnowledgeFile {
 
     private CustomerKnowledgeFile(String title, String category, String originalFilename, long fileSize,
                                   String originalContent, int chunkMaxLength, int chunkOverlapLength,
-                                  boolean splitByMarkdownHeading, Member createdBy, LocalDateTime now) {
+                                  boolean splitByMarkdownHeading, boolean splitByParagraph, Member createdBy,
+                                  LocalDateTime now) {
         this.title = title;
         this.category = category;
         this.originalFilename = originalFilename;
@@ -84,6 +88,7 @@ public class CustomerKnowledgeFile {
         this.chunkMaxLength = chunkMaxLength;
         this.chunkOverlapLength = chunkOverlapLength;
         this.splitByMarkdownHeading = splitByMarkdownHeading;
+        this.splitByParagraph = splitByParagraph;
         this.originalContent = originalContent;
         this.status = CustomerKnowledgeFileStatus.FAILED;
         this.active = true;
@@ -93,7 +98,8 @@ public class CustomerKnowledgeFile {
 
     public static CustomerKnowledgeFile create(String title, String category, String originalFilename, long fileSize,
                                                String originalContent, int chunkMaxLength, int chunkOverlapLength,
-                                               boolean splitByMarkdownHeading, Member createdBy, LocalDateTime now) {
+                                               boolean splitByMarkdownHeading, boolean splitByParagraph,
+                                               Member createdBy, LocalDateTime now) {
         return new CustomerKnowledgeFile(
                 title,
                 category,
@@ -103,6 +109,7 @@ public class CustomerKnowledgeFile {
                 chunkMaxLength,
                 chunkOverlapLength,
                 splitByMarkdownHeading,
+                splitByParagraph,
                 createdBy,
                 now);
     }
@@ -117,6 +124,10 @@ public class CustomerKnowledgeFile {
 
     public boolean isSplitByMarkdownHeading() {
         return splitByMarkdownHeading == null || splitByMarkdownHeading;
+    }
+
+    public boolean isSplitByParagraph() {
+        return splitByParagraph != null && splitByParagraph;
     }
 
     public void updateChunkCount(int chunkCount) {

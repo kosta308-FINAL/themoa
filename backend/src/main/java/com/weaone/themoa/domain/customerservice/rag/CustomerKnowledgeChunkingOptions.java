@@ -3,12 +3,14 @@ package com.weaone.themoa.domain.customerservice.rag;
 public record CustomerKnowledgeChunkingOptions(
         int maxChunkLength,
         int overlapLength,
-        boolean splitByMarkdownHeading
+        boolean splitByMarkdownHeading,
+        boolean splitByParagraph
 ) {
 
     public static final int DEFAULT_MAX_CHUNK_LENGTH = 1_200;
     public static final int DEFAULT_OVERLAP_LENGTH = 150;
     public static final boolean DEFAULT_SPLIT_BY_MARKDOWN_HEADING = true;
+    public static final boolean DEFAULT_SPLIT_BY_PARAGRAPH = false;
 
     private static final int MIN_CHUNK_LENGTH = 300;
     private static final int MAX_CHUNK_LENGTH = 4_000;
@@ -19,11 +21,12 @@ public record CustomerKnowledgeChunkingOptions(
         return new CustomerKnowledgeChunkingOptions(
                 DEFAULT_MAX_CHUNK_LENGTH,
                 DEFAULT_OVERLAP_LENGTH,
-                DEFAULT_SPLIT_BY_MARKDOWN_HEADING);
+                DEFAULT_SPLIT_BY_MARKDOWN_HEADING,
+                DEFAULT_SPLIT_BY_PARAGRAPH);
     }
 
     public static CustomerKnowledgeChunkingOptions normalize(Integer maxChunkLength, Integer overlapLength,
-                                                             Boolean splitByMarkdownHeading) {
+                                                             Boolean splitByMarkdownHeading, Boolean splitByParagraph) {
         int normalizedMax = clamp(
                 maxChunkLength == null ? DEFAULT_MAX_CHUNK_LENGTH : maxChunkLength,
                 MIN_CHUNK_LENGTH,
@@ -35,7 +38,11 @@ public record CustomerKnowledgeChunkingOptions(
         boolean normalizedHeadingSplit = splitByMarkdownHeading == null
                 ? DEFAULT_SPLIT_BY_MARKDOWN_HEADING
                 : splitByMarkdownHeading;
-        return new CustomerKnowledgeChunkingOptions(normalizedMax, normalizedOverlap, normalizedHeadingSplit);
+        boolean normalizedParagraphSplit = splitByParagraph == null
+                ? DEFAULT_SPLIT_BY_PARAGRAPH
+                : splitByParagraph;
+        return new CustomerKnowledgeChunkingOptions(
+                normalizedMax, normalizedOverlap, normalizedHeadingSplit, normalizedParagraphSplit);
     }
 
     private static int clamp(int value, int min, int max) {

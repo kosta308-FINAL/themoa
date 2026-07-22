@@ -77,6 +77,7 @@ public class AdminCustomerAiQualityController {
             @RequestParam(value = "chunkMaxLength", required = false) Integer chunkMaxLength,
             @RequestParam(value = "chunkOverlapLength", required = false) Integer chunkOverlapLength,
             @RequestParam(value = "splitByMarkdownHeading", required = false) Boolean splitByMarkdownHeading,
+            @RequestParam(value = "splitByParagraph", required = false) Boolean splitByParagraph,
             @RequestPart("file") MultipartFile file) {
         return ApiResponse.success(aiQualityService.upload(
                 adminId,
@@ -85,6 +86,7 @@ public class AdminCustomerAiQualityController {
                 chunkMaxLength,
                 chunkOverlapLength,
                 splitByMarkdownHeading,
+                splitByParagraph,
                 file));
     }
 

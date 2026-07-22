@@ -4,6 +4,7 @@ public record AdminCustomerKnowledgeChunkPreviewRequest(
         String content,
         Integer chunkMaxLength,
         Integer chunkOverlapLength,
-        Boolean splitByMarkdownHeading
+        Boolean splitByMarkdownHeading,
+        Boolean splitByParagraph
 ) {
 }

@@ -58,7 +58,7 @@ public class CustomerKnowledgeDocumentChunker {
     }
 
     private void appendSection(List<String> chunks, String section, CustomerKnowledgeChunkingOptions options) {
-        if (section.length() <= options.maxChunkLength()) {
+        if (section.length() <= options.maxChunkLength() && !options.splitByParagraph()) {
             chunks.add(section);
             return;
         }
@@ -71,6 +71,11 @@ public class CustomerKnowledgeDocumentChunker {
             if (trimmed.length() > options.maxChunkLength()) {
                 flush(chunks, current);
                 splitLongParagraph(chunks, trimmed, options);
+                continue;
+            }
+            if (options.splitByParagraph()) {
+                flush(chunks, current);
+                chunks.add(trimmed);
                 continue;
             }
             if (current.length() + trimmed.length() + 2 > options.maxChunkLength()) {

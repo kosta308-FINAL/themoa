@@ -42,8 +42,11 @@ function formatKnowledgeSourceName(value) {
   return value === "direct-text.txt" ? "직접 입력" : value;
 }
 
-function formatHeadingSplit(value) {
-  return value ? "제목 기준 분리" : "문단 기준 분리";
+function formatSplitMode(splitByMarkdownHeading, splitByParagraph) {
+  const labels = [];
+  if (splitByMarkdownHeading) labels.push("제목(#) 우선 분리");
+  if (splitByParagraph) labels.push("문단 단위 분리");
+  return labels.length > 0 ? labels.join(" + ") : "구간 자동 병합";
 }
 
 function CustomerServiceAiQualityPage() {
@@ -68,6 +71,7 @@ function CustomerServiceAiQualityPage() {
   const [chunkMaxLength, setChunkMaxLength] = useState(1200);
   const [chunkOverlapLength, setChunkOverlapLength] = useState(150);
   const [splitByMarkdownHeading, setSplitByMarkdownHeading] = useState(true);
+  const [splitByParagraph, setSplitByParagraph] = useState(false);
   const [chunkPreview, setChunkPreview] = useState(null);
   const [chunkPreviewLoading, setChunkPreviewLoading] = useState(false);
   const [chunkPreviewError, setChunkPreviewError] = useState("");
@@ -145,6 +149,8 @@ function CustomerServiceAiQualityPage() {
       ),
       splitByMarkdownHeading:
         optionOverrides.splitByMarkdownHeading ?? splitByMarkdownHeading,
+      splitByParagraph:
+        optionOverrides.splitByParagraph ?? splitByParagraph,
     };
     chunkPreviewTimerRef.current = setTimeout(async () => {
       try {
@@ -222,6 +228,13 @@ function CustomerServiceAiQualityPage() {
     setSplitByMarkdownHeading(checked);
     scheduleChunkPreview(currentKnowledgeContent(), {
       splitByMarkdownHeading: checked,
+    });
+  };
+
+  const handleSplitByParagraphChange = (checked) => {
+    setSplitByParagraph(checked);
+    scheduleChunkPreview(currentKnowledgeContent(), {
+      splitByParagraph: checked,
     });
   };
 
@@ -316,6 +329,7 @@ function CustomerServiceAiQualityPage() {
         chunkMaxLength: Number(chunkMaxLength),
         chunkOverlapLength: Number(chunkOverlapLength),
         splitByMarkdownHeading,
+        splitByParagraph,
       });
       setUploadTitle("");
       setUploadFile(null);
@@ -349,6 +363,7 @@ function CustomerServiceAiQualityPage() {
         chunkMaxLength: Number(chunkMaxLength),
         chunkOverlapLength: Number(chunkOverlapLength),
         splitByMarkdownHeading,
+        splitByParagraph,
       });
       setUploadTitle("");
       setKnowledgeText("");
@@ -708,7 +723,29 @@ function CustomerServiceAiQualityPage() {
                   />
                   <strong>제목(#) 먼저 나누기</strong>
                 </span>
-                <small>해제하면 단락 기준으로만 나눕니다.</small>
+                <small>
+                  문서에 `#`로 시작하는 마크다운 제목 줄이 있을 때만
+                  효과가 있습니다. 제목 줄이 없으면 켜고 꺼도 결과가
+                  같습니다.
+                </small>
+              </label>
+              <label className="aiq-field aiq-toggle-field">
+                <span>문단 분리</span>
+                <span className="aiq-toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={splitByParagraph}
+                    onChange={(event) =>
+                      handleSplitByParagraphChange(event.target.checked)
+                    }
+                  />
+                  <strong>문단(빈 줄)마다 청크 나누기</strong>
+                </span>
+                <small>
+                  켜면 빈 줄로 구분된 문단을 서로 합치지 않고 문단 하나당
+                  청크 하나로 만듭니다. 끄면 청크 최대 길이까지 여러 문단을
+                  이어붙입니다.
+                </small>
               </label>
             </div>
           </div>
@@ -780,8 +817,9 @@ function CustomerServiceAiQualityPage() {
                       <span>최대 {document.chunkMaxLength || 1200}자</span>
                       <span>겹침 {document.chunkOverlapLength || 150}자</span>
                       <span>
-                        {formatHeadingSplit(
+                        {formatSplitMode(
                           document.splitByMarkdownHeading ?? true,
+                          document.splitByParagraph ?? false,
                         )}
                       </span>
                       <span>{formatDateTime(document.createdAt)}</span>

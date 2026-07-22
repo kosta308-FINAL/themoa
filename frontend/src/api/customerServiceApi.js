@@ -103,6 +103,7 @@ export const uploadAdminCustomerKnowledgeDocument = ({
   chunkMaxLength,
   chunkOverlapLength,
   splitByMarkdownHeading,
+  splitByParagraph,
 }) => {
   const formData = new FormData();
   formData.append("title", title);
@@ -110,6 +111,7 @@ export const uploadAdminCustomerKnowledgeDocument = ({
   formData.append("chunkMaxLength", chunkMaxLength);
   formData.append("chunkOverlapLength", chunkOverlapLength);
   formData.append("splitByMarkdownHeading", splitByMarkdownHeading);
+  formData.append("splitByParagraph", splitByParagraph);
   formData.append("file", file);
   return axiosInstance
     .post("/api/admin/customer-service/ai-quality/documents", formData, {
