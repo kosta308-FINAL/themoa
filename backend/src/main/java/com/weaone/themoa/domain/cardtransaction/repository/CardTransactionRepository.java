@@ -356,6 +356,9 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
      * 관리자 "미식별 & 기타 가맹점 작업대"(merchant.md §2-1 전역 시드 후보): 최근 N일간 전역 alias가 없는
      * 원본 가맹점을 발생 건수 상위로 준다. biller(Apple 등)는 이름으로 신원 판별이 안 되고 전역 alias 후보가
      * 아니라(§5-D) 제외한다.
+     *
+     * <p>데이터 수집·활용에 동의({@code consentType})하지 않은 회원의 거래는 집계에서 제외한다 — 이
+     * 목록도 회원 거래를 관리자가 들여다보고 전역화 여부를 판단하는 화면이라 동의한 회원의 거래만 쓴다.
      */
     @Query(value = "select ct.merchant_id as merchantId, m.merchant_name_raw as merchantNameRaw, "
             + "max(ct.merchant_type_raw) as merchantTypeRaw, count(*) as transactionCount, "
@@ -364,10 +367,12 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
             + "join merchant m on m.id = ct.merchant_id "
             + "where m.merchant_alias_id is null and ct.replaced_at is null and ct.used_date >= :since "
             + "and upper(trim(m.merchant_name_raw)) not in (select upper(trim(b.name)) from biller b) "
+            + "and ct.member_id in (select member_id from member_terms_agreement where terms_type = :consentType) "
             + "group by ct.merchant_id, m.merchant_name_raw "
             + "order by count(*) desc "
             + "limit :limit", nativeQuery = true)
-    List<UnclassifiedMerchantRow> findUnclassifiedMerchants(@Param("since") LocalDate since, @Param("limit") int limit);
+    List<UnclassifiedMerchantRow> findUnclassifiedMerchants(@Param("since") LocalDate since, @Param("limit") int limit,
+                                                             @Param("consentType") String consentType);
 
     interface UnclassifiedMerchantRow {
         Long getMerchantId();

@@ -199,7 +199,7 @@ function MerchantMasterAdminPage() {
   return (
     <AdminLayout
       title="가맹점 & 서비스 마스터 관리"
-      subtitle="회원 학습 표기의 전역 승격과 미식별 가맹점 등록을 관리합니다"
+      subtitle="데이터 수집·활용에 동의한 회원의 학습 표기·거래만 모아 전역 승격과 미식별 가맹점 등록을 관리합니다"
     >
       <div className="mma-page">
         <section className="mma-kpi-grid">
@@ -248,7 +248,8 @@ function MerchantMasterAdminPage() {
                   구독&quot;처럼 여럿 다 맞는 이름일 수 있습니다. 이름이 진짜로
                   틀렸다고 판단되면(오타 등) &quot;반려&quot;로 그 제안만 빼고,
                   제안된 이름이 다 마땅치 않으면 새 이름을 직접 입력해서 승격할
-                  수 있습니다.
+                  수 있습니다. 데이터 수집·활용에 동의하지 않은 회원의 학습은
+                  이 목록에 올라오지 않습니다.
                 </div>
               </div>
             </div>
@@ -371,8 +372,9 @@ function MerchantMasterAdminPage() {
                   미식별 &amp; &apos;기타&apos; 가맹점 작업대
                 </div>
                 <div className="mma-panel-sub">
-                  최근 15일간 전역 alias가 없는 상위 원본 가맹점 리스트입니다.
-                  바로 마스터에 등록하세요.
+                  최근 15일간 전역 alias가 없는 상위 원본 가맹점 리스트입니다
+                  (데이터 수집·활용에 동의한 회원의 거래만 집계). 바로
+                  마스터에 등록하세요.
                 </div>
               </div>
             </div>

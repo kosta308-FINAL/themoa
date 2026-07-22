@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.merchant.service;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
+import com.weaone.themoa.domain.auth.entity.TermsType;
 import com.weaone.themoa.domain.category.entity.Category;
 import com.weaone.themoa.domain.category.repository.CategoryRepository;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
@@ -35,6 +36,10 @@ import java.util.List;
  * 입력)은 raw text로 묶을 근거가 없어 이 화면에서 다루지 않는다 — 그런 alias는 실제로 아무런 매칭에도
  * 관여하지 않아 방치해도 해가 없고, 나중에 누군가 F-05로 raw text를 확인하는 순간 이 화면에 정상적으로
  * 편입된다.
+ *
+ * <p>두 조회({@link #listPromotionCandidates()}, {@link #listUnclassifiedMerchants()}) 모두 회원 개인의
+ * 학습·거래 데이터를 관리자가 들여다보는 화면이라, {@code TermsType.DATA_COLLECTION}에 동의한 회원의
+ * 것만 집계한다 — 동의하지 않은 회원의 데이터는 이 화면에 아예 후보로도 올라오지 않는다.
  */
 @Service
 @RequiredArgsConstructor
@@ -53,7 +58,8 @@ public class AdminMerchantService {
 
     @Transactional(readOnly = true)
     public List<AdminMerchantPromotionCandidateResponse> listPromotionCandidates() {
-        return merchantAliasTermsRepository.findPromotionCandidates(PageRequest.of(0, PROMOTION_CANDIDATE_LIMIT))
+        return merchantAliasTermsRepository
+                .findPromotionCandidates(TermsType.DATA_COLLECTION, PageRequest.of(0, PROMOTION_CANDIDATE_LIMIT))
                 .stream()
                 .map(row -> new AdminMerchantPromotionCandidateResponse(
                         row.getAliasId(), row.getAliasText(), row.getCanonicalServiceName(),
@@ -126,7 +132,9 @@ public class AdminMerchantService {
     @Transactional(readOnly = true)
     public List<AdminUnclassifiedMerchantResponse> listUnclassifiedMerchants() {
         LocalDate since = LocalDate.now().minusDays(UNCLASSIFIED_WINDOW_DAYS);
-        return cardTransactionRepository.findUnclassifiedMerchants(since, UNCLASSIFIED_LIMIT).stream()
+        return cardTransactionRepository
+                .findUnclassifiedMerchants(since, UNCLASSIFIED_LIMIT, TermsType.DATA_COLLECTION.name())
+                .stream()
                 .map(row -> new AdminUnclassifiedMerchantResponse(
                         row.getMerchantId(), row.getMerchantNameRaw(), row.getMerchantTypeRaw(),
                         row.getTransactionCount(), row.getAverageAmount()))
