@@ -1,5 +1,6 @@
 package com.weaone.themoa.config;
 
+import com.weaone.themoa.common.logging.MdcLoggingFilter;
 import com.weaone.themoa.security.handler.JwtAccessDeniedHandler;
 import com.weaone.themoa.security.handler.JwtAuthenticationEntryPoint;
 import com.weaone.themoa.security.jwt.JwtAuthenticationFilter;
@@ -47,6 +48,7 @@ public class SecurityConfig {
     private static final RegexRequestMatcher POLICY_ADMIN_ENDPOINT =
             new RegexRequestMatcher("^/api/policies/admin(/.*)?$", null);
 
+    private final MdcLoggingFilter mdcLoggingFilter;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
@@ -86,7 +88,8 @@ public class SecurityConfig {
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(jwtAccessDeniedHandler)
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(mdcLoggingFilter, JwtAuthenticationFilter.class);
         return http.build();
     }
 
@@ -94,6 +97,14 @@ public class SecurityConfig {
     FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration() {
         FilterRegistrationBean<JwtAuthenticationFilter> registration =
                 new FilterRegistrationBean<>(jwtAuthenticationFilter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    /** Spring Security 체인 안에서만 실행되도록, 서블릿 컨테이너의 일반 필터 등록은 막는다(traceId가 요청당 한 번만 생성되게). */
+    @Bean
+    FilterRegistrationBean<MdcLoggingFilter> mdcLoggingFilterRegistration() {
+        FilterRegistrationBean<MdcLoggingFilter> registration = new FilterRegistrationBean<>(mdcLoggingFilter);
         registration.setEnabled(false);
         return registration;
     }
