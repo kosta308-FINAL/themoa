@@ -24,6 +24,34 @@ export const rebuildFinancialEmbeddings = () =>
     })
     .then(responseData);
 
+const SEARCH_SETTINGS_URL = "/api/admin/financial-products/search/settings";
+
+/** 검색 튜닝값(결과 개수·후보 개수·유사도 임계값) 현재 상태. */
+export const getSearchSettings = () =>
+  axiosInstance.get(SEARCH_SETTINGS_URL).then(responseData);
+
+/**
+ * 검색 튜닝값 변경. 항목을 null로 보내면 그 항목만 서버 기본값으로 되돌아간다.
+ * 응답은 실제로 적용된 값이라 그대로 화면에 반영하면 된다.
+ */
+export const updateSearchSettings = ({ topK, retryTopK, minimumSimilarity }) =>
+  axiosInstance
+    .put(SEARCH_SETTINGS_URL, { topK, retryTopK, minimumSimilarity })
+    .then(responseData);
+
+/** 검색 튜닝값을 서버 기본값으로 되돌린다. 응답은 되돌아간 기본값. */
+export const resetSearchSettings = () =>
+  axiosInstance.delete(SEARCH_SETTINGS_URL).then(responseData);
+
+/**
+ * 검색어가 어떻게 해석되고 어떤 후보가 어떤 점수로 걸렸는지 진단한다.
+ * 검색 결과가 이상할 때 원인을 숫자로 확인하는 용도.
+ */
+export const explainFinancialSearch = (query) =>
+  axiosInstance
+    .post("/api/admin/financial-products/search/explain", { query })
+    .then(responseData);
+
 /** 상품 수·마지막 수집 시각·벡터 인덱스·은행 링크 현황. */
 export const getFinancialProductStatus = () =>
   axiosInstance.get("/api/admin/financial-products/status").then(responseData);

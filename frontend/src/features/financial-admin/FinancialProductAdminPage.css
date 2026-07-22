@@ -348,8 +348,194 @@
   font-size: 12px;
 }
 
+/* ─── 검색 설정 ───────────────────────────────────────── */
+.fa-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.fa-settings-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fa-settings-head h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--admin-text, #0f172a);
+}
+
+.fa-badge-neutral {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.fa-settings-meta {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--admin-text-sub, #64748b);
+}
+
+.fa-settings-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  align-items: end;
+  gap: 12px;
+}
+
+.fa-setting-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fa-setting-field > span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--admin-text-sub, #64748b);
+}
+
+.fa-setting-field > span strong {
+  font-size: 14px;
+  color: #2563eb;
+}
+
+.fa-setting-field input[type="number"] {
+  padding: 8px 10px;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.fa-setting-field input[type="number"]:focus {
+  border-color: #2563eb;
+}
+
+.fa-setting-field input[type="range"] {
+  width: 100%;
+  accent-color: #2563eb;
+}
+
+.fa-setting-field small {
+  font-size: 11px;
+  color: var(--admin-text-sub, #64748b);
+}
+
+.fa-setting-slider {
+  grid-column: span 2;
+}
+
+.fa-setting-readonly strong {
+  padding: 8px 0;
+  font-size: 13px;
+  color: var(--admin-text, #0f172a);
+}
+
+.fa-setting-actions {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fa-setting-actions .admin-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ─── 검색 품질 점검 ──────────────────────────────────── */
+.fa-explain-form {
+  display: flex;
+  gap: 8px;
+}
+
+.fa-explain-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.fa-explain-form input:focus {
+  border-color: #2563eb;
+}
+
+.fa-chip-neutral {
+  border-color: var(--admin-border, #e2e8f0);
+  background: #f8fafc;
+  color: var(--admin-text-sub, #64748b);
+}
+
+.fa-chip-neutral:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.fa-chip-neutral:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.fa-term {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fa-explain-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.fa-stat-alert {
+  color: #c2410c;
+}
+
+/* 검색 후보 표는 숫자보다 이름이 길어 왼쪽 정렬이 읽기 쉽다 */
+.fa-table-left th,
+.fa-table-left td {
+  text-align: left;
+}
+
+.fa-row-excluded {
+  opacity: 0.5;
+}
+
+.fa-excluded-reason {
+  display: block;
+  margin-top: 2px;
+  color: #c2410c;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
 @media (max-width: 720px) {
   .fa-card-head {
+    flex-direction: column;
+  }
+
+  .fa-explain-form {
     flex-direction: column;
   }
 
