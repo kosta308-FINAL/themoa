@@ -1,17 +1,16 @@
-import { aiSummary } from "../../../constants/mockDashboard";
-
-function AiSummaryBanner() {
+function AiSummaryBanner({
+  productBookmarkCount,
+  policyBookmarkCount,
+  coachingCount,
+}) {
   return (
     <div className="ai-summary-banner">
-      <h3>AI 추천 요약</h3>
-      <p>
-        현재 {aiSummary.productCount}개의 금융상품과 {aiSummary.policyCount}개의
-        정책이 추천되었어요!
-      </p>
+      <h3>내 금융 요약</h3>
+      <p>관심 상품과 정책, 현재 확인할 수 있는 소비 코칭을 모아봤어요.</p>
       <div className="ai-summary-tags">
-        <span>추천 상품 {aiSummary.productCount}</span>
-        <span>추천 정책 {aiSummary.policyCount}</span>
-        <span>맞춤 소비 팁 {aiSummary.tipCount}</span>
+        <span>관심 상품 {productBookmarkCount}</span>
+        <span>관심 정책 {policyBookmarkCount}</span>
+        <span>소비 코칭 {coachingCount}</span>
       </div>
     </div>
   );

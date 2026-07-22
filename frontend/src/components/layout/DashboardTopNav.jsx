@@ -1,4 +1,8 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import {
+  Link,
+  NavLink,
+  useNavigate,
+} from "react-router-dom";
 import DashboardIcon from "../common/DashboardIcon";
 import NotificationBell from "./NotificationBell";
 import { navItems } from "../../constants/dashboardNavigation";
@@ -15,15 +19,15 @@ function DashboardTopNav() {
 
   return (
     <nav className="dash-topnav">
-      <div className="dash-topnav-logo">
+      <Link
+        to="/dashboard"
+        className="dash-topnav-logo"
+        aria-label="더모아 홈 대시보드로 이동"
+      >
         <span className="dash-logo-mark">M</span>
         <span className="dash-logo-text">더모아</span>
-      </div>
+      </Link>
       <div className="dash-topnav-right">
-        <div className="dash-topnav-search">
-          <DashboardIcon name="search" size={16} />
-          <input type="text" placeholder="검색어를 입력하세요" />
-        </div>
         <div className="dash-topnav-items">
           {navItems.map((item, idx) => (
             <NavLink
