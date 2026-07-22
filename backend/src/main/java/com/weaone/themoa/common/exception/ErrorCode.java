@@ -32,6 +32,13 @@ public enum ErrorCode {
     AUTH_VERIFICATION_RESEND_COOLDOWN(HttpStatus.TOO_MANY_REQUESTS, "잠시 후 다시 요청해 주세요."),
     AUTH_EMAIL_SEND_FAILED(HttpStatus.BAD_GATEWAY, "인증 메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요."),
 
+    // 인증 - 아이디(이메일) 찾기
+    AUTH_FIND_EMAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "일치하는 계정을 찾을 수 없습니다."),
+    AUTH_FIND_EMAIL_AMBIGUOUS(HttpStatus.CONFLICT, "일치하는 계정이 여러 개예요. 고객센터에 문의해 주세요."),
+
+    // 인증 - 비밀번호 찾기(재설정)
+    AUTH_PASSWORD_RESET_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "가입되지 않은 이메일입니다."),
+
     // 카드 연동 - 커넥션
     CARD_ISSUER_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "지원하지 않는 카드사입니다."),
     CARD_CONNECTION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 연결된 카드사입니다."),
@@ -130,7 +137,10 @@ public enum ErrorCode {
     CUSTOMER_KNOWLEDGE_FILE_TYPE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "md 또는 txt 파일만 업로드할 수 있습니다."),
     CUSTOMER_KNOWLEDGE_FILE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "업로드 파일 용량이 허용 범위를 초과했습니다."),
     CUSTOMER_KNOWLEDGE_DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "고객센터 AI 지식 문서를 찾을 수 없습니다."),
-    CUSTOMER_KNOWLEDGE_EMBEDDING_FAILED(HttpStatus.BAD_GATEWAY, "고객센터 AI 지식 문서를 임베딩하지 못했습니다.");
+    CUSTOMER_KNOWLEDGE_EMBEDDING_FAILED(HttpStatus.BAD_GATEWAY, "고객센터 AI 지식 문서를 임베딩하지 못했습니다."),
+
+    // 운영 에러 관리 (managelogging.md)
+    ADMIN_ERROR_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "에러 로그를 찾을 수 없습니다.");
     private final HttpStatus status;
     private final String message;
 

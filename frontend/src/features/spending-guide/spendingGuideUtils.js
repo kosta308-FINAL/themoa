@@ -84,6 +84,10 @@ const errorMessage = (error, fallback) =>
   error?.response?.data?.message ||
   (error?.response?.status === 401 ? "로그인이 필요합니다." : fallback);
 
+// 고정지출 태그 거래는 목록에는 표시하되 순사용액 집계에서는 제외한다(dayguide.md §5.1, 이중차감 방지).
+const netAmountForTotal = (transaction) =>
+  transaction.fixedExpenseId ? 0 : toNumber(transaction.netAmount);
+
 export {
   INITIAL_SYNC_IN_PROGRESS,
   WON,
@@ -94,6 +98,7 @@ export {
   formatShortDate,
   formatTime,
   formatWon,
+  netAmountForTotal,
   paymentLabel,
   shiftDateBy,
   todayDate,

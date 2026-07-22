@@ -54,16 +54,11 @@ function RecentFlow({ data, error }) {
             const isToday = day.date === todayDate();
             const guideLine = toNumber(data.guideLineAmount);
             const diff = guideLine - amount;
-            const tooltip =
-              `${formatDateWithWeekday(day.date)}\n` +
-              `${amount < 0 ? "취소 반영 순사용액" : "순사용액"} ${formatWon(Math.abs(amount))}\n` +
-              `하루 권장액 ${formatWon(guideLine)} 대비 ${diff >= 0 ? `${formatWon(diff)} 여유` : `${formatWon(-diff)} 초과`}`;
             return (
               <Link
                 className="spending-bar-item"
                 to={`/dashboard/spending/transactions?date=${day.date}`}
                 key={day.date}
-                title={tooltip}
               >
                 <span
                   className={`spending-bar-space${amount < 0 ? " negative-space" : ""}`}
@@ -73,7 +68,21 @@ function RecentFlow({ data, error }) {
                     style={{
                       height: `${Math.max(5, (Math.abs(amount) / axisMax) * 100)}%`,
                     }}
-                  />
+                  >
+                    <span className="spending-bar-tooltip">
+                      <strong>{formatDateWithWeekday(day.date)}</strong>
+                      <span>
+                        {amount < 0 ? "취소 반영 순사용액" : "순사용액"}{" "}
+                        {formatWon(Math.abs(amount))}
+                      </span>
+                      <span>
+                        하루 권장액 {formatWon(guideLine)} 대비{" "}
+                        {diff >= 0
+                          ? `${formatWon(diff)} 여유`
+                          : `${formatWon(-diff)} 초과`}
+                      </span>
+                    </span>
+                  </i>
                 </span>
                 <strong>
                   {isToday ? "오늘" : `${Number(day.date.slice(8, 10))}일`}

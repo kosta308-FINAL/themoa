@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.common.exception.GlobalExceptionHandler;
+import com.weaone.themoa.common.logging.ErrorLogSanitizer;
+import com.weaone.themoa.domain.logging.service.AsyncErrorLogRecorder;
 import com.weaone.themoa.domain.policy.policy.dto.response.PolicyDetailResponse;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import com.weaone.themoa.domain.policy.policy.service.PolicyDetailService;
@@ -34,7 +36,7 @@ class PolicySearchControllerTest {
     private final PolicyDetailService detailService = mock(PolicyDetailService.class);
     private final MockMvc mockMvc = MockMvcBuilders
             .standaloneSetup(new PolicySearchController(searchService, detailService))
-            .setControllerAdvice(new GlobalExceptionHandler())
+            .setControllerAdvice(new GlobalExceptionHandler(new ErrorLogSanitizer(), mock(AsyncErrorLogRecorder.class)))
             .setMessageConverters(new MappingJackson2HttpMessageConverter(new ObjectMapper().findAndRegisterModules()))
             .build();
     private final ObjectMapper objectMapper = new ObjectMapper();

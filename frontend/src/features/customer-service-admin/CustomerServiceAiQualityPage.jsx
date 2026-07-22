@@ -42,8 +42,11 @@ function formatKnowledgeSourceName(value) {
   return value === "direct-text.txt" ? "직접 입력" : value;
 }
 
-function formatHeadingSplit(value) {
-  return value ? "제목 기준 분리" : "문단 기준 분리";
+function formatSplitMode(splitByMarkdownHeading, splitByParagraph) {
+  const labels = [];
+  if (splitByMarkdownHeading) labels.push("제목(#) 우선 분리");
+  if (splitByParagraph) labels.push("문단 단위 분리");
+  return labels.length > 0 ? labels.join(" + ") : "구간 자동 병합";
 }
 
 function CustomerServiceAiQualityPage() {
@@ -66,8 +69,10 @@ function CustomerServiceAiQualityPage() {
   const [uploadFile, setUploadFile] = useState(null);
   const [knowledgeText, setKnowledgeText] = useState("");
   const [chunkMaxLength, setChunkMaxLength] = useState(1200);
+  const [chunkMinLength, setChunkMinLength] = useState(200);
   const [chunkOverlapLength, setChunkOverlapLength] = useState(150);
   const [splitByMarkdownHeading, setSplitByMarkdownHeading] = useState(true);
+  const [splitByParagraph, setSplitByParagraph] = useState(false);
   const [chunkPreview, setChunkPreview] = useState(null);
   const [chunkPreviewLoading, setChunkPreviewLoading] = useState(false);
   const [chunkPreviewError, setChunkPreviewError] = useState("");
@@ -140,11 +145,13 @@ function CustomerServiceAiQualityPage() {
     setChunkPreviewError("");
     const options = {
       chunkMaxLength: Number(optionOverrides.chunkMaxLength ?? chunkMaxLength),
+      chunkMinLength: Number(optionOverrides.chunkMinLength ?? chunkMinLength),
       chunkOverlapLength: Number(
         optionOverrides.chunkOverlapLength ?? chunkOverlapLength,
       ),
       splitByMarkdownHeading:
         optionOverrides.splitByMarkdownHeading ?? splitByMarkdownHeading,
+      splitByParagraph: optionOverrides.splitByParagraph ?? splitByParagraph,
     };
     chunkPreviewTimerRef.current = setTimeout(async () => {
       try {
@@ -211,6 +218,11 @@ function CustomerServiceAiQualityPage() {
     scheduleChunkPreview(currentKnowledgeContent(), { chunkMaxLength: value });
   };
 
+  const handleChunkMinLengthChange = (value) => {
+    setChunkMinLength(value);
+    scheduleChunkPreview(currentKnowledgeContent(), { chunkMinLength: value });
+  };
+
   const handleChunkOverlapLengthChange = (value) => {
     setChunkOverlapLength(value);
     scheduleChunkPreview(currentKnowledgeContent(), {
@@ -222,6 +234,13 @@ function CustomerServiceAiQualityPage() {
     setSplitByMarkdownHeading(checked);
     scheduleChunkPreview(currentKnowledgeContent(), {
       splitByMarkdownHeading: checked,
+    });
+  };
+
+  const handleSplitByParagraphChange = (checked) => {
+    setSplitByParagraph(checked);
+    scheduleChunkPreview(currentKnowledgeContent(), {
+      splitByParagraph: checked,
     });
   };
 
@@ -314,8 +333,10 @@ function CustomerServiceAiQualityPage() {
         category: uploadCategory,
         file: uploadFile,
         chunkMaxLength: Number(chunkMaxLength),
+        chunkMinLength: Number(chunkMinLength),
         chunkOverlapLength: Number(chunkOverlapLength),
         splitByMarkdownHeading,
+        splitByParagraph,
       });
       setUploadTitle("");
       setUploadFile(null);
@@ -347,8 +368,10 @@ function CustomerServiceAiQualityPage() {
         category: uploadCategory,
         content: knowledgeText,
         chunkMaxLength: Number(chunkMaxLength),
+        chunkMinLength: Number(chunkMinLength),
         chunkOverlapLength: Number(chunkOverlapLength),
         splitByMarkdownHeading,
+        splitByParagraph,
       });
       setUploadTitle("");
       setKnowledgeText("");
@@ -680,6 +703,24 @@ function CustomerServiceAiQualityPage() {
                 </small>
               </label>
               <label className="aiq-field">
+                <span>청크 최소 길이</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="1000"
+                  step="50"
+                  value={chunkMinLength}
+                  onChange={(event) =>
+                    handleChunkMinLengthChange(event.target.value)
+                  }
+                />
+                <small>
+                  이보다 짧은 청크는 앞뒤 청크와 자동으로 합쳐집니다. 특히 문단
+                  분리를 켰을 때 문맥 없는 한 줄짜리 청크가 생기는 걸
+                  막아줍니다.
+                </small>
+              </label>
+              <label className="aiq-field">
                 <span>청크 겹침 길이</span>
                 <input
                   type="number"
@@ -696,21 +737,40 @@ function CustomerServiceAiQualityPage() {
                   길이입니다. 경계에서 답변 근거가 끊기는 문제를 줄입니다.
                 </small>
               </label>
-              <label className="aiq-toggle-field">
-                <input
-                  type="checkbox"
-                  checked={splitByMarkdownHeading}
-                  onChange={(event) =>
-                    handleSplitByMarkdownHeadingChange(event.target.checked)
-                  }
-                />
-                <span>
-                  <strong>Markdown 제목 기준으로 먼저 나누기</strong>
-                  <small>
-                    md 파일의 #, ## 제목을 큰 단락 경계로 봅니다. 일반 txt처럼
-                    제목 표시가 없는 문서는 문단 기준으로만 묶입니다.
-                  </small>
+              <label className="aiq-field aiq-toggle-field">
+                <span>분리 기준</span>
+                <span className="aiq-toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={splitByMarkdownHeading}
+                    onChange={(event) =>
+                      handleSplitByMarkdownHeadingChange(event.target.checked)
+                    }
+                  />
+                  <strong>제목(#) 먼저 나누기</strong>
                 </span>
+                <small>
+                  문서에 `#`로 시작하는 마크다운 제목 줄이 있을 때만 효과가
+                  있습니다. 제목 줄이 없으면 켜고 꺼도 결과가 같습니다.
+                </small>
+              </label>
+              <label className="aiq-field aiq-toggle-field">
+                <span>문단 분리</span>
+                <span className="aiq-toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={splitByParagraph}
+                    onChange={(event) =>
+                      handleSplitByParagraphChange(event.target.checked)
+                    }
+                  />
+                  <strong>문단(빈 줄)마다 청크 나누기</strong>
+                </span>
+                <small>
+                  켜면 빈 줄로 구분된 문단을 서로 합치지 않고 문단 하나당 청크
+                  하나로 만듭니다. 끄면 청크 최대 길이까지 여러 문단을
+                  이어붙입니다.
+                </small>
               </label>
             </div>
           </div>
@@ -780,10 +840,12 @@ function CustomerServiceAiQualityPage() {
                       </span>
                       <span>{document.chunkCount} chunks</span>
                       <span>최대 {document.chunkMaxLength || 1200}자</span>
+                      <span>최소 {document.chunkMinLength ?? 200}자</span>
                       <span>겹침 {document.chunkOverlapLength || 150}자</span>
                       <span>
-                        {formatHeadingSplit(
+                        {formatSplitMode(
                           document.splitByMarkdownHeading ?? true,
+                          document.splitByParagraph ?? false,
                         )}
                       </span>
                       <span>{formatDateTime(document.createdAt)}</span>

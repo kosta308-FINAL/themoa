@@ -48,9 +48,9 @@ function SurplusSummary({ data, onSetGoal }) {
               {formatWon(data.ongoingCycle.amount)}
             </strong>
             <p>
-              {toNumber(data.ongoingCycle.amount) < 0
-                ? "예산을 초과했어요"
-                : "지금까지 예산보다 덜 썼어요 (주기가 끝나면 확정돼요)"}
+              {toNumber(data.ongoingCycle.amount) > 0
+                ? "하루 권장액보다 덜 써서 절약하고 있어요"
+                : "아직 절약된 금액이 없어요"}
             </p>
           </div>
           <div className="spending-surplus-recent">

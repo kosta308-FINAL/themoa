@@ -181,20 +181,6 @@ function useSpendingGuide() {
     }
   };
 
-  const handleCategoryCycleChange = async (budgetId) => {
-    if (!budgetId) return;
-    try {
-      const category = await getCategorySummary(budgetId);
-      setData((current) => ({ ...current, category }));
-      setSectionErrors((current) => ({ ...current, category: undefined }));
-    } catch (error) {
-      setSectionErrors((current) => ({
-        ...current,
-        category: errorMessage(error, "카테고리 데이터를 불러오지 못했습니다."),
-      }));
-    }
-  };
-
   const handleDismiss = async (cardId, dismissType) => {
     if (
       dismissType === "HIDE" &&
@@ -227,7 +213,6 @@ function useSpendingGuide() {
     editingTransaction,
     expandToday,
     handleCardConnected,
-    handleCategoryCycleChange,
     handleDismiss,
     handleInitialSyncRetry,
     handleManualSync,

@@ -290,17 +290,26 @@
 }
 
 .auth-back {
-  align-self: flex-start;
-  padding: 2px 0;
-  background: none;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--auth-border);
+  border-radius: 50%;
+  background: #fff;
   color: var(--auth-sub);
-  font-size: 13px;
-  font-weight: 600;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .auth-back:hover {
-  color: var(--auth-ink);
-  text-decoration: underline;
+  background: var(--auth-accent-light);
+  color: var(--auth-accent-dark);
+  border-color: var(--auth-accent-light);
 }
 
 .auth-submit {
@@ -350,11 +359,73 @@
   text-decoration: underline;
 }
 
+/* 로그인 폼: 아이디·비밀번호 찾기 */
+.auth-find-links {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: -8px;
+  font-size: 13px;
+}
+
+.auth-find-links a {
+  color: var(--auth-sub);
+}
+
+.auth-find-links a:hover {
+  color: var(--auth-accent-dark);
+  text-decoration: underline;
+}
+
+.auth-find-divider {
+  width: 1px;
+  height: 12px;
+  background: var(--auth-border);
+}
+
+/* 아이디 찾기: 조회 결과 카드 */
+.auth-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 20px;
+  border: 1px solid var(--auth-border);
+  border-radius: var(--auth-radius);
+  text-align: center;
+}
+
+.auth-result-label {
+  font-size: 13px;
+  color: var(--auth-sub);
+}
+
+.auth-result-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--auth-ink);
+}
+
+.auth-result-cta {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  text-align: center;
+  text-decoration: none;
+}
+
 /* ─── Signup steps (실제 가입 순서: ① 약관 동의 → ② 이메일 인증 → ③ 기본 정보) ─── */
+.auth-steps-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
 .auth-steps {
   display: flex;
   gap: 20px;
-  margin-bottom: 24px;
 }
 
 .auth-steps li {

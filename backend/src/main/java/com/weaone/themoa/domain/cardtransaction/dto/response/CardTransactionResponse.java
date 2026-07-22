@@ -30,7 +30,9 @@ public record CardTransactionResponse(
         String cardOrganizationName,
         String cardNumberMasked,
         Short installmentMonths,
-        String memo
+        String memo,
+        Long fixedExpenseId,
+        String fixedExpenseName
 ) {
 
     public static CardTransactionResponse from(CardTransaction transaction) {
@@ -58,7 +60,9 @@ public record CardTransactionResponse(
                 transaction.getCard() != null ? transaction.getCard().getCardConnection().getCardIssuer().getName() : null,
                 transaction.getCard() != null ? transaction.getCard().getCardNumberMasked() : null,
                 transaction.getInstallmentMonths(),
-                transaction.getMemo()
+                transaction.getMemo(),
+                transaction.getFixedExpense() != null ? transaction.getFixedExpense().getId() : null,
+                transaction.getFixedExpense() != null ? transaction.getFixedExpense().getName() : null
         );
     }
 
