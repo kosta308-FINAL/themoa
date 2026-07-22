@@ -43,3 +43,25 @@ export const logoutAllDevices = () =>
  */
 export const withdrawAccount = (payload) =>
   axiosInstance.delete("/api/auth/account", { data: payload });
+
+/**
+ * 아이디(이메일) 찾기. 닉네임+생년월일이 정확히 1건 일치할 때만 마스킹된 이메일을 돌려준다.
+ * @returns {Promise<{ data: { data: { maskedEmail: string } } }>}
+ */
+export const findEmail = (nickname, birthDate) =>
+  axiosInstance.post("/api/auth/find-email", { nickname, birthDate });
+
+/** 비밀번호 찾기 1단계: 가입된 이메일로 인증 코드 발송. */
+export const sendPasswordResetCode = (email) =>
+  axiosInstance.post("/api/auth/password/reset/code", { email });
+
+/** 비밀번호 찾기 2단계: 인증 코드 검증. */
+export const verifyPasswordResetCode = (email, code) =>
+  axiosInstance.post("/api/auth/password/reset/code/verify", { email, code });
+
+/**
+ * 비밀번호 찾기 3단계: 새 비밀번호로 재설정. 성공 시 전 세션이 무효화되어 재로그인이 필요하다.
+ * @param {{ email, newPassword, newPasswordConfirm }} payload
+ */
+export const resetPassword = (payload) =>
+  axiosInstance.post("/api/auth/password/reset", payload);

@@ -414,7 +414,13 @@ function TransactionDetailModal({
                 </>
               )}
             </div>
-            {onRegisterFixedExpense &&
+            {transaction.fixedExpenseId ? (
+              <div className="spending-detail-fixed-linked">
+                <DashboardIcon name="repeat" size={15} />
+                {`‘${transaction.fixedExpenseName}’ 고정지출로 연결됨`}
+              </div>
+            ) : (
+              onRegisterFixedExpense &&
               (transaction.paymentMethod === "CARD" ||
                 transaction.paymentMethod === "TRANSFER") && (
                 <button
@@ -425,7 +431,8 @@ function TransactionDetailModal({
                   <DashboardIcon name="repeat" size={15} />이 거래로 고정지출
                   등록
                 </button>
-              )}
+              )
+            )}
             {transaction.source === "MANUAL" && (
               <button
                 type="button"

@@ -122,7 +122,7 @@ app:
       verified-ttl: 30m
       from: ${MAIL_USERNAME}
     terms:
-      version: ${AUTH_TERMS_VERSION:2026-07-21}
+      version: ${AUTH_TERMS_VERSION:2026-07-22}
 
   codef:
     client-id: ${CODEF_CLIENT_ID}

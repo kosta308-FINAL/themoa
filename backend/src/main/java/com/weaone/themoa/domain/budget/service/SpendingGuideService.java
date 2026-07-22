@@ -230,7 +230,7 @@ public class SpendingGuideService {
         int clampedLimit = clamp(limit, TODAY_TRANSACTIONS_DEFAULT_LIMIT, TODAY_TRANSACTIONS_MAX_LIMIT);
         LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
         Page<CardTransactionResponse> page = cardTransactionRepository
-                .findByMember_IdAndFixedExpenseIsNullAndStatusNotAndUsedDateOrderByUsedAtDesc(
+                .findByMember_IdAndStatusNotAndUsedDateOrderByUsedAtDesc(
                         member.getId(), TransactionStatus.REJECTED, today, PageRequest.of(0, clampedLimit))
                 .map(CardTransactionResponse::from);
         return new TodayTransactionsResponse(page.getContent(), page.getTotalElements());
@@ -276,14 +276,15 @@ public class SpendingGuideService {
     }
 
     /**
-     * S-01 카테고리 도넛(dayguide.md §3.4·§8.1·§8.3). {@code budgetId} 생략 시 현재 주기를 조회하고,
-     * 진행 중인 주기이거나 데이터가 일부만 있는 주기는 {@code completedCycleResult=null}이다.
+     * S-01 카테고리 도넛(dayguide.md §3.4·§8.1·§8.3). {@code budgetId} 생략 시, {@code date}가 있으면 그
+     * 날짜가 속한 주기를, 둘 다 없으면 현재 주기를 조회한다. 진행 중인 주기이거나 데이터가 일부만 있는
+     * 주기는 {@code completedCycleResult=null}이다.
      */
     @Transactional(readOnly = true)
-    public CategorySummaryListResponse getCategorySummary(Long memberId, Long budgetId) {
+    public CategorySummaryListResponse getCategorySummary(Long memberId, Long budgetId, LocalDate date) {
         Member member = getMemberWithSetup(memberId);
         LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
-        Budget budget = resolveBudget(member, budgetId, today);
+        Budget budget = resolveBudgetForDate(member, budgetId, date, today);
 
         LocalDate dataStartDate = resolveDataStartDate(member);
         LocalDate earliestCycleStart = BudgetCyclePolicy.cycleOf(member.getPayday(), dataStartDate).cycleStartDate();
@@ -339,6 +340,20 @@ public class SpendingGuideService {
         return resolveBudget(member, budgetId, today);
     }
 
+    /**
+     * {@code budgetId} 지정 시 그 주기, 미지정이고 {@code date} 지정 시 그 날짜가 속한 주기(§3.4 날짜별
+     * 소비 확인 연동), 둘 다 없으면 현재 주기를 조회한다. date가 속한 주기가 아직 생성되지 않았으면(백필
+     * 범위 밖) BUDGET_NOT_FOUND를 던진다.
+     */
+    private Budget resolveBudgetForDate(Member member, Long budgetId, LocalDate date, LocalDate today) {
+        if (budgetId != null || date == null || date.isAfter(today)) {
+            return resolveBudget(member, budgetId, today);
+        }
+        BudgetCyclePolicy.BudgetCycle cycle = budgetCycleService.resolveCycleForDate(member, date);
+        return budgetRepository.findByMember_IdAndYearMonth(member.getId(), cycle.yearMonth())
+                .orElseThrow(() -> new BusinessException(ErrorCode.BUDGET_NOT_FOUND));
+    }
+
     /** {@code budgetId} 미지정 시 현재 주기, 지정 시 본인 소유·이미 시작된 주기만 허용한다(§8.6). */
     private Budget resolveBudget(Member member, Long budgetId, LocalDate today) {
         if (budgetId == null) {
@@ -383,6 +398,7 @@ public class SpendingGuideService {
         // 오늘 사용 가능 = max(0, 하루 권장액 − max(오늘 순사용액, 0)). Type 2 취소로 순사용액이 음수여도 권장액을 넘기지 않는다.
         BigDecimal todayAvailable = daily.subtract(todayNetSpend.max(BigDecimal.ZERO)).max(BigDecimal.ZERO);
         BigDecimal remaining = available.subtract(spentThisCycle);
+        BigDecimal cycleSavings = cycleSavingsAmount(memberId, budget, cycleStart, cycleEnd, today, incomeAdjustmentTotal);
 
         boolean overCycleBudget = remaining.signum() < 0;
         BigDecimal cycleOverspent = overCycleBudget ? remaining.negate() : BigDecimal.ZERO;
@@ -398,8 +414,33 @@ public class SpendingGuideService {
                 member.getPayday(), member.getPendingPayday(),
                 budget.getYearMonth(), cycleStart, cycleEnd, remainingDays,
                 budget.getSalaryAmount(), budget.getSavingsGoalAmount(), budget.getExpectedFixedExpenseTotal(),
-                available, daily, todayNetSpend, todayAvailable, remaining, overCycleBudget, cycleOverspent,
-                budgetUnaffordable);
+                available, daily, todayNetSpend, todayAvailable, remaining, cycleSavings, overCycleBudget,
+                cycleOverspent, budgetUnaffordable);
+    }
+
+    /**
+     * 진행 중 주기의 "절약 습관" 누적(dailyBudget.md §1 적응형 하루 권장액). {@code remainingAmount}(주기
+     * 마감 시 그대로 surplus_fund에 적립되는 값)와는 다른 지표로, 날짜별로 그날 실제 있었던 어제까지 누적
+     * 순지출·남은 일수를 그대로 대입해 그날의 하루 권장액을 재구성한 뒤 그날 실사용액과의 차이를 경과일만큼
+     * 더한다. 화면 표시용이라 최종 합계에만 0 바닥을 건다(중간 하루치 차이는 음수를 그대로 흘린다).
+     */
+    private BigDecimal cycleSavingsAmount(Long memberId, Budget budget, LocalDate cycleStart, LocalDate cycleEnd,
+                                           LocalDate today, BigDecimal incomeAdjustmentTotal) {
+        Map<LocalDate, BigDecimal> netByDate = cardTransactionRepository
+                .sumNetSpendByDate(memberId, TransactionStatus.REJECTED, cycleStart, today).stream()
+                .collect(Collectors.toMap(CardTransactionRepository.DailyNetAmount::getUsedDate,
+                        CardTransactionRepository.DailyNetAmount::getNetAmount));
+        BigDecimal spentThroughYesterday = BigDecimal.ZERO;
+        BigDecimal savings = BigDecimal.ZERO;
+        for (LocalDate date = cycleStart; !date.isAfter(today); date = date.plusDays(1)) {
+            int remainingDaysAtDate = BudgetCyclePolicy.remainingDays(date, cycleEnd);
+            BigDecimal recommendedThatDay =
+                    budget.getDailyRecommendedAmount(spentThroughYesterday, remainingDaysAtDate, incomeAdjustmentTotal);
+            BigDecimal actualThatDay = netByDate.getOrDefault(date, BigDecimal.ZERO);
+            savings = savings.add(recommendedThatDay.subtract(actualThatDay));
+            spentThroughYesterday = spentThroughYesterday.add(actualThatDay);
+        }
+        return savings.max(BigDecimal.ZERO);
     }
 
     /** 고정지출 태그·거절 제외 순지출 합계. 범위가 비면(주기 첫날의 "어제까지") 0. */

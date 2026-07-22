@@ -85,10 +85,13 @@ export const getRecentDays = () =>
     .get("/api/spending-guide/recent-days", { params: { days: 7 } })
     .then(responseData);
 
-export const getCategorySummary = (budgetId) =>
+export const getCategorySummary = ({ budgetId, date } = {}) =>
   axiosInstance
     .get("/api/card-transactions/category-summary", {
-      params: budgetId ? { budgetId } : {},
+      params: {
+        ...(budgetId ? { budgetId } : {}),
+        ...(date ? { date } : {}),
+      },
     })
     .then(responseData);
 

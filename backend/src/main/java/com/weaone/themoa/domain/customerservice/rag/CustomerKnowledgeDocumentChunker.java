@@ -58,10 +58,11 @@ public class CustomerKnowledgeDocumentChunker {
     }
 
     private void appendSection(List<String> chunks, String section, CustomerKnowledgeChunkingOptions options) {
-        if (section.length() <= options.maxChunkLength()) {
+        if (section.length() <= options.maxChunkLength() && !options.splitByParagraph()) {
             chunks.add(section);
             return;
         }
+        List<String> sectionChunks = new ArrayList<>();
         StringBuilder current = new StringBuilder();
         for (String paragraph : section.split("\\n\\s*\\n")) {
             String trimmed = paragraph.trim();
@@ -69,19 +70,54 @@ public class CustomerKnowledgeDocumentChunker {
                 continue;
             }
             if (trimmed.length() > options.maxChunkLength()) {
-                flush(chunks, current);
-                splitLongParagraph(chunks, trimmed, options);
+                flush(sectionChunks, current);
+                splitLongParagraph(sectionChunks, trimmed, options);
+                continue;
+            }
+            if (options.splitByParagraph()) {
+                flush(sectionChunks, current);
+                sectionChunks.add(trimmed);
                 continue;
             }
             if (current.length() + trimmed.length() + 2 > options.maxChunkLength()) {
-                flush(chunks, current);
+                flush(sectionChunks, current);
             }
             if (!current.isEmpty()) {
                 current.append("\n\n");
             }
             current.append(trimmed);
         }
-        flush(chunks, current);
+        flush(sectionChunks, current);
+        chunks.addAll(mergeShortChunks(sectionChunks, options));
+    }
+
+    private List<String> mergeShortChunks(List<String> sectionChunks, CustomerKnowledgeChunkingOptions options) {
+        if (options.minChunkLength() <= 0 || sectionChunks.size() < 2) {
+            return sectionChunks;
+        }
+        List<String> merged = new ArrayList<>();
+        for (String chunk : sectionChunks) {
+            if (!merged.isEmpty()) {
+                String previous = merged.get(merged.size() - 1);
+                boolean previousTooShort = previous.length() < options.minChunkLength();
+                boolean fitsTogether = previous.length() + chunk.length() + 2 <= options.maxChunkLength();
+                if (previousTooShort && fitsTogether) {
+                    merged.set(merged.size() - 1, previous + "\n\n" + chunk);
+                    continue;
+                }
+            }
+            merged.add(chunk);
+        }
+        int lastIndex = merged.size() - 1;
+        if (lastIndex > 0 && merged.get(lastIndex).length() < options.minChunkLength()) {
+            String last = merged.get(lastIndex);
+            String previous = merged.get(lastIndex - 1);
+            if (previous.length() + last.length() + 2 <= options.maxChunkLength()) {
+                merged.set(lastIndex - 1, previous + "\n\n" + last);
+                merged.remove(lastIndex);
+            }
+        }
+        return merged;
     }
 
     private void splitLongParagraph(List<String> chunks, String paragraph, CustomerKnowledgeChunkingOptions options) {

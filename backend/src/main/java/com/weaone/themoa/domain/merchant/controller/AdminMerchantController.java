@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.merchant.controller;
 
 import com.weaone.themoa.common.response.ApiResponse;
 import com.weaone.themoa.domain.merchant.dto.request.AdminMerchantQuickAliasRequest;
+import com.weaone.themoa.domain.merchant.dto.request.MerchantAliasPromoteAsNewServiceRequest;
 import com.weaone.themoa.domain.merchant.dto.request.MerchantAliasPromoteRequest;
 import com.weaone.themoa.domain.merchant.dto.response.AdminMerchantPromotionCandidateResponse;
 import com.weaone.themoa.domain.merchant.dto.response.AdminUnclassifiedMerchantResponse;
@@ -35,10 +36,31 @@ public class AdminMerchantController {
     }
 
     @Operation(summary = "표기 전역 승격",
-            description = "회원 학습 표기를 전역 시드(member_id=NULL)로 승격합니다. 이미 전역에 있으면 아무 일도 하지 않습니다.")
+            description = "회원 학습 표기를 전역 시드(member_id=NULL)로 승격합니다. 이미 전역에 있으면 아무 일도 하지 않습니다. "
+                    + "이 원본 가맹점명으로 이미 쌓여 있던 다른 회원들의 미분류 거래도 그 자리에서 함께 재분류됩니다.")
     @PostMapping("/promotion-candidates/promote")
     public ResponseEntity<ApiResponse<Void>> promote(@Valid @RequestBody MerchantAliasPromoteRequest request) {
         adminMerchantService.promote(request.aliasId(), request.aliasText());
+        return ResponseEntity.ok(ApiResponse.success());
+    }
+
+    @Operation(summary = "새 서비스명으로 승격",
+            description = "제안된 이름이 다 마땅치 않을 때, 관리자가 직접 지은 새 서비스명으로 이 표기를 전역 승격합니다. "
+                    + "같은 이름의 서비스가 이미 있으면 재사용합니다.")
+    @PostMapping("/promotion-candidates/promote-new")
+    public ResponseEntity<ApiResponse<Void>> promoteAsNewService(
+            @Valid @RequestBody MerchantAliasPromoteAsNewServiceRequest request) {
+        adminMerchantService.promoteAsNewService(
+                request.aliasText(), request.canonicalServiceName(), request.categoryId());
+        return ResponseEntity.ok(ApiResponse.success());
+    }
+
+    @Operation(summary = "표기 반려",
+            description = "이 (표기, 제안 서비스명) 조합이 틀렸다고 판단해 승격 대기목록에서 다시 안 뜨게 합니다. "
+                    + "학습한 회원의 개인 표기는 그대로 두므로 그 회원 본인 화면에는 영향이 없습니다.")
+    @PostMapping("/promotion-candidates/reject")
+    public ResponseEntity<ApiResponse<Void>> reject(@Valid @RequestBody MerchantAliasPromoteRequest request) {
+        adminMerchantService.rejectCandidate(request.aliasId(), request.aliasText());
         return ResponseEntity.ok(ApiResponse.success());
     }
 

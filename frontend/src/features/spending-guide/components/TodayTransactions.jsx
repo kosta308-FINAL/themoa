@@ -36,6 +36,7 @@ function TodayTransactions({
     const visual = transactionVisual(transaction);
     const isRefund = toNumber(transaction.netAmount) < 0;
     const isManual = transaction.source === "MANUAL";
+    const isFixedExpense = Boolean(transaction.fixedExpenseId);
     return (
       <button
         type="button"
@@ -55,6 +56,9 @@ function TodayTransactions({
             </strong>
             {transaction.canceledAmount > 0 && (
               <em className="spending-tiny-badge cancel">일부 취소됨</em>
+            )}
+            {isFixedExpense && (
+              <em className="spending-tiny-badge fixed">고정지출</em>
             )}
             {isManual && <em className="spending-tiny-badge">직접 입력</em>}
             {isRefund && !transaction.canceledAmount && (

@@ -355,49 +355,35 @@
 
 .aiq-chunk-option-grid {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(
-      260px,
-      1.2fr
-    );
+  grid-template-columns: repeat(3, minmax(200px, 1fr));
   gap: 14px;
-  align-items: stretch;
+  align-items: start;
 }
 
-.aiq-toggle-field {
-  min-height: 92px;
+.aiq-toggle-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
-  padding: 12px;
+  height: 42px;
+  padding: 0 12px;
   border: 1px solid #dbe4ee;
   border-radius: 8px;
   background: #fff;
-  color: #334155;
 }
 
-.aiq-toggle-field input {
+.aiq-toggle-row input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  margin-top: 2px;
+  padding: 0;
+  border: none;
   accent-color: #15803d;
+  cursor: pointer;
 }
 
-.aiq-toggle-field span {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.aiq-toggle-field strong {
+.aiq-toggle-row strong {
   color: #0f172a;
   font-size: 13px;
-  font-weight: 900;
-}
-
-.aiq-toggle-field small {
-  color: #64748b;
-  font-size: 12px;
-  line-height: 1.5;
+  font-weight: 800;
 }
 
 .aiq-chunk-preview {

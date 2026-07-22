@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getSpendingTransactions } from "../../api/spendingGuideApi";
+import {
+  getCategorySummary,
+  getSpendingTransactions,
+} from "../../api/spendingGuideApi";
 import CalendarPopover from "../../components/common/CalendarPopover";
 import DashboardIcon from "../../components/common/DashboardIcon";
 import RegisterExpenseModal from "../fixed-expense/components/RegisterExpenseModal";
@@ -27,8 +30,10 @@ import {
   errorMessage,
   formatDate,
   formatDateWithWeekday,
+  formatShortDate,
   formatWon,
   INITIAL_SYNC_IN_PROGRESS,
+  netAmountForTotal,
   shiftDateBy,
   todayDate,
   toNumber,
@@ -43,7 +48,6 @@ function SpendingGuidePage() {
     editingTransaction,
     expandToday,
     handleCardConnected,
-    handleCategoryCycleChange,
     handleDismiss,
     handleInitialSyncRetry,
     handleManualSync,
@@ -73,6 +77,9 @@ function SpendingGuidePage() {
   const [dayItems, setDayItems] = useState(null);
   const [isDayLoading, setIsDayLoading] = useState(false);
   const [dayError, setDayError] = useState("");
+  const [dayCategory, setDayCategory] = useState(null);
+  const [isDayCategoryLoading, setIsDayCategoryLoading] = useState(false);
+  const [dayCategoryError, setDayCategoryError] = useState("");
   const isSelectedToday = selectedDate === todayDate();
 
   useEffect(() => {
@@ -90,11 +97,28 @@ function SpendingGuidePage() {
     run();
   }, [selectedDate, isSelectedToday]);
 
+  useEffect(() => {
+    const run = () => {
+      if (isSelectedToday) return;
+      setIsDayCategoryLoading(true);
+      setDayCategoryError("");
+      getCategorySummary({ date: selectedDate })
+        .then((result) => setDayCategory(result))
+        .catch((error) =>
+          setDayCategoryError(
+            errorMessage(error, "카테고리 데이터를 불러오지 못했습니다."),
+          ),
+        )
+        .finally(() => setIsDayCategoryLoading(false));
+    };
+    run();
+  }, [selectedDate, isSelectedToday]);
+
   const summary = data.summary;
   const dailyRecommended = toNumber(summary?.dailyRecommendedAmount);
   const todaySpent = toNumber(summary?.todayNetSpend);
   const dayNetTotal = (dayItems ?? []).reduce(
-    (sum, item) => sum + toNumber(item.netAmount),
+    (sum, item) => sum + netAmountForTotal(item),
     0,
   );
   const displayNetSpend = isSelectedToday ? todaySpent : dayNetTotal;
@@ -112,9 +136,14 @@ function SpendingGuidePage() {
     ? data.today
     : dayItems && { items: dayItems, totalCount: dayItems.length };
   const isDayReady = isSelectedToday || (!isDayLoading && !dayError);
+  const displayCategory = isSelectedToday ? data.category : dayCategory;
+  const isDayCategoryReady =
+    isSelectedToday || (!isDayCategoryLoading && !dayCategoryError);
   // 완료된 주기의 surplus_fund(erd.md §6) 합계를 반환하는 조회 API가 아직 없어
-  // 완료 주기 누적치는 빈 상태로 둔다(가짜 숫자 금지). 반면 진행 중인 이번 주기는
-  // summary.remainingAmount(예산 - 현재까지 사용액)로 실시간 계산이 가능하므로 바로 보여준다.
+  // 완료 주기 누적치는 빈 상태로 둔다(가짜 숫자 금지). 진행 중인 이번 주기는
+  // summary.cycleSavingsAmount(하루 권장액을 날짜별로 재구성해 실사용액과 비교한 누적 절약액)로
+  // 보여준다 — remainingAmount(예산 - 누적 사용액, 주기 마감 시 그대로 surplus_fund에 적립되는 값)와는
+  // 다른 지표다.
   const surplusSummary = {
     hasSavingsGoal: toNumber(summary?.savingsGoalAmount) > 0,
     savingsTargetAmount: toNumber(summary?.savingsGoalAmount),
@@ -124,7 +153,7 @@ function SpendingGuidePage() {
     ongoingCycle: summary
       ? {
           yearMonth: summary.cycleStartDate,
-          amount: toNumber(summary.remainingAmount),
+          amount: toNumber(summary.cycleSavingsAmount),
         }
       : null,
   };
@@ -523,17 +552,39 @@ function SpendingGuidePage() {
                         description="실제 소비 순액 기준"
                         tone="teal"
                       />
+                      {displayCategory && (
+                        <div className="spending-category-period">
+                          <strong>
+                            {Number(displayCategory.yearMonth?.slice(5, 7))}월
+                            급여주기
+                          </strong>
+                          <span>
+                            {formatShortDate(displayCategory.cycleStartDate)} ~{" "}
+                            {displayCategory.hasNext
+                              ? formatShortDate(displayCategory.cycleEndDate)
+                              : "오늘"}{" "}
+                            · {displayCategory.hasNext ? "완료" : "진행 중"}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <CategorySummary
-                      data={data.category}
-                      error={sectionErrors.category}
-                      onNavigate={handleCategoryCycleChange}
-                    />
+                    {!isDayCategoryReady ? (
+                      isDayCategoryLoading ? (
+                        <LoadingState label="카테고리 데이터를 불러오고 있어요." />
+                      ) : (
+                        <SectionError message={dayCategoryError} />
+                      )
+                    ) : (
+                      <CategorySummary
+                        data={displayCategory}
+                        error={isSelectedToday ? sectionErrors.category : ""}
+                      />
+                    )}
                     <div className="spending-list-footer spending-category-footer">
                       <span />
                       <Link
                         className="spending-link-button"
-                        to={`/dashboard/spending/category-detail${data.category?.budgetId ? `?budgetId=${data.category.budgetId}` : ""}`}
+                        to={`/dashboard/spending/category-detail${displayCategory?.budgetId ? `?budgetId=${displayCategory.budgetId}` : ""}`}
                       >
                         카테고리 상세보기{" "}
                         <DashboardIcon name="chevron-right" size={15} />

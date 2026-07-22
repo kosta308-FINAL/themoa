@@ -3,11 +3,13 @@ package com.weaone.themoa.domain.cardtransaction.controller;
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.common.exception.GlobalExceptionHandler;
+import com.weaone.themoa.common.logging.ErrorLogSanitizer;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionListResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.ConsumptionHistorySummaryResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.ConsumptionHistorySummaryResponse.CycleInfo;
 import com.weaone.themoa.domain.cardtransaction.service.ConsumptionHistoryService;
+import com.weaone.themoa.domain.logging.service.AsyncErrorLogRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,13 +50,18 @@ class ConsumptionHistoryControllerTest {
     @Mock
     private ConsumptionHistoryService consumptionHistoryService;
 
+    @Mock
+    private AsyncErrorLogRecorder asyncErrorLogRecorder;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         ConsumptionHistoryController controller = new ConsumptionHistoryController(consumptionHistoryService);
+        GlobalExceptionHandler globalExceptionHandler =
+                new GlobalExceptionHandler(new ErrorLogSanitizer(), asyncErrorLogRecorder);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
-                .setControllerAdvice(new GlobalExceptionHandler())
+                .setControllerAdvice(globalExceptionHandler)
                 .setCustomArgumentResolvers(memberIdResolver())
                 .build();
     }

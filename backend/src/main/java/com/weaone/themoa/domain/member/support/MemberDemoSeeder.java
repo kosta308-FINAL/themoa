@@ -1,5 +1,9 @@
 package com.weaone.themoa.domain.member.support;
 
+import com.weaone.themoa.config.AuthProperties;
+import com.weaone.themoa.domain.auth.entity.MemberTermsAgreement;
+import com.weaone.themoa.domain.auth.entity.TermsType;
+import com.weaone.themoa.domain.auth.repository.MemberTermsAgreementRepository;
 import com.weaone.themoa.domain.member.entity.Gender;
 import com.weaone.themoa.domain.member.entity.IncomeType;
 import com.weaone.themoa.domain.member.entity.Member;
@@ -34,6 +38,8 @@ public class MemberDemoSeeder implements ApplicationRunner {
     public static final String SOLMIN_EMAIL = "solmin";
 
     private final MemberRepository memberRepository;
+    private final MemberTermsAgreementRepository memberTermsAgreementRepository;
+    private final AuthProperties authProperties;
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -70,5 +76,19 @@ public class MemberDemoSeeder implements ApplicationRunner {
 
         Member newbie = Member.signUp("test3", hash, "이신규", Gender.MALE, LocalDate.of(2000, 8, 30), now);
         memberRepository.save(newbie);
+
+        // 관리자 "가맹점 & 서비스 마스터" 화면(AdminMerchantService)이 DATA_COLLECTION 동의 회원만
+        // 집계하므로, 그 화면의 데모 시나리오(MerchantAliasPromotionDemoSeeder)에 등장하는 회원들은
+        // 여기서 미리 동의 이력을 심어 둔다 — 실제 가입은 체크박스로 선택 동의하지만(AuthService), 데모
+        // 회원은 가입 폼을 거치지 않아 이 행이 없으면 화면이 통째로 빈 상태가 된다.
+        agreeToDataCollection(now, solmin, jaehoon, areum, newbie);
+    }
+
+    private void agreeToDataCollection(LocalDateTime now, Member... members) {
+        String version = authProperties.terms().version();
+        for (Member member : members) {
+            memberTermsAgreementRepository.save(
+                    MemberTermsAgreement.agree(member, TermsType.DATA_COLLECTION, version, now));
+        }
     }
 }
