@@ -11,6 +11,7 @@ import com.weaone.themoa.domain.auth.service.AuthService;
 import com.weaone.themoa.domain.auth.service.AuthTokenService;
 import com.weaone.themoa.domain.auth.service.EmailVerificationService;
 import com.weaone.themoa.domain.auth.service.IssuedTokens;
+import com.weaone.themoa.domain.auth.service.PasswordResetService;
 import com.weaone.themoa.domain.auth.support.RefreshTokenCookieFactory;
 import com.weaone.themoa.domain.member.entity.Gender;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,6 +52,8 @@ class AuthControllerTest {
     private AuthTokenService authTokenService;
     @Mock
     private EmailVerificationService emailVerificationService;
+    @Mock
+    private PasswordResetService passwordResetService;
 
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
@@ -65,8 +68,8 @@ class AuthControllerTest {
                 new AuthProperties.Terms("2026-07-21")
         );
         AuthController controller = new AuthController(
-                authService, authTokenService, emailVerificationService,
-                new RefreshTokenCookieFactory());
+                authService, authTokenService, emailVerificationService, passwordResetService,
+                new RefreshTokenCookieFactory(properties));
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
