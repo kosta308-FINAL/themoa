@@ -39,6 +39,26 @@ export const updateSearchSettings = ({ topK, retryTopK, minimumSimilarity }) =>
     .put(SEARCH_SETTINGS_URL, { topK, retryTopK, minimumSimilarity })
     .then(responseData);
 
+const SEARCH_KEYWORDS_URL = "/api/admin/financial-products/search/keywords";
+
+/** 검색어 해석용 키워드(인구집단 동의어 / 상품유형 의도) 목록. */
+export const getSearchKeywords = () =>
+  axiosInstance.get(SEARCH_KEYWORDS_URL).then(responseData);
+
+/**
+ * 키워드 추가. keywordType은 DEMOGRAPHIC(인구집단) 또는 PRODUCT_INTENT(상품의도).
+ * 이미 있는 키워드면 서버가 200으로 응답하므로 성공으로 처리한다.
+ */
+export const addSearchKeyword = ({ keywordType, groupKey, keyword }) =>
+  axiosInstance.post(SEARCH_KEYWORDS_URL, { keywordType, groupKey, keyword });
+
+export const deleteSearchKeyword = (keywordId) =>
+  axiosInstance.delete(`${SEARCH_KEYWORDS_URL}/${keywordId}`);
+
+/** 키워드를 기본 세트로 초기화한다(편집 내용 전부 삭제). */
+export const resetSearchKeywords = () =>
+  axiosInstance.post(`${SEARCH_KEYWORDS_URL}/reset`);
+
 /** 검색 튜닝값을 서버 기본값으로 되돌린다. 응답은 되돌아간 기본값. */
 export const resetSearchSettings = () =>
   axiosInstance.delete(SEARCH_SETTINGS_URL).then(responseData);
