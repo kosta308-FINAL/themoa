@@ -29,6 +29,12 @@ const NAV_ITEMS = [
     to: "/admin/policies",
     icon: "M4 6c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2zm0 0v6c0 1.1 3.6 2 8 2s8-.9 8-2V6m-16 6v6c0 1.1 3.6 2 8 2s8-.9 8-2v-6",
   },
+  {
+    key: "financial-products",
+    label: "금융상품 관리",
+    to: "/admin/financial-products",
+    icon: "M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
+  },
 ];
 
 function AdminLayout({ title, subtitle, children }) {

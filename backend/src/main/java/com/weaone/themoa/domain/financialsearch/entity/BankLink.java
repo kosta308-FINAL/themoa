@@ -21,6 +21,20 @@ public class BankLink {
     protected BankLink() {
     }
 
+    private BankLink(String companyName, String officialUrl) {
+        this.companyName = companyName;
+        this.officialUrl = officialUrl;
+    }
+
+    public static BankLink of(String companyName, String officialUrl) {
+        return new BankLink(companyName, officialUrl);
+    }
+
+    /** 확인된 공식 URL이 바뀌었을 때 갱신한다(회사명은 식별자라 바꾸지 않는다). */
+    public void changeOfficialUrl(String officialUrl) {
+        this.officialUrl = officialUrl;
+    }
+
     public String getCompanyName() { return companyName; }
     public String getOfficialUrl() { return officialUrl; }
 }

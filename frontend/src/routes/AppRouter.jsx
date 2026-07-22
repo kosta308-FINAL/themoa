@@ -18,6 +18,7 @@ import CustomerServicePage from "../features/customer-service/CustomerServicePag
 import CustomerServiceAdminPage from "../features/customer-service-admin/CustomerServiceAdminPage";
 import CustomerServiceAiQualityPage from "../features/customer-service-admin/CustomerServiceAiQualityPage";
 import MerchantMasterAdminPage from "../features/merchant-admin/MerchantMasterAdminPage";
+import FinancialProductAdminPage from "../features/financial-admin/FinancialProductAdminPage";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 import UserOnlyRoute from "./UserOnlyRoute";
@@ -68,6 +69,10 @@ function AppRouter() {
             element={<MerchantMasterAdminPage />}
           />
           <Route path="/admin/policies" element={<PolicyAdminPage />} />
+          <Route
+            path="/admin/financial-products"
+            element={<FinancialProductAdminPage />}
+          />
         </Route>
       </Route>
     </Routes>
