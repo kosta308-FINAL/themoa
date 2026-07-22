@@ -1,0 +1,368 @@
+/* 금융상품 관리(관리자). 카드·색상은 AdminLayout.css의 --admin-* 토큰을 그대로 쓴다. */
+
+.fa-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 900px;
+}
+
+.fa-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 24px;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.fa-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.fa-card-head h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--admin-text, #0f172a);
+}
+
+.fa-card-head p {
+  margin-top: 4px;
+  max-width: 520px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--admin-text-sub, #64748b);
+}
+
+.fa-btn-primary {
+  flex-shrink: 0;
+  background: #2563eb;
+  color: #fff;
+}
+
+.fa-btn-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.fa-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ─── 결과 표 ─────────────────────────────────────────── */
+.fa-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.fa-table th,
+.fa-table td {
+  padding: 10px 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--admin-border, #e2e8f0);
+}
+
+.fa-table th:first-child,
+.fa-table td:first-child,
+.fa-table th:nth-child(2),
+.fa-table td:nth-child(2) {
+  text-align: left;
+}
+
+.fa-table thead th {
+  color: var(--admin-text-sub, #64748b);
+  font-weight: 600;
+  background: #f8fafc;
+}
+
+.fa-em {
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+.fa-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.fa-badge-ok {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.fa-badge-fail {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* ─── 안내 문구 ───────────────────────────────────────── */
+.fa-note {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: var(--admin-text-sub, #64748b);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.fa-note-action {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.fa-note-done {
+  background: #dcfce7;
+  color: #15803d;
+  font-weight: 600;
+}
+
+.fa-alert {
+  padding: 13px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.fa-alert-danger {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.fa-alert-info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+/* ─── 현황 대시보드 ───────────────────────────────────── */
+.fa-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.fa-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.fa-stat > span {
+  font-size: 12px;
+  color: var(--admin-text-sub, #64748b);
+}
+
+.fa-stat strong {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--admin-text, #0f172a);
+}
+
+.fa-stat .fa-stat-text {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.fa-stat .fa-stat-muted {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--admin-text-sub, #64748b);
+}
+
+.fa-stat small {
+  font-size: 11px;
+  color: var(--admin-text-sub, #64748b);
+}
+
+.fa-stat .fa-badge {
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.fa-badge-warn {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.fa-note-warn {
+  background: #fff7ed;
+  color: #c2410c;
+  font-weight: 600;
+}
+
+.fa-inline-link {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+/* 인덱스가 어긋났을 때 갱신 버튼을 눈에 띄게 */
+.fa-btn-attention {
+  background: #ea580c;
+  box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.15);
+}
+
+.fa-btn-attention:hover:not(:disabled) {
+  background: #c2410c;
+}
+
+/* ─── 은행 공식 링크 관리 ─────────────────────────────── */
+.fa-btn-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.fa-btn-danger:hover:not(:disabled) {
+  background: #fecaca;
+}
+
+.fa-btn-danger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.fa-link-form {
+  display: flex;
+  gap: 8px;
+}
+
+.fa-link-form input {
+  padding: 9px 12px;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.fa-link-form input:first-child {
+  flex: 0 0 220px;
+  min-width: 0;
+}
+
+.fa-link-form input:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
+.fa-link-form input:focus {
+  border-color: #2563eb;
+}
+
+.fa-link-block h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--admin-text, #0f172a);
+}
+
+.fa-count {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: var(--admin-text-sub, #64748b);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.fa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.fa-chip {
+  padding: 6px 11px;
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fa-chip:hover {
+  background: #ffedd5;
+}
+
+.fa-link-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fa-link-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 10px;
+}
+
+.fa-link-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fa-link-info strong {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fa-link-info a {
+  font-size: 12px;
+  color: #2563eb;
+  word-break: break-all;
+}
+
+.fa-link-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.fa-link-actions .admin-btn {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+@media (max-width: 720px) {
+  .fa-card-head {
+    flex-direction: column;
+  }
+
+  .fa-link-form {
+    flex-direction: column;
+  }
+
+  .fa-link-form input:first-child {
+    flex-basis: auto;
+  }
+
+  .fa-link-list li {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
