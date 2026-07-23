@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
 const DAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 const FULL_DAY_LABELS = [
@@ -36,14 +37,25 @@ const getMonday = (date) => {
 
 const formatShortDate = (date) => `${date.getMonth() + 1}.${date.getDate()}`;
 
+const EVENT_LABELS = {
+  FIXED_EXPENSE_DUE: "출금 예정",
+  POLICY_START: "신청 시작",
+  POLICY_DEADLINE: "신청 마감",
+  POLICY_SINGLE_DAY: "신청일",
+  USER_SCHEDULE: "내 일정",
+};
+
 const getAriaLabel = (date, dayIndex, today) => {
   const todayText = isSameDate(date, today) ? ", 오늘" : "";
 
   return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${FULL_DAY_LABELS[dayIndex]}${todayText}`;
 };
 
-function DashboardWeeklyCalendar() {
+const typeClass = (eventType) => `dash-weekly-event-${eventType.toLowerCase().replaceAll("_", "-")}`;
+
+function DashboardWeeklyCalendar({ events = [], loading, error }) {
   const today = useMemo(() => new Date(), []);
+  const [selectedDateKey, setSelectedDateKey] = useState(() => getDateKey(today));
   const weekDays = useMemo(() => {
     const monday = getMonday(today);
 
@@ -70,6 +82,17 @@ function DashboardWeeklyCalendar() {
       };
     });
   }, [today]);
+  const eventsByDate = useMemo(() => {
+    const groups = new Map();
+    events.forEach((event) => {
+      const items = groups.get(event.eventDate) || [];
+      groups.set(event.eventDate, [...items, event]);
+    });
+    return groups;
+  }, [events]);
+  const selectedEvents = eventsByDate.get(selectedDateKey) || [];
+  const visibleSelectedEvents = selectedEvents.slice(0, 3);
+  const hiddenSelectedCount = selectedEvents.length - visibleSelectedEvents.length;
 
   const rangeText = `${formatShortDate(weekDays[0].date)} - ${formatShortDate(
     weekDays[weekDays.length - 1].date,
@@ -86,24 +109,52 @@ function DashboardWeeklyCalendar() {
       </div>
 
       <div className="dash-weekly-calendar-grid">
-        {weekDays.map((day) => (
-          <time
-            key={day.dateKey}
-            dateTime={day.dateKey}
-            className={day.className}
-            aria-label={day.ariaLabel}
-          >
-            <span>{day.dayLabel}</span>
-            <strong>{day.dayNumber}</strong>
-          </time>
-        ))}
+        {weekDays.map((day) => {
+          const dayEvents = eventsByDate.get(day.dateKey) || [];
+          return (
+            <button
+              key={day.dateKey}
+              type="button"
+              className={`${day.className}${selectedDateKey === day.dateKey ? " is-selected" : ""}`}
+              onClick={() => setSelectedDateKey(day.dateKey)}
+              aria-label={day.ariaLabel}
+            >
+              <time dateTime={day.dateKey}>
+                <span>{day.dayLabel}</span>
+                <strong>{day.dayNumber}</strong>
+              </time>
+              {dayEvents.length > 0 && (
+                <span className="dash-weekly-event-dots" aria-label={`${dayEvents.length}개 일정`}>
+                  {dayEvents.slice(0, 3).map((event) => (
+                    <span key={event.eventKey} className={typeClass(event.eventType)} />
+                  ))}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="dash-weekly-calendar-empty">
-        <strong>일정 연동 준비 중</strong>
-        <span>
-          정책 신청일, 고정지출 예정일, 급여일은 다음 단계에서 연결됩니다.
-        </span>
+      <div className="dash-weekly-calendar-summary">
+        {loading && <div className="dash-weekly-calendar-empty">이번 주 일정을 불러오는 중입니다.</div>}
+        {!loading && error && <div className="dash-weekly-calendar-empty is-error">{error}</div>}
+        {!loading && !error && selectedEvents.length === 0 && (
+          <div className="dash-weekly-calendar-empty">등록된 일정이 없어요.</div>
+        )}
+        {!loading && !error && selectedEvents.length > 0 && (
+          <ul className="dash-weekly-event-list">
+            {visibleSelectedEvents.map((event) => (
+              <li key={event.eventKey}>
+                <span className={typeClass(event.eventType)}>{EVENT_LABELS[event.eventType]}</span>
+                <strong>{event.title}</strong>
+              </li>
+            ))}
+            {hiddenSelectedCount > 0 && <li className="dash-weekly-event-more">외 {hiddenSelectedCount}건</li>}
+          </ul>
+        )}
+        <Link className="dash-weekly-calendar-link" to="/dashboard/calendar">
+          전체 캘린더
+        </Link>
       </div>
     </section>
   );
