@@ -40,6 +40,14 @@ public class FinancialVectorStoreConfig {
                 .collectionName(properties.getCollectionName())
                 .initializeSchema(true)   // 금융 전용 컬렉션이 없으면 생성(정책 컬렉션과 별개)
                 .build();
+        try {
+            // 이 QdrantVectorStore는 스프링 빈이 아니라 래퍼 안에 들어가므로, 스프링이 afterPropertiesSet()을
+            // 자동 호출해주지 않는다. 컬렉션 생성(initializeSchema)이 여기서 일어나므로 직접 호출해야 한다.
+            // (호출하지 않으면 컬렉션이 이미 있는 환경에서만 동작하고, 새 Qdrant 볼륨에선 컬렉션이 없어 검색이 실패한다.)
+            delegate.afterPropertiesSet();
+        } catch (Exception e) {
+            throw new IllegalStateException("금융상품 Qdrant 컬렉션을 초기화하지 못했습니다.", e);
+        }
         return new FinancialVectorStore(delegate);
     }
 }
