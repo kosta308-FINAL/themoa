@@ -16,44 +16,41 @@ function PolicyPage() {
   const search = usePolicySearch(examples[0])
 
   return (
-    <div className="policy-page">
-      <main className="policy-main">
-        <section className="policy-header">
-          <div>
-            <p className="policy-eyebrow">Youth policy search</p>
-            <h1>정책 지원</h1>
-            <p className="policy-description">
-              지역, 나이, 학생 여부, 취업 상태를 자연어로 입력하면 준비된 정책/RAG 인덱스에서 조건에 맞는 정책만 찾습니다.
-            </p>
-          </div>
-        </section>
+    <main className="dash-main policy-page">
+      <div className="dash-topbar policy-topbar">
+        <div>
+          <h1>정책 지원</h1>
+          <p>
+            지역, 나이, 학생 여부와 취업 상태를 자연어로 입력해 내 조건과 관련된 정책을 찾아보세요.
+          </p>
+        </div>
+      </div>
 
-        <PolicySearchForm
-          query={search.query}
-          examples={examples}
+      <PolicySearchForm
+        query={search.query}
+        examples={examples}
+        loading={search.loading}
+        totalText={search.totalText}
+        onQueryChange={search.setQuery}
+        onSearch={search.runSearch}
+      />
+
+      {search.error && <div className="policy-alert">{search.error}</div>}
+      <PolicySearchStatus result={search.result} />
+
+      <section className="policy-content">
+        <PolicySearchResults
           loading={search.loading}
-          totalText={search.totalText}
-          onQueryChange={search.setQuery}
+          result={search.result}
+          results={search.results}
+          selected={search.selected}
+          page={search.page}
           onSearch={search.runSearch}
+          onOpenDetail={search.openDetail}
         />
-
-        {search.error && <div className="policy-alert">{search.error}</div>}
-        <PolicySearchStatus result={search.result} />
-
-        <section className="policy-content">
-          <PolicySearchResults
-            loading={search.loading}
-            result={search.result}
-            results={search.results}
-            selected={search.selected}
-            page={search.page}
-            onSearch={search.runSearch}
-            onOpenDetail={search.openDetail}
-          />
-          <PolicyDetailPanel selected={search.selected} detailLoading={search.detailLoading} />
-        </section>
-      </main>
-    </div>
+        <PolicyDetailPanel selected={search.selected} detailLoading={search.detailLoading} />
+      </section>
+    </main>
   )
 }
 
