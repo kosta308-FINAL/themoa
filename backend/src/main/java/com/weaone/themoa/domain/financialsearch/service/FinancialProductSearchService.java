@@ -5,6 +5,7 @@ import com.weaone.themoa.domain.financialsearch.dto.FinancialSearchRequest;
 import com.weaone.themoa.domain.financialsearch.dto.FinancialSearchResponse;
 import com.weaone.themoa.domain.financialsearch.dto.FinancialSearchResultItem;
 import com.weaone.themoa.domain.financialsearch.dto.FinancialSortOption;
+import com.weaone.themoa.domain.financialsearch.dto.response.FinancialSearchExplainResponse;
 import com.weaone.themoa.domain.financialsearch.repository.FinancialLoanSearchRepository;
 import com.weaone.themoa.domain.financialsearch.repository.FinancialSavingsSearchRepository;
 import com.weaone.themoa.domain.recommend.entity.LoanProduct;
@@ -47,28 +48,15 @@ public class FinancialProductSearchService {
     private static final double SEMANTIC_WEIGHT = 0.4;
     private static final double LEXICAL_WEIGHT = 0.6;
 
-    // 특정 인구집단을 겨냥한 상품인지 룰 기반으로 감지하기 위한 키워드 그룹.
-    // 검색어가 어느 그룹에 속하는지 감지되면, 상품 텍스트가 "다른 그룹"에만 해당하고 검색어 그룹엔
+    // 인구집단 키워드와 상품의도 키워드는 관리자가 화면에서 편집할 수 있어 DB에서 읽는다
+    // (FinancialSearchKeywordProvider가 캐시해 두고, 변경 시 갱신한다).
+    //
+    // 인구집단: 검색어가 어느 그룹에 속하는지 감지되면, 상품 텍스트가 "다른 그룹"에만 해당하고 검색어 그룹엔
     // 전혀 해당하지 않을 경우 유사도 점수와 무관하게 결과에서 제외한다(하드필터).
     // 예: "청년"으로 검색했는데 상품이 "임산부/육아" 전용이고 "청년"이란 언급이 전혀 없으면 제외.
-    private static final Map<String, List<String>> DEMOGRAPHIC_GROUPS = Map.ofEntries(
-            Map.entry("YOUTH", List.of("청년", "MZ", "사회초년생", "청소년", "대학생")),
-            Map.entry("CHILDCARE", List.of("임산부", "임신", "출산", "육아", "다자녀", "아이사랑", "자녀", "키즈", "꿈나무", "아동")),
-            Map.entry("DISABILITY", List.of("장애인", "장애우", "장애")),
-            Map.entry("SENIOR", List.of("시니어", "고령자", "실버", "어르신", "노인")),
-            Map.entry("MULTICULTURAL", List.of("다문화", "외국인")),
-            Map.entry("VETERAN", List.of("국가유공자", "보훈", "상이군경")),
-            Map.entry("LOW_INCOME", List.of("기초생활수급자", "차상위", "서민", "저소득")),
-            Map.entry("FARMER_FISHER", List.of("농업인", "어업인", "농어민", "귀농", "귀어")),
-            Map.entry("NEWLYWED", List.of("신혼부부", "예비부부"))
-    );
-
-    // 검색어가 "대출"을 원하는지 "예금/적금(저축)"을 원하는지 감지하는 키워드.
-    // 둘 다 걸리면(예: "돈 없을 때 돈 불리기"처럼 대출 트리거와 저축 트리거가 같이 있는 경우) 저축 쪽을 우선한다.
-    private static final List<String> LOAN_INTENT_KEYWORDS =
-            List.of("대출", "빌리", "빌려", "급전", "돈이 없", "돈 없");
-    private static final List<String> SAVINGS_INTENT_KEYWORDS =
-            List.of("적금", "예금", "저축", "모으", "불리");
+    //
+    // 상품의도: 검색어가 "대출"을 원하는지 "예금/적금(저축)"을 원하는지 감지한다.
+    // 둘 다 걸리면(예: "돈 없을 때 돈 불리기") 저축 쪽을 우선한다.
 
     // 결과 화면에 한 번에 보여줄 최대 개수(topK)만큼만 LLM에 설명을 부탁한다. 그 이상은 토큰 낭비.
     private final FinancialSavingsSearchRepository savingsProductRepository;
@@ -78,6 +66,9 @@ public class FinancialProductSearchService {
     // 빈이 없으면(금융 RAG 꺼짐/Qdrant 미가동) getIfAvailable()이 null → semanticScores가 빈 맵 반환 → LIKE 폴백.
     private final ObjectProvider<FinancialVectorStore> financialVectorStoreProvider;
     private final FinancialRagProperties ragProperties;
+    // 튜닝값(topK·유사도 임계값)은 관리자가 화면에서 바꿀 수 있어 매 검색마다 현재 값을 읽는다.
+    private final FinancialRagSettingService settingService;
+    private final FinancialSearchKeywordProvider keywordProvider;
     private final BankUrlResolver bankUrlResolver;
     private final ObjectMapper objectMapper;
 
@@ -86,6 +77,8 @@ public class FinancialProductSearchService {
                                          ObjectProvider<ChatClient.Builder> chatClientBuilderProvider,
                                          ObjectProvider<FinancialVectorStore> financialVectorStoreProvider,
                                          FinancialRagProperties ragProperties,
+                                         FinancialRagSettingService settingService,
+                                         FinancialSearchKeywordProvider keywordProvider,
                                          BankUrlResolver bankUrlResolver,
                                          ObjectMapper objectMapper) {
         this.savingsProductRepository = savingsProductRepository;
@@ -93,6 +86,8 @@ public class FinancialProductSearchService {
         this.chatClientBuilderProvider = chatClientBuilderProvider;
         this.financialVectorStoreProvider = financialVectorStoreProvider;
         this.ragProperties = ragProperties;
+        this.settingService = settingService;
+        this.keywordProvider = keywordProvider;
         this.bankUrlResolver = bankUrlResolver;
         this.objectMapper = objectMapper;
     }
@@ -111,7 +106,8 @@ public class FinancialProductSearchService {
         if (query.contains("연금")) {
             return new FinancialSearchResponse(query, request.sort().name(), 0, List.of(), PENSION_UNAVAILABLE_MESSAGE, List.of());
         }
-        List<FinancialSearchResultItem> results = hybridSearch(query);
+        FinancialRagSettingValues settings = settingService.current();
+        List<FinancialSearchResultItem> results = hybridSearch(query, settings);
 
         String message = null;
         List<String> suggestedQueries = List.of();
@@ -119,7 +115,7 @@ public class FinancialProductSearchService {
             // 하이브리드 검색(벡터+키워드)도 0건일 때만 LLM 호출(비용 절약).
             String expandedKeyword = expandQueryWithLlm(query);
             if (StringUtils.hasText(expandedKeyword)) {
-                results = hybridSearch(expandedKeyword);
+                results = hybridSearch(expandedKeyword, settings);
                 if (!results.isEmpty()) {
                     message = "\"" + query + "\"에 대한 결과가 없어 \"" + expandedKeyword + "\"(으)로 확장하여 검색했습니다.";
                 }
@@ -130,7 +126,7 @@ public class FinancialProductSearchService {
                 List<String> alternatives = suggestAlternativeQueries(query);
                 String matchedAlternative = null;
                 for (String alternative : alternatives) {
-                    List<FinancialSearchResultItem> alternativeResults = hybridSearch(alternative);
+                    List<FinancialSearchResultItem> alternativeResults = hybridSearch(alternative, settings);
                     if (!alternativeResults.isEmpty()) {
                         results = alternativeResults;
                         matchedAlternative = alternative;
@@ -155,6 +151,124 @@ public class FinancialProductSearchService {
         return new FinancialSearchResponse(query, effectiveSort.name(), sorted.size(), sorted, message, suggestedQueries);
     }
 
+    /**
+     * 검색 품질 점검(관리자). 실제 검색과 같은 채점 단계를 그대로 돌리되, 순위만 주는 게 아니라
+     * 후보별 점수와 제외 사유를 함께 돌려준다.
+     *
+     * <p>실제 검색에는 규칙 신호가 약할 때 LLM 보강이 붙지만, 여기서는 원인을 명확히 보기 위해
+     * 규칙 기반 해석만 사용한다(LLM이 끼면 같은 검색어라도 결과가 흔들려 진단이 어려워진다).
+     */
+    @Transactional(readOnly = true)
+    public FinancialSearchExplainResponse explain(String rawQuery) {
+        String query = rawQuery.trim();
+        FinancialRagSettingValues settings = settingService.current();
+
+        Map<String, Double> semanticScores = semanticScores(query, settings);
+        Map<String, Set<String>> lexicalMatches = lexicalMatches(query);
+        int termCount = Math.max(1, query.split("\\s+").length);
+        Map<String, Double> lexicalScores = new LinkedHashMap<>();
+        lexicalMatches.forEach((key, terms) -> lexicalScores.put(key, terms.size() / (double) termCount));
+
+        Set<String> queryGroups = detectGroups(query);
+        String typeIntent = detectProductTypeIntent(query);
+        Integer queryAge = extractAge(query);
+
+        FinancialSearchExplainResponse.QueryInterpretation interpretation =
+                new FinancialSearchExplainResponse.QueryInterpretation(
+                        typeIntent,
+                        List.copyOf(queryGroups),
+                        queryAge,
+                        expandWithDemographicSynonyms(query.split("\\s+")),
+                        ragProperties.isEnabled() && financialVectorStoreProvider.getIfAvailable() != null,
+                        semanticScores.size(),
+                        settings.minimumSimilarity());
+
+        LinkedHashSet<String> candidateKeys = new LinkedHashSet<>(semanticScores.keySet());
+        candidateKeys.addAll(lexicalMatches.keySet());
+
+        Set<Long> savingsIds = new LinkedHashSet<>();
+        Set<Long> loanIds = new LinkedHashSet<>();
+        for (String key : candidateKeys) {
+            String[] parts = key.split("-", 2);
+            Long id = Long.valueOf(parts[1]);
+            if ("SAVINGS".equals(parts[0])) {
+                savingsIds.add(id);
+            } else {
+                loanIds.add(id);
+            }
+        }
+
+        List<FinancialSearchExplainResponse.Candidate> candidates = new ArrayList<>();
+        if (!savingsIds.isEmpty()) {
+            for (SavingsProduct product : savingsProductRepository.findAllById(savingsIds)) {
+                String key = "SAVINGS-" + product.getId();
+                String productText = nullToEmpty(product.getJoinTarget()) + " " + nullToEmpty(product.getSpecialCondition());
+                String excludedReason = null;
+                if ("LOAN".equals(typeIntent)) {
+                    excludedReason = "검색어가 대출 의도로 감지되어 예·적금은 제외";
+                } else if (isDemographicMismatch(queryGroups, productText)) {
+                    excludedReason = "상품이 다른 인구집단 전용이라 제외";
+                } else if (isAgeMismatch(queryAge, product.getMinAge(), product.getMaxAge())) {
+                    excludedReason = "검색어의 나이가 상품 가입 연령 범위를 벗어나 제외";
+                }
+                candidates.add(toCandidate("SAVINGS_PRODUCT", product.getId(), product.getCompanyName(),
+                        product.getProductName(), key, semanticScores, lexicalScores, lexicalMatches, excludedReason));
+            }
+        }
+        if (!loanIds.isEmpty()) {
+            for (LoanProduct product : loanProductRepository.findAllById(loanIds)) {
+                String key = "LOAN-" + product.getId();
+                String excludedReason = null;
+                if ("SAVINGS".equals(typeIntent)) {
+                    excludedReason = "검색어가 저축 의도로 감지되어 대출은 제외";
+                } else if (isDemographicMismatch(queryGroups, nullToEmpty(product.getSpecialCondition()))) {
+                    excludedReason = "상품이 다른 인구집단 전용이라 제외";
+                }
+                candidates.add(toCandidate("LOAN_PRODUCT", product.getId(), product.getCompanyName(),
+                        product.getProductName(), key, semanticScores, lexicalScores, lexicalMatches, excludedReason));
+            }
+        }
+
+        // 점수 높은 순으로 정렬한 뒤, 필터를 통과한 것 중 상위 topK만 실제 결과에 들어간다.
+        candidates.sort(Comparator.comparingDouble(FinancialSearchExplainResponse.Candidate::totalScore).reversed());
+        List<FinancialSearchExplainResponse.Candidate> finalized = new ArrayList<>(candidates.size());
+        int rank = 0;
+        for (FinancialSearchExplainResponse.Candidate candidate : candidates) {
+            if (candidate.excludedReason() != null) {
+                finalized.add(candidate);
+                continue;
+            }
+            rank++;
+            if (rank <= settings.topK()) {
+                finalized.add(candidate);
+            } else {
+                finalized.add(withExcludedReason(candidate, "상위 " + settings.topK() + "건에 들지 못해 제외"));
+            }
+        }
+        return new FinancialSearchExplainResponse(query, interpretation, finalized);
+    }
+
+    private FinancialSearchExplainResponse.Candidate toCandidate(
+            String targetType, Long productId, String companyName, String productName, String key,
+            Map<String, Double> semanticScores, Map<String, Double> lexicalScores,
+            Map<String, Set<String>> lexicalMatches, String excludedReason) {
+        Double semantic = semanticScores.get(key);
+        double lexical = lexicalScores.getOrDefault(key, 0.0);
+        return new FinancialSearchExplainResponse.Candidate(
+                targetType, productId, companyName, productName,
+                semantic, lexical, score(key, semanticScores, lexicalScores),
+                List.copyOf(lexicalMatches.getOrDefault(key, Set.of())),
+                excludedReason == null, excludedReason);
+    }
+
+    private FinancialSearchExplainResponse.Candidate withExcludedReason(
+            FinancialSearchExplainResponse.Candidate candidate, String reason) {
+        return new FinancialSearchExplainResponse.Candidate(
+                candidate.targetType(), candidate.productId(), candidate.companyName(), candidate.productName(),
+                candidate.semanticScore(), candidate.lexicalScore(), candidate.totalScore(),
+                candidate.matchedTerms(), false, reason);
+    }
+
     private static final List<String> HIGH_RATE_INTENT_KEYWORDS =
             List.of("고금리", "높은 금리", "높은금리", "최고 금리", "최고금리", "이자 많이", "이자많이");
 
@@ -175,8 +289,8 @@ public class FinancialProductSearchService {
     // 벡터 유사도 후보와 SQL 키워드 매칭 후보를 합쳐서 점수를 매기고, 점수 높은 순으로 topK개만 남긴다.
     // 벡터 검색만 쓰면 "청년"과 "육아"처럼 문서상 자주 같이 언급되는 단어를 혼동하는데,
     // 실제 키워드 포함 여부를 같이 반영하면 그런 오탐이 줄어든다.
-    private List<FinancialSearchResultItem> hybridSearch(String query) {
-        Map<String, Double> semanticScores = semanticScores(query);
+    private List<FinancialSearchResultItem> hybridSearch(String query, FinancialRagSettingValues settings) {
+        Map<String, Double> semanticScores = semanticScores(query, settings);
         int termCount = Math.max(1, query.trim().split("\\s+").length);
         Map<String, Set<String>> lexicalMatches = lexicalMatches(query);
         Map<String, Double> lexicalScores = new LinkedHashMap<>();
@@ -199,7 +313,8 @@ public class FinancialProductSearchService {
                 if (hint.age() != null) {
                     queryAge = hint.age();
                 }
-                if (hint.populationGroup() != null && DEMOGRAPHIC_GROUPS.containsKey(hint.populationGroup())) {
+                if (hint.populationGroup() != null
+                        && keywordProvider.demographicGroups().containsKey(hint.populationGroup())) {
                     queryGroups = Set.of(hint.populationGroup());
                 }
             }
@@ -211,7 +326,7 @@ public class FinancialProductSearchService {
             // 검색어 자체가 후보를 하나도 못 찾았어도, "대출"/"저축" 의도는 감지된 경우
             // (예: "급전", "돈 빌리기"처럼 상품 데이터엔 없는 구어체 표현) 완전히 빈 결과 대신
             // 해당 유형의 상품군을 최소한 보여준다.
-            return typedFallback(typeIntent);
+            return typedFallback(typeIntent, settings);
         }
 
         Set<Long> savingsIds = new LinkedHashSet<>();
@@ -257,26 +372,26 @@ public class FinancialProductSearchService {
 
         if (scoredItems.isEmpty()) {
             // 후보는 있었지만 전부 다른 유형(대출/저축)이었거나 인구집단 하드필터에 걸려 다 빠진 경우도 동일하게 처리.
-            return typedFallback(typeIntent);
+            return typedFallback(typeIntent, settings);
         }
 
         return scoredItems.stream()
                 .sorted(Comparator.comparingDouble(ScoredItem::score).reversed())
-                .limit(ragProperties.getTopK())
+                .limit(settings.topK())
                 .map(ScoredItem::item)
                 .toList();
     }
 
     // 검색어와 정확히 일치하는 상품이 없어도, "대출"/"저축" 의도만은 확실할 때 그 유형의 상품군을
     // 최소한 보여주는 폴백. 진짜 관련성 신호가 없으므로 대표금리 순으로만 정렬해 보여준다.
-    private List<FinancialSearchResultItem> typedFallback(String typeIntent) {
+    private List<FinancialSearchResultItem> typedFallback(String typeIntent, FinancialRagSettingValues settings) {
         String reason = "정확히 일치하는 상품 정보는 없지만, 검색어가 %s 관련 표현으로 보여 관련 상품을 보여드려요";
         if ("LOAN".equals(typeIntent)) {
             return loanProductRepository.findAll().stream()
                     .map(product -> toItem(product, reason.formatted("대출")))
                     .sorted(Comparator.comparing(FinancialSearchResultItem::representativeRate,
                             Comparator.nullsLast(Comparator.naturalOrder())))
-                    .limit(ragProperties.getTopK())
+                    .limit(settings.topK())
                     .toList();
         }
         if ("SAVINGS".equals(typeIntent)) {
@@ -284,7 +399,7 @@ public class FinancialProductSearchService {
                     .map(product -> toItem(product, reason.formatted("예금/적금")))
                     .sorted(Comparator.comparing(FinancialSearchResultItem::representativeRate,
                             Comparator.nullsLast(Comparator.reverseOrder())))
-                    .limit(ragProperties.getTopK())
+                    .limit(settings.topK())
                     .toList();
         }
         return List.of();
@@ -344,11 +459,11 @@ public class FinancialProductSearchService {
     // 검색어에 저축 관련 단어가 있으면 무조건 "SAVINGS"(저축 트리거가 대출 트리거보다 우선).
     // 저축 단어가 없고 대출 단어만 있으면 "LOAN". 둘 다 없으면 null(필터 없이 예금/적금+대출 다 보여줌).
     private String detectProductTypeIntent(String query) {
-        boolean hasSavingsIntent = SAVINGS_INTENT_KEYWORDS.stream().anyMatch(query::contains);
+        boolean hasSavingsIntent = keywordProvider.savingsIntentKeywords().stream().anyMatch(query::contains);
         if (hasSavingsIntent) {
             return "SAVINGS";
         }
-        boolean hasLoanIntent = LOAN_INTENT_KEYWORDS.stream().anyMatch(query::contains);
+        boolean hasLoanIntent = keywordProvider.loanIntentKeywords().stream().anyMatch(query::contains);
         return hasLoanIntent ? "LOAN" : null;
     }
 
@@ -357,7 +472,7 @@ public class FinancialProductSearchService {
             return Set.of();
         }
         Set<String> groups = new LinkedHashSet<>();
-        DEMOGRAPHIC_GROUPS.forEach((group, keywords) -> {
+        keywordProvider.demographicGroups().forEach((group, keywords) -> {
             if (keywords.stream().anyMatch(text::contains)) {
                 groups.add(group);
             }
@@ -383,7 +498,7 @@ public class FinancialProductSearchService {
     // 정확도는 이후 키워드 점수와 합산하는 단계에서 한 번 더 걸러진다).
     // 1단계 이식: ragProperties.isEnabled()가 false면 여기서 바로 빈 맵을 반환해 벡터스토어(정책 Qdrant 컬렉션)를
     // 아예 건드리지 않는다.
-    private Map<String, Double> semanticScores(String query) {
+    private Map<String, Double> semanticScores(String query, FinancialRagSettingValues settings) {
         if (!ragProperties.isEnabled()) {
             return Map.of();
         }
@@ -394,8 +509,8 @@ public class FinancialProductSearchService {
         VectorStore vectorStore = financialVectorStore.delegate();
         List<Document> documents = vectorStore.similaritySearch(SearchRequest.builder()
                 .query(query)
-                .topK(ragProperties.getRetryTopK())
-                .similarityThreshold(ragProperties.getMinimumSimilarity())
+                .topK(settings.retryTopK())
+                .similarityThreshold(settings.minimumSimilarity())
                 .build());
         Map<String, Double> scores = new LinkedHashMap<>();
         for (Document document : documents) {
@@ -447,7 +562,7 @@ public class FinancialProductSearchService {
         return matches;
     }
 
-    // 검색어 단어가 인구집단 그룹(DEMOGRAPHIC_GROUPS)의 동의어 중 하나면, 그 그룹의 나머지 동의어도
+    // 검색어 단어가 인구집단 그룹의 동의어 중 하나면, 그 그룹의 나머지 동의어도
     // 같이 검색 대상에 넣는다. 예: "임산부"로 검색해도 상품 텍스트엔 "임신"으로만 적혀 있는 경우가 많아서
     // (실측: DB에 "임산부" 0건, "임신" 5건), 원래 단어만으론 후보가 아예 안 잡히는 문제가 있었다.
     private List<String> expandWithDemographicSynonyms(String[] originalTerms) {
@@ -457,7 +572,7 @@ public class FinancialProductSearchService {
                 continue;
             }
             expanded.add(term);
-            for (List<String> synonyms : DEMOGRAPHIC_GROUPS.values()) {
+            for (List<String> synonyms : keywordProvider.demographicGroups().values()) {
                 if (synonyms.contains(term)) {
                     expanded.addAll(synonyms);
                 }
@@ -527,7 +642,7 @@ public class FinancialProductSearchService {
             if (builder == null) {
                 return null;
             }
-            String groupKeys = String.join("|", DEMOGRAPHIC_GROUPS.keySet());
+            String groupKeys = String.join("|", keywordProvider.demographicGroups().keySet());
             String prompt = """
                     사용자가 금융상품(예금/적금/대출) 검색창에 아래처럼 정형화된 단어 없이 말로 풀어서
                     검색어를 입력했습니다. 이 문장에서 아래 3가지 정보를 추론해서 JSON 한 줄로만 출력하세요.

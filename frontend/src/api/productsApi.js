@@ -9,3 +9,10 @@ const responseData = (response) => response.data?.data;
  */
 export const postRecommend = (payload) =>
   axiosInstance.post("/api/recommend", payload).then(responseData);
+
+/**
+ * 추천 입력 폼 기본값. 회원가입 월급과 소비내역 연동으로 쌓인 잉여금에서 가져온다.
+ * monthlyIncomeManwon은 소비가이드 설정 전이면 null이고, monthlyDepositWon은 항상 값이 있다.
+ */
+export const getRecommendDefaults = () =>
+  axiosInstance.get("/api/recommend/defaults").then(responseData);

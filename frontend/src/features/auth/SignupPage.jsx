@@ -190,20 +190,35 @@ function SignupPage() {
         </p>
       </div>
 
-      <ol className="auth-steps">
-        <li className={step === 1 ? "current" : "done"}>
-          <span className="auth-step-num">{step > 1 ? "✓" : "1"}</span>
-          약관 동의
-        </li>
-        <li className={step === 2 ? "current" : step > 2 ? "done" : ""}>
-          <span className="auth-step-num">{step > 2 ? "✓" : "2"}</span>
-          이메일 인증
-        </li>
-        <li className={step === 3 ? "current" : ""}>
-          <span className="auth-step-num">3</span>
-          기본 정보
-        </li>
-      </ol>
+      <div className="auth-steps-row">
+        {step > 1 && (
+          <button
+            type="button"
+            className="auth-back"
+            aria-label="이전 단계로"
+            onClick={() => {
+              setError("");
+              setStep((s) => s - 1);
+            }}
+          >
+            <DashboardIcon name="chevron-left" size={16} />
+          </button>
+        )}
+        <ol className="auth-steps">
+          <li className={step === 1 ? "current" : "done"}>
+            <span className="auth-step-num">{step > 1 ? "✓" : "1"}</span>
+            약관 동의
+          </li>
+          <li className={step === 2 ? "current" : step > 2 ? "done" : ""}>
+            <span className="auth-step-num">{step > 2 ? "✓" : "2"}</span>
+            이메일 인증
+          </li>
+          <li className={step === 3 ? "current" : ""}>
+            <span className="auth-step-num">3</span>
+            기본 정보
+          </li>
+        </ol>
+      </div>
 
       {step === 1 && (
         <form className="auth-form" onSubmit={handleContinueToEmail} noValidate>
@@ -231,17 +246,6 @@ function SignupPage() {
               {error}
             </p>
           )}
-
-          <button
-            type="button"
-            className="auth-back"
-            onClick={() => {
-              setError("");
-              setStep(1);
-            }}
-          >
-            ← 이전
-          </button>
 
           <div className="auth-field">
             <span className="auth-field-label">이메일</span>
@@ -329,17 +333,6 @@ function SignupPage() {
               {error}
             </p>
           )}
-
-          <button
-            type="button"
-            className="auth-back"
-            onClick={() => {
-              setError("");
-              setStep(2);
-            }}
-          >
-            ← 이전
-          </button>
 
           <div className="auth-verified">
             <span>{normalizedEmail}</span>

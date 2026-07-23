@@ -75,6 +75,12 @@ function LoginPage() {
           />
         </label>
 
+        <div className="auth-find-links">
+          <Link to="/find-email">아이디 찾기</Link>
+          <span className="auth-find-divider" aria-hidden="true" />
+          <Link to="/find-password">비밀번호 찾기</Link>
+        </div>
+
         <button type="submit" className="auth-submit" disabled={submitting}>
           {submitting ? "로그인 중…" : "로그인"}
         </button>

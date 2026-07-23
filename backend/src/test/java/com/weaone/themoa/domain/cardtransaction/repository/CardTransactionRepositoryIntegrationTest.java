@@ -287,7 +287,7 @@ class CardTransactionRepositoryIntegrationTest {
     }
 
     @Test
-    @DisplayName("전체 소비내역 상세 결제내역 페이지는 usedAt DESC, id DESC로 정렬되고 고정지출·거절 거래를 제외한다")
+    @DisplayName("전체 소비내역 상세 결제내역 페이지는 usedAt DESC, id DESC로 정렬되고 거절 거래만 제외하며 고정지출 태그 거래는 포함한다")
     void findConsumptionHistoryPageOrdersAndFilters() {
         Member member = persistMember("history-page@example.com");
         CardConnection connection = persistConnection(member);
@@ -330,9 +330,10 @@ class CardTransactionRepositoryIntegrationTest {
                 PageRequest.of(0, 10));
 
         assertThat(page.getContent()).extracting(CardTransaction::getId)
-                .containsExactly(latest.getId(), sameInstantLargerId.getId(), sameInstantSmallerId.getId(), earliest.getId());
+                .containsExactly(fixedTx.getId(), latest.getId(), sameInstantLargerId.getId(),
+                        sameInstantSmallerId.getId(), earliest.getId());
         assertThat(page.getContent()).extracting(CardTransaction::getId)
-                .doesNotContain(fixedTx.getId(), rejectedTx.getId());
+                .doesNotContain(rejectedTx.getId());
     }
 
     @Test

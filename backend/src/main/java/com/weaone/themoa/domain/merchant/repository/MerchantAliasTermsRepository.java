@@ -1,5 +1,6 @@
 package com.weaone.themoa.domain.merchant.repository;
 
+import com.weaone.themoa.domain.auth.entity.TermsType;
 import com.weaone.themoa.domain.merchant.entity.MerchantAliasTerms;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,7 +27,12 @@ public interface MerchantAliasTermsRepository extends JpaRepository<MerchantAlia
     /**
      * 관리자 전역 승격 대기목록(manage.html "전역 마스터 승격 대기목록" 확장). 회원 학습 표기를
      * (alias, 표기) 단위로 묶어 학습자 수 내림차순으로 준다. {@code defaultCategory}가 없는 alias도
-     * 빠지지 않도록 left join으로 카테고리를 가져온다.
+     * 빠지지 않도록 left join으로 카테고리를 가져온다. 이미 전역 등록됐거나 관리자가 반려한
+     * (alias, 표기) 조합은 다시 안 뜨도록 둘 다 제외한다.
+     *
+     * <p>데이터 수집·활용에 동의({@code consentType})하지 않은 회원의 학습분은 이 집계에서 아예
+     * 제외한다 — 이 화면은 회원 개인의 학습 데이터를 관리자가 들여다보고 전역화 여부를 판단하는
+     * 화면이라, 동의하지 않은 회원의 데이터는 애초에 후보로도 올리지 않는다.
      */
     @Query("select t.merchantAlias.id as aliasId, t.aliasText as aliasText, "
             + "a.canonicalServiceName as canonicalServiceName, c.name as categoryName, "
@@ -35,14 +41,23 @@ public interface MerchantAliasTermsRepository extends JpaRepository<MerchantAlia
             + "join t.merchantAlias a "
             + "left join a.defaultCategory c "
             + "where t.member is not null "
+            + "and exists ("
+            + "  select mta.id from MemberTermsAgreement mta "
+            + "  where mta.member = t.member and mta.termsType = :consentType"
+            + ") "
             + "and not exists ("
             + "  select g.id from MerchantAliasTerms g "
             + "  where g.member is null "
             + "  and upper(trim(g.aliasText)) = upper(trim(t.aliasText))"
             + ") "
+            + "and not exists ("
+            + "  select r.id from PromotionCandidateRejection r "
+            + "  where r.merchantAlias.id = t.merchantAlias.id "
+            + "  and upper(trim(r.aliasText)) = upper(trim(t.aliasText))"
+            + ") "
             + "group by t.merchantAlias.id, t.aliasText, a.canonicalServiceName, c.name "
             + "order by count(distinct t.member.id) desc")
-    List<PromotionCandidate> findPromotionCandidates(Pageable pageable);
+    List<PromotionCandidate> findPromotionCandidates(@Param("consentType") TermsType consentType, Pageable pageable);
 
     interface PromotionCandidate {
         Long getAliasId();

@@ -41,3 +41,4 @@ externalApiTest
 sql
 src/main/resources/application-local.yml
 .local-storage/
+logs

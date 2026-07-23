@@ -141,14 +141,16 @@ public class AdminCustomerAiQualityService {
 
     @Transactional
     public AdminCustomerKnowledgeFileResponse upload(Long adminId, String title, String category,
-                                                     Integer chunkMaxLength, Integer chunkOverlapLength,
-                                                     Boolean splitByMarkdownHeading, MultipartFile file) {
+                                                     Integer chunkMaxLength, Integer chunkMinLength,
+                                                     Integer chunkOverlapLength,
+                                                     Boolean splitByMarkdownHeading, Boolean splitByParagraph,
+                                                     MultipartFile file) {
         validateFile(file);
         String normalizedTitle = requireText(title, 1, TITLE_MAX_LENGTH);
         String normalizedCategory = requireText(category, 1, CATEGORY_MAX_LENGTH);
         String content = readText(file);
         CustomerKnowledgeChunkingOptions options = CustomerKnowledgeChunkingOptions.normalize(
-                chunkMaxLength, chunkOverlapLength, splitByMarkdownHeading);
+                chunkMaxLength, chunkMinLength, chunkOverlapLength, splitByMarkdownHeading, splitByParagraph);
         return createKnowledgeDocument(
                 adminId,
                 normalizedTitle,
@@ -166,8 +168,10 @@ public class AdminCustomerAiQualityService {
         String content = requireText(request == null ? null : request.content(), 1, 500_000);
         CustomerKnowledgeChunkingOptions options = CustomerKnowledgeChunkingOptions.normalize(
                 request == null ? null : request.chunkMaxLength(),
+                request == null ? null : request.chunkMinLength(),
                 request == null ? null : request.chunkOverlapLength(),
-                request == null ? null : request.splitByMarkdownHeading());
+                request == null ? null : request.splitByMarkdownHeading(),
+                request == null ? null : request.splitByParagraph());
         return createKnowledgeDocument(
                 adminId,
                 normalizedTitle,
@@ -182,8 +186,10 @@ public class AdminCustomerAiQualityService {
         String content = requireText(request == null ? null : request.content(), 1, 500_000);
         CustomerKnowledgeChunkingOptions options = CustomerKnowledgeChunkingOptions.normalize(
                 request == null ? null : request.chunkMaxLength(),
+                request == null ? null : request.chunkMinLength(),
                 request == null ? null : request.chunkOverlapLength(),
-                request == null ? null : request.splitByMarkdownHeading());
+                request == null ? null : request.splitByMarkdownHeading(),
+                request == null ? null : request.splitByParagraph());
         List<String> chunks = chunker.chunk(content, options);
         List<AdminCustomerKnowledgeChunkPreviewResponse.Item> items = IntStream.range(0, chunks.size())
                 .mapToObj(index -> new AdminCustomerKnowledgeChunkPreviewResponse.Item(
@@ -210,8 +216,10 @@ public class AdminCustomerAiQualityService {
                 fileSize,
                 content,
                 options.maxChunkLength(),
+                options.minChunkLength(),
                 options.overlapLength(),
                 options.splitByMarkdownHeading(),
+                options.splitByParagraph(),
                 admin,
                 now));
         List<CustomerKnowledgeChunk> savedChunks = IntStream.range(0, chunks.size())

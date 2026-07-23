@@ -454,7 +454,7 @@ function CategoryDetailPage() {
                   <span>소비 규모</span>
                   <span>이번 주기</span>
                 </div>
-                <div>
+                <div className="category-rows">
                   {coloredCategories.map((row) => (
                     <button
                       type="button"

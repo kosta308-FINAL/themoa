@@ -121,9 +121,15 @@ public class FixedExpenseRegistrationService {
                 converted.convertedDate(), converted.exchangeRate(), request.expectedPayDay());
     }
 
+    /** 해지 시 후보를 함께 되돌린다 — REGISTERED로 남으면 재탐지에서 영구히 제외되기 때문(fixedExpenseCandidateReopen 이슈). */
     @Transactional
     public void cancel(Long memberId, Long fixedExpenseId) {
-        getOwned(memberId, fixedExpenseId).cancel();
+        FixedExpense fixedExpense = getOwned(memberId, fixedExpenseId);
+        fixedExpense.cancel();
+        FixedExpenseCandidate candidate = fixedExpense.getCandidate();
+        if (candidate != null) {
+            candidate.reopen();
+        }
     }
 
     private MerchantAlias resolveMerchantAliasForDirectRegister(Long memberId, FixedExpenseDirectRegisterRequest request) {

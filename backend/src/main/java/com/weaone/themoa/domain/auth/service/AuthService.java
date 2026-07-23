@@ -4,12 +4,16 @@ import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.config.AuthProperties;
 import com.weaone.themoa.domain.auth.dto.request.ChangePasswordRequest;
+import com.weaone.themoa.domain.auth.dto.request.FindEmailRequest;
 import com.weaone.themoa.domain.auth.dto.request.LoginRequest;
+import com.weaone.themoa.domain.auth.dto.request.PasswordResetRequest;
 import com.weaone.themoa.domain.auth.dto.request.SignupRequest;
 import com.weaone.themoa.domain.auth.dto.request.WithdrawRequest;
+import com.weaone.themoa.domain.auth.dto.response.FindEmailResponse;
 import com.weaone.themoa.domain.auth.entity.MemberTermsAgreement;
 import com.weaone.themoa.domain.auth.entity.TermsType;
 import com.weaone.themoa.domain.auth.repository.MemberTermsAgreementRepository;
+import com.weaone.themoa.domain.auth.support.EmailMasker;
 import com.weaone.themoa.domain.auth.support.EmailNormalizer;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
@@ -22,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +38,7 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final MemberTermsAgreementRepository memberTermsAgreementRepository;
     private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService;
     private final AuthTokenService authTokenService;
     private final LoginAttemptService loginAttemptService;
     private final PasswordEncoder passwordEncoder;
@@ -169,5 +175,39 @@ public class AuthService {
 
     private boolean isUnderage(LocalDate birthDate, LocalDate today) {
         return Period.between(birthDate, today).getYears() < MIN_SIGNUP_AGE;
+    }
+
+    /**
+     * 아이디(이메일) 찾기. 닉네임은 unique 제약이 없어 동명이인이 나올 수 있으므로, 정확히 1건일 때만
+     * 마스킹된 이메일을 알려준다 — 0건은 "없음", 2건 이상은 "특정 불가"로 서로 다르게 응답한다.
+     */
+    public FindEmailResponse findEmail(FindEmailRequest request) {
+        List<Member> matches = memberRepository.findByNameAndBirthDateAndWithdrawnAtIsNull(
+                request.nickname().trim(), request.birthDate());
+        if (matches.isEmpty()) {
+            throw new BusinessException(ErrorCode.AUTH_FIND_EMAIL_NOT_FOUND);
+        }
+        if (matches.size() > 1) {
+            throw new BusinessException(ErrorCode.AUTH_FIND_EMAIL_AMBIGUOUS);
+        }
+        return new FindEmailResponse(EmailMasker.mask(matches.get(0).getEmail()));
+    }
+
+    /**
+     * 비밀번호 찾기 최종 단계. 현재 비밀번호 확인 없이 이메일 인증 코드 통과만으로 재설정한다는 점에서
+     * 마이페이지의 {@link #changePassword}와 다르다. 성공하면 동일하게 전 세션을 무효화한다.
+     */
+    @Transactional
+    public void resetPassword(PasswordResetRequest request) {
+        if (!request.newPassword().equals(request.newPasswordConfirm())) {
+            throw new BusinessException(ErrorCode.AUTH_PASSWORD_CONFIRM_MISMATCH);
+        }
+        String email = EmailNormalizer.normalize(request.email());
+        passwordResetService.requireVerified(email);
+
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_PASSWORD_RESET_MEMBER_NOT_FOUND));
+        member.changePassword(passwordEncoder.encode(request.newPassword()));
+        authTokenService.revokeAll(member);
     }
 }

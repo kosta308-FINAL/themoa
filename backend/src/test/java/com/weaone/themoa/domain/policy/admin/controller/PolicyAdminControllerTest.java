@@ -1,6 +1,8 @@
 package com.weaone.themoa.domain.policy.admin.controller;
 
 import com.weaone.themoa.common.exception.GlobalExceptionHandler;
+import com.weaone.themoa.common.logging.ErrorLogSanitizer;
+import com.weaone.themoa.domain.logging.service.AsyncErrorLogRecorder;
 import com.weaone.themoa.domain.policy.admin.dto.AdminJobStatus;
 import com.weaone.themoa.domain.policy.admin.dto.AdminStatusResponse;
 import com.weaone.themoa.domain.policy.admin.dto.dashboard.AdminDashboardResponse;
@@ -112,7 +114,7 @@ class PolicyAdminControllerTest {
         given(jobService.find("missing")).willReturn(Optional.empty());
         MockMvc mockMvc = MockMvcBuilders
                 .standaloneSetup(new PolicyAdminJobController(jobService))
-                .setControllerAdvice(new GlobalExceptionHandler())
+                .setControllerAdvice(new GlobalExceptionHandler(new ErrorLogSanitizer(), mock(AsyncErrorLogRecorder.class)))
                 .setMessageConverters(new MappingJackson2HttpMessageConverter())
                 .build();
 

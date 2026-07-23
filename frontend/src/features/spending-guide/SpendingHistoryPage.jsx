@@ -17,7 +17,11 @@ import {
   getSpendingTransactions,
   syncCardTransactions,
 } from "../../api/spendingGuideApi";
-import { shiftDateBy, todayDate } from "./spendingGuideUtils";
+import {
+  netAmountForTotal,
+  shiftDateBy,
+  todayDate,
+} from "./spendingGuideUtils";
 import "./SpendingHistoryPage.css";
 
 const ICONS = {
@@ -131,7 +135,7 @@ function HistoryIcon({ name, small = false, spin = false }) {
   );
 }
 
-function DailyChart({ daily, isCurrentCycle }) {
+function DailyChart({ daily, isCurrentCycle, onPointClick, activeDate }) {
   const chartRef = useRef(null);
   const [size, setSize] = useState({ width: 700, height: 190 });
 
@@ -207,12 +211,30 @@ function DailyChart({ daily, isCurrentCycle }) {
           {daily.map((item, index) => (
             <g key={`${item[0]}-${index}`}>
               <circle
-                className={`line-point${index === peakIndex || (isCurrentCycle && index === daily.length - 1) ? " highlight" : ""}`}
+                className={`line-point${index === peakIndex || (isCurrentCycle && index === daily.length - 1) ? " highlight" : ""}${item[2] === activeDate ? " selected" : ""}`}
                 cx={x(index)}
                 cy={y(item[1])}
                 r="3"
               />
-              <circle className="line-hit" cx={x(index)} cy={y(item[1])} r="9">
+              <circle
+                className="line-hit"
+                cx={x(index)}
+                cy={y(item[1])}
+                r="9"
+                role={onPointClick ? "button" : undefined}
+                tabIndex={onPointClick ? 0 : undefined}
+                aria-label={
+                  onPointClick ? `${item[0]} 결제내역으로 이동` : undefined
+                }
+                onClick={() => onPointClick?.(item[2])}
+                onKeyDown={(event) => {
+                  if (!onPointClick) return;
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onPointClick(item[2]);
+                  }
+                }}
+              >
                 <title>
                   {item[0]} · {(item[1] * 1000).toLocaleString("ko-KR")}원
                 </title>
@@ -259,21 +281,24 @@ function groupTransactions(items) {
     const last = groups.at(-1);
     if (last && last.date === item.usedDate) {
       last.items.push(item);
-      last.total += toNumber(item.netAmount);
+      last.total += netAmountForTotal(item);
     } else {
       groups.push({
         date: item.usedDate,
         items: [item],
-        total: toNumber(item.netAmount),
+        total: netAmountForTotal(item),
       });
     }
   });
   return groups;
 }
 
-function TransactionGroup({ group, isToday }) {
+function TransactionGroup({ group, isToday, innerRef, highlighted }) {
   return (
-    <div className="history-group">
+    <div
+      className={`history-group${highlighted ? " highlighted" : ""}`}
+      ref={innerRef}
+    >
       <div className="history-date">
         <strong>{`${formatMonthDayKo(group.date)}${isToday ? " · 오늘" : ""}`}</strong>
         <span>{`순사용 ${formatWon(group.total)}`}</span>
@@ -282,6 +307,7 @@ function TransactionGroup({ group, isToday }) {
         {group.items.map((item) => {
           const visual = transactionVisual(item);
           const isManual = item.source === "MANUAL";
+          const isFixedExpense = Boolean(item.fixedExpenseId);
           const badge =
             item.status === "PARTIAL_CANCELED"
               ? "일부 취소됨"
@@ -308,6 +334,9 @@ function TransactionGroup({ group, isToday }) {
               <span className="tx-info">
                 <span className="tx-name">
                   <strong>{item.merchantDisplayName}</strong>
+                  {isFixedExpense && (
+                    <em className="tiny-badge fixed">고정지출</em>
+                  )}
                   {badge && (
                     <em
                       className={`tiny-badge${badge.includes("취소") ? " cancel" : ""}`}
@@ -348,6 +377,8 @@ function SpendingHistoryPage() {
   const [syncMessage, setSyncMessage] = useState("");
   const [toast, setToast] = useState("");
   const transactionsPanelRef = useRef(null);
+  const groupRefs = useRef(new Map());
+  const [highlightDate, setHighlightDate] = useState("");
   const initialDateTime = useMemo(() => nowLocalInputValue(), []);
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedDate = searchParams.get("date");
@@ -401,7 +432,7 @@ function SpendingHistoryPage() {
 
   const dayNetTotal = useMemo(
     () =>
-      (dayItems ?? []).reduce((sum, item) => sum + toNumber(item.netAmount), 0),
+      (dayItems ?? []).reduce((sum, item) => sum + netAmountForTotal(item), 0),
     [dayItems],
   );
   const dayGroups = useMemo(
@@ -552,12 +583,73 @@ function SpendingHistoryPage() {
       (summary?.dailyTrend ?? []).map((item) => [
         `${dayOfMonth(item.date)}일`,
         toNumber(item.netAmount) / 1000,
+        item.date,
       ]),
     [summary],
   );
   const groups = useMemo(
     () => groupTransactions(transactionsData?.items ?? []),
     [transactionsData],
+  );
+
+  useEffect(() => {
+    if (!highlightDate) return undefined;
+    const timer = window.setTimeout(() => setHighlightDate(""), 2200);
+    return () => window.clearTimeout(timer);
+  }, [highlightDate]);
+
+  const scrollToDateGroup = useCallback((date) => {
+    groupRefs.current.get(date)?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+    setHighlightDate(date);
+  }, []);
+
+  const jumpToDate = useCallback(
+    async (targetDate) => {
+      if (!cycleBudgetId || isTransactionsLoading) return;
+      if (groups.some((group) => group.date === targetDate)) {
+        scrollToDateGroup(targetDate);
+        return;
+      }
+      setIsTransactionsLoading(true);
+      setTransactionsError("");
+      try {
+        let page = 0;
+        let matchedPage = null;
+        for (;;) {
+          const data = await fetchTransactionsPage(cycleBudgetId, page);
+          const items = data.items ?? [];
+          if (items.some((item) => item.usedDate === targetDate)) {
+            matchedPage = data;
+            break;
+          }
+          const passedTarget = items.some((item) => item.usedDate < targetDate);
+          if (passedTarget || page >= (data.totalPages ?? 1) - 1) break;
+          page += 1;
+        }
+        if (matchedPage) {
+          setTransactionsData(matchedPage);
+          window.requestAnimationFrame(() => scrollToDateGroup(targetDate));
+        } else {
+          setToast("해당 날짜에는 결제내역이 없어요.");
+        }
+      } catch (error) {
+        setTransactionsError(
+          errorMessage(error, "결제내역을 불러오지 못했어요."),
+        );
+      } finally {
+        setIsTransactionsLoading(false);
+      }
+    },
+    [
+      cycleBudgetId,
+      isTransactionsLoading,
+      groups,
+      fetchTransactionsPage,
+      scrollToDateGroup,
+    ],
   );
 
   return (
@@ -870,6 +962,8 @@ function SpendingHistoryPage() {
                   <DailyChart
                     daily={daily}
                     isCurrentCycle={cycle.status === "IN_PROGRESS"}
+                    onPointClick={jumpToDate}
+                    activeDate={highlightDate}
                   />
                 )}
               </article>
@@ -921,6 +1015,11 @@ function SpendingHistoryPage() {
                           cycle.status === "IN_PROGRESS" &&
                           group.date === cycle.dataEndDate
                         }
+                        innerRef={(el) => {
+                          if (el) groupRefs.current.set(group.date, el);
+                          else groupRefs.current.delete(group.date);
+                        }}
+                        highlighted={group.date === highlightDate}
                       />
                     ))}
                   </div>
@@ -1077,7 +1176,11 @@ function SpendingHistoryPage() {
                       onClick={handleSync}
                       disabled={isSyncing}
                     >
-                      <HistoryIcon name="repeat" small spin={isSyncing} />
+                      {isSyncing ? (
+                        <span className="sync-spinner" aria-hidden="true" />
+                      ) : (
+                        <HistoryIcon name="repeat" small />
+                      )}
                       {isSyncing ? "동기화 중..." : "결제내역 동기화"}
                     </button>
                   </div>

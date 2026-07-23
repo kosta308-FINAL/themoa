@@ -61,6 +61,12 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
     /** 학습 루프 2단계(merchant.md §3): 같은 원본 가맹점(merchant)의 이 회원 거래 전체 재태깅 대상. */
     List<CardTransaction> findByMember_IdAndMerchant_Id(Long memberId, Long merchantId);
 
+    /** 관리자 전역 승격 소급 재분류 대상: 회원 구분 없이 이 원본 가맹점(merchant)의 미분류 거래 전체. */
+    List<CardTransaction> findByMerchant_IdAndMerchantAliasIsNull(Long merchantId);
+
+    /** 데모 시드 재기동 시 중복 생성 방지용. */
+    boolean existsByApprovalNo(String approvalNo);
+
     /**
      * F-05 미납 확인 후보(troubleshooting/billerProblem.md §6): 미태깅 + 금액오차 + 결제일 윈도우.
      * 가맹점은 미식별(merchantAlias null, biller 경유 포함) 거래이거나 이 고정지출과 같은 alias로
@@ -158,10 +164,11 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
                                                          @Param("endDate") LocalDate endDate);
 
     /**
-     * S-01 오늘 거래 미리보기(dayguide.md §8.1): 고정지출 태그·거절 제외, 최신순. {@code pageable}로 미리보기
-     * 개수를 제한하면서도 {@code Page.getTotalElements()}로 제한 전 전체 건수를 함께 얻는다.
+     * S-01 오늘 거래 미리보기(dayguide.md §8.1): 거절 제외, 최신순. 고정지출 태그 거래도 표시하되
+     * ({@code fixedExpenseId} 배지) 오늘 순사용액 등 집계에서만 별도로 제외한다(§5). {@code pageable}로
+     * 미리보기 개수를 제한하면서도 {@code Page.getTotalElements()}로 제한 전 전체 건수를 함께 얻는다.
      */
-    Page<CardTransaction> findByMember_IdAndFixedExpenseIsNullAndStatusNotAndUsedDateOrderByUsedAtDesc(
+    Page<CardTransaction> findByMember_IdAndStatusNotAndUsedDateOrderByUsedAtDesc(
             Long memberId, TransactionStatus rejected, LocalDate usedDate, Pageable pageable);
 
     /**
@@ -178,10 +185,10 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
                                             @Param("endDate") LocalDate endDate);
 
     /**
-     * S-04 전체 소비내역(dayguide.md §8.1): 급여 주기 범위 + 선택적 날짜·카테고리 필터. 고정지출 태그·거절
-     * 제외, 최신순 페이지.
+     * S-04 전체 소비내역(dayguide.md §8.1): 급여 주기 범위 + 선택적 날짜·카테고리 필터. 거절 제외, 최신순
+     * 페이지. 고정지출 태그 거래도 목록에는 표시하고(배지) 집계에서만 별도로 제외한다(§5).
      */
-    @Query("select t from CardTransaction t where t.member.id = :memberId and t.fixedExpense is null "
+    @Query("select t from CardTransaction t where t.member.id = :memberId "
             + "and t.status <> :rejected and t.usedDate between :cycleStart and :cycleEnd "
             + "and (:date is null or t.usedDate = :date) "
             + "and (:categoryId is null or t.category.id = :categoryId) "
@@ -210,8 +217,9 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
 
     /**
      * 전체 소비내역 상세 결제내역(consumeHistoryDetail.md §3.2·§5·§7.2): 급여주기 범위 페이지, 정렬은
-     * usedAt DESC, id DESC로 고정한다. 목록 DTO 변환({@link com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionResponse#from})이
-     * category·merchantAlias·merchant·card 연관관계를 전부 읽으므로 N+1을 막기 위해 함께 fetch join한다.
+     * usedAt DESC, id DESC로 고정한다. 거절만 제외하고 고정지출 태그 거래도 목록에는 표시하며(배지) 집계에서만
+     * 별도로 제외한다. 목록 DTO 변환({@link com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionResponse#from})이
+     * category·merchantAlias·merchant·card·fixedExpense 연관관계를 전부 읽으므로 N+1을 막기 위해 함께 fetch join한다.
      * fetch join + Page이므로 count 쿼리를 별도로 준다.
      */
     @Query(value = "select t from CardTransaction t "
@@ -221,11 +229,12 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
             + "left join fetch t.card c "
             + "left join fetch c.cardConnection cc "
             + "left join fetch cc.cardIssuer "
-            + "where t.member.id = :memberId and t.status <> :rejected and t.fixedExpense is null "
+            + "left join fetch t.fixedExpense "
+            + "where t.member.id = :memberId and t.status <> :rejected "
             + "and t.usedDate between :startDate and :endDate "
             + "order by t.usedAt desc, t.id desc",
             countQuery = "select count(t) from CardTransaction t "
-                    + "where t.member.id = :memberId and t.status <> :rejected and t.fixedExpense is null "
+                    + "where t.member.id = :memberId and t.status <> :rejected "
                     + "and t.usedDate between :startDate and :endDate")
     Page<CardTransaction> findConsumptionHistoryPage(@Param("memberId") Long memberId,
                                                        @Param("rejected") TransactionStatus rejected,
@@ -347,6 +356,9 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
      * 관리자 "미식별 & 기타 가맹점 작업대"(merchant.md §2-1 전역 시드 후보): 최근 N일간 전역 alias가 없는
      * 원본 가맹점을 발생 건수 상위로 준다. biller(Apple 등)는 이름으로 신원 판별이 안 되고 전역 alias 후보가
      * 아니라(§5-D) 제외한다.
+     *
+     * <p>데이터 수집·활용에 동의({@code consentType})하지 않은 회원의 거래는 집계에서 제외한다 — 이
+     * 목록도 회원 거래를 관리자가 들여다보고 전역화 여부를 판단하는 화면이라 동의한 회원의 거래만 쓴다.
      */
     @Query(value = "select ct.merchant_id as merchantId, m.merchant_name_raw as merchantNameRaw, "
             + "max(ct.merchant_type_raw) as merchantTypeRaw, count(*) as transactionCount, "
@@ -355,10 +367,12 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
             + "join merchant m on m.id = ct.merchant_id "
             + "where m.merchant_alias_id is null and ct.replaced_at is null and ct.used_date >= :since "
             + "and upper(trim(m.merchant_name_raw)) not in (select upper(trim(b.name)) from biller b) "
+            + "and ct.member_id in (select member_id from member_terms_agreement where terms_type = :consentType) "
             + "group by ct.merchant_id, m.merchant_name_raw "
             + "order by count(*) desc "
             + "limit :limit", nativeQuery = true)
-    List<UnclassifiedMerchantRow> findUnclassifiedMerchants(@Param("since") LocalDate since, @Param("limit") int limit);
+    List<UnclassifiedMerchantRow> findUnclassifiedMerchants(@Param("since") LocalDate since, @Param("limit") int limit,
+                                                             @Param("consentType") String consentType);
 
     interface UnclassifiedMerchantRow {
         Long getMerchantId();

@@ -19,6 +19,23 @@ export const promoteMerchantAliasTerm = (aliasId, aliasText) =>
     aliasText,
   });
 
+export const rejectMerchantAliasProposal = (aliasId, aliasText) =>
+  axiosInstance.post("/api/admin/merchants/promotion-candidates/reject", {
+    aliasId,
+    aliasText,
+  });
+
+export const promoteMerchantAliasTermAsNewService = (
+  aliasText,
+  canonicalServiceName,
+  categoryId,
+) =>
+  axiosInstance.post("/api/admin/merchants/promotion-candidates/promote-new", {
+    aliasText,
+    canonicalServiceName,
+    categoryId,
+  });
+
 export const getUnclassifiedMerchants = () =>
   axiosInstance.get("/api/admin/merchants/unclassified").then(responseData);
 

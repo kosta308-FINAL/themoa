@@ -2,6 +2,8 @@ import { Routes, Route } from "react-router-dom";
 import LandingPage from "../features/landing/LandingPage";
 import LoginPage from "../features/auth/LoginPage";
 import SignupPage from "../features/auth/SignupPage";
+import FindIdPage from "../features/auth/FindIdPage";
+import FindPasswordPage from "../features/auth/FindPasswordPage";
 import Dashboard from "../features/dashboard/Dashboard";
 import ProductsPage from "../features/products/ProductsPage";
 import FinancialSearchPage from "../features/financial-search/FinancialSearchPage";
@@ -16,6 +18,7 @@ import CustomerServicePage from "../features/customer-service/CustomerServicePag
 import CustomerServiceAdminPage from "../features/customer-service-admin/CustomerServiceAdminPage";
 import CustomerServiceAiQualityPage from "../features/customer-service-admin/CustomerServiceAiQualityPage";
 import MerchantMasterAdminPage from "../features/merchant-admin/MerchantMasterAdminPage";
+import FinancialProductAdminPage from "../features/financial-admin/FinancialProductAdminPage";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 import UserOnlyRoute from "./UserOnlyRoute";
@@ -27,6 +30,8 @@ function AppRouter() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/find-email" element={<FindIdPage />} />
+      <Route path="/find-password" element={<FindPasswordPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<UserOnlyRoute />}>
@@ -46,10 +51,7 @@ function AppRouter() {
             />
             <Route path="fixed-expenses" element={<FixedExpensePage />} />
             <Route path="mypage" element={<MyPage />} />
-            <Route
-              path="customer-service"
-              element={<CustomerServicePage />}
-            />
+            <Route path="customer-service" element={<CustomerServicePage />} />
           </Route>
         </Route>
 
@@ -62,8 +64,15 @@ function AppRouter() {
             path="/admin/customer-service/ai-quality"
             element={<CustomerServiceAiQualityPage />}
           />
-          <Route path="/admin/merchants" element={<MerchantMasterAdminPage />} />
+          <Route
+            path="/admin/merchants"
+            element={<MerchantMasterAdminPage />}
+          />
           <Route path="/admin/policies" element={<PolicyAdminPage />} />
+          <Route
+            path="/admin/financial-products"
+            element={<FinancialProductAdminPage />}
+          />
         </Route>
       </Route>
     </Routes>
