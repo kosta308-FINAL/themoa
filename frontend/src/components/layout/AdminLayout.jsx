@@ -35,6 +35,12 @@ const NAV_ITEMS = [
     to: "/admin/financial-products",
     icon: "M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
   },
+  {
+    key: "error-logs",
+    label: "오류 로그 관리",
+    to: "/admin/logs/errors",
+    icon: "M12 9v4m0 4h.01M10.29 3.86l-8.18 14.18A2 2 0 0 0 4 21h16a2 2 0 0 0 1.89-2.96L13.71 3.86a2 2 0 0 0-3.42 0z",
+  },
 ];
 
 function AdminLayout({ title, subtitle, children }) {
@@ -81,9 +87,7 @@ function AdminLayout({ title, subtitle, children }) {
               {item.label}
               {item.key === "customer-service" &&
                 Boolean(pendingInquiryCount) && (
-                  <span className="admin-nav-badge">
-                    {pendingInquiryCount}
-                  </span>
+                  <span className="admin-nav-badge">{pendingInquiryCount}</span>
                 )}
             </NavLink>
           ))}

@@ -1867,6 +1867,9 @@
 .spending-budget-modal {
   width: min(520px, 100%);
 }
+.spending-income-modal {
+  width: min(440px, 100%);
+}
 .spending-card-modal {
   width: min(720px, 100%);
 }
@@ -3178,13 +3181,13 @@
     padding: 17px;
   }
   .spending-manual-backdrop {
-    align-items: flex-end;
+    align-items: center;
     padding: 0;
   }
   .spending-manual-modal {
-    width: 100%;
-    max-height: 94vh;
-    border-radius: 20px 20px 0 0;
+    width: min(88%, 380px);
+    max-height: 90vh;
+    border-radius: 20px;
   }
   .spending-manual-modal .spending-entry-form {
     grid-template-columns: 1fr;
