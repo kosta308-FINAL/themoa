@@ -1,0 +1,43 @@
+.themoa-brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.themoa-brand-logo-image {
+  display: block;
+  flex: 0 0 auto;
+  width: var(--themoa-brand-logo-size);
+  height: var(--themoa-brand-logo-size);
+  object-fit: contain;
+  object-position: center;
+  border-radius: 10px;
+}
+
+.themoa-brand-logo-label {
+  min-width: 0;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.themoa-brand-logo-small {
+  --themoa-brand-logo-size: 34px;
+}
+
+.themoa-brand-logo-medium {
+  --themoa-brand-logo-size: 42px;
+}
+
+.themoa-brand-logo-large {
+  --themoa-brand-logo-size: 56px;
+}
+
+.themoa-brand-logo:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 12px;
+}

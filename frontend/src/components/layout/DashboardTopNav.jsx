@@ -1,5 +1,4 @@
 import {
-  Link,
   NavLink,
   useNavigate,
 } from "react-router-dom";
@@ -7,6 +6,7 @@ import DashboardIcon from "../common/DashboardIcon";
 import NotificationBell from "./NotificationBell";
 import { navItems } from "../../constants/dashboardNavigation";
 import { useAuth } from "../../hooks/useAuth";
+import BrandLogo from "../common/BrandLogo";
 
 function DashboardTopNav() {
   const { logout } = useAuth();
@@ -19,14 +19,13 @@ function DashboardTopNav() {
 
   return (
     <nav className="dash-topnav">
-      <Link
+      <BrandLogo
         to="/dashboard"
+        label="themoa"
+        size="small"
         className="dash-topnav-logo"
-        aria-label="더모아 홈 대시보드로 이동"
-      >
-        <span className="dash-logo-mark">M</span>
-        <span className="dash-logo-text">더모아</span>
-      </Link>
+        ariaLabel="themoa 홈 대시보드로 이동"
+      />
       <div className="dash-topnav-right">
         <div className="dash-topnav-items">
           {navItems.map((item, idx) => (
