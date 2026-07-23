@@ -1,7 +1,9 @@
 package com.weaone.themoa.domain.member.repository;
 
 import com.weaone.themoa.domain.member.entity.Member;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -28,4 +30,8 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     /** 습관 코칭 월급일 배치 대상(habitExpense.md §3) 후보 — 급여 주기가 있는 회원만 골라낸다. */
     List<Member> findByPaydayIsNotNull();
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select m from Member m where m.id = :memberId")
+    Optional<Member> findByIdForUpdate(@Param("memberId") Long memberId);
 }
