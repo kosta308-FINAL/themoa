@@ -257,13 +257,16 @@ public class SpendingGuideService {
         return new RecentDaysResponse(daily, guideLineAmount);
     }
 
-    /** S-04 전체 소비내역(dayguide.md §8.1). {@code budgetId} 생략 시 현재 주기를 조회한다. */
+    /**
+     * S-04 전체 소비내역(dayguide.md §8.1). {@code budgetId} 생략 시, {@code date}가 있으면 그 날짜가 속한
+     * 주기를, 둘 다 없으면 현재 주기를 조회한다(과거 주기 날짜 조회 시 현재 주기로 새는 문제 방지).
+     */
     @Transactional(readOnly = true)
     public CardTransactionListResponse searchTransactions(Long memberId, Long budgetId, LocalDate date,
                                                             Long categoryId, Pageable pageable) {
         Member member = getMemberWithSetup(memberId);
         LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
-        Budget budget = resolveBudget(member, budgetId, today);
+        Budget budget = resolveBudgetForDate(member, budgetId, date, today);
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "usedAt"));
         Page<CardTransactionResponse> page = cardTransactionRepository.searchForSpendingGuide(
                         member.getId(), TransactionStatus.REJECTED, budget.getCycleStartDate(), budget.getCycleEndDate(),

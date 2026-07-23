@@ -120,111 +120,145 @@ public class FixedExpenseDetectionService {
         }
     }
 
+    /**
+     * alias 하나에 서로 다른 구독이 공존할 수 있어(예: 같은 서비스를 계정 두 개로 구독) {@link RecurringPatternDetector#detectAll}로
+     * 여러 패턴을 한 번에 뽑는다. 금액이 아니라 이미 링크된 증거 거래와의 겹침으로 기존 그룹을 찾으므로
+     * 값이 비슷한 별개 구독끼리도 안 섞인다(아래 {@link #findMatchingGroup}).
+     */
     private void processAliasGroup(Long memberId, Long merchantAliasId, String currentYearMonth) {
-        if (isSuppressed(memberId, merchantAliasId)) {
-            return;
-        }
-
         List<CardTransaction> transactions = cardTransactionRepository
                 .findByMember_IdAndMerchantAlias_IdAndStatusNotOrderByUsedDateAsc(
                         memberId, merchantAliasId, TransactionStatus.CANCELED);
-        DetectedPattern pattern = recurringPatternDetector.detect(transactions).orElse(null);
-        if (pattern == null) {
+        List<DetectedPattern> patterns = recurringPatternDetector.detectAll(transactions);
+        if (patterns.isEmpty()) {
             return;
         }
 
+        List<RecurringPaymentGroup> existingGroups = recurringPaymentGroupRepository
+                .findByMember_IdAndMerchantAlias_Id(memberId, merchantAliasId);
+        for (DetectedPattern pattern : patterns) {
+            try {
+                processAliasPattern(memberId, existingGroups, pattern, currentYearMonth);
+            } catch (RuntimeException e) {
+                log.warn("고정지출 탐지 패턴 처리 실패, 다음 패턴으로 계속 진행합니다. memberId={}, merchantAliasId={}",
+                        memberId, merchantAliasId, e);
+            }
+        }
+    }
+
+    private void processAliasPattern(Long memberId, List<RecurringPaymentGroup> existingGroups,
+                                      DetectedPattern pattern, String currentYearMonth) {
         CardTransaction sample = pattern.transactions().get(0);
         Member member = sample.getMember();
         MerchantAlias merchantAlias = sample.getMerchantAlias();
 
-        RecurringPaymentGroup group = recurringPaymentGroupRepository
-                .findByMember_IdAndMerchantAlias_Id(memberId, merchantAliasId)
+        RecurringPaymentGroup group = findMatchingGroup(existingGroups, pattern)
                 .map(existing -> {
                     existing.updateStats((short) pattern.transactions().size(), pattern.avgAmount(),
                             pattern.amountVariancePct(), pattern.avgPayDay(), pattern.payDayVariance(),
                             pattern.lastDetectedAt());
                     return existing;
                 })
-                .orElseGet(() -> recurringPaymentGroupRepository.save(RecurringPaymentGroup.detect(
-                        member, merchantAlias, (short) pattern.transactions().size(), pattern.avgAmount(),
-                        pattern.amountVariancePct(), pattern.avgPayDay(), pattern.payDayVariance(),
-                        pattern.lastDetectedAt())));
+                .orElseGet(() -> {
+                    RecurringPaymentGroup created = recurringPaymentGroupRepository.save(RecurringPaymentGroup.detect(
+                            member, merchantAlias, (short) pattern.transactions().size(), pattern.avgAmount(),
+                            pattern.amountVariancePct(), pattern.avgPayDay(), pattern.payDayVariance(),
+                            pattern.lastDetectedAt()));
+                    existingGroups.add(created);
+                    return created;
+                });
 
         linkEvidenceTransactions(group.getId(), pattern);
+        if (isGroupSuppressed(memberId, group.getId())) {
+            return;
+        }
         Category recommendedCategory = merchantAlias.getDefaultCategory() != null
                 ? merchantAlias.getDefaultCategory()
                 : etcCategory();
         String message = "매달 " + pattern.avgAmount().toBigInteger() + "원 나가는 "
-                + merchantAlias.getCanonicalServiceName() + ", 등록할까요?";
+                + merchantAlias.getCanonicalServiceName() + "(매월 " + pattern.avgPayDay() + "일), 등록할까요?";
         upsertCandidate(member, group, recommendedCategory, message, pattern, currentYearMonth);
     }
 
     /**
      * biller 경유 그룹핑(merchant.md §5-D-3): 이름으로 alias가 안 붙으므로 merchant 단위로 모은 거래를
-     * 먼저 금액으로 사전 클러스터링한 뒤, 버킷마다 {@link RecurringPatternDetector}를 개별 호출한다.
-     * 한 merchant(예: Apple)에서 서로 다른 금액대의 구독이 섞여 있으면 버킷 수만큼 그룹 후보가 나온다.
+     * 먼저 금액으로 사전 클러스터링한 뒤, 버킷마다 {@link RecurringPatternDetector#detectAll}을 호출한다.
+     * 한 merchant(예: Apple)에서 서로 다른 금액대의 구독이 섞여 있으면 버킷 수만큼, 같은 버킷 안에 결제일이
+     * 다른 별개 구독이 섞여 있으면 패턴 수만큼 그룹 후보가 나온다.
      */
     private void processBillerMerchant(Long memberId, Long merchantId, String currentYearMonth) {
-        if (isSuppressedBiller(memberId, merchantId)) {
-            return;
-        }
-
         List<CardTransaction> transactions = cardTransactionRepository
                 .findByMember_IdAndMerchant_IdAndMerchantAliasIsNullAndStatusNotOrderByAmountAsc(
                         memberId, merchantId, TransactionStatus.CANCELED);
+        List<RecurringPaymentGroup> existingGroups = recurringPaymentGroupRepository
+                .findByMember_IdAndBillerMerchant_Id(memberId, merchantId);
         for (List<CardTransaction> bucket : amountClusterer.cluster(transactions)) {
             bucket.sort(Comparator.comparing(CardTransaction::getUsedDate));
-            DetectedPattern pattern = recurringPatternDetector.detect(bucket).orElse(null);
-            if (pattern != null) {
-                processBillerBucket(memberId, merchantId, pattern, currentYearMonth);
+            for (DetectedPattern pattern : recurringPatternDetector.detectAll(bucket)) {
+                try {
+                    processBillerPattern(memberId, merchantId, existingGroups, pattern, currentYearMonth);
+                } catch (RuntimeException e) {
+                    log.warn("biller 고정지출 탐지 패턴 처리 실패, 다음 패턴으로 계속 진행합니다. memberId={}, merchantId={}",
+                            memberId, merchantId, e);
+                }
             }
         }
     }
 
-    private void processBillerBucket(Long memberId, Long merchantId, DetectedPattern pattern, String currentYearMonth) {
+    private void processBillerPattern(Long memberId, Long merchantId, List<RecurringPaymentGroup> existingGroups,
+                                       DetectedPattern pattern, String currentYearMonth) {
         CardTransaction sample = pattern.transactions().get(0);
         Member member = sample.getMember();
         Merchant billerMerchant = sample.getMerchant();
 
-        RecurringPaymentGroup group = findMatchingBillerGroup(memberId, merchantId, pattern.avgAmount())
+        RecurringPaymentGroup group = findMatchingGroup(existingGroups, pattern)
                 .map(existing -> {
                     existing.updateStats((short) pattern.transactions().size(), pattern.avgAmount(),
                             pattern.amountVariancePct(), pattern.avgPayDay(), pattern.payDayVariance(),
                             pattern.lastDetectedAt());
                     return existing;
                 })
-                .orElseGet(() -> recurringPaymentGroupRepository.save(RecurringPaymentGroup.detectBiller(
-                        member, billerMerchant, (short) pattern.transactions().size(), pattern.avgAmount(),
-                        pattern.amountVariancePct(), pattern.avgPayDay(), pattern.payDayVariance(),
-                        pattern.lastDetectedAt())));
+                .orElseGet(() -> {
+                    RecurringPaymentGroup created = recurringPaymentGroupRepository.save(RecurringPaymentGroup.detectBiller(
+                            member, billerMerchant, (short) pattern.transactions().size(), pattern.avgAmount(),
+                            pattern.amountVariancePct(), pattern.avgPayDay(), pattern.payDayVariance(),
+                            pattern.lastDetectedAt()));
+                    existingGroups.add(created);
+                    return created;
+                });
 
         linkEvidenceTransactions(group.getId(), pattern);
+        if (isGroupSuppressed(memberId, group.getId())) {
+            return;
+        }
         String message = pattern.avgAmount().toBigInteger() + "원씩 " + billerMerchant.getMerchantNameRaw()
-                + "로 매달 나가는 결제가 있어요. 어떤 서비스인지 이름을 지어 등록할까요?";
+                + "로 매월 " + pattern.avgPayDay() + "일쯤 나가는 결제가 있어요. 어떤 서비스인지 이름을 지어 등록할까요?";
         upsertCandidate(member, group, etcCategory(), message, pattern, currentYearMonth);
     }
 
-    /** biller 그룹은 UNIQUE가 없어(erd.md) 금액이 비슷한 기존 그룹을 찾는 find-or-create가 필요하다. */
-    private Optional<RecurringPaymentGroup> findMatchingBillerGroup(Long memberId, Long billerMerchantId,
-                                                                      BigDecimal newAvgAmount) {
-        return recurringPaymentGroupRepository.findByMember_IdAndBillerMerchant_Id(memberId, billerMerchantId)
-                .stream()
-                .filter(existing -> amountClusterer.withinTolerance(existing.getAvgAmount(), newAvgAmount))
+    /**
+     * find-or-create의 신원 판단 기준(fixedExpense.md §2): 금액이 아니라 이 그룹에 이미 링크된 증거
+     * 거래와의 겹침으로 "같은 구독의 재탐지인지"를 가른다. 같은 alias(또는 biller merchant) 안에 값이
+     * 비슷한 별개 구독이 있으면 금액만으론 못 갈라서, 결제일 간격으로 나뉜 패턴별 실제 거래로 판단한다.
+     */
+    private Optional<RecurringPaymentGroup> findMatchingGroup(List<RecurringPaymentGroup> existingGroups,
+                                                                DetectedPattern pattern) {
+        if (existingGroups.isEmpty()) {
+            return Optional.empty();
+        }
+        List<Long> patternTransactionIds = pattern.transactions().stream().map(CardTransaction::getId).toList();
+        return existingGroups.stream()
+                .filter(existing -> recurringPaymentGroupTransactionRepository
+                        .existsOverlap(existing.getId(), patternTransactionIds))
                 .findFirst();
     }
 
-    private boolean isSuppressed(Long memberId, Long merchantAliasId) {
-        return userMerchantPreferenceRepository.existsByMember_IdAndMerchantAlias_IdAndPreferenceType(
-                memberId, merchantAliasId, UserMerchantPreferenceType.DO_NOT_RECOMMEND)
-                || userMerchantPreferenceRepository.existsByMember_IdAndMerchantAlias_IdAndPreferenceType(
-                memberId, merchantAliasId, UserMerchantPreferenceType.RECLASSIFY_HABIT);
-    }
-
-    private boolean isSuppressedBiller(Long memberId, Long billerMerchantId) {
-        return userMerchantPreferenceRepository.existsByMember_IdAndBillerMerchant_IdAndPreferenceType(
-                memberId, billerMerchantId, UserMerchantPreferenceType.DO_NOT_RECOMMEND)
-                || userMerchantPreferenceRepository.existsByMember_IdAndBillerMerchant_IdAndPreferenceType(
-                memberId, billerMerchantId, UserMerchantPreferenceType.RECLASSIFY_HABIT);
+    /** 거절·습관분류는 그룹 단위로 억제한다 — alias·biller merchant 단위로 걸면 공존하는 별개 구독까지 함께 막힌다. */
+    private boolean isGroupSuppressed(Long memberId, Long recurringGroupId) {
+        return userMerchantPreferenceRepository.existsByMember_IdAndRecurringPaymentGroup_IdAndPreferenceType(
+                memberId, recurringGroupId, UserMerchantPreferenceType.DO_NOT_RECOMMEND)
+                || userMerchantPreferenceRepository.existsByMember_IdAndRecurringPaymentGroup_IdAndPreferenceType(
+                memberId, recurringGroupId, UserMerchantPreferenceType.RECLASSIFY_HABIT);
     }
 
     private void linkEvidenceTransactions(Long groupId, DetectedPattern pattern) {

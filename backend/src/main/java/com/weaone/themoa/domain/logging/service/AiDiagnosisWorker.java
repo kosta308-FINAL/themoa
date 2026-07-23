@@ -26,7 +26,7 @@ import java.util.Map;
 @Component
 public class AiDiagnosisWorker {
 
-    private static final String MODEL_NAME = "gemini-2.5-flash-lite";
+    private static final String MODEL_NAME = "gemini-3.1-flash-lite";
 
     private static final String SYSTEM_PROMPT = """
             당신은 사내 백엔드 서버의 예상하지 못한 예외 로그를 분석하는 진단 도우미다. 아래 규칙을 반드시 지킨다.

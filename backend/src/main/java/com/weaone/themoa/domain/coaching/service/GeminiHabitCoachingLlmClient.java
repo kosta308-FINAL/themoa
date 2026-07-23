@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * 습관 코칭 문구 생성 LLM 계층 구현체(habitExpense.md §4). Gemini(gemini-2.5-flash-lite) — 저비용·소형,
+ * 습관 코칭 문구 생성 LLM 계층 구현체(habitExpense.md §4). Gemini(gemini-3.1-flash-lite) — 저비용·소형,
  * 분류+짧은 생성 과제라 추론 모델이 불필요하다는 §6 근거를 따른다. provider 교체 시 이 클래스와
  * application.yaml의 {@code spring.ai.google.genai.*} 설정만 바뀌면 된다(§4 구현 힌트).
  *
