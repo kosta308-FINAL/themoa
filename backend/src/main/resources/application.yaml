@@ -67,7 +67,7 @@ spring:
         api-key: ${GEMINI_API_KEY}
         chat:
           options:
-            model: ${GEMINI_CHAT_MODEL:gemini-2.5-flash-lite}
+            model: ${GEMINI_CHAT_MODEL:gemini-3.1-flash-lite}
             temperature: 0.4
 
     # 정책 자연어 분석 및 임베딩용 OpenAI
