@@ -362,6 +362,380 @@
   background: var(--dash-accent-dark, #16a34a);
 }
 
+/* ── 입력 폼: 접기/펼치기 헤더 ── */
+.rec-form-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--dash-text-primary);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rec-form-caret {
+  color: var(--dash-text-secondary);
+  font-size: 14px;
+}
+
+.rec-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rec-form-collapsed-hint {
+  font-size: 12.5px;
+  color: var(--dash-text-secondary);
+}
+
+.rec-field-error {
+  font-size: 12px;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+/* ── 추천 카드: 상단 정보 밀집 ── */
+.rec-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rec-card-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.rec-company {
+  font-size: 12px;
+  color: var(--dash-text-secondary);
+}
+
+.rec-card-top .rec-name {
+  font-size: 16px;
+}
+
+.rec-card-top-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.rec-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rec-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--dash-bg, #f4f5f7);
+  border: 1px solid var(--dash-border);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dash-text-primary);
+}
+
+.rec-chip-rate {
+  background: var(--dash-accent-light);
+  border-color: transparent;
+  color: var(--dash-accent-dark);
+}
+
+.rec-chip-muted {
+  background: transparent;
+  color: var(--dash-text-secondary);
+  font-weight: 500;
+}
+
+.rec-reasons-more {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--dash-accent-dark);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── 로딩: 결과(상품) 영역 자리에만 가운데 스피너 ── */
+.rec-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 320px;
+  padding: 40px 20px;
+  background: var(--dash-bg-card);
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius);
+  box-shadow: var(--dash-shadow);
+}
+
+.rec-loading p {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dash-text-secondary);
+}
+
+.rec-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--dash-border, #e5ede8);
+  border-top-color: var(--dash-accent-dark, #16a34a);
+  border-radius: 50%;
+  animation: rec-spin 0.8s linear infinite;
+}
+
+@keyframes rec-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── 만기금액 막대그래프 ── */
+.mchart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px;
+  background: var(--dash-bg-card);
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius);
+  box-shadow: var(--dash-shadow);
+}
+
+.mchart-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--dash-text-primary);
+}
+
+.mchart-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mchart-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mchart-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mchart-rank {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--dash-accent-light);
+  color: var(--dash-accent-dark);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.mchart-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dash-text-primary);
+}
+
+.mchart-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mchart-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  min-width: 0;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 7px;
+  background: linear-gradient(
+    90deg,
+    var(--dash-accent, #22c55e),
+    var(--dash-accent-dark, #16a34a)
+  );
+  transition: width 0.4s ease;
+}
+
+.mchart-value {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 막대 안(넓을 때)은 흰 글씨, 막대 밖(짧을 때)은 진한 글씨 */
+.mchart-value.in {
+  color: #fff;
+}
+
+.mchart-value.out {
+  color: var(--dash-text-primary);
+}
+
+.mchart-na {
+  font-size: 12px;
+  color: var(--dash-text-secondary);
+}
+
+/* ── 실시간 인기 상품 위젯 ── */
+.pop-products {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  background: var(--dash-bg-card);
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius);
+  box-shadow: var(--dash-shadow);
+}
+
+.pop-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--dash-text-primary);
+}
+
+.pop-sub {
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--dash-text-secondary);
+}
+
+.pop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  list-style: none;
+  animation: pop-fade 0.45s ease;
+}
+
+@keyframes pop-fade {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.pop-list button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pop-list button:hover {
+  background: var(--dash-accent-light);
+}
+
+.pop-rank {
+  flex-shrink: 0;
+  width: 16px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--dash-accent-dark);
+  text-align: center;
+}
+
+.pop-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pop-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dash-text-primary);
+}
+
+.pop-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: var(--dash-text-secondary);
+}
+
+.pop-bookmark {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--dash-text-secondary);
+  white-space: nowrap;
+}
+
+/* ── 오른쪽 사이드바(만기 그래프 + 인기 상품) ── */
+.products-results-col.with-side {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: start;
+}
+
+.products-results-side {
+  position: sticky;
+  top: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 1100px) {
+  .products-results-col.with-side {
+    grid-template-columns: 1fr;
+  }
+
+  .products-results-side {
+    position: static;
+  }
+}
+
 @media (max-width: 900px) {
   .products-layout {
     grid-template-columns: 1fr;

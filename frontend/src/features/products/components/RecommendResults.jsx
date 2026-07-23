@@ -1,6 +1,19 @@
 import RecommendResultCard from "./RecommendResultCard";
 
 /**
+ * 추천 로딩 표시. POST /recommend가 LLM(AI 총평)까지 도느라 수 초 걸려서
+ * 결과(상품이 뜨는) 영역 자리에만 스피너를 가운데 띄운다.
+ */
+function RecommendLoading() {
+  return (
+    <div className="rec-loading" role="status" aria-live="polite">
+      <span className="rec-spinner" aria-hidden="true" />
+      <p>AI가 딱 맞는 상품을 고르고 있어요…</p>
+    </div>
+  );
+}
+
+/**
  * 저축목표 실현가능성 안내. 목표를 입력했을 때(feasibility.hasGoal)만 노출한다.
  * 프론트는 한글 메시지가 아니라 백엔드가 준 플래그로 분기한다.
  */
@@ -37,7 +50,7 @@ function FeasibilityNotice({ feasibility }) {
  */
 function RecommendResults({ loading, error, data, searched, bookmarks }) {
   if (loading) {
-    return <div className="rec-state">추천 상품을 찾고 있어요…</div>;
+    return <RecommendLoading />;
   }
   if (error) {
     return <div className="rec-alert rec-alert-danger">{error}</div>;

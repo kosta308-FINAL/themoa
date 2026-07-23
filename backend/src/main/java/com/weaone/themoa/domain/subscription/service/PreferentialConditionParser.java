@@ -26,8 +26,6 @@ public class PreferentialConditionParser {
     private static final Pattern RATE_PATTERN = Pattern.compile("(\\d+(?:\\.\\d+)?)\\s*%\\s*p?");
     // 줄 앞머리 글머리 기호만 떼어낸다(한글 조건 문구가 잘리지 않도록 한글은 건드리지 않는다).
     private static final Pattern BULLET_PREFIX = Pattern.compile("^\\s*(?:[-*·▷▸○●□■◆▪]|[0-9]{1,2}[.)]|[①-⑳]|[가-힣][.)])\\s*");
-    // "최고(우대)금리/최대 우대이율" 등 상한을 안내하는 줄. 실제 충족 조건이 아니라 상한 표기다.
-    private static final Pattern LIMIT_LINE = Pattern.compile("(최고|최대).{0,4}(우대)?.{0,2}(금리|이율)");
     private static final int MAX_ITEMS = 20;
     private static final int MIN_DESC_LENGTH = 2;
     private static final int MAX_DESC_LENGTH = 200;
@@ -50,8 +48,8 @@ public class PreferentialConditionParser {
             if (!matcher.find()) {
                 continue; // 금리 표기가 없는 줄(머리말·안내문)은 항목이 아니다.
             }
-            if (LIMIT_LINE.matcher(line).find()) {
-                continue; // "최고우대금리 0.45%p" 같은 상한 안내는 조건이 아니다.
+            if (isLimitLine(line)) {
+                continue; // "…우대금리 제공: 최고 3%p" 같은 상한 안내는 개별 조건이 아니라 총량이다.
             }
             String description = cleanDescription(line);
             if (description.length() < MIN_DESC_LENGTH) {
@@ -63,6 +61,17 @@ public class PreferentialConditionParser {
             }
         }
         return items;
+    }
+
+    /**
+     * "최고/최대/합산"과 "금리/이율/우대"가 한 줄에 함께 나오면 개별 충족 조건이 아니라 상한(총량) 안내로 본다.
+     * 단어 순서에 의존하지 않는다("최고 우대금리"든 "우대금리 …최고"든 모두 잡는다).
+     */
+    private boolean isLimitLine(String line) {
+        String text = line.replaceAll("\\s+", "");
+        boolean cap = text.contains("최고") || text.contains("최대") || text.contains("합산");
+        boolean rate = text.contains("금리") || text.contains("이율") || text.contains("우대");
+        return cap && rate;
     }
 
     /** 설명에서 앞머리 글머리 기호와 금리 표기를 걷어내 사람이 읽을 문구만 남긴다. */

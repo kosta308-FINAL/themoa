@@ -395,6 +395,7 @@ public class RecommendWebController {
 
     private static String periodLabel(PreferredPeriod p) {
         return switch (p) {
+            case SINGLE -> "초단기";
             case SHORT -> "단기";
             case MID -> "중기";
             case LONG -> "장기";

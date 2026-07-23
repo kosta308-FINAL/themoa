@@ -41,7 +41,10 @@ public class RecommendationService {
         RateRanking ranking = new RateRanking(selling, profile.effectiveTargetMonths());
 
         // 1~2단계: 하드필터 통과 상품에 점수 → 점수순 정렬 → 상위 topN = 최종 순위(확정)
+        // 추천은 "월 납입가능금액" 기준이라 매달 납입하는 적금(SAVING)만 대상으로 한다. 정기예금(DEPOSIT)은
+        // 목돈을 한 번에 예치하는 상품이라 월납입 기준 만기금액·비교가 성립하지 않아 추천 목록에서 제외한다.
         List<Recommendation> ranked = selling.stream()
+                .filter(p -> p.getProductType() == SavingsType.SAVING)
                 .filter(p -> HardFilter.passes(p, profile))
                 .map(p -> toRecommendation(p, profile, ranking))
                 .sorted(Comparator.comparingInt(Recommendation::score).reversed()

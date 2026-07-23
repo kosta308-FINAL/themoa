@@ -249,10 +249,17 @@
   color: var(--dash-accent-dark);
 }
 
+.fs-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .fs-name {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
   font-size: 16px;
   font-weight: 700;
   color: var(--dash-text-primary);
