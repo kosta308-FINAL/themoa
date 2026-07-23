@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import DashboardTopbar from "./components/DashboardTopbar";
 import SummaryCards from "./components/SummaryCards";
 import StatsStrip from "./components/StatsStrip";
@@ -8,6 +9,7 @@ import RecentActivity from "./components/RecentActivity";
 import SpendingTipCard from "./components/SpendingTipCard";
 import SavingsSubscriptionSummary from "./components/SavingsSubscriptionSummary";
 import DashboardWeeklyCalendar from "./components/DashboardWeeklyCalendar";
+import { useDashboardCalendar } from "./hooks/useDashboardCalendar";
 import { useDashboardData } from "./hooks/useDashboardData";
 import "./Dashboard.css";
 
@@ -20,9 +22,20 @@ function Dashboard() {
     lastUpdatedAt,
     reload,
   } = useDashboardData();
+  const {
+    events: calendarEvents,
+    isLoading: calendarLoading,
+    isRefreshing: calendarRefreshing,
+    error: calendarError,
+    reload: reloadCalendar,
+  } = useDashboardCalendar();
   const productBookmarks = data.productBookmarks?.items || data.productBookmarks || [];
   const policyBookmarks = data.policyBookmarks?.items || [];
   const coachingItems = data.coaching?.items || [];
+  const handleReload = useCallback(async () => {
+    await Promise.all([reload(), reloadCalendar()]);
+  }, [reload, reloadCalendar]);
+  const refreshing = isRefreshing || calendarRefreshing;
 
   return (
     <main className="dash-main">
@@ -31,8 +44,8 @@ function Dashboard() {
           <DashboardTopbar
             name={data.myPage?.profile?.name}
             lastUpdatedAt={lastUpdatedAt}
-            isRefreshing={isRefreshing}
-            onRefresh={reload}
+            isRefreshing={refreshing}
+            onRefresh={handleReload}
           />
           <SummaryCards
             summary={data.summary}
@@ -44,7 +57,11 @@ function Dashboard() {
           />
         </div>
         <div className="dash-hero-side">
-          <DashboardWeeklyCalendar />
+          <DashboardWeeklyCalendar
+            events={calendarEvents}
+            loading={calendarLoading}
+            error={calendarError}
+          />
         </div>
       </section>
       <StatsStrip

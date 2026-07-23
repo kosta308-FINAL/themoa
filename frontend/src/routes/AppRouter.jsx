@@ -5,6 +5,7 @@ import SignupPage from "../features/auth/SignupPage";
 import FindIdPage from "../features/auth/FindIdPage";
 import FindPasswordPage from "../features/auth/FindPasswordPage";
 import Dashboard from "../features/dashboard/Dashboard";
+import CalendarPage from "../features/calendar/CalendarPage";
 import ProductsPage from "../features/products/ProductsPage";
 import FinancialSearchPage from "../features/financial-search/FinancialSearchPage";
 import PolicyPage from "../features/policy/PolicyPage";
@@ -38,6 +39,7 @@ function AppRouter() {
         <Route element={<UserOnlyRoute />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
+            <Route path="calendar" element={<CalendarPage />} />
             <Route path="products" element={<ProductsPage />} />
             <Route path="products/search" element={<FinancialSearchPage />} />
             <Route path="policy" element={<PolicyPage />} />

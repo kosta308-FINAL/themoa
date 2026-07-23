@@ -39,4 +39,6 @@ public interface FixedExpenseRepository extends JpaRepository<FixedExpense, Long
 
     /** 새벽 배치(미납·예정일 알림) 전체 스캔용. */
     List<FixedExpense> findByStatus(FixedExpenseStatus status);
+
+    List<FixedExpense> findByMember_IdAndStatusAndExpectedPayDayIsNotNull(Long memberId, FixedExpenseStatus status);
 }
