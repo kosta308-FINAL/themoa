@@ -19,5 +19,9 @@ public enum NotificationTypeCode {
     /** 1:1 문의 최초 답변 등록(customerservice.md §7). */
     INQUIRY_ANSWERED,
     /** 관심 금융상품(북마크·최근 추천)의 금리·우대조건 변경 또는 판매종료 감지. */
-    FINANCIAL_PRODUCT_CHANGED
+    FINANCIAL_PRODUCT_CHANGED,
+    /** 캘린더에 표시되는 사용자 일정·고정지출·관심 정책 일정 리마인더. */
+    CALENDAR_REMINDER,
+    /** 정책 및 금융상품 정기 최신화 완료 알림. */
+    CONTENT_UPDATED
 }

@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface NotificationTypeRepository extends JpaRepository<NotificationType, Long> {
 
     Optional<NotificationType> findByCodeAndActiveTrue(String code);
+
+    boolean existsByCode(String code);
 }

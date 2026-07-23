@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.notification.controller;
 
 import com.weaone.themoa.common.response.ApiResponse;
 import com.weaone.themoa.domain.notification.dto.response.NotificationListResponse;
+import com.weaone.themoa.domain.notification.service.DailyNotificationService;
 import com.weaone.themoa.domain.notification.service.NotificationQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class NotificationController {
 
     private final NotificationQueryService notificationQueryService;
+    private final DailyNotificationService dailyNotificationService;
 
     @Operation(summary = "앱 내 알림 목록 조회",
             description = "로그인 사용자의 알림을 최신순으로 페이지 조회합니다. unreadCount는 읽지 않은 알림 배지 수입니다. 먼저 /api/auth/login으로 로그인하세요.")
@@ -32,6 +35,15 @@ public class NotificationController {
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
             @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(notificationQueryService.list(memberId, pageable)));
+    }
+
+    @Operation(summary = "일일 알림 준비 후 목록 조회",
+            description = "로그인 사용자의 오늘 캘린더·정보 최신화 알림을 멱등하게 준비한 뒤 최신 알림 목록을 반환합니다.")
+    @PostMapping("/daily")
+    public ResponseEntity<ApiResponse<NotificationListResponse>> prepareDaily(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
+            @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(dailyNotificationService.prepareAndList(memberId, pageable)));
     }
 
     @Operation(summary = "알림 읽음 처리",

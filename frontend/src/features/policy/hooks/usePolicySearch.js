@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getPolicyDetail, searchPolicies } from '../../../api/policyApi'
 
 const errorMessage = (error) => {
@@ -17,6 +17,7 @@ export const usePolicySearch = (initialQuery) => {
   const [loading, setLoading] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
   const [error, setError] = useState('')
+  const detailRequestIdRef = useRef(0)
 
   const results = result?.results || []
   const totalText = useMemo(() => {
@@ -29,9 +30,11 @@ export const usePolicySearch = (initialQuery) => {
       setError('검색어를 입력하세요.')
       return
     }
+    detailRequestIdRef.current += 1
     setLoading(true)
     setError('')
     setSelected(null)
+    setDetailLoading(false)
     try {
       const data = await searchPolicies({ query: query.trim(), page: nextPage, size: 10 })
       setResult(data)
@@ -45,16 +48,29 @@ export const usePolicySearch = (initialQuery) => {
   }
 
   const openDetail = async (policyId) => {
+    const requestId = ++detailRequestIdRef.current
     setDetailLoading(true)
     setError('')
     try {
-      setSelected(await getPolicyDetail(policyId))
+      const detail = await getPolicyDetail(policyId)
+      if (requestId !== detailRequestIdRef.current) return
+      setSelected(detail)
     } catch (detailError) {
+      if (requestId !== detailRequestIdRef.current) return
       setError(detailError?.response?.data?.message || '정책 상세 정보를 불러오지 못했습니다.')
     } finally {
-      setDetailLoading(false)
+      if (requestId === detailRequestIdRef.current) {
+        setDetailLoading(false)
+      }
     }
   }
+
+  useEffect(
+    () => () => {
+      detailRequestIdRef.current += 1
+    },
+    [],
+  )
 
   return {
     query,

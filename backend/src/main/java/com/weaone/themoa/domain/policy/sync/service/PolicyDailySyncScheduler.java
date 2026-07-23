@@ -1,6 +1,8 @@
 package com.weaone.themoa.domain.policy.sync.service;
 
 import com.weaone.themoa.common.exception.BusinessException;
+import com.weaone.themoa.domain.datarefresh.entity.DataRefreshSource;
+import com.weaone.themoa.domain.datarefresh.service.DataRefreshStatusService;
 import com.weaone.themoa.domain.policy.policy.service.PolicyCollectionExecutionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,21 +12,28 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+
 @Component
 @ConditionalOnProperty(prefix = "app.policy.sync", name = "enabled", havingValue = "true")
 public class PolicyDailySyncScheduler {
     private static final Logger log = LoggerFactory.getLogger(PolicyDailySyncScheduler.class);
+    private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
 
     private final PolicySyncExecutionGuard executionGuard;
     private final PolicySyncPipelineService pipelineService;
     private final TaskExecutor adminJobExecutor;
+    private final DataRefreshStatusService dataRefreshStatusService;
 
     public PolicyDailySyncScheduler(PolicySyncExecutionGuard executionGuard,
                                     PolicySyncPipelineService pipelineService,
-                                    @Qualifier("adminJobExecutor") TaskExecutor adminJobExecutor) {
+                                    @Qualifier("adminJobExecutor") TaskExecutor adminJobExecutor,
+                                    DataRefreshStatusService dataRefreshStatusService) {
         this.executionGuard = executionGuard;
         this.pipelineService = pipelineService;
         this.adminJobExecutor = adminJobExecutor;
+        this.dataRefreshStatusService = dataRefreshStatusService;
     }
 
     @Scheduled(
@@ -60,6 +69,9 @@ public class PolicyDailySyncScheduler {
                     result.embeddingProcess().failedCount(),
                     result.embeddingProcess().pendingCountAfter(),
                     result.readiness().ready());
+            if (result.readiness().ready()) {
+                dataRefreshStatusService.recordSuccess(DataRefreshSource.POLICY, LocalDateTime.now(SEOUL_ZONE));
+            }
         } catch (BusinessException ex) {
             log.warn("정책 일일 동기화에 실패했습니다. errorCode={}",
                     ex.getErrorCode().name());
