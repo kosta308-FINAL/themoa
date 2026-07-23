@@ -107,6 +107,9 @@ openai:
   model: gpt-5-mini
 
 app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+
   auth:
     jwt:
       secret: ${JWT_SECRET}
@@ -176,6 +179,9 @@ app:
       top-k: 20
       retry-top-k: 40
       minimum-similarity: 0.45
+    # 관심 상품(북마크·최근 추천) 변경 감지. 상품 수집(04:00) 이후에 돌아야 변경을 놓치지 않는다.
+    change-detection:
+      cron: ${FINANCIAL_CHANGE_DETECTION_CRON:0 0 5 * * *}
 
   region-sync:
     enabled: ${SGIS_REGION_SYNC_ENABLED:false}

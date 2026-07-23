@@ -336,6 +336,32 @@
   color: var(--dash-accent-dark);
 }
 
+.rec-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.rec-actions .rec-link {
+  margin-top: 0;
+}
+
+.rec-register {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--dash-accent, #22c55e);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rec-register:hover {
+  background: var(--dash-accent-dark, #16a34a);
+}
+
 @media (max-width: 900px) {
   .products-layout {
     grid-template-columns: 1fr;

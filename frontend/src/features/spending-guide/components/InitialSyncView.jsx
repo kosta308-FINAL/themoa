@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import DashboardIcon from "../../../components/common/DashboardIcon";
 import {
   formatDate,
@@ -6,13 +7,73 @@ import {
 } from "../spendingGuideUtils";
 import { PanelTitle } from "./SpendingGuideCommon";
 
-function InitialSyncLoading({ compact = false, title, description }) {
+const COLLECTING_MESSAGES = [
+  "카드사에서 소비내역을 불러오고 있어요.",
+  "최초 동기화는 카드사 응답에 따라 3~5분 정도 걸릴 수 있어요.",
+  "화면을 나가도 수집은 계속 진행되니 편하게 기다려주세요.",
+  "수집이 끝나면 오늘의 소비 기준이 자동으로 계산돼요.",
+];
+
+const ANALYZING_MESSAGES = [
+  "불러온 거래를 정리하고 분석하는 중이에요.",
+  "카테고리별 소비와 소비 습관 분석도 함께 준비하고 있어요.",
+  "조금만 더 기다려주시면 오늘의 소비 기준을 보여드릴게요.",
+  "화면을 나가도 분석은 계속 진행돼요.",
+];
+
+const ROTATE_INTERVAL_MS = 3000;
+
+function useRotatingMessage(messages) {
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTick((current) => current + 1);
+    }, ROTATE_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, []);
+
+  return messages[tick % messages.length];
+}
+
+function InitialSyncOverlay({ analyzing }) {
+  const messages = useMemo(
+    () => (analyzing ? ANALYZING_MESSAGES : COLLECTING_MESSAGES),
+    [analyzing],
+  );
+  const message = useRotatingMessage(messages);
+
+  return (
+    <section
+      className="spending-initial-overlay"
+      role="status"
+      aria-live="polite"
+    >
+      <span className="spending-initial-overlay-spinner" />
+      <strong>카드 소비내역을 동기화하고 있어요</strong>
+      <p key={message} className="spending-initial-overlay-message">
+        {message}
+      </p>
+    </section>
+  );
+}
+
+function InitialSyncPlaceholder({ compact = false }) {
   return (
     <div
-      className={`spending-initial-loading${compact ? " compact" : ""}`}
-      role="status"
+      className={`spending-initial-placeholder${compact ? " compact" : ""}`}
+      aria-hidden="true"
     >
-      <span className="spending-spinner" />
+      <span className="spending-initial-placeholder-bar" />
+      <span className="spending-initial-placeholder-bar short" />
+    </div>
+  );
+}
+
+function InitialSyncFailedNotice({ title, description }) {
+  return (
+    <div className="spending-initial-failed" role="status">
+      <DashboardIcon name="info" size={20} />
       <strong>{title}</strong>
       <p>{description}</p>
     </div>
@@ -26,9 +87,6 @@ function InitialSyncView({ summary, syncState, retryingId, onRetry }) {
       (connection) => connection.initialSyncStatus === "FAILED",
     ) || [];
   const analyzing = syncState?.overallStatus === "ANALYZING";
-  const loadingDescription = analyzing
-    ? "불러온 거래를 정리하고 분석하는 중이에요."
-    : "소비내역 수집이 끝나면 자동으로 표시돼요.";
 
   return (
     <>
@@ -52,6 +110,7 @@ function InitialSyncView({ summary, syncState, retryingId, onRetry }) {
           ))}
         </div>
       )}
+      {!failed && <InitialSyncOverlay analyzing={analyzing} />}
       <section
         className="spending-hero spending-initial-sync"
         aria-label="카드 소비내역 초기 수집 상태"
@@ -69,18 +128,14 @@ function InitialSyncView({ summary, syncState, retryingId, onRetry }) {
               {failed ? "수집 확인 필요" : "불러오는 중"}
             </span>
           </div>
-          <InitialSyncLoading
-            title={
-              failed
-                ? "소비 기준 계산을 기다리고 있어요"
-                : "오늘 소비 기준을 계산하고 있어요"
-            }
-            description={
-              failed
-                ? "카드 내역을 다시 수집하면 자동으로 계산돼요."
-                : loadingDescription
-            }
-          />
+          {failed ? (
+            <InitialSyncFailedNotice
+              title="소비 기준 계산을 기다리고 있어요"
+              description="카드 내역을 다시 수집하면 자동으로 계산돼요."
+            />
+          ) : (
+            <InitialSyncPlaceholder />
+          )}
         </article>
         <aside className="spending-cycle-card">
           <span>이번 급여 주기</span>
@@ -88,11 +143,14 @@ function InitialSyncView({ summary, syncState, retryingId, onRetry }) {
             {formatDate(summary?.cycleStartDate)} ~{" "}
             {formatDate(summary?.cycleEndDate)}
           </p>
-          <InitialSyncLoading
-            compact
-            title="남은 예산을 계산하고 있어요"
-            description="소비내역 수집이 끝나면 자동으로 표시돼요."
-          />
+          {failed ? (
+            <InitialSyncFailedNotice
+              title="남은 예산 계산 대기 중"
+              description="카드 내역을 다시 수집하면 자동으로 계산돼요."
+            />
+          ) : (
+            <InitialSyncPlaceholder compact />
+          )}
         </aside>
       </section>
       <div className="spending-content-grid spending-initial-sync-grid">
@@ -105,10 +163,7 @@ function InitialSyncView({ summary, syncState, retryingId, onRetry }) {
                 description="고정지출을 제외한 오늘의 거래를 보여드려요"
               />
             </div>
-            <InitialSyncLoading
-              title="최근 소비내역을 불러오고 있어요"
-              description="화면을 나가도 수집은 계속 진행돼요."
-            />
+            <InitialSyncPlaceholder />
           </section>
           <section className="spending-panel">
             <div className="spending-panel-head">
@@ -119,10 +174,7 @@ function InitialSyncView({ summary, syncState, retryingId, onRetry }) {
                 tone="blue"
               />
             </div>
-            <InitialSyncLoading
-              title="최근 소비 흐름을 만들고 있어요"
-              description="날짜별 순사용액을 정리하는 중이에요."
-            />
+            <InitialSyncPlaceholder />
           </section>
         </div>
         <div className="spending-column">
@@ -135,10 +187,7 @@ function InitialSyncView({ summary, syncState, retryingId, onRetry }) {
                 tone="teal"
               />
             </div>
-            <InitialSyncLoading
-              title="카테고리를 분석하고 있어요"
-              description="불러온 거래를 카테고리별로 정리하는 중이에요."
-            />
+            <InitialSyncPlaceholder />
           </section>
           <section className="spending-panel">
             <div className="spending-panel-head">
@@ -149,10 +198,7 @@ function InitialSyncView({ summary, syncState, retryingId, onRetry }) {
                 tone="purple"
               />
             </div>
-            <InitialSyncLoading
-              title="소비 습관을 분석하고 있어요"
-              description="분석할 내역이 충분한지 함께 확인하고 있어요."
-            />
+            <InitialSyncPlaceholder compact />
           </section>
         </div>
       </div>

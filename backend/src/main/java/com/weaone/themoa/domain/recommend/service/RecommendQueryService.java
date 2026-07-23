@@ -2,19 +2,24 @@ package com.weaone.themoa.domain.recommend.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.weaone.themoa.domain.budget.entity.Budget;
+import com.weaone.themoa.domain.member.entity.Member;
+import com.weaone.themoa.domain.member.repository.MemberRepository;
 import com.weaone.themoa.domain.budget.entity.SurplusFund;
 import com.weaone.themoa.domain.recommend.dto.Recommendation;
 import com.weaone.themoa.domain.recommend.dto.UserProfile;
 import com.weaone.themoa.domain.recommend.dto.request.RecommendRequest;
 import com.weaone.themoa.domain.recommend.dto.response.RecommendDefaultsResponse;
 import com.weaone.themoa.domain.recommend.dto.response.RecommendResponse;
+import com.weaone.themoa.domain.recommend.entity.RecommendSnapshot;
 import com.weaone.themoa.domain.recommend.repository.RecommendBudgetRepository;
+import com.weaone.themoa.domain.recommend.repository.RecommendSnapshotRepository;
 import com.weaone.themoa.domain.recommend.repository.RecommendSurplusFundRepository;
 
 /**
@@ -36,13 +41,19 @@ public class RecommendQueryService {
     private final RecommendationService recommendationService;
     private final RecommendBudgetRepository budgetRepository;
     private final RecommendSurplusFundRepository surplusFundRepository;
+    private final RecommendSnapshotRepository snapshotRepository;
+    private final MemberRepository memberRepository;
 
     public RecommendQueryService(RecommendationService recommendationService,
                                  RecommendBudgetRepository budgetRepository,
-                                 RecommendSurplusFundRepository surplusFundRepository) {
+                                 RecommendSurplusFundRepository surplusFundRepository,
+                                 RecommendSnapshotRepository snapshotRepository,
+                                 MemberRepository memberRepository) {
         this.recommendationService = recommendationService;
         this.budgetRepository = budgetRepository;
         this.surplusFundRepository = surplusFundRepository;
+        this.snapshotRepository = snapshotRepository;
+        this.memberRepository = memberRepository;
     }
 
     /**
@@ -71,8 +82,12 @@ public class RecommendQueryService {
         return new RecommendDefaultsResponse(monthlyIncomeManwon, monthlyDepositWon, usableSurplus);
     }
 
-    @Transactional(readOnly = true)
-    public RecommendResponse recommend(RecommendRequest request) {
+    /**
+     * 추천 실행. 결과 top N을 회원의 "최근 추천 기록"으로 저장한다 — 나중에 그 상품의 금리·우대조건이
+     * 바뀌면 알려주기 위해서다(북마크와 함께 변경 알림 대상이 된다).
+     */
+    @Transactional
+    public RecommendResponse recommend(Long memberId, RecommendRequest request) {
         UserProfile profile = toProfile(request);
 
         List<Recommendation> recommendations = recommendationService.recommend(profile, TOP_N).stream()
@@ -83,6 +98,7 @@ public class RecommendQueryService {
         RecommendResponse.Feasibility feasibility = new RecommendResponse.Feasibility(
                 goal.hasGoal(), goal.reachableAtGoalMonths(), goal.actualMonthsNeeded(), goal.hopeless());
 
+        saveSnapshot(memberId, recommendations);
         return new RecommendResponse(feasibility, recommendations);
     }
 
@@ -109,6 +125,26 @@ public class RecommendQueryService {
                 request.goalAmountWon(),
                 goalMonths,
                 null);
+    }
+
+    /** 최근 추천 기록을 새 결과로 교체한다(최신 1회분만 유지). */
+    private void saveSnapshot(Long memberId, List<Recommendation> recommendations) {
+        snapshotRepository.deleteByMember_Id(memberId);
+        if (recommendations.isEmpty()) {
+            return;
+        }
+        Member member = memberRepository.getReferenceById(memberId);
+        LocalDateTime now = LocalDateTime.now();
+        List<RecommendSnapshot> rows = new java.util.ArrayList<>(recommendations.size());
+        for (int i = 0; i < recommendations.size(); i++) {
+            Recommendation item = recommendations.get(i);
+            if (item.id() == null) {
+                continue;
+            }
+            // 추천은 예·적금만 다루므로 대상 유형은 SAVINGS_PRODUCT로 고정된다.
+            rows.add(RecommendSnapshot.of(member, "SAVINGS_PRODUCT", item.id(), i + 1, now));
+        }
+        snapshotRepository.saveAll(rows);
     }
 
     /** 추천 이유에 붙는 내부 채점 표기 "(+N)"는 사용자용이 아니라서 응답에서 떼어낸다. */

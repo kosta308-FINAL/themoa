@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { getAdminInquiries } from "../../api/customerServiceApi";
+import BrandLogo from "../common/BrandLogo";
 import "./AdminLayout.css";
 
 const NAV_ITEMS = [
@@ -35,6 +36,12 @@ const NAV_ITEMS = [
     to: "/admin/financial-products",
     icon: "M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
   },
+  {
+    key: "error-logs",
+    label: "오류 로그 관리",
+    to: "/admin/logs/errors",
+    icon: "M12 9v4m0 4h.01M10.29 3.86l-8.18 14.18A2 2 0 0 0 4 21h16a2 2 0 0 0 1.89-2.96L13.71 3.86a2 2 0 0 0-3.42 0z",
+  },
 ];
 
 function AdminLayout({ title, subtitle, children }) {
@@ -57,10 +64,16 @@ function AdminLayout({ title, subtitle, children }) {
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <div className="admin-sidebar-header">
-          <span className="admin-brand-mark">M</span>
-          <div>
-            <span className="admin-brand-title">더모아 관리자</span>
-            <span className="admin-brand-sub">Themoa Admin</span>
+          <div className="admin-brand-wrap">
+            <BrandLogo
+              to="/admin/customer-service"
+              label="themoa 관리자"
+              size="small"
+              variant="auth"
+              className="admin-brand-logo"
+              ariaLabel="themoa 관리자 홈으로 이동"
+            />
+            <span className="admin-brand-sub">themoa Admin</span>
           </div>
         </div>
 
@@ -81,9 +94,7 @@ function AdminLayout({ title, subtitle, children }) {
               {item.label}
               {item.key === "customer-service" &&
                 Boolean(pendingInquiryCount) && (
-                  <span className="admin-nav-badge">
-                    {pendingInquiryCount}
-                  </span>
+                  <span className="admin-nav-badge">{pendingInquiryCount}</span>
                 )}
             </NavLink>
           ))}

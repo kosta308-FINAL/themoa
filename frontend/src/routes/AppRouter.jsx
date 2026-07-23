@@ -5,6 +5,7 @@ import SignupPage from "../features/auth/SignupPage";
 import FindIdPage from "../features/auth/FindIdPage";
 import FindPasswordPage from "../features/auth/FindPasswordPage";
 import Dashboard from "../features/dashboard/Dashboard";
+import CalendarPage from "../features/calendar/CalendarPage";
 import ProductsPage from "../features/products/ProductsPage";
 import FinancialSearchPage from "../features/financial-search/FinancialSearchPage";
 import PolicyPage from "../features/policy/PolicyPage";
@@ -19,6 +20,7 @@ import CustomerServiceAdminPage from "../features/customer-service-admin/Custome
 import CustomerServiceAiQualityPage from "../features/customer-service-admin/CustomerServiceAiQualityPage";
 import MerchantMasterAdminPage from "../features/merchant-admin/MerchantMasterAdminPage";
 import FinancialProductAdminPage from "../features/financial-admin/FinancialProductAdminPage";
+import ErrorLogAdminPage from "../features/error-log-admin/ErrorLogAdminPage";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 import UserOnlyRoute from "./UserOnlyRoute";
@@ -37,6 +39,7 @@ function AppRouter() {
         <Route element={<UserOnlyRoute />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
+            <Route path="calendar" element={<CalendarPage />} />
             <Route path="products" element={<ProductsPage />} />
             <Route path="products/search" element={<FinancialSearchPage />} />
             <Route path="policy" element={<PolicyPage />} />
@@ -73,6 +76,7 @@ function AppRouter() {
             path="/admin/financial-products"
             element={<FinancialProductAdminPage />}
           />
+          <Route path="/admin/logs/errors" element={<ErrorLogAdminPage />} />
         </Route>
       </Route>
     </Routes>

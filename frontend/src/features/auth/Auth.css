@@ -50,21 +50,14 @@
   width: fit-content;
 }
 
-.auth-logo-mark {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--auth-accent);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
+.auth-logo .themoa-brand-logo-image {
+  border-radius: 0;
 }
 
-.auth-logo-text {
+.auth-logo .themoa-brand-logo-label {
   font-weight: 700;
   font-size: 16px;
+  color: #f4fff8;
 }
 
 .auth-panel-body {

@@ -1,4 +1,6 @@
+import { useState } from "react";
 import BookmarkButton from "../../../components/common/BookmarkButton";
+import SavingsSubscriptionModal from "../../../components/common/SavingsSubscriptionModal";
 import { bookmarkTargetTypeOf } from "../../../utils/bookmarkTarget";
 
 const PRODUCT_TYPE_LABELS = {
@@ -16,11 +18,14 @@ const LOAN_TYPES = new Set(["MORTGAGE", "RENT", "CREDIT"]);
  * 라벨도 그에 맞춰 바꿔 표시한다.
  */
 function FinancialSearchResultCard({ item, bookmarks }) {
+  const [registerOpen, setRegisterOpen] = useState(false);
   const typeLabel = PRODUCT_TYPE_LABELS[item.productType] || item.productType;
   const isLoan = LOAN_TYPES.has(item.productType);
   const rateLabel = isLoan ? "최저" : "최고";
   const targetType = bookmarkTargetTypeOf(item.productType);
   const canBookmark = item.id != null;
+  // 가입 등록은 예·적금만(대출은 만기·월납입 개념이 없어 제외).
+  const canRegister = canBookmark && !isLoan;
 
   return (
     <article className="fs-card">
@@ -65,15 +70,34 @@ function FinancialSearchResultCard({ item, bookmarks }) {
         </p>
       )}
 
-      {item.officialUrl && (
-        <a
-          className="fs-link"
-          href={item.officialUrl}
-          target="_blank"
-          rel="noreferrer"
-        >
-          🔗 {item.companyName} 사이트로 이동
-        </a>
+      <div className="fs-actions">
+        {canRegister && (
+          <button
+            type="button"
+            className="fs-register"
+            onClick={() => setRegisterOpen(true)}
+          >
+            가입 등록
+          </button>
+        )}
+        {item.officialUrl && (
+          <a
+            className="fs-link"
+            href={item.officialUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            🔗 {item.companyName} 사이트로 이동
+          </a>
+        )}
+      </div>
+
+      {registerOpen && (
+        <SavingsSubscriptionModal
+          productId={item.id}
+          onClose={() => setRegisterOpen(false)}
+          onCreated={(message) => bookmarks.showToast?.(message)}
+        />
       )}
     </article>
   );

@@ -37,22 +37,16 @@
   border-bottom: 1px solid var(--admin-sidebar-border);
 }
 
-.admin-brand-mark {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  background: var(--admin-primary);
-  color: #fff;
-  font-weight: 900;
+.admin-brand-wrap {
   display: grid;
-  place-items: center;
-  font-size: 18px;
-  flex-shrink: 0;
+  gap: 3px;
 }
 
-.admin-brand-title {
-  display: block;
+.admin-brand-logo {
   color: #fff;
+}
+
+.admin-brand-logo .themoa-brand-logo-label {
   font-size: 15px;
   font-weight: 800;
   letter-spacing: -0.3px;

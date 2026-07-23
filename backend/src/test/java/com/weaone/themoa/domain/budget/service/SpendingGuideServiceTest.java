@@ -99,11 +99,11 @@ class SpendingGuideServiceTest {
     }
 
     @Test
-    @DisplayName("하루 권장액은 어제까지 순지출만 쓰고, 오늘 순사용액은 오늘 사용 가능 금액·남은 예산에만 반영된다")
-    void dailyRecommendedIgnoresTodaySpend() {
+    @DisplayName("하루 권장액은 주기 전체 일수로 나눈 고정값이라 어제까지 누적지출·오늘 순사용액에 흔들리지 않는다")
+    void dailyRecommendedIsFixedForWholeCycle() {
         LocalDate today = TODAY.value();
         LocalDate start = today.minusDays(5);
-        LocalDate end = today.plusDays(19); // 남은일수 20
+        LocalDate end = today.plusDays(19); // 주기 전체 25일, 남은일수 20
         Member member = member(new BigDecimal("1000000"), 5, BigDecimal.ZERO);
         Budget budget = budget(member, start, end, "1000000", "0", "0");
         given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member));
@@ -118,11 +118,11 @@ class SpendingGuideServiceTest {
         assertThat(response.setupRequired()).isFalse();
         assertThat(response.remainingDays()).isEqualTo(20);
         assertThat(response.availableAmount()).isEqualByComparingTo("1000000");
-        // (1,000,000 − 250,000) / 20 = 37,500 — 오늘 쓴 10,000은 권장액을 흔들지 않는다
-        assertThat(response.dailyRecommendedAmount()).isEqualByComparingTo("37500");
+        // 1,000,000 / 25 = 40,000 — 어제까지 누적지출 250,000은 더 이상 이 값을 흔들지 않는다
+        assertThat(response.dailyRecommendedAmount()).isEqualByComparingTo("40000");
         assertThat(response.todayNetSpend()).isEqualByComparingTo("10000");
-        // 오늘 사용 가능 = 37,500 − 10,000 = 27,500
-        assertThat(response.todayAvailableAmount()).isEqualByComparingTo("27500");
+        // 오늘 사용 가능 = 40,000 − 10,000 = 30,000
+        assertThat(response.todayAvailableAmount()).isEqualByComparingTo("30000");
         assertThat(response.remainingAmount()).isEqualByComparingTo("740000");
         assertThat(response.overCycleBudget()).isFalse();
     }
@@ -202,6 +202,7 @@ class SpendingGuideServiceTest {
                 .willReturn(List.of());
         given(cardTransactionRepository.sumCanceledAmount(eq(MEMBER_ID), eq(TransactionStatus.REJECTED), any(), any()))
                 .willReturn(BigDecimal.ZERO);
+        given(budgetIncomeAdjustmentRepository.sumAmountByBudget_Id(any())).willReturn(BigDecimal.ZERO);
 
         CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L, null);
 
@@ -252,6 +253,7 @@ class SpendingGuideServiceTest {
         given(budgetRepository.findByIdAndMember_Id(31L, MEMBER_ID)).willReturn(Optional.of(budget));
         given(cardTransactionRepository.summarizeByCategory(any(), any(), any(), any())).willReturn(List.of());
         given(cardTransactionRepository.sumCanceledAmount(any(), any(), any(), any())).willReturn(BigDecimal.ZERO);
+        given(budgetIncomeAdjustmentRepository.sumAmountByBudget_Id(any())).willReturn(BigDecimal.ZERO);
 
         CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L, null);
 
@@ -273,6 +275,7 @@ class SpendingGuideServiceTest {
         given(budgetRepository.findByIdAndMember_Id(31L, MEMBER_ID)).willReturn(Optional.of(budget));
         given(cardTransactionRepository.summarizeByCategory(any(), any(), any(), any())).willReturn(List.of());
         given(cardTransactionRepository.sumCanceledAmount(any(), any(), any(), any())).willReturn(BigDecimal.ZERO);
+        given(budgetIncomeAdjustmentRepository.sumAmountByBudget_Id(any())).willReturn(BigDecimal.ZERO);
 
         CategorySummaryListResponse response = service().getCategorySummary(MEMBER_ID, 31L, null);
 

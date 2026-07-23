@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import BrandLogo from "../../../components/common/BrandLogo";
 import "../Auth.css";
 
 /**
@@ -16,10 +16,14 @@ function AuthLayout({ children }) {
   return (
     <div className="auth">
       <aside className="auth-panel">
-        <Link to="/" className="auth-logo">
-          <span className="auth-logo-mark">M</span>
-          <span className="auth-logo-text">더모아</span>
-        </Link>
+        <BrandLogo
+          to="/"
+          label="themoa"
+          size="large"
+          variant="auth"
+          className="auth-logo"
+          ariaLabel="themoa 홈으로 이동"
+        />
         <div className="auth-panel-body">
           <p className="auth-panel-date">{dateLabel}</p>
           <h1 className="auth-panel-title">

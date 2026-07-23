@@ -100,6 +100,7 @@ export const useBookmarks = () => {
     isBookmarked,
     isBusy,
     toggleBookmark,
+    showToast,
     toast,
     clearToast: () => setToast(null),
   };
