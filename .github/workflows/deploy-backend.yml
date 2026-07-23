@@ -58,9 +58,13 @@ jobs:
             '{commands: [
               ("aws s3 cp s3://" + $bucket + "/" + $jar + " /home/ssm-user/app/themoa.jar"),
               "chown ssm-user:ssm-user /home/ssm-user/app/themoa.jar",
+              "mkdir -p /etc/systemd/system/themoa.service.d",
+              "printf \"[Service]\nEnvironment=POLICY_DAILY_SYNC_ENABLED=true\n\" > /etc/systemd/system/themoa.service.d/policy-sync.conf",
+              "systemctl daemon-reload",
               "systemctl restart themoa",
               "sleep 5",
-              "systemctl is-active themoa"
+              "systemctl is-active themoa",
+              "systemctl show themoa --property=Environment --value | grep -Eq \"(^| )POLICY_DAILY_SYNC_ENABLED=true( |$)\""
             ]}')
 
           COMMAND_ID=$(aws ssm send-command \

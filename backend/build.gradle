@@ -29,6 +29,8 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // API별 응답시간(ms) 집계 - DB에 요청마다 저장하지 않고 메모리에서 엔드포인트별로 누적한다
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'com.github.ben-manes.caffeine:caffeine'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'

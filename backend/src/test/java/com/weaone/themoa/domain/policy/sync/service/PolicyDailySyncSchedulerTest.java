@@ -1,5 +1,6 @@
 package com.weaone.themoa.domain.policy.sync.service;
 
+import com.weaone.themoa.domain.datarefresh.service.DataRefreshStatusService;
 import com.weaone.themoa.domain.policy.policy.service.PolicyCollectionExecutionType;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.task.SyncTaskExecutor;
@@ -13,6 +14,7 @@ import static org.mockito.Mockito.when;
 class PolicyDailySyncSchedulerTest {
     private final PolicySyncExecutionGuard executionGuard = mock(PolicySyncExecutionGuard.class);
     private final PolicySyncPipelineService pipelineService = mock(PolicySyncPipelineService.class);
+    private final DataRefreshStatusService dataRefreshStatusService = mock(DataRefreshStatusService.class);
 
     @Test
     void successfulAcquireRunsIncrementalScheduledPipeline() {
@@ -64,6 +66,11 @@ class PolicyDailySyncSchedulerTest {
     }
 
     private PolicyDailySyncScheduler scheduler() {
-        return new PolicyDailySyncScheduler(executionGuard, pipelineService, new SyncTaskExecutor());
+        return new PolicyDailySyncScheduler(
+                executionGuard,
+                pipelineService,
+                new SyncTaskExecutor(),
+                dataRefreshStatusService
+        );
     }
 }

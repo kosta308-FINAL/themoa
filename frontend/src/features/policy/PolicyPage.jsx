@@ -13,7 +13,7 @@ const examples = [
 ]
 
 function PolicyPage() {
-  const search = usePolicySearch(examples[0])
+  const search = usePolicySearch('')
 
   return (
     <main className="dash-main policy-page">

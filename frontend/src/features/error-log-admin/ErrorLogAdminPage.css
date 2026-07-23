@@ -2,6 +2,30 @@
   color: var(--text-primary);
 }
 
+.ela-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.ela-tab {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ela-tab.active {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+  color: #fff;
+}
+
 .ela-kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -369,4 +393,202 @@
   font-size: 11.5px;
   color: var(--text-muted);
   margin-top: 4px;
+}
+
+/* 파일 로그 뷰어 */
+.ela-level-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.ela-level-tab {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ela-level-tab.active {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+  color: #fff;
+}
+
+.ela-filelog-time,
+.ela-filelog-logger,
+.ela-filelog-detail {
+  font-family:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.ela-filelog-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ela-filelog-item {
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid transparent;
+}
+
+.ela-filelog-item:last-child {
+  border-bottom: none;
+}
+
+.ela-filelog-item[data-level="error"] {
+  border-left-color: var(--red);
+}
+
+.ela-filelog-item[data-level="warn"] {
+  border-left-color: #d97706;
+}
+
+.ela-filelog-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 16px 9px 10px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--text-primary);
+}
+
+.ela-filelog-row-plain {
+  cursor: default;
+}
+
+.ela-filelog-row:hover {
+  background: var(--bg-subtle);
+}
+
+.ela-filelog-row-plain:hover {
+  background: transparent;
+}
+
+.ela-filelog-chevron {
+  flex: 0 0 12px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.ela-filelog-time {
+  flex: 0 0 172px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 11.5px;
+}
+
+.ela-filelog-logger {
+  flex: 0 0 200px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+}
+
+.ela-filelog-message {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.ela-filelog-detail {
+  margin: 0 16px 14px 25px;
+  padding: 12px 14px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 11.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* API 성능 TOP 5 */
+.ela-apiperf-top-panel {
+  margin-bottom: 20px;
+}
+
+.ela-apiperf-top-list {
+  list-style: none;
+  margin: 0;
+  padding: 10px 22px 18px;
+}
+
+.ela-apiperf-top-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+}
+
+.ela-apiperf-top-item + .ela-apiperf-top-item {
+  border-top: 1px solid var(--border);
+}
+
+.ela-apiperf-top-rank {
+  flex: 0 0 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--accent-dark);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ela-apiperf-top-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ela-apiperf-top-uri {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ela-apiperf-top-method {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent-dark);
+}
+
+.ela-apiperf-top-bar-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-subtle);
+  overflow: hidden;
+}
+
+.ela-apiperf-top-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.2s ease;
 }
