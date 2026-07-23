@@ -67,8 +67,17 @@ public class FixedExpenseDetectionService {
     private final AmountClusterer amountClusterer;
     private final BudgetCycleService budgetCycleService;
 
-    /** 카드거래 수집 새벽 배치(03:00) 이후에 돌도록 30분 뒤로 잡는다. */
+    /**
+     * 카드거래 수집 새벽 배치(03:00) 이후에 돌도록 30분 뒤로 잡는다.
+     *
+     * <p>{@code @Transactional}이 필요하다 — {@link #currentYearMonth}가 {@code memberRepository.getReferenceById}로
+     * 만든 프록시를 별도 빈({@link BudgetCycleService})의 트랜잭션에 넘기므로, 이 메서드 자체가 트랜잭션을
+     * 열어 두지 않으면 조회·사용 트랜잭션이 갈려 {@code LazyInitializationException}이 난다
+     * (troubleshooting/lazyinitialization.md 사례 2). 카드 동기화 배치와 달리 이 배치는 외부 API 호출이
+     * 없는 순수 DB 작업이라 전체를 하나의 트랜잭션으로 묶어도 커넥션을 오래 붙잡는 부담이 없다.
+     */
     @Scheduled(cron = "0 30 3 * * *", zone = "Asia/Seoul")
+    @Transactional
     public void runNightlyDetection() {
         LocalDateTime activeSince = LocalDateTime.now(FixedExpenseCyclePolicy.ZONE_SEOUL).minusDays(INACTIVITY_LIMIT_DAYS);
         LocalDate today = LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL);
