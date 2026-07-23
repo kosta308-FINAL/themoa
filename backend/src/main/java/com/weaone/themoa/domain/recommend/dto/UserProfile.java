@@ -61,6 +61,7 @@ public record UserProfile(
         // 두 옵션(예: 24개월 vs 36개월)이 거리 동점이 되어 "장기"를 선택해도 24개월 상품이 튀어나오는
         // 문제가 있었다 — 동점 자체가 안 생기게 실제 구간과 1:1로 맞춘다.
         return switch (preferredPeriod) {
+            case SINGLE -> 1;
             case SHORT -> 6;
             case MID -> 24;
             case LONG -> 36;

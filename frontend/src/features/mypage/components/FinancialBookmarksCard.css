@@ -50,6 +50,16 @@
   white-space: nowrap;
 }
 
+.mp-financial-bookmark-titlerow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mp-financial-bookmark-titlerow > div {
+  min-width: 0;
+}
+
 .mp-financial-bookmark-item h3 {
   font-size: 15px;
   font-weight: 700;

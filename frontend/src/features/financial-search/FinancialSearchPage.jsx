@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import Toast from "../../components/common/Toast";
 import { useBookmarks } from "../../hooks/useBookmarks";
 import FinancialSearchForm from "./components/FinancialSearchForm";
@@ -9,6 +10,17 @@ import "./FinancialSearchPage.css";
 function FinancialSearchPage() {
   const search = useFinancialSearch();
   const bookmarks = useBookmarks();
+  const [searchParams] = useSearchParams();
+
+  // 인기 검색어 등에서 ?q=로 넘어오면 진입하자마자 그 검색어로 검색한다.
+  useEffect(() => {
+    const initialQuery = searchParams.get("q");
+    if (initialQuery) {
+      search.runSearch(initialQuery);
+    }
+    // 진입 시 1회만 실행.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <main className="dash-main financial-search-page">

@@ -24,6 +24,13 @@
   gap: 12px;
 }
 
+.mp-sub-item-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
 .mp-sub-item-title {
   display: flex;
   flex-direction: column;

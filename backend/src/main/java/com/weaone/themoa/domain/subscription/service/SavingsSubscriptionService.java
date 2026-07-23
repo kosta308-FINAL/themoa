@@ -123,6 +123,7 @@ public class SavingsSubscriptionService {
         String companyName = request.companyName();
         String productType = request.productType();
         boolean compound = request.compound();
+        BigDecimal appliedRate = request.appliedRate();
 
         if (request.productId() != null) {
             SavingsProduct product = savingsProductRepository
@@ -133,6 +134,10 @@ public class SavingsSubscriptionService {
             companyName = product.getCompanyName();
             productType = product.getProductType() == null ? null : product.getProductType().name();
             compound = isCompound(product, request.termMonth());
+            // 우대조건 파싱이 부정확하면 적용금리가 상품 최고금리를 넘을 수 있다(예: 상한 안내문이 조건으로
+            // 오인되어 합산됨). 최고금리를 절대 넘지 못하도록 서버에서 강제로 깎는다 — 화면 경고만으로는
+            // 잘못된 값이 저장되는 걸 막지 못한다.
+            appliedRate = capToMaxRate(appliedRate, product);
         }
         if (!StringUtils.hasText(productName) || !StringUtils.hasText(companyName)) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
@@ -140,7 +145,7 @@ public class SavingsSubscriptionService {
 
         SavingsSubscription subscription = SavingsSubscription.create(
                 member, request.productId(), productName, companyName, productType,
-                request.monthlyAmount(), request.appliedRate(), request.termMonth(), compound,
+                request.monthlyAmount(), appliedRate, request.termMonth(), compound,
                 request.startDate(), LocalDateTime.now());
 
         if (request.conditions() != null) {
@@ -178,6 +183,22 @@ public class SavingsSubscriptionService {
                 .findByIdAndMember_Id(subscriptionId, memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
         subscriptionRepository.delete(subscription);
+    }
+
+    /** 적용금리가 상품 최고우대금리를 넘으면 최고금리로 깎는다. 최고금리 정보가 없으면 그대로 둔다. */
+    private BigDecimal capToMaxRate(BigDecimal appliedRate, SavingsProduct product) {
+        if (appliedRate == null) {
+            return null;
+        }
+        BigDecimal maxRate = product.getOptions().stream()
+                .map(SavingsProductOption::getMaxRate)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(null);
+        if (maxRate != null && appliedRate.compareTo(maxRate) > 0) {
+            return maxRate;
+        }
+        return appliedRate;
     }
 
     private boolean isCompound(SavingsProduct product, int termMonth) {

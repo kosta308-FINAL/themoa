@@ -1,4 +1,5 @@
 import { useState } from "react";
+import BankBadge from "../../../components/common/BankBadge";
 import BookmarkButton from "../../../components/common/BookmarkButton";
 import SavingsSubscriptionModal from "../../../components/common/SavingsSubscriptionModal";
 import { bookmarkTargetTypeOf } from "../../../utils/bookmarkTarget";
@@ -51,10 +52,13 @@ function FinancialSearchResultCard({ item, bookmarks }) {
         </div>
       </div>
 
-      <h3 className="fs-name">
-        <span className="fs-company">{item.companyName}</span>
-        {item.productName}
-      </h3>
+      <div className="fs-name-row">
+        <BankBadge companyName={item.companyName} size={36} />
+        <h3 className="fs-name">
+          <span className="fs-company">{item.companyName}</span>
+          {item.productName}
+        </h3>
+      </div>
 
       {item.joinMethod && (
         <p className="fs-join">가입방법 · {item.joinMethod}</p>

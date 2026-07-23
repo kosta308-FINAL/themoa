@@ -732,23 +732,34 @@ public class FinancialProductSearchService {
             for (int i = 0; i < items.size(); i++) {
                 FinancialSearchResultItem item = items.get(i);
                 String condition = item.specialCondition() == null ? "" : item.specialCondition();
-                if (condition.length() > 120) {
-                    condition = condition.substring(0, 120);
+                // 조건 텍스트를 너무 짧게 자르면 요약이 두루뭉술해진다. 근거로 삼을 만큼 넉넉히 준다.
+                if (condition.length() > 400) {
+                    condition = condition.substring(0, 400);
                 }
                 productList.append(i + 1).append(". ")
                         .append(item.productName()).append(" / ").append(item.companyName())
                         .append(" / 대표금리 ").append(item.representativeRate()).append("%")
+                        .append(item.representativeTermMonth() == null ? ""
+                                : " / " + item.representativeTermMonth() + "개월")
                         .append(" / 조건: ").append(condition)
                         .append('\n');
             }
             String prompt = """
-                    사용자가 금융상품을 검색했습니다. 검색어와 아래 상품 목록을 보고, 각 상품이 왜 이 검색어에
-                    적합한지(또는 어떤 점이 유용한지) 상품 조건을 근거로 1문장씩 한국어로 설명하세요.
-                    ⚠️ 반드시 아래 "조건" 텍스트에 실제로 적힌 내용만 근거로 쓰세요. 조건에 없는 내용(예: 특정
-                    대상자·직업·연령층 전용이라거나 소득 증빙이 필요 없다는 식의 자격 조건)은 절대로 지어내지
-                    마세요. 조건 텍스트에 검색어와 직접 관련된 근거가 없으면, 그 대상에 특화됐다고 단정하지 말고
-                    금리·이용 편의성 등 확인 가능한 사실만으로 일반적인 설명을 쓰세요.
-                    반드시 상품 목록과 같은 개수, 같은 순서로 문자열 배열만 JSON으로 출력하세요. 다른 텍스트는 넣지 마세요.
+                    사용자가 금융상품을 검색했습니다. 검색어와 아래 상품 목록을 보고, 각 상품이 이 검색어에 왜
+                    적합한지 상품별로 한국어 2문장으로 설명하세요.
+
+                    작성 지침:
+                    - 반드시 그 상품의 "구체적 사실"을 최소 하나 담으세요: 금리 %, 가입기간, 조건 텍스트에 실제로
+                      적힌 우대조건(예: "자동이체 시 우대", "비대면 가입") 중 검색어와 연결되는 것.
+                    - "안정적으로 자산을 늘릴 수 있어요", "좋은 선택이에요"처럼 어느 상품에나 붙일 수 있는 일반론만
+                      쓰지 마세요. 왜 다른 상품이 아니라 '이' 상품인지가 드러나게 쓰세요.
+                    - ⚠️ 아래 "조건" 텍스트에 실제로 적힌 내용만 근거로 쓰세요. 조건에 없는 자격(특정 대상자·직업·
+                      연령층 전용, 소득 증빙 불필요 등)은 절대 지어내지 마세요.
+                    - 검색어와 직접 관련된 근거가 조건에 없으면, 그 대상 특화라고 단정하지 말고 금리·가입기간·가입
+                      편의성 등 확인 가능한 사실로 설명하세요.
+                    - 친근한 존댓말로 쓰되 과장·홍보 문구는 피하세요.
+
+                    반드시 상품 목록과 같은 개수, 같은 순서의 문자열 배열만 JSON으로 출력하세요. 다른 텍스트는 넣지 마세요.
                     검색어: %s
                     상품 목록:
                     %s""".formatted(query, productList);

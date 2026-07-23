@@ -5,6 +5,7 @@ import {
   getSubscriptionDraft,
 } from "../../api/savingsSubscriptionApi";
 import { getApiErrorMessage } from "../../utils/apiError";
+import { stripCommas, withCommas } from "../../utils/numberFormat";
 import "./SavingsSubscriptionModal.css";
 
 const PRODUCT_TYPE_LABELS = {
@@ -17,6 +18,29 @@ const PRODUCT_TYPE_LABELS = {
 
 // 소수점 둘째 자리까지만 — 금리는 3.45%처럼 표기하고 부동소수점 오차를 없앤다.
 const round2 = (value) => Math.round(value * 100) / 100;
+
+const won = (value) => `${Math.round(value).toLocaleString("ko-KR")}원`;
+
+/**
+ * 화면에서 바로 보여줄 대략적인 세전 만기금액(단리 기준).
+ * 정확한 값은 등록 후 백엔드가 계산해 목록에 내려주고, 여기선 미리보기용 추정치다.
+ * - 적금(월납입): 원금 = 월납입×개월, 이자 = 월납입×연이율×(n(n+1)/2)/12
+ * - 예금(일시예치): 원금 = 입력액, 이자 = 원금×연이율×개월/12
+ */
+const estimateMaturity = (productType, monthlyAmount, termMonth, ratePct) => {
+  const amount = Number(monthlyAmount) || 0;
+  const months = Number(termMonth) || 0;
+  const rate = (Number(ratePct) || 0) / 100;
+  if (amount <= 0 || months <= 0) return null;
+  if (productType === "DEPOSIT") {
+    const principal = amount;
+    const interest = principal * rate * (months / 12);
+    return { principal, maturity: principal + interest };
+  }
+  const principal = amount * months;
+  const interest = (amount * rate * (months * (months + 1))) / 2 / 12;
+  return { principal, maturity: principal + interest };
+};
 
 const todayString = () => {
   const now = new Date();
@@ -94,8 +118,26 @@ function SavingsSubscriptionModal({ productId, onClose, onCreated }) {
       ),
     [conditions],
   );
-  const appliedRate = round2(baseRate + bonusSum);
-  const overMax = maxRate != null && appliedRate > maxRate;
+  // 우대조건 합이 최고금리를 넘어도 상품 최고금리를 넘을 수 없으므로 maxRate로 상한을 건다.
+  // (경고는 캡핑 전 원래 합 기준으로 띄운다)
+  const rawRate = round2(baseRate + bonusSum);
+  const appliedRate = maxRate != null ? Math.min(rawRate, maxRate) : rawRate;
+  const overMax = maxRate != null && rawRate > maxRate;
+
+  // 백엔드가 @Min(10000)으로 검증하므로 화면에서도 미달이면 등록을 막는다.
+  const monthlyValid = Number(monthlyAmount) >= 10000;
+
+  // 월납입액·기간·내 금리가 바뀔 때마다 예상 만기금액을 다시 계산한다.
+  const estimate = useMemo(
+    () =>
+      estimateMaturity(
+        draft?.productType,
+        monthlyAmount,
+        termMonth,
+        appliedRate,
+      ),
+    [draft?.productType, monthlyAmount, termMonth, appliedRate],
+  );
 
   const toggleCondition = (index) => {
     setConditions((prev) =>
@@ -107,7 +149,7 @@ function SavingsSubscriptionModal({ productId, onClose, onCreated }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (submitting) return;
+    if (submitting || !monthlyValid) return;
     setSubmitting(true);
     setSubmitError("");
     try {
@@ -200,15 +242,21 @@ function SavingsSubscriptionModal({ productId, onClose, onCreated }) {
                 <span>월 납입액</span>
                 <div className="ss-amount">
                   <input
-                    type="number"
-                    min="0"
-                    step="10000"
-                    value={monthlyAmount}
-                    onChange={(event) => setMonthlyAmount(event.target.value)}
+                    type="text"
+                    inputMode="numeric"
+                    value={withCommas(monthlyAmount)}
+                    onChange={(event) =>
+                      setMonthlyAmount(stripCommas(event.target.value))
+                    }
                     required
                   />
                   <em>원</em>
                 </div>
+                {!monthlyValid && (
+                  <small className="ss-field-error">
+                    월 납입금액은 10,000원 이상 입력해 주세요.
+                  </small>
+                )}
               </label>
 
               <div className="ss-field-row">
@@ -270,11 +318,26 @@ function SavingsSubscriptionModal({ productId, onClose, onCreated }) {
                 ))}
               </div>
 
-              <div className="ss-applied">
-                <span>내 금리</span>
-                <strong>
-                  기본 {baseRate}% + 우대 {round2(bonusSum)}% = {appliedRate}%
-                </strong>
+              <div className="ss-summary">
+                <div className="ss-summary-row">
+                  <span>내 금리</span>
+                  <strong>
+                    기본 {baseRate}% + 우대 {round2(bonusSum)}% = {appliedRate}%
+                    {overMax && " (최고금리 적용)"}
+                  </strong>
+                </div>
+                {estimate && (
+                  <div className="ss-summary-row ss-summary-maturity">
+                    <span>예상 만기금액 (세전)</span>
+                    <strong>{won(estimate.maturity)}</strong>
+                  </div>
+                )}
+                {estimate && (
+                  <p className="ss-summary-note">
+                    원금 {won(estimate.principal)} 기준 단순 계산이에요. 실제
+                    수령액은 이자과세·상품 방식에 따라 달라질 수 있어요.
+                  </p>
+                )}
               </div>
               {overMax && (
                 <p className="ss-warn">
@@ -295,7 +358,11 @@ function SavingsSubscriptionModal({ productId, onClose, onCreated }) {
               >
                 취소
               </button>
-              <button type="submit" className="ss-submit" disabled={submitting}>
+              <button
+                type="submit"
+                className="ss-submit"
+                disabled={submitting || !monthlyValid}
+              >
                 {submitting ? "등록 중..." : "가입 등록"}
               </button>
             </div>
