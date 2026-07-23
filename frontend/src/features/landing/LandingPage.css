@@ -72,18 +72,7 @@
   color: var(--landing-text);
 }
 
-.landing-logo-mark {
-  display: inline-flex;
-  width: 36px;
-  height: 36px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background: var(--landing-primary-soft);
-  color: var(--landing-primary-dark);
-}
-
-.landing-brand-text {
+.landing-brand .themoa-brand-logo-label {
   font-size: 18px;
   font-weight: 800;
   letter-spacing: -0.03em;
@@ -956,7 +945,7 @@
 }
 
 @media (max-width: 460px) {
-  .landing-brand-text {
+  .landing-brand .themoa-brand-logo-label {
     display: none;
   }
 

@@ -1,13 +1,17 @@
 import { Link } from "react-router-dom";
+import BrandLogo from "../common/BrandLogo";
 
 function DashboardFooter() {
   return (
     <footer className="dash-footer">
       <div className="dash-footer-top">
-        <div className="dash-footer-logo">
-          <span className="dash-logo-mark">M</span>
-          <span className="dash-logo-text">더모아</span>
-        </div>
+        <BrandLogo
+          to="/dashboard"
+          label="themoa"
+          size="small"
+          className="dash-footer-logo"
+          ariaLabel="themoa 홈 대시보드로 이동"
+        />
         <nav className="dash-footer-links">
           <a href="#">이용약관</a>
           <a href="#">개인정보처리방침</a>
