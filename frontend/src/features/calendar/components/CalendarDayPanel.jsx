@@ -44,17 +44,19 @@ function CalendarDayPanel({
   };
 
   const handleSubmit = async (payload) => {
-    if (editingEvent) {
-      await onUpdate(editingEvent.sourceId, payload);
-    } else {
-      await onCreate(payload);
+    const succeeded = editingEvent
+      ? await onUpdate(editingEvent.sourceId, payload)
+      : await onCreate(payload);
+
+    if (succeeded) {
+      closeForm();
     }
-    closeForm();
   };
 
   const handleDelete = async (event) => {
     if (!window.confirm("일정을 삭제할까요?")) return;
-    await onDelete(event.sourceId);
+    const succeeded = await onDelete(event.sourceId);
+    if (!succeeded) return;
   };
 
   return (
