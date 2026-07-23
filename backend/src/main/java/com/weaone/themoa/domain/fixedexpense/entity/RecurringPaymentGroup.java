@@ -12,7 +12,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,11 +25,14 @@ import java.time.LocalDate;
  * 그룹이 쪼개진다. biller(Apple 등) 경유 결제는 카드 거래에 merchant_alias_id가 붙지 않으므로
  * {@code billerMerchant} + 금액 클러스터링으로 그룹핑한다(merchant.md §5-D-3,
  * {@link FixedExpenseDetectionService}, troubleshooting/billerProblem.md).
+ *
+ * <p>회원+alias당 그룹 1개로 제한하지 않는다(UNIQUE 없음) — 같은 alias 아래 서로 다른 구독이
+ * 공존할 수 있어서다(예: 같은 서비스를 계정 두 개로 구독). biller형과 마찬가지로 find-or-create는
+ * 애플리케이션 레벨({@link FixedExpenseDetectionService})이 담당하며, 새벽 배치 단일 라이터라
+ * 동시 경합 위험이 낮다.
  */
 @Entity
-@Table(name = "recurring_payment_group",
-        uniqueConstraints = @UniqueConstraint(name = "uk_recurring_group_member_alias",
-                columnNames = {"member_id", "merchant_alias_id"}))
+@Table(name = "recurring_payment_group")
 @Check(constraints = "(merchant_alias_id is not null) <> (biller_merchant_id is not null)")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

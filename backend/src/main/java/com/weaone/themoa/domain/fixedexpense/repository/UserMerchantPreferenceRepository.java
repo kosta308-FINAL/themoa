@@ -11,4 +11,7 @@ public interface UserMerchantPreferenceRepository extends JpaRepository<UserMerc
 
     boolean existsByMember_IdAndBillerMerchant_IdAndPreferenceType(
             Long memberId, Long billerMerchantId, UserMerchantPreferenceType preferenceType);
+
+    boolean existsByMember_IdAndRecurringPaymentGroup_IdAndPreferenceType(
+            Long memberId, Long recurringPaymentGroupId, UserMerchantPreferenceType preferenceType);
 }

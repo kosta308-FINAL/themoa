@@ -38,7 +38,7 @@ public class AmountClusterer {
         return buckets;
     }
 
-    /** 기존 biller 그룹의 find-or-create 매칭에도 같은 오차를 재사용한다. */
+    /** 버킷팅 내부용 인접 금액 비교. 그룹 find-or-create는 금액이 아니라 증거 거래 겹침으로 판단한다(fixedExpense.md §2). */
     public boolean withinTolerance(BigDecimal a, BigDecimal b) {
         BigDecimal diffRatio = a.subtract(b).abs().divide(a, 4, RoundingMode.HALF_UP);
         return diffRatio.compareTo(TOLERANCE) <= 0;
