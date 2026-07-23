@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { getAdminInquiries } from "../../api/customerServiceApi";
+import BrandLogo from "../common/BrandLogo";
 import "./AdminLayout.css";
 
 const NAV_ITEMS = [
@@ -63,10 +64,16 @@ function AdminLayout({ title, subtitle, children }) {
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <div className="admin-sidebar-header">
-          <span className="admin-brand-mark">M</span>
-          <div>
-            <span className="admin-brand-title">더모아 관리자</span>
-            <span className="admin-brand-sub">Themoa Admin</span>
+          <div className="admin-brand-wrap">
+            <BrandLogo
+              to="/admin/customer-service"
+              label="themoa 관리자"
+              size="small"
+              variant="auth"
+              className="admin-brand-logo"
+              ariaLabel="themoa 관리자 홈으로 이동"
+            />
+            <span className="admin-brand-sub">themoa Admin</span>
           </div>
         </div>
 

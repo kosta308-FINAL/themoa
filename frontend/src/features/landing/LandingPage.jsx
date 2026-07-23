@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import BrandLogo from "../../components/common/BrandLogo";
 import "./LandingPage.css";
 
 const LOGIN_PATH = "/login";
@@ -77,14 +78,14 @@ function LandingHeader({ startPath, onSectionClick }) {
   return (
     <header className="landing-header">
       <div className="landing-shell landing-header-inner">
-        <a
-          href="#landing-hero"
+        <BrandLogo
           className="landing-brand"
+          to="/"
+          label="themoa"
+          size="medium"
+          ariaLabel="themoa 홈으로 이동"
           onClick={(event) => onSectionClick(event, "landing-hero")}
-        >
-          <LogoMark />
-          <span className="landing-brand-text">TheMoa</span>
-        </a>
+        />
         <nav className="landing-nav" aria-label="랜딩 페이지 섹션">
           <a
             href="#landing-problems"
@@ -488,9 +489,14 @@ function LandingFooter({ startPath, onSectionClick }) {
     <footer className="landing-footer">
       <div className="landing-shell landing-footer-inner">
         <div className="landing-footer-brand">
-          <LogoMark />
+          <BrandLogo
+            to="/"
+            label=""
+            size="medium"
+            ariaLabel="themoa 홈으로 이동"
+          />
           <div>
-            <strong>TheMoa</strong>
+            <strong>themoa</strong>
             <p>월급 기반 금융 생활 관리 서비스</p>
           </div>
         </div>
@@ -576,32 +582,6 @@ function SimpleIcon() {
       <path d="M12 17h12M12 22h8" stroke="currentColor" strokeLinecap="round" />
       <circle cx="25" cy="11" r="4" fill="currentColor" opacity="0.16" />
     </svg>
-  );
-}
-
-function LogoMark() {
-  return (
-    <span className="landing-logo-mark" aria-hidden="true">
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-        <path
-          d="M4 13.5C4 8.8 7.1 5 11 5s7 3.8 7 8.5V17H4v-3.5Z"
-          fill="currentColor"
-          opacity="0.16"
-        />
-        <path
-          d="M6 12.8C6 9.2 8.2 7 11 7s5 2.2 5 5.8V17H6v-4.2Z"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M8.5 13.2h5"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-        />
-      </svg>
-    </span>
   );
 }
 

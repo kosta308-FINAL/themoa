@@ -62,7 +62,7 @@
   cursor: pointer;
 }
 
-.dash-topnav-logo:hover .dash-logo-text {
+.dash-topnav-logo:hover .themoa-brand-logo-label {
   color: var(--dash-accent-dark);
 }
 
@@ -72,19 +72,7 @@
   border-radius: 10px;
 }
 
-.dash-logo-mark {
-  width: 33px;
-  height: 33px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9px;
-  color: #fff;
-  background: var(--dash-accent);
-  font-weight: 800;
-}
-
-.dash-logo-text {
+.dash-topnav-logo .themoa-brand-logo-label {
   font-size: 16px;
   font-weight: 800;
   letter-spacing: -0.4px;
@@ -1378,13 +1366,7 @@
   gap: 8px;
 }
 
-.dash-footer-logo .dash-logo-mark {
-  width: 26px;
-  height: 26px;
-  font-size: 13px;
-}
-
-.dash-footer-logo .dash-logo-text {
+.dash-footer-logo .themoa-brand-logo-label {
   font-size: 14px;
   color: var(--dash-text-secondary);
 }
