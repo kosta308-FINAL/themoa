@@ -4,13 +4,13 @@ import { getApiErrorMessage } from "../../../utils/apiError";
 
 function speedBadgeClass(avgMs) {
   if (avgMs >= 500) return "red";
-  if (avgMs >= 150) return "yellow";
+  if (avgMs >= 200) return "yellow";
   return "green";
 }
 
 function speedBarColor(avgMs) {
   if (avgMs >= 500) return "var(--red)";
-  if (avgMs >= 150) return "var(--orange)";
+  if (avgMs >= 200) return "var(--orange)";
   return "var(--green)";
 }
 
