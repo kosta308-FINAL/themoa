@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 /**
  * 주기별 예산 스냅샷(dailyBudget.md, erd.md §6). "입력값(월급·저축목표·고정지출 합계)"만 저장하고
@@ -116,14 +117,19 @@ public class Budget {
     }
 
     /**
-     * 하루 권장액 = (월 예산 − 어제까지 누적 순지출) ÷ 오늘 포함 남은 일수. 화면에 내보내는 값이라
-     * 여기서만 {@code max(0)} 바닥을 건다("−4,000원까지 쓰세요"는 정보가 0). 중간 계산엔 바닥을 걸지 않는다.
+     * 하루 권장액 = 월 예산 ÷ 주기 전체 일수. 그날그날 누적 순지출·남은 일수로 다시 나누지 않는 **고정값**이라
+     * 어제 아낀 돈이 오늘 권장액을 올리지 않는다(일 단위 재분배 없음 — 진행 중 잉여금이 의미를 가지려면
+     * 필수 전제). 월급·저축 목표를 "이번 주기부터 적용"하면 그 즉시 이 값도 새 기준으로 바뀐다. 화면에
+     * 내보내는 값이라 여기서만 {@code max(0)} 바닥을 건다("−4,000원까지 쓰세요"는 정보가 0).
      */
-    public BigDecimal getDailyRecommendedAmount(BigDecimal spentThroughYesterday, int remainingDays,
-                                                 BigDecimal incomeAdjustmentTotal) {
+    public BigDecimal getDailyRecommendedAmount(BigDecimal incomeAdjustmentTotal) {
         return getAvailableAmount(incomeAdjustmentTotal)
-                .subtract(spentThroughYesterday)
-                .divide(BigDecimal.valueOf(remainingDays), 0, RoundingMode.DOWN)
+                .divide(BigDecimal.valueOf(cycleDays()), 0, RoundingMode.DOWN)
                 .max(BigDecimal.ZERO);
+    }
+
+    /** 주기 전체 일수(시작일·종료일 포함). */
+    public int cycleDays() {
+        return (int) ChronoUnit.DAYS.between(cycleStartDate, cycleEndDate) + 1;
     }
 }

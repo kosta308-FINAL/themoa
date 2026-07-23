@@ -43,13 +43,12 @@ class BudgetTest {
     }
 
     @Test
-    @DisplayName("하루 권장액 = (월 예산 − 어제까지 순지출) ÷ 남은일수, 내림")
+    @DisplayName("하루 권장액 = 월 예산 ÷ 주기 전체 일수, 내림 — 남은일수·누적지출로 재계산하지 않는 고정값")
     void dailyRecommendedFloorsDown() {
-        Budget budget = budget("1000000", "0", "0");
+        Budget budget = budget("1000000", "0", "0"); // 7/5~8/4, 31일
 
-        // (1,000,000 − 250,000) / 20 = 37,500
-        assertThat(budget.getDailyRecommendedAmount(new BigDecimal("250000"), 20, BigDecimal.ZERO))
-                .isEqualByComparingTo("37500");
+        // 1,000,000 / 31 = 32,258.06... → 내림
+        assertThat(budget.getDailyRecommendedAmount(BigDecimal.ZERO)).isEqualByComparingTo("32258");
     }
 
     @Test
@@ -57,7 +56,6 @@ class BudgetTest {
     void dailyRecommendedFlooredAtZero() {
         Budget budget = budget("2000000", "1500000", "600000"); // 월 예산 −100,000
 
-        assertThat(budget.getDailyRecommendedAmount(BigDecimal.ZERO, 25, BigDecimal.ZERO))
-                .isEqualByComparingTo("0");
+        assertThat(budget.getDailyRecommendedAmount(BigDecimal.ZERO)).isEqualByComparingTo("0");
     }
 }

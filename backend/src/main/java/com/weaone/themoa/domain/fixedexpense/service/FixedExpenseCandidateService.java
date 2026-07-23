@@ -64,27 +64,20 @@ public class FixedExpenseCandidateService {
         suppressCandidateTarget(candidate, UserMerchantPreferenceType.RECLASSIFY_HABIT);
     }
 
-    /** biller 후보는 승인 전까지 alias가 없어 billerMerchant 기준으로 걸어야 한다(troubleshooting/billerProblem.md). */
+    /**
+     * 그룹 단위로 억제를 건다(fixedExpense.md §2) — alias·billerMerchant 단위로 걸면 같은 alias(또는
+     * merchant) 아래 공존하는 별개 구독까지 함께 억제돼버린다(같은 서비스를 계정 두 개로 구독하는 경우 등).
+     * 이름형·biller형 구분 없이 동일하게 처리되므로 승인 전 alias 유무를 따질 필요도 없어졌다.
+     */
     private void suppressCandidateTarget(FixedExpenseCandidate candidate, UserMerchantPreferenceType type) {
         Member member = candidate.getMember();
         RecurringPaymentGroup group = candidate.getRecurringPaymentGroup();
         try {
-            if (group.isBillerGroup()) {
-                Long billerMerchantId = group.getBillerMerchant().getId();
-                if (userMerchantPreferenceRepository
-                        .existsByMember_IdAndBillerMerchant_IdAndPreferenceType(member.getId(), billerMerchantId, type)) {
-                    return;
-                }
-                userMerchantPreferenceRepository.save(
-                        UserMerchantPreference.createForBiller(member, group.getBillerMerchant(), type));
-                return;
-            }
-            Long aliasId = group.getMerchantAlias().getId();
             if (userMerchantPreferenceRepository
-                    .existsByMember_IdAndMerchantAlias_IdAndPreferenceType(member.getId(), aliasId, type)) {
+                    .existsByMember_IdAndRecurringPaymentGroup_IdAndPreferenceType(member.getId(), group.getId(), type)) {
                 return;
             }
-            userMerchantPreferenceRepository.save(UserMerchantPreference.create(member, group.getMerchantAlias(), type));
+            userMerchantPreferenceRepository.save(UserMerchantPreference.createForGroup(member, group, type));
         } catch (DataIntegrityViolationException e) {
             // 동시 요청 경합 — 이미 다른 요청이 같은 설정을 저장했다.
         }

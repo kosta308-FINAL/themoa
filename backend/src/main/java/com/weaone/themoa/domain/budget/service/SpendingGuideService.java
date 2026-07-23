@@ -253,20 +253,20 @@ public class SpendingGuideService {
                 .toList();
 
         Budget budget = budgetCycleService.getOrCreateCurrentBudget(member, today);
-        int remainingDays = BudgetCyclePolicy.remainingDays(today, budget.getCycleEndDate());
-        BigDecimal spentThroughYesterday = netSpend(memberId, budget.getCycleStartDate(), today.minusDays(1));
-        BigDecimal guideLineAmount =
-                budget.getDailyRecommendedAmount(spentThroughYesterday, remainingDays, incomeAdjustmentTotal(budget));
+        BigDecimal guideLineAmount = budget.getDailyRecommendedAmount(incomeAdjustmentTotal(budget));
         return new RecentDaysResponse(daily, guideLineAmount);
     }
 
-    /** S-04 전체 소비내역(dayguide.md §8.1). {@code budgetId} 생략 시 현재 주기를 조회한다. */
+    /**
+     * S-04 전체 소비내역(dayguide.md §8.1). {@code budgetId} 생략 시, {@code date}가 있으면 그 날짜가 속한
+     * 주기를, 둘 다 없으면 현재 주기를 조회한다(과거 주기 날짜 조회 시 현재 주기로 새는 문제 방지).
+     */
     @Transactional(readOnly = true)
     public CardTransactionListResponse searchTransactions(Long memberId, Long budgetId, LocalDate date,
                                                             Long categoryId, Pageable pageable) {
         Member member = getMemberWithSetup(memberId);
         LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
-        Budget budget = resolveBudget(member, budgetId, today);
+        Budget budget = resolveBudgetForDate(member, budgetId, date, today);
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "usedAt"));
         Page<CardTransactionResponse> page = cardTransactionRepository.searchForSpendingGuide(
                         member.getId(), TransactionStatus.REJECTED, budget.getCycleStartDate(), budget.getCycleEndDate(),
@@ -306,10 +306,13 @@ public class SpendingGuideService {
                 .sumCanceledAmount(memberId, TransactionStatus.REJECTED, budget.getCycleStartDate(), budget.getCycleEndDate());
         CategorySummaryListResponse.CompletedCycleResult completedCycleResult =
                 (hasNext && !partialCycle) ? completedCycleResult(memberId, budget) : null;
+        // 이 응답이 가리키는 주기 자체의 하루 권장액. 현재 진행 중인 주기의 요약과는 다른 budget row일 수
+        // 있으므로 그쪽 값을 그대로 재사용하지 않고 이 budget의 스냅샷·수입 직접 입력으로 다시 계산한다.
+        BigDecimal dailyRecommendedAmount = budget.getDailyRecommendedAmount(incomeAdjustmentTotal(budget));
 
         return CategorySummaryListResponse.of(budget.getId(), budget.getYearMonth(), budget.getCycleStartDate(),
                 budget.getCycleEndDate(), dataStartDate, partialCycle, hasPrevious, hasNext, previousBudgetId,
-                nextBudgetId, summaries, canceledTotal, completedCycleResult);
+                nextBudgetId, dailyRecommendedAmount, summaries, canceledTotal, completedCycleResult);
     }
 
     /** 완료된 과거 주기의 예산·사용·결과 한 줄 요약(§3.4). 사용액은 고정지출 태그 거래를 제외한 순지출이다. */
@@ -394,11 +397,12 @@ public class SpendingGuideService {
 
         BigDecimal incomeAdjustmentTotal = incomeAdjustmentTotal(budget);
         BigDecimal available = budget.getAvailableAmount(incomeAdjustmentTotal);
-        BigDecimal daily = budget.getDailyRecommendedAmount(spentThroughYesterday, remainingDays, incomeAdjustmentTotal);
+        BigDecimal daily = budget.getDailyRecommendedAmount(incomeAdjustmentTotal);
         // 오늘 사용 가능 = max(0, 하루 권장액 − max(오늘 순사용액, 0)). Type 2 취소로 순사용액이 음수여도 권장액을 넘기지 않는다.
         BigDecimal todayAvailable = daily.subtract(todayNetSpend.max(BigDecimal.ZERO)).max(BigDecimal.ZERO);
         BigDecimal remaining = available.subtract(spentThisCycle);
-        BigDecimal cycleSavings = cycleSavingsAmount(memberId, budget, cycleStart, cycleEnd, today, incomeAdjustmentTotal);
+        int completedDays = budget.cycleDays() - remainingDays;
+        BigDecimal cycleSavings = cycleSavingsAmount(daily, spentThroughYesterday, completedDays);
 
         boolean overCycleBudget = remaining.signum() < 0;
         BigDecimal cycleOverspent = overCycleBudget ? remaining.negate() : BigDecimal.ZERO;
@@ -419,28 +423,14 @@ public class SpendingGuideService {
     }
 
     /**
-     * 진행 중 주기의 "절약 습관" 누적(dailyBudget.md §1 적응형 하루 권장액). {@code remainingAmount}(주기
-     * 마감 시 그대로 surplus_fund에 적립되는 값)와는 다른 지표로, 날짜별로 그날 실제 있었던 어제까지 누적
-     * 순지출·남은 일수를 그대로 대입해 그날의 하루 권장액을 재구성한 뒤 그날 실사용액과의 차이를 경과일만큼
-     * 더한다. 화면 표시용이라 최종 합계에만 0 바닥을 건다(중간 하루치 차이는 음수를 그대로 흘린다).
+     * 진행 중 주기의 "절약 습관" 누적. 하루 권장액이 고정값(더 이상 날짜별로 재계산하지 않음)이라
+     * 완료된 날짜 수(오늘 제외 — 아직 끝나지 않은 날)만큼의 권장액 합계에서 어제까지 누적 순지출을
+     * 빼면 된다. {@code remainingAmount}(주기 마감 시 그대로 surplus_fund에 적립되는 값)와는 별개
+     * 지표로, 주기 마지막 날엔 완료된 날짜 수가 주기 전체 일수와 같아져 두 값이 정확히 일치한다.
+     * 화면 표시용이라 0 바닥을 건다.
      */
-    private BigDecimal cycleSavingsAmount(Long memberId, Budget budget, LocalDate cycleStart, LocalDate cycleEnd,
-                                           LocalDate today, BigDecimal incomeAdjustmentTotal) {
-        Map<LocalDate, BigDecimal> netByDate = cardTransactionRepository
-                .sumNetSpendByDate(memberId, TransactionStatus.REJECTED, cycleStart, today).stream()
-                .collect(Collectors.toMap(CardTransactionRepository.DailyNetAmount::getUsedDate,
-                        CardTransactionRepository.DailyNetAmount::getNetAmount));
-        BigDecimal spentThroughYesterday = BigDecimal.ZERO;
-        BigDecimal savings = BigDecimal.ZERO;
-        for (LocalDate date = cycleStart; !date.isAfter(today); date = date.plusDays(1)) {
-            int remainingDaysAtDate = BudgetCyclePolicy.remainingDays(date, cycleEnd);
-            BigDecimal recommendedThatDay =
-                    budget.getDailyRecommendedAmount(spentThroughYesterday, remainingDaysAtDate, incomeAdjustmentTotal);
-            BigDecimal actualThatDay = netByDate.getOrDefault(date, BigDecimal.ZERO);
-            savings = savings.add(recommendedThatDay.subtract(actualThatDay));
-            spentThroughYesterday = spentThroughYesterday.add(actualThatDay);
-        }
-        return savings.max(BigDecimal.ZERO);
+    private BigDecimal cycleSavingsAmount(BigDecimal daily, BigDecimal spentThroughYesterday, int completedDays) {
+        return daily.multiply(BigDecimal.valueOf(completedDays)).subtract(spentThroughYesterday).max(BigDecimal.ZERO);
     }
 
     /** 고정지출 태그·거절 제외 순지출 합계. 범위가 비면(주기 첫날의 "어제까지") 0. */
