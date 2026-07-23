@@ -17,6 +17,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.access.AccessDeniedException;
@@ -34,6 +35,7 @@ import static org.mockito.Mockito.reset;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -121,6 +123,15 @@ class SecurityConfigTest {
         mockMvc.perform(post("/api/auth/login"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value("login"));
+    }
+
+    @Test
+    @DisplayName("non-local profile에서는 Origin이 붙어도 CORS 필터가 공개 Auth API를 차단하지 않는다")
+    void publicAuthApiWithOriginIsNotBlockedInNonLocalProfile() throws Exception {
+        mockMvc.perform(post("/api/auth/login").header(HttpHeaders.ORIGIN, "https://themoa.kro.kr"))
+                .andExpect(status().isOk())
+                .andExpect(header().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN))
                 .andExpect(jsonPath("$.data").value("login"));
     }
 

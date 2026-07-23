@@ -14,9 +14,10 @@ import java.util.List;
  * 하루 권장액·오늘 사용 가능 금액만 화면용 0 바닥이 이미 적용돼 있다.
  *
  * <p>{@code cycleSavingsAmount}는 {@code remainingAmount}(월 예산 − 실사용, 주기 마감 시 {@code surplus_fund}에
- * 그대로 적립되는 값)와는 다른 지표다 — 날짜별로 재구성한 그날의 하루 권장액과 그날 실사용액의 차이를
- * 경과일만큼 누적한 "절약 습관" 값이며, 하루 권장액이 매일 재계산되는 적응형 구조라 일반적으로
- * {@code remainingAmount}와 값이 갈린다(dailyBudget.md §1). 화면 표시용이라 0 바닥을 적용한다.
+ * 그대로 적립되는 값)와는 다른 지표다 — 고정 하루 권장액에 완료된 날짜 수를 곱한 값과 그동안의 실사용액의
+ * 차이로 계산한 "절약 습관" 값이다. 하루 권장액이 날짜별로 재계산되지 않는 고정값이라(일 단위 재분배 없음)
+ * 주기 내내 {@code remainingAmount}보다 작거나 같고, 주기 마지막 날엔 두 값이 정확히 일치한다(dailyBudget.md
+ * §1). 화면 표시용이라 0 바닥을 적용한다.
  */
 public record SpendingGuideSummaryResponse(
         boolean setupRequired,

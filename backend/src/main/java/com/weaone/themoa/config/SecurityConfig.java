@@ -20,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -63,14 +64,7 @@ public class SecurityConfig {
         http
                 // 인증은 Authorization 헤더(Bearer)로, Refresh 쿠키는 SameSite=Strict라 cross-site 요청에 실리지 않는다.
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(request -> {
-                    CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
-                    config.setAllowedOrigins(List.of("http://localhost:5173"));
-                    config.setAllowedHeaders(List.of("*"));
-                    config.setAllowCredentials(true);
-                    return config;
-                }))
+                .cors(cors -> cors.configurationSource(request -> corsConfiguration()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(HttpMethod.GET, HEALTH_ENDPOINTS).permitAll();
@@ -122,5 +116,30 @@ public class SecurityConfig {
     private boolean isPolicyLocalToolsEnabled() {
         return environment.acceptsProfiles(Profiles.of("local"))
                 && environment.getProperty("app.policy.local-tools.enabled", Boolean.class, false);
+    }
+
+    private List<String> corsAllowedOrigins() {
+        String configuredOrigins = environment.getProperty("app.cors.allowed-origins", "");
+        if (configuredOrigins.isBlank() && environment.acceptsProfiles(Profiles.of("local"))) {
+            configuredOrigins = "http://localhost:5173";
+        }
+        return Arrays.stream(configuredOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList();
+    }
+
+    private CorsConfiguration corsConfiguration() {
+        List<String> allowedOrigins = corsAllowedOrigins();
+        if (allowedOrigins.isEmpty()) {
+            return null;
+        }
+
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
+        config.setAllowedOrigins(allowedOrigins);
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        return config;
     }
 }

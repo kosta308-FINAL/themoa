@@ -115,7 +115,11 @@ function SpendingGuidePage() {
   }, [selectedDate, isSelectedToday]);
 
   const summary = data.summary;
-  const dailyRecommended = toNumber(summary?.dailyRecommendedAmount);
+  // 다른 날짜는 다른 급여 주기(다른 budget row)에 속할 수 있어 현재 주기 summary 값을 그대로 쓰면 안 된다.
+  // 그 날짜가 속한 주기 자체의 하루 권장액(dayCategory.dailyRecommendedAmount)을 대신 쓴다.
+  const dailyRecommended = isSelectedToday
+    ? toNumber(summary?.dailyRecommendedAmount)
+    : toNumber(dayCategory?.dailyRecommendedAmount);
   const todaySpent = toNumber(summary?.todayNetSpend);
   const dayNetTotal = (dayItems ?? []).reduce(
     (sum, item) => sum + netAmountForTotal(item),
