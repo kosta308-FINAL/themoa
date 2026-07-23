@@ -64,7 +64,7 @@ jobs:
               "systemctl restart themoa",
               "sleep 5",
               "systemctl is-active themoa",
-              "systemctl show themoa --property=Environment --value | grep -Eq '(^| )POLICY_DAILY_SYNC_ENABLED=true( |$)'"
+              "systemctl show themoa --property=Environment --value | grep -Eq \"(^| )POLICY_DAILY_SYNC_ENABLED=true( |$)\""
             ]}')
 
           COMMAND_ID=$(aws ssm send-command \
