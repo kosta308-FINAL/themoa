@@ -1,0 +1,313 @@
+.ss-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.ss-modal {
+  width: min(460px, 100%);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+
+.ss-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--dash-border, #e5ede8);
+}
+
+.ss-head strong {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ss-head button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dash-text-secondary, #6b7a72);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ss-head button:hover {
+  background: #f1f5f9;
+}
+
+.ss-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.ss-state,
+.ss-error {
+  padding: 8px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.ss-error {
+  color: #b91c1c;
+  text-align: left;
+}
+
+.ss-product {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--dash-surface-muted, #f4f8f5);
+}
+
+.ss-product strong {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.ss-product span {
+  font-size: 13px;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+/* 기본금리 / 최고금리 두 칸을 나란히 */
+.ss-rates {
+  display: flex;
+  gap: 12px;
+}
+
+.ss-rates > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--dash-surface-muted, #f4f8f5);
+}
+
+.ss-rates span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.ss-rates strong {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--dash-text, #1f2a24);
+}
+
+.ss-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.ss-field-row {
+  display: flex;
+  gap: 12px;
+}
+
+.ss-field-row .ss-field {
+  flex: 1;
+}
+
+.ss-field input,
+.ss-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--dash-border, #d8e3dc);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--dash-text, #1f2a24);
+  background: #fff;
+}
+
+.ss-field input:focus,
+.ss-field select:focus {
+  outline: none;
+  border-color: var(--dash-accent, #22c55e);
+}
+
+.ss-amount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ss-amount input {
+  text-align: right;
+}
+
+.ss-amount em {
+  font-style: normal;
+  font-size: 13px;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.ss-conditions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--dash-border, #e5ede8);
+  border-radius: 12px;
+}
+
+.ss-conditions-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ss-conditions-empty {
+  font-size: 12.5px;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.ss-conditions-note {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--dash-surface-muted, #f4f8f5);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+/* API가 준 우대조건을 그대로 렌더한 읽기 전용 체크리스트(체크만 가능).
+   항목마다 박스로 구분하고, 체크하면 초록으로 강조한다. */
+.ss-condition {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--dash-border, #e5ede8);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.ss-condition:has(input:checked) {
+  border-color: var(--dash-accent, #22c55e);
+  background: var(--dash-accent-light, #e7f9ee);
+}
+
+.ss-condition input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  accent-color: var(--dash-accent, #22c55e);
+  cursor: pointer;
+}
+
+.ss-condition-desc {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--dash-text, #1f2a24);
+  word-break: break-word;
+}
+
+.ss-condition-bonus {
+  flex-shrink: 0;
+  font-style: normal;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--dash-accent-dark, #16a34a);
+}
+
+.ss-applied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--dash-surface-muted, #f4f8f5);
+}
+
+.ss-applied span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.ss-applied strong {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--dash-accent-dark, #16a34a);
+}
+
+.ss-warn {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.ss-foot {
+  display: flex;
+  gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--dash-border, #e5ede8);
+}
+
+.ss-cancel,
+.ss-submit {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ss-cancel {
+  background: #f1f5f9;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.ss-submit {
+  background: var(--dash-accent, #22c55e);
+  color: #fff;
+}
+
+.ss-submit:hover:not(:disabled) {
+  background: var(--dash-accent-dark, #16a34a);
+}
+
+.ss-cancel:disabled,
+.ss-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

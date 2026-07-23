@@ -30,8 +30,9 @@ public class RecommendApiController {
     }
 
     @PostMapping
-    public ApiResponse<RecommendResponse> recommend(@Valid @RequestBody RecommendRequest request) {
-        return ApiResponse.success(recommendQueryService.recommend(request));
+    public ApiResponse<RecommendResponse> recommend(@AuthenticationPrincipal Long memberId,
+                                                    @Valid @RequestBody RecommendRequest request) {
+        return ApiResponse.success(recommendQueryService.recommend(memberId, request));
     }
 
     /**

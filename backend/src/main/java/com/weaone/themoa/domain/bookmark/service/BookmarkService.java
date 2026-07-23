@@ -111,8 +111,13 @@ public class BookmarkService {
                     bookmark.getTargetId(),
                     detail.title(),
                     detail.subtitle(),
+                    detail.productType(),
+                    detail.joinMethod(),
                     detail.rate(),
                     detail.termMonth(),
+                    detail.specialCondition(),
+                    detail.officialUrl(),
+                    detail.discontinued(),
                     bookmark.getCreatedAt()));
         }
         return responses;

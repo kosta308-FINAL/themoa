@@ -17,6 +17,7 @@ import TermsHistoryCard from "./components/TermsHistoryCard";
 import ComingSoonCard from "./components/ComingSoonCard";
 import PolicyBookmarksCard from "./components/PolicyBookmarksCard";
 import FinancialBookmarksCard from "./components/FinancialBookmarksCard";
+import SavingsSubscriptionsCard from "./components/SavingsSubscriptionsCard";
 import {
   ENTRY_MODE_LABELS,
   INCOME_TYPE_LABELS,
@@ -239,6 +240,7 @@ function MyPage() {
                 <div className="mp-tab-panel mp-bookmark-tab">
                   <PolicyBookmarksCard />
                   <FinancialBookmarksCard />
+                  <SavingsSubscriptionsCard />
                   <ComingSoonCard />
                 </div>
               )}

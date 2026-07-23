@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardIcon from "../common/DashboardIcon";
+import ProductChangeModal from "../common/ProductChangeModal";
 import { getApiErrorMessage } from "../../utils/apiError";
 import {
   getNotifications,
@@ -16,6 +17,7 @@ const TYPE_ICON = {
   BACKFILL_RECALCULATED: "chart",
   UNLINKED_CARD_SUSPECTED: "card",
   INQUIRY_ANSWERED: "check",
+  FINANCIAL_PRODUCT_CHANGED: "sparkle",
 };
 
 const formatRelativeTime = (value) => {
@@ -37,6 +39,7 @@ function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [changeNotificationId, setChangeNotificationId] = useState(null);
   const rootRef = useRef(null);
   const navigate = useNavigate();
 
@@ -91,7 +94,10 @@ function NotificationBell() {
       }
     }
     setOpen(false);
-    if (item.fixedExpenseId) {
+    if (item.type === "FINANCIAL_PRODUCT_CHANGED") {
+      // 화면 이동 대신 변경 내역 팝업을 띄운다.
+      setChangeNotificationId(item.id);
+    } else if (item.fixedExpenseId) {
       navigate("/dashboard/fixed-expenses");
     } else if (item.customerInquiryId) {
       navigate(
@@ -156,6 +162,12 @@ function NotificationBell() {
             ))}
           </ul>
         </div>
+      )}
+      {changeNotificationId && (
+        <ProductChangeModal
+          notificationId={changeNotificationId}
+          onClose={() => setChangeNotificationId(null)}
+        />
       )}
     </div>
   );
