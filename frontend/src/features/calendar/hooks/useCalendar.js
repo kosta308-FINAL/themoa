@@ -15,8 +15,10 @@ export function useCalendar({ startDate, endDate }) {
   const [mutationError, setMutationError] = useState("");
   const mounted = useRef(true);
   const hasLoaded = useRef(false);
+  const loadRequestIdRef = useRef(0);
 
   const reload = useCallback(async () => {
+    const requestId = ++loadRequestIdRef.current;
     if (!startDate || !endDate) return;
     if (!hasLoaded.current) {
       setIsLoading(true);
@@ -24,14 +26,14 @@ export function useCalendar({ startDate, endDate }) {
     setError("");
     try {
       const data = await getCalendarEvents({ startDate, endDate });
-      if (!mounted.current) return;
+      if (!mounted.current || requestId !== loadRequestIdRef.current) return;
       setEvents(data?.items || []);
       hasLoaded.current = true;
     } catch (requestError) {
-      if (!mounted.current) return;
+      if (!mounted.current || requestId !== loadRequestIdRef.current) return;
       setError(getApiErrorMessage(requestError, "캘린더 일정을 불러오지 못했어요."));
     } finally {
-      if (mounted.current) {
+      if (mounted.current && requestId === loadRequestIdRef.current) {
         setIsLoading(false);
       }
     }
@@ -44,6 +46,7 @@ export function useCalendar({ startDate, endDate }) {
     }, 0);
     return () => {
       mounted.current = false;
+      loadRequestIdRef.current += 1;
       window.clearTimeout(timer);
     };
   }, [reload]);
@@ -53,15 +56,15 @@ export function useCalendar({ startDate, endDate }) {
       setIsSaving(true);
       setMutationError("");
       try {
-        const result = await request();
+        await request();
         await reload();
-        return result;
+        return true;
       } catch (requestError) {
         const message = getApiErrorMessage(requestError, "일정을 저장하지 못했어요.");
         if (mounted.current) {
           setMutationError(message);
         }
-        throw requestError;
+        return false;
       } finally {
         if (mounted.current) {
           setIsSaving(false);
