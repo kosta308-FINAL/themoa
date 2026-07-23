@@ -96,6 +96,13 @@ spring:
         use-tls: false
         initialize-schema: ${QDRANT_AUTO_CREATE_COLLECTION:true}
 
+management:
+  # actuator를 HTTP로 노출하진 않는다 - MeterRegistry는 ApiPerformanceStatService에 주입받아 내부적으로만 읽는다
+  endpoints:
+    web:
+      exposure:
+        include: ""
+
 finlife:
   base-url: https://finlife.fss.or.kr/finlifeapi
   api-key: ${FINLIFE_API_KEY}

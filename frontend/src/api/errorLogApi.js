@@ -16,3 +16,8 @@ export const requestAdminErrorLogAiAnalysis = (errorLogId) =>
 
 export const getAdminLogFiles = (params) =>
   axiosInstance.get("/api/admin/logs/files", { params }).then(responseData);
+
+export const getAdminApiPerformance = (params) =>
+  axiosInstance
+    .get("/api/admin/logs/api-performance", { params })
+    .then(responseData);

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import AdminLayout from "../../components/layout/AdminLayout";
 import ErrorLogDetailDrawer from "./components/ErrorLogDetailDrawer";
 import LogFileViewerPanel from "./components/LogFileViewerPanel";
+import ApiPerformancePanel from "./components/ApiPerformancePanel";
 import { getAdminErrorLogs } from "../../api/errorLogApi";
 import { getApiErrorMessage } from "../../utils/apiError";
 import "./ErrorLogAdminPage.css";
@@ -82,7 +83,7 @@ function ErrorLogAdminPage() {
   return (
     <AdminLayout
       title="오류 로그 관리"
-      subtitle="예상하지 못한 서버 오류(500) 추적·AI 진단과 서버 파일 로그(WARN/ERROR) 열람을 제공합니다"
+      subtitle="예상하지 못한 서버 오류(500) 추적·AI 진단, 서버 파일 로그(WARN/ERROR) 열람, API 응답시간 통계를 제공합니다"
     >
       <div className="ela-page">
         <div className="ela-tabs">
@@ -100,9 +101,17 @@ function ErrorLogAdminPage() {
           >
             파일 로그 (WARN / ERROR)
           </button>
+          <button
+            type="button"
+            className={`ela-tab ${activeTab === "api-performance" ? "active" : ""}`}
+            onClick={() => setActiveTab("api-performance")}
+          >
+            API 성능
+          </button>
         </div>
 
         {activeTab === "files" && <LogFileViewerPanel />}
+        {activeTab === "api-performance" && <ApiPerformancePanel />}
 
         {activeTab === "db" && (
           <>
