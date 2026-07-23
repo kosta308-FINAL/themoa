@@ -4,29 +4,27 @@
 .mp-financial-bookmark-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .mp-financial-bookmark-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 14px 16px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
   border: 1px solid var(--dash-border, #e5ede8);
   border-radius: 12px;
   background: #fff;
 }
 
-.mp-financial-bookmark-main {
+.mp-financial-bookmark-badges {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .mp-financial-bookmark-type {
-  align-self: flex-start;
   padding: 3px 9px;
   border-radius: 999px;
   background: var(--dash-accent-light, #e7f9ee);
@@ -35,51 +33,109 @@
   font-weight: 700;
 }
 
-.mp-financial-bookmark-item h3 {
-  font-size: 14px;
+.mp-financial-bookmark-discontinued {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 11px;
   font-weight: 700;
-  line-height: 1.4;
-}
-
-.mp-financial-bookmark-sub {
-  font-size: 12px;
-  color: var(--dash-text-secondary, #6b7a72);
-}
-
-.mp-financial-bookmark-side {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  flex-shrink: 0;
 }
 
 .mp-financial-bookmark-rate {
+  margin-left: auto;
   font-size: 13px;
   font-weight: 700;
   color: var(--dash-accent-dark, #16a34a);
   white-space: nowrap;
 }
 
-.mp-financial-bookmark-side button {
+.mp-financial-bookmark-item h3 {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.mp-financial-bookmark-sub {
+  font-size: 12.5px;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.mp-financial-bookmark-join {
+  font-size: 12.5px;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.mp-financial-bookmark-special button {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--dash-accent-dark, #16a34a);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mp-financial-bookmark-special p {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--dash-surface-muted, #f4f8f5);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--dash-text, #1f2a24);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.mp-financial-bookmark-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.mp-financial-bookmark-link {
+  margin-right: auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dash-accent-dark, #16a34a);
+}
+
+.mp-financial-bookmark-register,
+.mp-financial-bookmark-remove {
   padding: 6px 12px;
   border: 1px solid var(--dash-border, #e5ede8);
   border-radius: 999px;
   background: #fff;
-  color: #e11d48;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
+  cursor: pointer;
 }
 
-.mp-financial-bookmark-side button:hover:not(:disabled) {
+.mp-financial-bookmark-remove {
+  color: #e11d48;
+}
+
+.mp-financial-bookmark-remove:hover:not(:disabled) {
   border-color: #e11d48;
   background: #fff1f3;
 }
 
-.mp-financial-bookmark-side button:disabled {
+.mp-financial-bookmark-remove:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.mp-financial-bookmark-register {
+  border-color: var(--dash-accent, #22c55e);
+  color: var(--dash-accent-dark, #16a34a);
+}
+
+.mp-financial-bookmark-register:hover {
+  background: var(--dash-accent-light, #e7f9ee);
 }
 
 .mp-financial-bookmark-empty {
@@ -111,16 +167,5 @@
   color: #a12c2c;
   font-size: 12px;
   font-weight: 600;
-}
-
-@media (max-width: 600px) {
-  .mp-financial-bookmark-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .mp-financial-bookmark-side {
-    align-items: flex-start;
-    flex-direction: row;
-  }
+  cursor: pointer;
 }

@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.bookmark.service;
 
 import com.weaone.themoa.domain.bookmark.entity.BookmarkTargetType;
 import com.weaone.themoa.domain.bookmark.repository.BookmarkLoanProductRepository;
+import com.weaone.themoa.domain.financialsearch.service.BankUrlResolver;
 import com.weaone.themoa.domain.recommend.entity.LoanProduct;
 import com.weaone.themoa.domain.recommend.entity.LoanProductOption;
 import org.springframework.stereotype.Component;
@@ -21,9 +22,12 @@ import java.util.Objects;
 public class LoanProductBookmarkTargetReader implements BookmarkTargetReader {
 
     private final BookmarkLoanProductRepository loanProductRepository;
+    private final BankUrlResolver bankUrlResolver;
 
-    public LoanProductBookmarkTargetReader(BookmarkLoanProductRepository loanProductRepository) {
+    public LoanProductBookmarkTargetReader(BookmarkLoanProductRepository loanProductRepository,
+                                           BankUrlResolver bankUrlResolver) {
         this.loanProductRepository = loanProductRepository;
+        this.bankUrlResolver = bankUrlResolver;
     }
 
     @Override
@@ -44,7 +48,15 @@ public class LoanProductBookmarkTargetReader implements BookmarkTargetReader {
                     .min(Comparator.naturalOrder())
                     .orElse(null);
             details.put(product.getId(), new BookmarkTargetDetail(
-                    product.getProductName(), product.getCompanyName(), minRate, null));
+                    product.getProductName(),
+                    product.getCompanyName(),
+                    product.getProductType() == null ? null : product.getProductType().name(),
+                    product.getJoinMethod(),
+                    minRate,
+                    null,
+                    product.getSpecialCondition(),
+                    bankUrlResolver.resolve(product.getCompanyName()),
+                    product.getCloseDate() != null));
         }
         return details;
     }
