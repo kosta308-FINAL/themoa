@@ -7,6 +7,7 @@ import RecommendedProduct from "./components/RecommendedProduct";
 import PolicyRecommendations from "./components/PolicyRecommendations";
 import RecentActivity from "./components/RecentActivity";
 import SpendingTipCard from "./components/SpendingTipCard";
+import SavingsSubscriptionSummary from "./components/SavingsSubscriptionSummary";
 import DashboardWeeklyCalendar from "./components/DashboardWeeklyCalendar";
 import { useDashboardCalendar } from "./hooks/useDashboardCalendar";
 import { useDashboardData } from "./hooks/useDashboardData";
@@ -97,6 +98,7 @@ function Dashboard() {
           loading={isLoading}
           error={sectionErrors.coaching}
         />
+        <SavingsSubscriptionSummary />
       </section>
     </main>
   );
