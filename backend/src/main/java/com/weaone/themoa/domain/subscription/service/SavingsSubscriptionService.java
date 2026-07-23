@@ -65,7 +65,7 @@ public class SavingsSubscriptionService {
         this.bankUrlResolver = bankUrlResolver;
     }
 
-    /** 상품을 골랐을 때 가입 등록 화면을 채울 초안. 우대조건은 원문을 쪼갠 초안이며 사용자가 수정한다. */
+    /** 상품을 골랐을 때 가입 등록 화면을 채울 초안. 우대조건은 원문을 AI로 분해한 초안이며 사용자가 수정한다. */
     @Transactional(readOnly = true)
     public SubscriptionDraftResponse draftFromProduct(Long productId) {
         SavingsProduct product = savingsProductRepository.findAllWithOptionsByIdIn(List.of(productId)).stream()
@@ -96,8 +96,7 @@ public class SavingsSubscriptionService {
             parsed = conditionParser.parse(product.getSpecialCondition());
         }
         List<SubscriptionDraftResponse.ConditionDraft> conditions = parsed.stream()
-                .map(item -> new SubscriptionDraftResponse.ConditionDraft(
-                        item.description(), item.ratePercent()))
+                .map(item -> new SubscriptionDraftResponse.ConditionDraft(item.description(), item.ratePercent()))
                 .toList();
 
         return new SubscriptionDraftResponse(

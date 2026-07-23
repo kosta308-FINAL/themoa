@@ -64,14 +64,12 @@ public class PreferentialConditionParser {
     }
 
     /**
-     * "최고/최대/합산"과 "금리/이율/우대"가 한 줄에 함께 나오면 개별 충족 조건이 아니라 상한(총량) 안내로 본다.
-     * 단어 순서에 의존하지 않는다("최고 우대금리"든 "우대금리 …최고"든 모두 잡는다).
+     * "최고/최대/합산"이 들어간 줄은 개별 충족 조건이 아니라 상한(총량)을 안내하는 공지로 보고 제외한다.
+     * (예: "…우대금리 제공: 최고 3%p" — 이 줄 자체는 조건이 아니고, 실제 조건은 그 아래에 따로 나열된다)
      */
     private boolean isLimitLine(String line) {
         String text = line.replaceAll("\\s+", "");
-        boolean cap = text.contains("최고") || text.contains("최대") || text.contains("합산");
-        boolean rate = text.contains("금리") || text.contains("이율") || text.contains("우대");
-        return cap && rate;
+        return text.contains("최고") || text.contains("최대") || text.contains("합산");
     }
 
     /** 설명에서 앞머리 글머리 기호와 금리 표기를 걷어내 사람이 읽을 문구만 남긴다. */
