@@ -303,10 +303,13 @@ public class SpendingGuideService {
                 .sumCanceledAmount(memberId, TransactionStatus.REJECTED, budget.getCycleStartDate(), budget.getCycleEndDate());
         CategorySummaryListResponse.CompletedCycleResult completedCycleResult =
                 (hasNext && !partialCycle) ? completedCycleResult(memberId, budget) : null;
+        // 이 응답이 가리키는 주기 자체의 하루 권장액. 현재 진행 중인 주기의 요약과는 다른 budget row일 수
+        // 있으므로 그쪽 값을 그대로 재사용하지 않고 이 budget의 스냅샷·수입 직접 입력으로 다시 계산한다.
+        BigDecimal dailyRecommendedAmount = budget.getDailyRecommendedAmount(incomeAdjustmentTotal(budget));
 
         return CategorySummaryListResponse.of(budget.getId(), budget.getYearMonth(), budget.getCycleStartDate(),
                 budget.getCycleEndDate(), dataStartDate, partialCycle, hasPrevious, hasNext, previousBudgetId,
-                nextBudgetId, summaries, canceledTotal, completedCycleResult);
+                nextBudgetId, dailyRecommendedAmount, summaries, canceledTotal, completedCycleResult);
     }
 
     /** 완료된 과거 주기의 예산·사용·결과 한 줄 요약(§3.4). 사용액은 고정지출 태그 거래를 제외한 순지출이다. */
