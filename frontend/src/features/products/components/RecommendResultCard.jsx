@@ -1,4 +1,6 @@
+import { useState } from "react";
 import BookmarkButton from "../../../components/common/BookmarkButton";
+import SavingsSubscriptionModal from "../../../components/common/SavingsSubscriptionModal";
 import { SAVINGS_PRODUCT } from "../../../utils/bookmarkTarget";
 
 const won = (value) => `${Number(value).toLocaleString("ko-KR")}원`;
@@ -15,6 +17,7 @@ const homepageSearchUrl = (company) =>
  * maturityAmountWon·goalMonthlyWon은 적금·목표 입력 시에만 값이 있어 null 분기한다.
  */
 function RecommendResultCard({ item, rank, bookmarks }) {
+  const [registerOpen, setRegisterOpen] = useState(false);
   const rotating = item.productName?.includes("회전");
   // 추천은 예·적금만 다루므로 북마크 대상 타입은 항상 SAVINGS_PRODUCT다.
   const canBookmark = item.id != null;
@@ -82,14 +85,33 @@ function RecommendResultCard({ item, rank, bookmarks }) {
         </>
       )}
 
-      <a
-        className="rec-link"
-        href={homepageSearchUrl(item.company)}
-        target="_blank"
-        rel="noreferrer"
-      >
-        🔗 {item.company} 홈페이지 찾기
-      </a>
+      <div className="rec-actions">
+        {canBookmark && (
+          <button
+            type="button"
+            className="rec-register"
+            onClick={() => setRegisterOpen(true)}
+          >
+            가입 등록
+          </button>
+        )}
+        <a
+          className="rec-link"
+          href={homepageSearchUrl(item.company)}
+          target="_blank"
+          rel="noreferrer"
+        >
+          🔗 {item.company} 홈페이지 찾기
+        </a>
+      </div>
+
+      {registerOpen && (
+        <SavingsSubscriptionModal
+          productId={item.id}
+          onClose={() => setRegisterOpen(false)}
+          onCreated={(message) => bookmarks.showToast?.(message)}
+        />
+      )}
     </article>
   );
 }

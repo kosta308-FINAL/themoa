@@ -17,5 +17,7 @@ public enum NotificationTypeCode {
     /** 대체 짝을 못 찾은 수기 카드 건 발견 — 미연동 카드 의심 신호(entryMode.md §4-2). */
     UNLINKED_CARD_SUSPECTED,
     /** 1:1 문의 최초 답변 등록(customerservice.md §7). */
-    INQUIRY_ANSWERED
+    INQUIRY_ANSWERED,
+    /** 관심 금융상품(북마크·최근 추천)의 금리·우대조건 변경 또는 판매종료 감지. */
+    FINANCIAL_PRODUCT_CHANGED
 }

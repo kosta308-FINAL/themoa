@@ -1,0 +1,100 @@
+/* 홈 대시보드 "가입한 예·적금" 요약. 뼈대(widget-panel 등)는 Dashboard.css 것을 쓰고
+   요약 목록 내부만 여기서 정의한다. */
+
+.sub-summary-manage {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dash-accent-dark, #16a34a);
+}
+
+.sub-summary-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: var(--dash-accent-light, #e7f9ee);
+}
+
+.sub-summary-total span {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.sub-summary-total strong {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--dash-accent-dark, #16a34a);
+}
+
+.sub-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sub-summary-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--dash-border, #eef3f0);
+}
+
+.sub-summary-list li:last-child {
+  border-bottom: none;
+}
+
+.sub-summary-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sub-summary-item-main h4 {
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.sub-summary-item-main p {
+  font-size: 12px;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.sub-summary-item-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.sub-summary-item-side strong {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--dash-accent-dark, #16a34a);
+  white-space: nowrap;
+}
+
+.sub-summary-warn {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sub-summary-more {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dash-accent-dark, #16a34a);
+}

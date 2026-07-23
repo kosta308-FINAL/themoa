@@ -295,6 +295,34 @@
   color: var(--dash-accent-dark);
 }
 
+.fs-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.fs-actions .fs-link {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.fs-register {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--dash-accent, #22c55e);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fs-register:hover {
+  background: var(--dash-accent-dark, #16a34a);
+}
+
 @media (max-width: 720px) {
   .fs-search-row {
     flex-wrap: wrap;
