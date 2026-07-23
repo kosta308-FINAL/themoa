@@ -88,14 +88,14 @@ class FixedExpenseMatchRulesTest {
             "5, 1, false"   // -4일 초과
     })
     void 결제일이_기대일_기준_3일_이내면_통과한다(int expectedPayDay, int usedDayOfMonth, boolean expected) {
-        boolean result = FixedExpenseMatchRules.isPayDayWithinWindow((short) expectedPayDay, usedDayOfMonth);
+        boolean result = FixedExpenseMatchRules.isPayDayWithinWindow((short) expectedPayDay, usedDayOfMonth, 3);
 
         assertThat(result).isEqualTo(expected);
     }
 
     @Test
     void 기대결제일이_없으면_결제일_판정은_항상_통과한다() {
-        boolean result = FixedExpenseMatchRules.isPayDayWithinWindow(null, 15);
+        boolean result = FixedExpenseMatchRules.isPayDayWithinWindow(null, 15, 3);
 
         assertThat(result).isTrue();
     }

@@ -4,6 +4,7 @@ import com.weaone.themoa.domain.budget.service.BudgetCycleService;
 import com.weaone.themoa.domain.cardtransaction.entity.CardTransaction;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
+import com.weaone.themoa.domain.fixedexpense.entity.FixedExpenseCandidate;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpensePayment;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpensePaymentMethod;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpenseStatus;
@@ -50,8 +51,9 @@ public class FixedExpenseMatchingService {
             if (fixedExpensePaymentRepository.existsByFixedExpense_IdAndYearMonth(fixedExpense.getId(), yearMonth)) {
                 continue; // 조건④: 이번 주기 이미 이행
             }
+            int payDayWindow = FixedExpenseMatchRules.resolvePayDayWindow(observedPayDayVariance(fixedExpense));
             if (!FixedExpenseMatchRules.isPayDayWithinWindow(fixedExpense.getExpectedPayDay(),
-                    transaction.getUsedDate().getDayOfMonth())) {
+                    transaction.getUsedDate().getDayOfMonth(), payDayWindow)) {
                 continue; // 조건③
             }
             if (FixedExpenseMatchRules.isAmountMatch(fixedExpense.getExpectedCurrency(), fixedExpense.getExpectedAmount(),
@@ -62,6 +64,16 @@ public class FixedExpenseMatchingService {
             }
             notifyAmountChange(fixedExpense, yearMonth); // 신원·결제일은 맞는데 금액만 벗어남 = 가격 인상 의심(§7)
         }
+    }
+
+    /**
+     * 후보 승인(경로 A)으로 만들어진 고정지출은 그 그룹의 실측 변동폭을 그때그때 읽는다(스냅샷하지
+     * 않음 — 그룹은 매일 밤 재탐지로 계속 갱신되므로 등록 시점 값을 굳히면 금방 낡는다). 직접 등록
+     * (경로 B)은 그룹이 없어 관측치 자체가 없다.
+     */
+    private Short observedPayDayVariance(FixedExpense fixedExpense) {
+        FixedExpenseCandidate candidate = fixedExpense.getCandidate();
+        return candidate != null ? candidate.getRecurringPaymentGroup().getPayDayVariance() : null;
     }
 
     /** 조건①: 일반은 alias 대조, biller 경유는 merchant(결제대행사) 대조(merchant.md §5-D). */

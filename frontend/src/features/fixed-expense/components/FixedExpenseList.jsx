@@ -40,6 +40,7 @@ function FixedExpenseList({
   sort,
   onSortChange,
   onSelect,
+  onRegisterNew,
 }) {
   const cardCount = items.filter(
     (item) => item.paymentMethod === "CARD",
@@ -63,6 +64,14 @@ function FixedExpenseList({
             <p>결제일이 가까운 순서로 보여드려요.</p>
           </div>
         </div>
+        <button
+          type="button"
+          className="fx-primary-button"
+          onClick={onRegisterNew}
+        >
+          <DashboardIcon name="plus" size={15} />
+          고정지출 등록
+        </button>
       </div>
       <div className="fx-list-toolbar">
         <div className="fx-filters">

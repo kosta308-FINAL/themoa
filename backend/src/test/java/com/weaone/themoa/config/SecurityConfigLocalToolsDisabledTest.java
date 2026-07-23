@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -16,6 +17,7 @@ import testsupport.SecurityTestController;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -73,6 +75,15 @@ class SecurityConfigLocalToolsDisabledTest {
     void publicAuthApiIsStillPublic() throws Exception {
         mockMvc.perform(post("/api/auth/login"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("login"));
+    }
+
+    @Test
+    @DisplayName("local profile에서는 Vite 개발 서버 Origin을 CORS로 허용한다")
+    void localProfileAllowsViteOrigin() throws Exception {
+        mockMvc.perform(post("/api/auth/login").header(HttpHeaders.ORIGIN, "http://localhost:5173"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:5173"))
                 .andExpect(jsonPath("$.data").value("login"));
     }
 }

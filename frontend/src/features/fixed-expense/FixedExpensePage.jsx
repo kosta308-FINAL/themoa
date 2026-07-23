@@ -161,14 +161,6 @@ function FixedExpensePage() {
             <h1>고정지출</h1>
             <p>매달 반복되는 지출과 결제 상태를 한곳에서 관리해보세요.</p>
           </div>
-          <button
-            type="button"
-            className="fx-primary-button"
-            onClick={() => setRegisterState({ candidate: null })}
-          >
-            <DashboardIcon name="plus" size={15} />
-            고정지출 등록
-          </button>
         </div>
 
         {pageError && (
@@ -286,6 +278,7 @@ function FixedExpensePage() {
                   sort={sort}
                   onSortChange={setSort}
                   onSelect={setDetailExpense}
+                  onRegisterNew={() => setRegisterState({ candidate: null })}
                 />
               </div>
               <UpcomingPayments items={items} />
