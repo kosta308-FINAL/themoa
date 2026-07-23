@@ -33,11 +33,15 @@ public class CollectionBatchService {
      */
     public record CollectionResult(SavingsIngestService.IngestSummary savings,
                                    LoanIngestService.IngestSummary loans) {
+
+        public boolean successful() {
+            return savings != null && loans != null;
+        }
     }
 
     /** 하루 1회 실행되는 전체 수집. 한 파트가 실패해도 다른 파트는 계속 시도한다. */
-    public void runDailyCollection() {
-        runCollection();
+    public CollectionResult runDailyCollection() {
+        return runCollection();
     }
 
     /** {@link #runDailyCollection()}과 같은 수집을 실행하고 집계 결과를 돌려준다(관리자 수동 실행용). */
