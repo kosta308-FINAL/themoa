@@ -4,6 +4,7 @@ import {
   getSubscriptions,
   updateSubscriptionCondition,
 } from "../../../api/savingsSubscriptionApi";
+import BankBadge from "../../../components/common/BankBadge";
 import "./SavingsSubscriptionsCard.css";
 
 const PRODUCT_TYPE_LABELS = {
@@ -134,12 +135,16 @@ function SavingsSubscriptionsCard() {
           {items.map((item) => (
             <article className="mp-sub-item" key={item.id}>
               <div className="mp-sub-item-head">
-                <div className="mp-sub-item-title">
-                  <span className="mp-sub-type">
-                    {PRODUCT_TYPE_LABELS[item.productType] || item.productType}
-                  </span>
-                  <h3>{item.productName}</h3>
-                  <p>{item.companyName}</p>
+                <div className="mp-sub-item-left">
+                  <BankBadge companyName={item.companyName} size={38} />
+                  <div className="mp-sub-item-title">
+                    <span className="mp-sub-type">
+                      {PRODUCT_TYPE_LABELS[item.productType] ||
+                        item.productType}
+                    </span>
+                    <h3>{item.productName}</h3>
+                    <p>{item.companyName}</p>
+                  </div>
                 </div>
                 <button
                   type="button"

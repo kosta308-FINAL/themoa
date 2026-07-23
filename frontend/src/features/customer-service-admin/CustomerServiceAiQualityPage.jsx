@@ -71,7 +71,7 @@ function CustomerServiceAiQualityPage() {
   const [chunkMaxLength, setChunkMaxLength] = useState(1200);
   const [chunkMinLength, setChunkMinLength] = useState(200);
   const [chunkOverlapLength, setChunkOverlapLength] = useState(150);
-  const [splitByMarkdownHeading, setSplitByMarkdownHeading] = useState(true);
+  const [splitByMarkdownHeading, setSplitByMarkdownHeading] = useState(false);
   const [splitByParagraph, setSplitByParagraph] = useState(false);
   const [chunkPreview, setChunkPreview] = useState(null);
   const [chunkPreviewLoading, setChunkPreviewLoading] = useState(false);
@@ -128,6 +128,18 @@ function CustomerServiceAiQualityPage() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(""), 4000);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
+  useEffect(() => {
+    if (!error) return;
+    const timer = setTimeout(() => setError(""), 6000);
+    return () => clearTimeout(timer);
+  }, [error]);
 
   const scheduleChunkPreview = (content, optionOverrides = {}) => {
     if (chunkPreviewTimerRef.current) {
@@ -320,6 +332,14 @@ function CustomerServiceAiQualityPage() {
 
   const uploadDocument = async (event) => {
     event.preventDefault();
+    if (!uploadTitle.trim()) {
+      setError("문서 제목을 입력해 주세요.");
+      return;
+    }
+    if (!uploadCategory.trim()) {
+      setError("카테고리를 입력해 주세요.");
+      return;
+    }
     if (!uploadFile) {
       setError("업로드할 md 또는 txt 파일을 선택해 주세요.");
       return;
@@ -359,6 +379,18 @@ function CustomerServiceAiQualityPage() {
 
   const createTextDocument = async (event) => {
     event.preventDefault();
+    if (!uploadTitle.trim()) {
+      setError("문서 제목을 입력해 주세요.");
+      return;
+    }
+    if (!uploadCategory.trim()) {
+      setError("카테고리를 입력해 주세요.");
+      return;
+    }
+    if (!knowledgeText.trim()) {
+      setError("등록할 내용을 입력해 주세요.");
+      return;
+    }
     setBusyKey("text");
     setError("");
     setNotice("");
@@ -445,8 +477,12 @@ function CustomerServiceAiQualityPage() {
           </div>
         </section>
 
-        {notice && <div className="aiq-alert success">{notice}</div>}
-        {error && <div className="aiq-alert">{error}</div>}
+        {(notice || error) && (
+          <div className="aiq-toast-stack" role="status" aria-live="polite">
+            {notice && <div className="aiq-toast success">{notice}</div>}
+            {error && <div className="aiq-toast error">{error}</div>}
+          </div>
+        )}
 
         <section className="aiq-panel aiq-playground">
           <div className="aiq-panel-heading">

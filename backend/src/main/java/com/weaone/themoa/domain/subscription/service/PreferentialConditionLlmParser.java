@@ -62,6 +62,11 @@ public class PreferentialConditionLlmParser {
                 if (!StringUtils.hasText(item.description())) {
                     continue;
                 }
+                // 프롬프트로 걸러도 LLM이 "…우대금리 제공: 최고 3%p" 같은 상한 안내를 항목으로 남기는 경우가 있어,
+                // 코드에서 한 번 더 제외한다("최고/최대"가 들어간 총량 문구는 개별 충족 조건이 아니다).
+                if (isLimitDescription(item.description())) {
+                    continue;
+                }
                 BigDecimal bonus = item.rateBonus() == null ? BigDecimal.ZERO : item.rateBonus();
                 items.add(new PreferentialConditionParser.ParsedCondition(item.description().trim(), bonus));
                 if (items.size() >= MAX_ITEMS) {
@@ -83,7 +88,11 @@ public class PreferentialConditionLlmParser {
                 규칙:
                 - 각 원소는 {"description": string, "rateBonus": number} 형식. rateBonus는 그 조건 하나가 주는
                   우대금리 %p 숫자만(예: 0.1). 원문에 개별 %p가 없으면 0으로 둔다.
-                - "최고우대금리 0.45%p", "최대 연 0.2%p 우대"처럼 전체 상한을 안내하는 문구는 조건이 아니므로 제외한다.
+                - ⚠️ 전체 우대 상한을 안내하는 문구는 조건이 아니므로 반드시 제외한다. 다음은 모두 상한 안내다:
+                  "최고우대금리 0.45%p", "최대 연 0.2%p 우대", "자동이체 우대금리 제공: 최고 3%p",
+                  "우대금리 최대 …" 등 '최고/최대/합산'이라는 말과 함께 총량을 말하는 줄. 개별 충족 항목만 남긴다.
+                - 각 항목의 rateBonus를 다 더한 값이 원문에 적힌 "최고/최대 우대금리"를 넘으면 안 된다. 넘는다면
+                  상한 안내문을 조건으로 잘못 포함한 것이니 그 항목을 빼라.
                 - "가/나 중 하나" 같은 묶음은 개별 조건으로 각각 풀어서 나열한다.
                 - description은 사용자가 이해할 짧은 한국어로 다듬는다(예: "급여이체 월 30만원 이상").
                 - 조건이 하나도 없으면 빈 배열 [] 을 출력한다.
@@ -111,6 +120,18 @@ public class PreferentialConditionLlmParser {
             }
         }
         return client;
+    }
+
+    /**
+     * "최고 우대금리 제공", "최대 …우대", "우대금리 합산 …" 처럼 개별 충족 조건이 아니라 상한/총량을
+     * 안내하는 문구인지. 이런 문구는 그 아래 실제 조건들의 합계라서 체크리스트에 넣으면 금리가 이중 계산된다.
+     */
+    private boolean isLimitDescription(String description) {
+        String text = description.replaceAll("\\s+", "");
+        boolean mentionsRate = text.contains("금리") || text.contains("이율") || text.contains("우대");
+        boolean mentionsCap = text.contains("최고") || text.contains("최대") || text.contains("합산");
+        // "최고 3%p 제공"처럼 상한 표현 + 금리 언급이면 개별 조건이 아니라 총량 안내로 본다.
+        return mentionsCap && mentionsRate;
     }
 
     private String stripJsonFence(String content) {

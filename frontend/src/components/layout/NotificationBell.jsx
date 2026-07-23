@@ -6,6 +6,7 @@ import { getApiErrorMessage } from "../../utils/apiError";
 import {
   getNotifications,
   markNotificationRead,
+  prepareDailyNotifications,
 } from "../../api/notificationApi";
 
 const POLL_INTERVAL_MS = 60000;
@@ -18,6 +19,8 @@ const TYPE_ICON = {
   UNLINKED_CARD_SUSPECTED: "card",
   INQUIRY_ANSWERED: "check",
   FINANCIAL_PRODUCT_CHANGED: "sparkle",
+  CALENDAR_REMINDER: "calendar",
+  CONTENT_UPDATED: "sparkle",
 };
 
 const formatRelativeTime = (value) => {
@@ -43,26 +46,42 @@ function NotificationBell() {
   const rootRef = useRef(null);
   const navigate = useNavigate();
 
+  const applyNotificationData = useCallback((data) => {
+    setItems(data?.items || []);
+    setUnreadCount(data?.unreadCount || 0);
+    setError("");
+  }, []);
+
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await getNotifications({ size: 20 });
-      setItems(data?.items || []);
-      setUnreadCount(data?.unreadCount || 0);
-      setError("");
+      applyNotificationData(data);
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, "알림을 불러오지 못했어요."));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [applyNotificationData]);
+
+  const prepareAndLoad = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await prepareDailyNotifications({ size: 20 });
+      applyNotificationData(data);
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, "알림을 불러오지 못했어요."));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [applyNotificationData]);
 
   useEffect(() => {
-    const run = () => load();
+    const run = () => prepareAndLoad();
     run();
     const timer = window.setInterval(load, POLL_INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, [load]);
+  }, [load, prepareAndLoad]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -78,7 +97,7 @@ function NotificationBell() {
   const toggleOpen = () => {
     const next = !open;
     setOpen(next);
-    if (next) load();
+    if (next) prepareAndLoad();
   };
 
   const handleItemClick = async (item) => {
@@ -103,6 +122,8 @@ function NotificationBell() {
       navigate(
         `/dashboard/customer-service?tab=myList&inquiryId=${item.customerInquiryId}`,
       );
+    } else if (item.type === "CALENDAR_REMINDER") {
+      navigate("/dashboard/calendar");
     }
   };
 

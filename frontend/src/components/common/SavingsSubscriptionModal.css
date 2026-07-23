@@ -49,11 +49,23 @@
   background: #f1f5f9;
 }
 
+/* form이 모달 높이를 채우고, 그 안에서 body만 스크롤되고 footer는 항상 바닥에 고정되게 한다.
+   (min-height:0이 없으면 body가 안 줄어들어 스크롤이 안 걸리고 버튼이 화면 밖으로 밀린다) */
+.ss-modal > form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
 .ss-body {
   display: flex;
   flex-direction: column;
   gap: 16px;
   padding: 18px;
+  min-height: 0;
+  flex: 1 1 auto;
   overflow-y: auto;
 }
 
@@ -170,6 +182,12 @@
   color: var(--dash-text-secondary, #6b7a72);
 }
 
+.ss-field-error {
+  font-size: 12px;
+  font-weight: 600;
+  color: #dc2626;
+}
+
 .ss-conditions {
   display: flex;
   flex-direction: column;
@@ -243,25 +261,48 @@
   color: var(--dash-accent-dark, #16a34a);
 }
 
-.ss-applied {
+.ss-summary {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
   border-radius: 12px;
   background: var(--dash-surface-muted, #f4f8f5);
 }
 
-.ss-applied span {
+.ss-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ss-summary-row span {
   font-size: 13px;
   font-weight: 600;
   color: var(--dash-text-secondary, #6b7a72);
 }
 
-.ss-applied strong {
+.ss-summary-row strong {
   font-size: 16px;
   font-weight: 800;
   color: var(--dash-accent-dark, #16a34a);
+}
+
+/* 예상 만기금액은 원금 대비 커서 조금 더 강조 */
+.ss-summary-maturity {
+  padding-top: 8px;
+  border-top: 1px dashed var(--dash-border, #d8e3dc);
+}
+
+.ss-summary-maturity strong {
+  font-size: 18px;
+}
+
+.ss-summary-note {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--dash-text-secondary, #6b7a72);
 }
 
 .ss-warn {
@@ -278,7 +319,9 @@
   display: flex;
   gap: 10px;
   padding: 14px 18px;
+  flex-shrink: 0;
   border-top: 1px solid var(--dash-border, #e5ede8);
+  background: #fff;
 }
 
 .ss-cancel,

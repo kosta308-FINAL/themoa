@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getBookmarks, removeBookmark } from "../../../api/bookmarkApi";
+import BankBadge from "../../../components/common/BankBadge";
 import SavingsSubscriptionModal from "../../../components/common/SavingsSubscriptionModal";
 import "./FinancialBookmarksCard.css";
 
@@ -158,8 +159,13 @@ function FinancialBookmarksCard() {
                   )}
                 </div>
 
-                <h3>{item.title}</h3>
-                <p className="mp-financial-bookmark-sub">{item.subtitle}</p>
+                <div className="mp-financial-bookmark-titlerow">
+                  <BankBadge companyName={item.subtitle} size={36} />
+                  <div>
+                    <h3>{item.title}</h3>
+                    <p className="mp-financial-bookmark-sub">{item.subtitle}</p>
+                  </div>
+                </div>
 
                 {item.joinMethod && (
                   <p className="mp-financial-bookmark-join">
