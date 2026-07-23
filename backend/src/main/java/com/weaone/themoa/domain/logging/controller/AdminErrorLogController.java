@@ -4,8 +4,10 @@ import com.weaone.themoa.common.response.ApiResponse;
 import com.weaone.themoa.domain.logging.dto.AdminErrorLogDetailResponse;
 import com.weaone.themoa.domain.logging.dto.AdminErrorLogListResponse;
 import com.weaone.themoa.domain.logging.dto.AiDiagnosisRequestResponse;
+import com.weaone.themoa.domain.logging.dto.LogFileEntryResponse;
 import com.weaone.themoa.domain.logging.service.AdminErrorLogService;
 import com.weaone.themoa.domain.logging.service.AiDiagnosisCommandService;
+import com.weaone.themoa.domain.logging.service.LogFileViewerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /** 관리자 에러 목록·상세·수동 AI 분석(managelogging.md §5). {@code SecurityConfig}가 ROLE_ADMIN만 통과시킨다. */
 @RestController
@@ -30,6 +33,7 @@ public class AdminErrorLogController {
 
     private final AdminErrorLogService adminErrorLogService;
     private final AiDiagnosisCommandService aiDiagnosisCommandService;
+    private final LogFileViewerService logFileViewerService;
 
     @Operation(summary = "에러 목록(관리자)",
             description = "exceptionClass·requestUri·controller·memberId는 정확히 일치, startAt/endAt은 [startAt, endAt) 범위입니다.")
@@ -62,5 +66,16 @@ public class AdminErrorLogController {
             @PathVariable Long errorLogId) {
         AiDiagnosisRequestResponse response = aiDiagnosisCommandService.requestAnalysis(errorLogId, adminId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "파일 로그 조회(관리자)",
+            description = "info.log/error.log를 직접 읽어 레벨별로 반환합니다. level은 INFO·WARN·ERROR 중 하나이며, "
+                    + "keyword는 message·logger·traceId 부분 일치입니다. 최신순으로 최대 limit건(기본 200, 최대 1000)을 반환합니다.")
+    @GetMapping("/files")
+    public ResponseEntity<ApiResponse<List<LogFileEntryResponse>>> files(
+            @RequestParam String level,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer limit) {
+        return ResponseEntity.ok(ApiResponse.success(logFileViewerService.readRecent(level, keyword, limit)));
     }
 }
