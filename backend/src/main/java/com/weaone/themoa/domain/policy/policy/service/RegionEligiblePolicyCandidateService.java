@@ -26,16 +26,30 @@ public class RegionEligiblePolicyCandidateService {
     }
 
     public List<RegionEligiblePolicyCandidate> findEligibleCandidates(ResolvedUserRegion userRegion) {
+        return findEligibleCandidates(userRegion, false, false);
+    }
+
+    public List<RegionEligiblePolicyCandidate> findSearchEligibleCandidates(ResolvedUserRegion userRegion) {
+        return findEligibleCandidates(userRegion, true, true);
+    }
+
+    public List<RegionEligiblePolicyCandidate> findRecommendationEligibleCandidates(ResolvedUserRegion userRegion) {
+        return findEligibleCandidates(userRegion, true, false);
+    }
+
+    private List<RegionEligiblePolicyCandidate> findEligibleCandidates(ResolvedUserRegion userRegion,
+                                                                       boolean includeRegionUnspecified,
+                                                                       boolean includeSidoChildren) {
         if (userRegion == null || !userRegion.hasRegion() || userRegion.region() == null) {
             return List.of();
         }
         Integer userRegionId = userRegion.region().getId();
-        Integer parentSidoId = parentSidoId(userRegion);
         Integer nationwideId = catalog.nationwide().map(RegionCode::getId).orElse(null);
         if (userRegionId == null || nationwideId == null) {
             return List.of();
         }
-        Set<Integer> exactIds = exactRegionIds(userRegion);
+        Set<Integer> childIds = childSigunguIds(userRegion, includeSidoChildren);
+        Set<Integer> exactIds = exactRegionIds(userRegion, childIds);
         Set<Integer> parentIds = parentSidoIds(userRegion);
         Set<Integer> nationwideIds = nationwideId == null ? Set.of() : Set.of(nationwideId);
         LinkedHashSet<Integer> eligibleRegionIds = new LinkedHashSet<>();
@@ -53,15 +67,19 @@ public class RegionEligiblePolicyCandidateService {
             Integer policyId = ((Number) row[0]).intValue();
             Integer regionId = ((Number) row[1]).intValue();
             int regionCount = ((Number) row[2]).intValue();
-            RegionCompatibility compatibility = compatibility(regionId, regionCount, userRegion, exactIds, parentIds, nationwideIds);
-            best.merge(policyId, compatibility, this::moreSpecific);
+            RegionCompatibility compatibility = compatibility(regionId, regionCount, userRegion, exactIds, childIds, parentIds, nationwideIds);
+            best.merge(policyId, compatibility, (left, right) -> moreSpecific(left, right, userRegion.level()));
+        }
+        if (includeRegionUnspecified) {
+            repository.findRegionUnspecifiedPolicyIds().forEach(policyId ->
+                    best.putIfAbsent(policyId, RegionCompatibility.REGION_UNSPECIFIED));
         }
         return best.entrySet().stream()
                 .map(entry -> new RegionEligiblePolicyCandidate(entry.getKey(), entry.getValue()))
                 .toList();
     }
 
-    private Set<Integer> exactRegionIds(ResolvedUserRegion userRegion) {
+    private Set<Integer> exactRegionIds(ResolvedUserRegion userRegion, Set<Integer> childIds) {
         if (userRegion.level() == SearchRegionLevel.SIGUNGU) {
             return catalog.allRegions().stream()
                     .filter(region -> java.util.Objects.equals(region.getProvince(), userRegion.region().getProvince()))
@@ -71,9 +89,21 @@ public class RegionEligiblePolicyCandidateService {
                     .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
         }
         if (userRegion.level() == SearchRegionLevel.SIDO) {
-            return parentSidoIds(userRegion);
+            LinkedHashSet<Integer> ids = new LinkedHashSet<>(parentSidoIds(userRegion));
+            ids.addAll(childIds);
+            return ids;
         }
         return Set.of();
+    }
+
+    private Set<Integer> childSigunguIds(ResolvedUserRegion userRegion, boolean includeSidoChildren) {
+        if (!includeSidoChildren || userRegion.level() != SearchRegionLevel.SIDO || userRegion.region() == null) {
+            return Set.of();
+        }
+        return catalog.searchSupportedChildrenOf(userRegion.region()).stream()
+                .map(RegionCode::getId)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
     }
 
     private Set<Integer> parentSidoIds(ResolvedUserRegion userRegion) {
@@ -86,49 +116,49 @@ public class RegionEligiblePolicyCandidateService {
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
     }
 
-    private RegionCompatibility compatibility(Integer regionId, int regionCount, ResolvedUserRegion userRegion, Set<Integer> exactIds,
+    private RegionCompatibility compatibility(Integer regionId, int regionCount, ResolvedUserRegion userRegion,
+                                              Set<Integer> exactIds, Set<Integer> childIds,
                                               Set<Integer> parentIds, Set<Integer> nationwideIds) {
         if (nationwideIds.contains(regionId)) {
             return RegionCompatibility.NATIONWIDE;
         }
-        if (regionCount > 1) {
-            return RegionCompatibility.MULTIPLE_REGION_MATCH;
-        }
         if (userRegion.level() == SearchRegionLevel.SIGUNGU && exactIds.contains(regionId)) {
-            return RegionCompatibility.EXACT_SIGUNGU;
+            return regionCount > 1 ? RegionCompatibility.MULTIPLE_SIGUNGU_MATCH : RegionCompatibility.EXACT_SIGUNGU;
         }
         if (userRegion.level() == SearchRegionLevel.SIGUNGU && parentIds.contains(regionId)) {
-            return RegionCompatibility.PARENT_SIDO;
+            return regionCount > 1 ? RegionCompatibility.MULTIPLE_SIDO_MATCH : RegionCompatibility.PARENT_SIDO;
         }
         if (userRegion.level() == SearchRegionLevel.SIDO && exactIds.contains(regionId)) {
-            return RegionCompatibility.EXACT_SIDO;
-        }
-        return RegionCompatibility.MULTIPLE_REGION_MATCH;
-    }
-
-    private Integer parentSidoId(ResolvedUserRegion userRegion) {
-        if (userRegion.level() == SearchRegionLevel.SIGUNGU) {
-            RegionCode region = userRegion.region();
-            if (region != null && region.getParent() != null) {
-                return region.getParent().getId();
+            if (parentIds.contains(regionId)) {
+                return regionCount > 1 ? RegionCompatibility.MULTIPLE_SIDO_MATCH : RegionCompatibility.EXACT_SIDO;
             }
-            return catalog.findProvince(userRegion.province()).map(RegionCode::getId).orElse(null);
+            if (childIds.contains(regionId)) {
+                return regionCount > 1
+                        ? RegionCompatibility.MULTIPLE_CHILD_SIGUNGU_MATCH
+                        : RegionCompatibility.CHILD_SIGUNGU_MATCH;
+            }
+            return regionCount > 1 ? RegionCompatibility.MULTIPLE_SIDO_MATCH : RegionCompatibility.EXACT_SIDO;
         }
-        return userRegion.region() == null ? null : userRegion.region().getId();
+        return RegionCompatibility.UNKNOWN;
     }
 
-    private RegionCompatibility moreSpecific(RegionCompatibility left, RegionCompatibility right) {
-        return specificity(left) <= specificity(right) ? left : right;
+    private RegionCompatibility moreSpecific(RegionCompatibility left, RegionCompatibility right, SearchRegionLevel userLevel) {
+        return compatibilityPriority(left, userLevel) <= compatibilityPriority(right, userLevel) ? left : right;
     }
 
-    private int specificity(RegionCompatibility compatibility) {
-        return switch (compatibility) {
-            case EXACT_SIGUNGU -> 0;
-            case PARENT_SIDO, EXACT_SIDO -> 1;
-            case NATIONWIDE -> 2;
-            case MULTIPLE_REGION_MATCH -> 3;
-            case UNKNOWN -> 4;
-            case NOT_MATCHED -> 5;
-        };
+    private int compatibilityPriority(RegionCompatibility compatibility, SearchRegionLevel userLevel) {
+        if (userLevel == SearchRegionLevel.SIDO) {
+            return switch (compatibility) {
+                case EXACT_SIDO -> 0;
+                case CHILD_SIGUNGU_MATCH -> 1;
+                case MULTIPLE_CHILD_SIGUNGU_MATCH -> 2;
+                case MULTIPLE_SIDO_MATCH, MULTIPLE_REGION_MATCH -> 3;
+                case NATIONWIDE -> 4;
+                case REGION_UNSPECIFIED -> 5;
+                case UNKNOWN -> 6;
+                case EXACT_SIGUNGU, MULTIPLE_SIGUNGU_MATCH, PARENT_SIDO, NOT_MATCHED -> 7;
+            };
+        }
+        return compatibility.priority();
     }
 }

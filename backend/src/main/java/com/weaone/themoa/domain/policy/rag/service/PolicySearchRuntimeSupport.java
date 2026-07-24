@@ -78,8 +78,9 @@ public class PolicySearchRuntimeSupport {
     RegionCoverageResultSelector.Selection selectRegionCoverage(List<PolicySearchResultItem> results,
                                                                 int page,
                                                                 int size,
-                                                                SearchQueryType queryType) {
-        return regionCoverageResultSelector.select(results, page, size, queryType);
+                                                                SearchQueryType queryType,
+                                                                PolicySearchCondition condition) {
+        return regionCoverageResultSelector.select(results, page, size, queryType, condition);
     }
 
     Policy findPolicy(Integer policyId, String sourcePolicyId) {

@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.policy.rag.service;
 
 import com.weaone.themoa.domain.policy.policy.entity.Policy;
 import com.weaone.themoa.domain.policy.policy.entity.PolicySearchProjection;
+import com.weaone.themoa.domain.policy.policy.region.RegionCompatibility;
 import com.weaone.themoa.domain.policy.policy.region.RegionEligiblePolicyCandidate;
 import com.weaone.themoa.domain.policy.policy.region.ResolvedUserRegion;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
@@ -92,7 +93,7 @@ public class PolicySearchCandidateRetriever {
         SearchQueryType queryType = plan.queryType();
         boolean regionPoolApplied = condition.regionExplicit() && regionEligiblePolicyCandidateService != null;
         List<RegionEligiblePolicyCandidate> regionEligibleCandidates = regionPoolApplied
-                ? regionEligiblePolicyCandidateService.findEligibleCandidates(userRegion)
+                ? regionEligibleCandidates(plan, userRegion)
                 : List.of();
         Set<Integer> regionEligibleIds = regionEligibleCandidates.stream()
                 .map(RegionEligiblePolicyCandidate::policyId)
@@ -211,6 +212,25 @@ public class PolicySearchCandidateRetriever {
         }
         int regionIntersectionCandidateCount = mergedIds.size();
         int broadFallbackAddedCount = 0;
+        if (!exactTitleSuppressed && shouldProtectRegionPool(plan)) {
+            Set<Integer> localRegionEligibleIds = localRegionEligibleIds(regionEligibleCandidates);
+            if (!localRegionEligibleIds.isEmpty()) {
+                List<FallbackCandidate> protectedRegionCandidates = broadFallbackCandidates(plan, intent,
+                        true, localRegionEligibleIds, mergedIds, fallbackTarget(resultSize));
+                protectedRegionCandidates.forEach(candidate -> {
+                    Integer id = candidate.policyId();
+                    candidateSources.computeIfAbsent(id, ignored -> EnumSet.noneOf(CandidateSource.class))
+                            .add(CandidateSource.BROAD_FALLBACK);
+                    semanticScores.merge(id, candidate.score(), Math::max);
+                    lexicalScores.merge(id, candidate.score(), Math::max);
+                    addEvidence(sourceEvidence, id, CandidateSource.BROAD_FALLBACK, null,
+                            candidate.score(), candidate.score(),
+                            "REGION_PRIORITY_POOL terms=" + String.join("/", candidate.matchedTerms()));
+                });
+                mergedIds.addAll(protectedRegionCandidates.stream().map(FallbackCandidate::policyId).toList());
+                broadFallbackAddedCount += protectedRegionCandidates.size();
+            }
+        }
         if (!exactTitleSuppressed
                 && (queryType == SearchQueryType.BROAD_DISCOVERY || queryType == SearchQueryType.ELIGIBILITY_SEARCH)
                 && shouldUseBroadFallback(mergedIds.size(), resultSize)
@@ -228,7 +248,7 @@ public class PolicySearchCandidateRetriever {
                         candidate.score(), candidate.score(), "BROAD_FALLBACK_REGION_POOL terms=" + String.join("/", candidate.matchedTerms()));
             });
             mergedIds.addAll(broadCandidates.stream().map(FallbackCandidate::policyId).toList());
-            broadFallbackAddedCount = broadCandidates.size();
+            broadFallbackAddedCount += broadCandidates.size();
         }
 
         int rawCandidateCount = vectorCandidatesBySource.values().stream().mapToInt(List::size).sum()
@@ -324,6 +344,27 @@ public class PolicySearchCandidateRetriever {
         return containsAny(compact, "비슷한", "유사한", "관련", "같은", "교통정책도", "정책도알려");
     }
 
+    private List<RegionEligiblePolicyCandidate> regionEligibleCandidates(PolicySearchPlan plan,
+                                                                         ResolvedUserRegion userRegion) {
+        if (plan.queryType() == SearchQueryType.POLICY_NAME) {
+            return regionEligiblePolicyCandidateService.findEligibleCandidates(userRegion);
+        }
+        return regionEligiblePolicyCandidateService.findSearchEligibleCandidates(userRegion);
+    }
+
+    private boolean shouldProtectRegionPool(PolicySearchPlan plan) {
+        return plan.condition().regionExplicit()
+                && plan.queryType() != SearchQueryType.POLICY_NAME
+                && properties.getSearch().isMysqlFallbackEnabled();
+    }
+
+    private Set<Integer> localRegionEligibleIds(List<RegionEligiblePolicyCandidate> candidates) {
+        return candidates.stream()
+                .filter(candidate -> candidate.compatibility().priority() < RegionCompatibility.NATIONWIDE.priority())
+                .map(RegionEligiblePolicyCandidate::policyId)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+    }
+
     private List<Policy> deduplicateExactTitlePolicies(List<Policy> policies, Set<Integer> exactTitleIds) {
         Map<String, Policy> selected = new LinkedHashMap<>();
         for (Policy policy : policies) {
@@ -351,7 +392,7 @@ public class PolicySearchCandidateRetriever {
                                                            int limit) {
         boolean regionPoolApplied = plan.condition().regionExplicit() && regionEligiblePolicyCandidateService != null;
         List<RegionEligiblePolicyCandidate> regionEligibleCandidates = regionPoolApplied
-                ? regionEligiblePolicyCandidateService.findEligibleCandidates(userRegion)
+                ? regionEligibleCandidates(plan, userRegion)
                 : List.of();
         Set<Integer> regionEligibleIds = regionEligibleCandidates.stream()
                 .map(RegionEligiblePolicyCandidate::policyId)
@@ -855,10 +896,10 @@ public class PolicySearchCandidateRetriever {
             int multiple = 0;
             for (RegionEligiblePolicyCandidate row : rows) {
                 switch (row.compatibility()) {
-                    case EXACT_SIGUNGU -> exactSigungu++;
+                    case EXACT_SIGUNGU, CHILD_SIGUNGU_MATCH -> exactSigungu++;
                     case PARENT_SIDO, EXACT_SIDO -> parentSido++;
                     case NATIONWIDE -> nationwide++;
-                    case MULTIPLE_REGION_MATCH -> multiple++;
+                    case MULTIPLE_REGION_MATCH, MULTIPLE_SIGUNGU_MATCH, MULTIPLE_CHILD_SIGUNGU_MATCH, MULTIPLE_SIDO_MATCH -> multiple++;
                     default -> {
                     }
                 }

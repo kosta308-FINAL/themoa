@@ -3,6 +3,7 @@ package com.weaone.themoa.domain.policy.rag.service;
 import com.weaone.themoa.domain.policy.policy.entity.Policy;
 import com.weaone.themoa.domain.policy.policy.entity.PolicyCategory;
 import com.weaone.themoa.domain.policy.policy.entity.PolicyCondition;
+import com.weaone.themoa.domain.policy.policy.entity.PolicyRegion;
 import com.weaone.themoa.domain.policy.policy.region.RegionCompatibility;
 import com.weaone.themoa.domain.policy.policy.region.RegionMatchResult;
 import com.weaone.themoa.domain.policy.rag.dto.CandidateSource;
@@ -48,6 +49,24 @@ class PolicySearchResultAssemblerTest {
         assertThat(item.officialUrl()).isNull();
     }
 
+    @Test
+    void missingAndUnknownRegionRowsAreNotDisplayedAsNationwide() {
+        PolicySearchResultAssembler assembler = new PolicySearchResultAssembler(new PolicyDomainClassifier());
+        Policy missingRegion = policy();
+        Policy unknownRegion = policy();
+        unknownRegion.getRegions().add(new PolicyRegion(unknownRegion, null));
+
+        PolicySearchResultItem missing = assembler.assemble(new RankedPolicyCandidate(
+                new EvaluatedPolicyCandidate(missingRegion, evidence(),
+                        eligibility(RegionCompatibility.REGION_UNSPECIFIED)), ranking()), Map.of(), Map.of());
+        PolicySearchResultItem unknown = assembler.assemble(new RankedPolicyCandidate(
+                new EvaluatedPolicyCandidate(unknownRegion, evidence(),
+                        eligibility(RegionCompatibility.UNKNOWN)), ranking()), Map.of(), Map.of());
+
+        assertThat(missing.region()).isEqualTo("지역 제한 미지정");
+        assertThat(unknown.region()).isEqualTo("지역 확인 필요");
+    }
+
     private Policy policy() {
         Policy policy = new Policy("P1");
         ReflectionTestUtils.setField(policy, "id", 1);
@@ -55,5 +74,23 @@ class PolicySearchResultAssemblerTest {
                 null, null, true, true, "OPEN");
         policy.updateCondition(new PolicyCondition(18, 39, null, null, null, "청년 교통비 지원", false));
         return policy;
+    }
+
+    private CandidateEvidence evidence() {
+        return new CandidateEvidence(1, List.of(), 0.72, 0.81, 0.0);
+    }
+
+    private PolicyEligibilityEvaluation eligibility(RegionCompatibility compatibility) {
+        return new PolicyEligibilityEvaluation(1, true,
+                new RegionMatchResult(compatibility, true, 0, compatibility.label()),
+                ConditionMatchResult.match("나이 일치"), ConditionMatchResult.unknown("취업 확인"),
+                ConditionMatchResult.unknown("학생 확인"), TargetStageMatchResult.unknown("교육 확인"),
+                new EmploymentAudienceMatch(ConditionMatchStatus.UNKNOWN, "취업 확인"),
+                RecommendationTier.PRIMARY, List.of(compatibility.label()), List.of(), null);
+    }
+
+    private PolicyRankingEvaluation ranking() {
+        return new PolicyRankingEvaluation(0.9, 0.72, 0.81, 1.0,
+                0.0, 0.0, 0.0, 88.4, RecommendationTier.PRIMARY, 1, List.of());
     }
 }

@@ -27,26 +27,30 @@ class RegionMatchEvaluatorTest {
         assertMatch(policy(region("41110")), user, RegionCompatibility.EXACT_SIGUNGU, true, 100);
         assertMatch(policy(region("41")), user, RegionCompatibility.PARENT_SIDO, true, 100);
         assertMatch(policy(region("KR")), user, RegionCompatibility.NATIONWIDE, true, 100);
-        assertMatch(policy(region("41110"), region("41130")), user, RegionCompatibility.MULTIPLE_REGION_MATCH, true, 100);
-        assertMatch(policy(region("41"), region("11")), user, RegionCompatibility.MULTIPLE_REGION_MATCH, true, 100);
+        assertMatch(policy(region("41110"), region("41130")), user, RegionCompatibility.MULTIPLE_SIGUNGU_MATCH, true, 100);
+        assertMatch(policy(region("41"), region("11")), user, RegionCompatibility.MULTIPLE_SIDO_MATCH, true, 100);
+        assertMatch(policy(region("KR"), region("11")), user, RegionCompatibility.NATIONWIDE, true, 100);
 
         assertMatch(policy(region("41130")), user, RegionCompatibility.NOT_MATCHED, false, 0);
         assertMatch(policy(region("11")), user, RegionCompatibility.NOT_MATCHED, false, 0);
         assertMatch(policy(region("28177")), user, RegionCompatibility.NOT_MATCHED, false, 0);
-        assertMatch(policy(), user, RegionCompatibility.UNKNOWN, false, 0);
+        assertMatch(policy(), user, RegionCompatibility.REGION_UNSPECIFIED, true, 0);
     }
 
     @Test
-    void sidoSearchAllowsSidoNationwideAndMatchingMultipleButNotChildOnlyPolicies() {
+    void sidoSearchAllowsSidoChildRegionsBeforeNationwideButExcludesOtherSidoChildren() {
         ResolvedUserRegion user = evaluator.resolveUserRegion("경기도", null, null);
 
         assertMatch(policy(region("41")), user, RegionCompatibility.EXACT_SIDO, true, 100);
+        assertMatch(policy(region("41110")), user, RegionCompatibility.CHILD_SIGUNGU_MATCH, true, 100);
+        assertMatch(policy(region("41110"), region("41130")), user, RegionCompatibility.MULTIPLE_CHILD_SIGUNGU_MATCH, true, 100);
+        assertMatch(policy(region("41110"), region("11")), user, RegionCompatibility.MULTIPLE_CHILD_SIGUNGU_MATCH, true, 100);
+        assertMatch(policy(region("41110"), region("KR")), user, RegionCompatibility.MULTIPLE_CHILD_SIGUNGU_MATCH, true, 100);
         assertMatch(policy(region("KR")), user, RegionCompatibility.NATIONWIDE, true, 100);
-        assertMatch(policy(region("41"), region("11")), user, RegionCompatibility.MULTIPLE_REGION_MATCH, true, 100);
+        assertMatch(policy(region("41"), region("11")), user, RegionCompatibility.MULTIPLE_SIDO_MATCH, true, 100);
 
-        assertMatch(policy(region("41110")), user, RegionCompatibility.NOT_MATCHED, false, 0);
-        assertMatch(policy(region("41130")), user, RegionCompatibility.NOT_MATCHED, false, 0);
         assertMatch(policy(region("11")), user, RegionCompatibility.NOT_MATCHED, false, 0);
+        assertMatch(policy(region("28177")), user, RegionCompatibility.NOT_MATCHED, false, 0);
     }
 
     @Test
@@ -79,6 +83,16 @@ class RegionMatchEvaluatorTest {
         assertThat(result.compatibility()).isEqualTo(RegionCompatibility.UNKNOWN);
         assertThat(result.eligible()).isTrue();
         assertThat(result.score()).isZero();
+    }
+
+    @Test
+    void mappedRegionRowsWithoutRegionCodeRemainUnknownNotNationwide() {
+        ResolvedUserRegion user = evaluator.resolveUserRegion("경기도", "수원시", null);
+
+        RegionMatchResult result = evaluator.evaluate(policy((RegionCode) null), user);
+
+        assertThat(result.compatibility()).isEqualTo(RegionCompatibility.UNKNOWN);
+        assertThat(result.eligible()).isFalse();
     }
 
     private void assertMatch(Policy policy, ResolvedUserRegion user, RegionCompatibility compatibility,
