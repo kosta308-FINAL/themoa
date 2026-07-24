@@ -1,5 +1,6 @@
 import { useState } from "react";
 import DashboardIcon from "../../../components/common/DashboardIcon";
+import ServiceIcon from "./ServiceIcon";
 import { getApiErrorMessage } from "../../../utils/apiError";
 import {
   cancelFixedExpense,
@@ -201,9 +202,9 @@ function ExpenseDetailModal({
         </div>
         <div className="fx-modal-body">
           <div className="fx-detail-hero">
-            <span className={`fx-service-icon ${toneForId(expense.id)}`}>
+            <ServiceIcon tone={toneForId(expense.id)}>
               {serviceInitial(expense.merchantAliasName || expense.name)}
-            </span>
+            </ServiceIcon>
             <h3>{expense.name}</h3>
             <strong>
               {formatAmount(expense.expectedAmount, expense.expectedCurrency)}

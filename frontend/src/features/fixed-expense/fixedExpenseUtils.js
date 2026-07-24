@@ -80,7 +80,7 @@ const serviceInitial = (name = "") => {
     : trimmed.slice(0, 1);
 };
 
-const ICON_TONES = ["red", "blue", "purple", "green"];
+const ICON_TONES = ["red", "blue", "accent", "green"];
 const toneForId = (id) => ICON_TONES[toNumber(id) % ICON_TONES.length];
 
 export {
