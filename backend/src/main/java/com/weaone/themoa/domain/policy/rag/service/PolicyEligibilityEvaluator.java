@@ -366,12 +366,16 @@ public class PolicyEligibilityEvaluator {
                 metrics.parentSidoMatchedCount++;
                 metrics.provinceMatchedCount++;
             }
+            case CHILD_SIGUNGU_MATCH -> {
+                metrics.exactSigunguMatchedCount++;
+                metrics.cityMatchedCount++;
+            }
             case NATIONWIDE -> {
                 metrics.nationwideMatchedCount++;
                 metrics.nationwideCandidateCount++;
             }
-            case MULTIPLE_REGION_MATCH -> metrics.multipleRegionMatchedCount++;
-            case UNKNOWN -> metrics.regionUnknownCount++;
+            case MULTIPLE_REGION_MATCH, MULTIPLE_SIGUNGU_MATCH, MULTIPLE_CHILD_SIGUNGU_MATCH, MULTIPLE_SIDO_MATCH -> metrics.multipleRegionMatchedCount++;
+            case REGION_UNSPECIFIED, UNKNOWN -> metrics.regionUnknownCount++;
             case NOT_MATCHED -> metrics.regionNotMatchedCount++;
         }
     }

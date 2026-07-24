@@ -94,6 +94,21 @@ public class RegionCatalog {
         return loaded;
     }
 
+    public List<RegionCode> searchSupportedChildrenOf(RegionCode sido) {
+        if (sido == null || !"PROVINCE".equals(sido.getRegionLevel())) {
+            return List.of();
+        }
+        return allRegions().stream()
+                .filter(region -> region.getId() != null)
+                .filter(region -> !sameRegion(region, sido))
+                .filter(this::searchSupportedLevel)
+                .filter(region -> sido.getId() != null && region.getParent() != null
+                        ? sameRegion(region.getParent(), sido)
+                        : java.util.Objects.equals(region.getProvince(), sido.getProvince()))
+                .sorted(Comparator.comparing(RegionCode::getRegionCode))
+                .toList();
+    }
+
     public void refreshCache() {
         specificRegionsByLongestName = null;
         allRegions = null;
@@ -256,6 +271,16 @@ public class RegionCatalog {
     private boolean standardInternalCode(RegionCode region) {
         String code = region.getRegionCode();
         return "KR".equals(code) || code.startsWith("P:") || code.startsWith("M:");
+    }
+
+    private boolean sameRegion(RegionCode left, RegionCode right) {
+        if (left == null || right == null) {
+            return false;
+        }
+        if (left.getId() != null && right.getId() != null) {
+            return java.util.Objects.equals(left.getId(), right.getId());
+        }
+        return java.util.Objects.equals(left.getRegionCode(), right.getRegionCode());
     }
 
     private String logicalKey(RegionCode region) {

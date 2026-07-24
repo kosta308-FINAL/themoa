@@ -57,7 +57,7 @@ class PolicySearchCandidateRetrieverTest {
                 Map.of(1, Set.of(CandidateSource.MYSQL_TITLE)),
                 Map.of(CandidateSource.MYSQL_TITLE, 1)));
         RegionEligiblePolicyCandidateService regionService = mock(RegionEligiblePolicyCandidateService.class);
-        when(regionService.findEligibleCandidates(any())).thenReturn(java.util.stream.IntStream.rangeClosed(1, 500)
+        when(regionService.findSearchEligibleCandidates(any())).thenReturn(java.util.stream.IntStream.rangeClosed(1, 500)
                 .mapToObj(id -> new RegionEligiblePolicyCandidate(id, id % 2 == 0 ? RegionCompatibility.NATIONWIDE : RegionCompatibility.EXACT_SIDO))
                 .toList());
 
@@ -102,7 +102,7 @@ class PolicySearchCandidateRetrieverTest {
         when(lexicalSearchService.search(any(), any(), anyInt())).thenReturn(new PolicyLexicalSearchService.LexicalSearchResult(
                 List.of(), Map.of(), Map.of(), Map.of(), Map.of()));
         RegionEligiblePolicyCandidateService regionService = mock(RegionEligiblePolicyCandidateService.class);
-        when(regionService.findEligibleCandidates(any())).thenReturn(java.util.stream.IntStream.rangeClosed(1, 500)
+        when(regionService.findSearchEligibleCandidates(any())).thenReturn(java.util.stream.IntStream.rangeClosed(1, 500)
                 .mapToObj(id -> new RegionEligiblePolicyCandidate(id, RegionCompatibility.NATIONWIDE))
                 .toList());
 
@@ -136,7 +136,7 @@ class PolicySearchCandidateRetrieverTest {
         when(lexicalSearchService.search(any(), any(), anyInt())).thenReturn(new PolicyLexicalSearchService.LexicalSearchResult(
                 List.of(), Map.of(), Map.of(), Map.of(), Map.of()));
         RegionEligiblePolicyCandidateService regionService = mock(RegionEligiblePolicyCandidateService.class);
-        when(regionService.findEligibleCandidates(any())).thenReturn(java.util.stream.IntStream.rangeClosed(1, 500)
+        when(regionService.findSearchEligibleCandidates(any())).thenReturn(java.util.stream.IntStream.rangeClosed(1, 500)
                 .mapToObj(id -> new RegionEligiblePolicyCandidate(id, RegionCompatibility.NATIONWIDE))
                 .toList());
         PolicySearchProjectionRepository projectionRepository = mock(PolicySearchProjectionRepository.class);
@@ -156,6 +156,46 @@ class PolicySearchCandidateRetrieverTest {
         assertThat(collection.candidateSources().get(490)).contains(CandidateSource.BROAD_FALLBACK);
         assertThat(collection.evidenceByPolicyId().get(490).semanticScore()).isGreaterThan(0);
         assertThat(collection.evidenceByPolicyId().get(490).lexicalScore()).isGreaterThan(0);
+    }
+
+    @Test
+    void regionExplicitSearchKeepsRelevantLocalRegionCandidateBeforeFallbackThreshold() {
+        PolicyRepository repository = mock(PolicyRepository.class);
+        when(repository.findWithRelationsByIdIn(any())).thenAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            List<Integer> ids = invocation.getArgument(0);
+            return ids.stream()
+                    .map(id -> policy(id, id == 100 ? "수원 청년 금융 지원" : "전국 청년 금융 지원 " + id))
+                    .toList();
+        });
+        @SuppressWarnings("unchecked")
+        ObjectProvider<VectorStore> vectorStoreProvider = mock(ObjectProvider.class);
+        when(vectorStoreProvider.getIfAvailable()).thenReturn(null);
+        PolicyLexicalSearchService lexicalSearchService = mock(PolicyLexicalSearchService.class);
+        List<Integer> nationalIds = java.util.stream.IntStream.rangeClosed(1, 12).boxed().toList();
+        Map<Integer, Double> lexicalScores = nationalIds.stream()
+                .collect(java.util.stream.Collectors.toMap(id -> id, ignored -> 0.8));
+        when(lexicalSearchService.search(any(), any(), anyInt())).thenReturn(new PolicyLexicalSearchService.LexicalSearchResult(
+                nationalIds, lexicalScores, Map.of(), Map.of(), Map.of()));
+        RegionEligiblePolicyCandidateService regionService = mock(RegionEligiblePolicyCandidateService.class);
+        when(regionService.findSearchEligibleCandidates(any())).thenReturn(java.util.stream.Stream.concat(
+                        nationalIds.stream().map(id -> new RegionEligiblePolicyCandidate(id, RegionCompatibility.NATIONWIDE)),
+                        java.util.stream.Stream.of(new RegionEligiblePolicyCandidate(100, RegionCompatibility.EXACT_SIGUNGU)))
+                .toList());
+        PolicySearchProjectionRepository projectionRepository = mock(PolicySearchProjectionRepository.class);
+        when(projectionRepository.findAllActive()).thenReturn(List.of(
+                projection(policy(100, "수원 청년 금융 지원"), "수원 청년 금융 지원", "청년 금융 지원")));
+
+        RagProperties properties = new RagProperties();
+        properties.setEnabled(true);
+        PolicySearchCandidateRetriever retriever = new PolicySearchCandidateRetriever(
+                repository, vectorStoreProvider, properties, lexicalSearchService, regionService, projectionRepository);
+
+        PolicyCandidateCollection collection = retriever.retrieve(economicRegionalPlan(), intent(),
+                new ResolvedUserRegion("경기도", "수원시", null), 0, 10, 10);
+
+        assertThat(collection.policies()).extracting(Policy::getId).contains(100);
+        assertThat(collection.candidateSources().get(100)).contains(CandidateSource.BROAD_FALLBACK);
     }
 
     private PolicySearchPlan plan() {
@@ -201,6 +241,10 @@ class PolicySearchCandidateRetrieverTest {
 
     private PolicySearchProjection projection(Integer id, String title, String support) {
         Policy policy = policy(id, title);
+        return projection(policy, title, support);
+    }
+
+    private PolicySearchProjection projection(Policy policy, String title, String support) {
         PolicySearchProjection projection = new PolicySearchProjection(policy);
         projection.update(title, title, "", "복지", "", support, "청년", "", "", "기관",
                 String.join(" ", title, support), "test", false);

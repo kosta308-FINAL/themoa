@@ -112,7 +112,7 @@ public class PolicyRecommendationService {
         PolicyRecommendationRegionService.ValidatedRegion region =
                 regionService.validate(profile.getResidenceSido(), profile.getResidenceSigungu());
         List<RegionEligiblePolicyCandidate> candidates =
-                regionCandidateService.findEligibleCandidates(region.resolvedUserRegion());
+                regionCandidateService.findRecommendationEligibleCandidates(region.resolvedUserRegion());
         if (candidates.isEmpty()) {
             return List.of();
         }
@@ -126,7 +126,8 @@ public class PolicyRecommendationService {
                         employmentAudiences.get(policy.getId()), today, generatedAt))
                 .filter(scored -> scored != null)
                 .sorted(Comparator
-                        .comparingInt(ScoredRecommendation::score).reversed()
+                        .comparingInt(ScoredRecommendation::regionPriority)
+                        .thenComparing(Comparator.comparingInt(ScoredRecommendation::score).reversed())
                         .thenComparing(scored -> dueDateForSort(scored.policy()))
                         .thenComparing(scored -> scored.policy().getId()))
                 .limit(MAX_RECOMMENDATIONS)
@@ -148,7 +149,7 @@ public class PolicyRecommendationService {
                 match.matchReason(),
                 generatedAt
         );
-        return new ScoredRecommendation(policy, match.score(), recommendation);
+        return new ScoredRecommendation(policy, match.score(), match.regionCompatibility(), recommendation);
     }
 
     private LocalDate dueDateForSort(Policy policy) {
@@ -209,7 +210,11 @@ public class PolicyRecommendationService {
     private record ScoredRecommendation(
             Policy policy,
             int score,
+            RegionCompatibility regionCompatibility,
             MemberPolicyRecommendation recommendation
     ) {
+        private int regionPriority() {
+            return regionCompatibility == null ? RegionCompatibility.UNKNOWN.priority() : regionCompatibility.priority();
+        }
     }
 }

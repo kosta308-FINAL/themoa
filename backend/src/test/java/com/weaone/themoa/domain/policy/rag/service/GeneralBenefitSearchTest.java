@@ -71,7 +71,7 @@ class GeneralBenefitSearchTest {
         when(projectionRepository.findAllActive()).thenReturn(List.of(
                 projection(kpass), projection(housing), projection(culture), projection(savings), projection(organization)));
         RegionEligiblePolicyCandidateService regionService = mock(RegionEligiblePolicyCandidateService.class);
-        when(regionService.findEligibleCandidates(any())).thenReturn(List.of(
+        when(regionService.findSearchEligibleCandidates(any())).thenReturn(List.of(
                 new RegionEligiblePolicyCandidate(1, RegionCompatibility.NATIONWIDE),
                 new RegionEligiblePolicyCandidate(2, RegionCompatibility.PARENT_SIDO),
                 new RegionEligiblePolicyCandidate(3, RegionCompatibility.NATIONWIDE),

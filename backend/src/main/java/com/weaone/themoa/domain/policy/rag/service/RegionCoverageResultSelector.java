@@ -1,6 +1,7 @@
 package com.weaone.themoa.domain.policy.rag.service;
 
 import com.weaone.themoa.domain.policy.policy.region.RegionCompatibility;
+import com.weaone.themoa.domain.policy.rag.dto.PolicySearchCondition;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchResultItem;
 import com.weaone.themoa.domain.policy.rag.dto.RecommendationTier;
 import com.weaone.themoa.domain.policy.rag.dto.SearchQueryType;
@@ -22,9 +23,18 @@ public class RegionCoverageResultSelector {
      * 나누고, 각 그룹 안에서만 정확 시군·상위 시도·전국 대표 정책을 앞쪽에 배치한다.</p>
      */
     public Selection select(List<PolicySearchResultItem> sortedResults, int page, int size, SearchQueryType queryType) {
+        return select(sortedResults, page, size, queryType, null);
+    }
+
+    public Selection select(List<PolicySearchResultItem> sortedResults,
+                            int page,
+                            int size,
+                            SearchQueryType queryType,
+                            PolicySearchCondition condition) {
         if (page != 0 || sortedResults.isEmpty()
                 || queryType == SearchQueryType.POLICY_NAME
-                || queryType == SearchQueryType.TOPIC_SEARCH) {
+                || queryType == SearchQueryType.TOPIC_SEARCH
+                || regionPriorityFirst(queryType, condition)) {
             return new Selection(sortedResults, 0, 0, 0);
         }
         List<PolicySearchResultItem> reordered = new ArrayList<>();
@@ -52,11 +62,15 @@ public class RegionCoverageResultSelector {
         }
         LinkedHashSet<Integer> promoted = new LinkedHashSet<>();
         counter.exact += promote(tierItems, promoted, RegionCompatibility.EXACT_SIGUNGU);
+        counter.exact += promote(tierItems, promoted, RegionCompatibility.MULTIPLE_SIGUNGU_MATCH);
+        counter.exact += promote(tierItems, promoted, RegionCompatibility.CHILD_SIGUNGU_MATCH);
+        counter.exact += promote(tierItems, promoted, RegionCompatibility.MULTIPLE_CHILD_SIGUNGU_MATCH);
         int parent = promote(tierItems, promoted, RegionCompatibility.PARENT_SIDO);
         if (parent == 0) {
             parent = promote(tierItems, promoted, RegionCompatibility.EXACT_SIDO);
         }
         counter.parent += parent;
+        counter.parent += promote(tierItems, promoted, RegionCompatibility.MULTIPLE_SIDO_MATCH);
         promote(tierItems, promoted, RegionCompatibility.NATIONWIDE);
         promoted.forEach(id -> tierItems.stream()
                 .filter(item -> item.policyId().equals(id))
@@ -76,6 +90,10 @@ public class RegionCoverageResultSelector {
                     return 1;
                 })
                 .orElse(0);
+    }
+
+    private boolean regionPriorityFirst(SearchQueryType queryType, PolicySearchCondition condition) {
+        return condition != null && condition.regionExplicit() && queryType != SearchQueryType.POLICY_NAME;
     }
 
     private static class Counter {
