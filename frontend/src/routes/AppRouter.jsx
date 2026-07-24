@@ -4,8 +4,8 @@ import LoginPage from "../features/auth/LoginPage";
 import SignupPage from "../features/auth/SignupPage";
 import FindIdPage from "../features/auth/FindIdPage";
 import FindPasswordPage from "../features/auth/FindPasswordPage";
-import KakaoCallbackPage from "../features/auth/KakaoCallbackPage";
-import KakaoSignupPage from "../features/auth/KakaoSignupPage";
+import OAuthCallbackPage from "../features/auth/OAuthCallbackPage";
+import OAuthSignupPage from "../features/auth/OAuthSignupPage";
 import Dashboard from "../features/dashboard/Dashboard";
 import CalendarPage from "../features/calendar/CalendarPage";
 import ProductsPage from "../features/products/ProductsPage";
@@ -36,8 +36,8 @@ function AppRouter() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/find-email" element={<FindIdPage />} />
       <Route path="/find-password" element={<FindPasswordPage />} />
-      <Route path="/oauth/callback" element={<KakaoCallbackPage />} />
-      <Route path="/oauth/kakao/signup" element={<KakaoSignupPage />} />
+      <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+      <Route path="/oauth/signup" element={<OAuthSignupPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<UserOnlyRoute />}>

@@ -5,9 +5,9 @@ import com.weaone.themoa.security.handler.JwtAccessDeniedHandler;
 import com.weaone.themoa.security.handler.JwtAuthenticationEntryPoint;
 import com.weaone.themoa.security.jwt.JwtAuthenticationFilter;
 import com.weaone.themoa.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
-import com.weaone.themoa.security.oauth.KakaoLoginFailureHandler;
-import com.weaone.themoa.security.oauth.KakaoLoginSuccessHandler;
-import com.weaone.themoa.security.oauth.KakaoOAuth2UserService;
+import com.weaone.themoa.security.oauth.SocialLoginFailureHandler;
+import com.weaone.themoa.security.oauth.SocialLoginSuccessHandler;
+import com.weaone.themoa.security.oauth.SocialOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -41,7 +41,7 @@ public class SecurityConfig {
             "/api/auth/email/code",
             "/api/auth/email/code/verify",
             "/api/auth/oauth/exchange",
-            "/api/auth/oauth/kakao/complete-signup"
+            "/api/auth/oauth/complete-signup"
     };
 
     /**
@@ -74,9 +74,9 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final Environment environment;
-    private final KakaoOAuth2UserService kakaoOAuth2UserService;
-    private final KakaoLoginSuccessHandler kakaoLoginSuccessHandler;
-    private final KakaoLoginFailureHandler kakaoLoginFailureHandler;
+    private final SocialOAuth2UserService socialOAuth2UserService;
+    private final SocialLoginSuccessHandler socialLoginSuccessHandler;
+    private final SocialLoginFailureHandler socialLoginFailureHandler;
     private final HttpCookieOAuth2AuthorizationRequestRepository authorizationRequestRepository;
 
     @Bean
@@ -108,8 +108,8 @@ public class SecurityConfig {
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(jwtAccessDeniedHandler)
                 )
-                // 카카오 로그인(auth.md §6). 인가 URL 생성·code 교환은 Spring이 처리하고, 그 뒤 커스텀
-                // 분기(기존 회원 로그인 vs 신규가입)는 KakaoLoginSuccessHandler가 이어받는다.
+                // 소셜 로그인(카카오·구글, auth.md §6). 인가 URL 생성·code 교환은 Spring이 처리하고, 그 뒤
+                // 커스텀 분기(기존 회원 로그인 vs 신규가입)는 SocialLoginSuccessHandler가 이어받는다.
                 // state는 HttpSession이 아니라 쿠키에 둔다(authorizationRequestRepository) — 이 프로젝트의
                 // 인증은 완전히 stateless가 원칙이라 핸드셰이크 동안도 서버 세션을 만들지 않는다.
                 .oauth2Login(oauth2 -> oauth2
@@ -117,9 +117,9 @@ public class SecurityConfig {
                                 .baseUri("/api/oauth2/authorization")
                                 .authorizationRequestRepository(authorizationRequestRepository))
                         .redirectionEndpoint(endpoint -> endpoint.baseUri("/api/login/oauth2/code/*"))
-                        .userInfoEndpoint(endpoint -> endpoint.userService(kakaoOAuth2UserService))
-                        .successHandler(kakaoLoginSuccessHandler)
-                        .failureHandler(kakaoLoginFailureHandler)
+                        .userInfoEndpoint(endpoint -> endpoint.userService(socialOAuth2UserService))
+                        .successHandler(socialLoginSuccessHandler)
+                        .failureHandler(socialLoginFailureHandler)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(mdcLoggingFilter, JwtAuthenticationFilter.class);

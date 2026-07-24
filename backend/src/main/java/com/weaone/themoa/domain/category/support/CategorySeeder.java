@@ -39,26 +39,40 @@ public class CategorySeeder implements ApplicationRunner {
         seedKeywordRules(categories);
     }
 
+    /**
+     * 코드별로 없는 것만 추가한다. 기존엔 "테이블이 비어 있을 때만 통째로 시드"였는데, 그러면 이미
+     * 시드가 끝난 운영/개발 DB에 새 카테고리(예: SAVING)를 추가해도 절대 반영되지 않는다.
+     */
     private Map<CategoryCode, Category> seedCategories() {
-        if (categoryRepository.count() > 0) {
-            return categoryRepository.findAll().stream()
-                    .collect(Collectors.toMap(c -> CategoryCode.valueOf(c.getCode()), c -> c));
+        Map<CategoryCode, Category> existing = categoryRepository.findAll().stream()
+                .collect(Collectors.toMap(c -> CategoryCode.valueOf(c.getCode()), c -> c));
+
+        record Seed(CategoryCode code, String name) {
         }
-        List<Category> saved = categoryRepository.saveAll(List.of(
-                Category.seed(CategoryCode.FOOD, "식비"),
-                Category.seed(CategoryCode.DELIVERY, "배달"),
-                Category.seed(CategoryCode.CAFE, "카페"),
-                Category.seed(CategoryCode.CONVENIENCE, "편의점/마트"),
-                Category.seed(CategoryCode.TRANSPORT, "교통"),
-                Category.seed(CategoryCode.SHOPPING, "쇼핑"),
-                Category.seed(CategoryCode.SUBSCRIPTION, "구독"),
-                Category.seed(CategoryCode.LEISURE, "여가"),
-                Category.seed(CategoryCode.MEDICAL, "의료"),
-                Category.seed(CategoryCode.BEAUTY, "미용"),
-                Category.seed(CategoryCode.DONATION, "기부/회비"),
-                Category.seed(CategoryCode.ETC, "기타")
-        ));
-        return saved.stream().collect(Collectors.toMap(c -> CategoryCode.valueOf(c.getCode()), c -> c));
+        List<Seed> desired = List.of(
+                new Seed(CategoryCode.FOOD, "식비"),
+                new Seed(CategoryCode.DELIVERY, "배달"),
+                new Seed(CategoryCode.CAFE, "카페"),
+                new Seed(CategoryCode.CONVENIENCE, "편의점/마트"),
+                new Seed(CategoryCode.TRANSPORT, "교통"),
+                new Seed(CategoryCode.SHOPPING, "쇼핑"),
+                new Seed(CategoryCode.SUBSCRIPTION, "구독"),
+                new Seed(CategoryCode.LEISURE, "여가"),
+                new Seed(CategoryCode.MEDICAL, "의료"),
+                new Seed(CategoryCode.BEAUTY, "미용"),
+                new Seed(CategoryCode.DONATION, "기부/회비"),
+                new Seed(CategoryCode.SAVING, "저축"),
+                new Seed(CategoryCode.ETC, "기타")
+        );
+
+        List<Category> missing = desired.stream()
+                .filter(seed -> !existing.containsKey(seed.code()))
+                .map(seed -> Category.seed(seed.code(), seed.name()))
+                .toList();
+        if (!missing.isEmpty()) {
+            categoryRepository.saveAll(missing).forEach(c -> existing.put(CategoryCode.valueOf(c.getCode()), c));
+        }
+        return existing;
     }
 
     private void seedMerchantTypeMap(Map<CategoryCode, Category> categories) {

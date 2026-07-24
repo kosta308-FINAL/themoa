@@ -117,8 +117,11 @@ function ExpenseDetailModal({
     payDay: String(expense.expectedPayDay),
   });
   const [error, setError] = useState("");
+  const [confirmError, setConfirmError] = useState("");
+  const [cancelError, setCancelError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
+  const [isConfirmingCancel, setIsConfirmingCancel] = useState(false);
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
 
   const handleAmount = (event) =>
@@ -147,29 +150,30 @@ function ExpenseDetailModal({
   };
 
   const handleConfirmPayment = async () => {
-    setError("");
+    setConfirmError("");
     setIsConfirmingPayment(true);
     try {
       await confirmManualPayment(expense.id);
       await onChanged("결제 처리했어요.");
       onClose();
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError, "결제 처리에 실패했어요."));
+      setConfirmError(getApiErrorMessage(requestError, "결제 처리에 실패했어요."));
     } finally {
       setIsConfirmingPayment(false);
     }
   };
 
   const handleCancel = async () => {
-    if (!window.confirm(`'${expense.name}' 고정지출을 해지할까요?`)) return;
+    setCancelError("");
     setIsCanceling(true);
     try {
       await cancelFixedExpense(expense.id);
       await onChanged("고정지출을 해지했어요.");
       onClose();
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError, "해지하지 못했어요."));
+      setCancelError(getApiErrorMessage(requestError, "해지하지 못했어요."));
       setIsCanceling(false);
+      setIsConfirmingCancel(false);
     }
   };
 
@@ -324,25 +328,54 @@ function ExpenseDetailModal({
                     >
                       {isConfirmingPayment ? "처리 중..." : "결제처리"}
                     </button>
+                    {confirmError && (
+                      <p className="fx-form-error-text">{confirmError}</p>
+                    )}
                   </div>
                 )}
 
-              {error && <p className="fx-form-error-text">{error}</p>}
-
               <div className="fx-detail-danger">
-                <p>
-                  금액과 결제일은 수정할 수 있어요.
-                  <br />
-                  해지해도 지난 이행 기록은 유지됩니다.
-                </p>
-                <button
-                  type="button"
-                  className="fx-danger-button"
-                  disabled={isCanceling}
-                  onClick={handleCancel}
-                >
-                  {isCanceling ? "해지 중..." : "고정지출 해지"}
-                </button>
+                {isConfirmingCancel ? (
+                  <>
+                    <p>'{expense.name}' 고정지출을 정말 해지하시겠어요?</p>
+                    <div className="fx-detail-danger-actions">
+                      <button
+                        type="button"
+                        className="fx-ghost-button"
+                        disabled={isCanceling}
+                        onClick={() => setIsConfirmingCancel(false)}
+                      >
+                        아니오
+                      </button>
+                      <button
+                        type="button"
+                        className="fx-danger-button"
+                        disabled={isCanceling}
+                        onClick={handleCancel}
+                      >
+                        {isCanceling ? "해지 중..." : "네, 해지할게요"}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      금액과 결제일은 수정할 수 있어요.
+                      <br />
+                      해지해도 지난 이행 기록은 유지됩니다.
+                    </p>
+                    <button
+                      type="button"
+                      className="fx-danger-button"
+                      onClick={() => setIsConfirmingCancel(true)}
+                    >
+                      고정지출 해지
+                    </button>
+                  </>
+                )}
+                {cancelError && (
+                  <p className="fx-form-error-text">{cancelError}</p>
+                )}
               </div>
             </>
           )}

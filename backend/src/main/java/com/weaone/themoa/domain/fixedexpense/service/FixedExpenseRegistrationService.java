@@ -3,6 +3,7 @@ package com.weaone.themoa.domain.fixedexpense.service;
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.category.entity.Category;
+import com.weaone.themoa.domain.category.entity.CategoryCode;
 import com.weaone.themoa.domain.category.repository.CategoryRepository;
 import com.weaone.themoa.domain.cardtransaction.service.ExchangeRateUnavailableException;
 import com.weaone.themoa.domain.fixedexpense.dto.request.FixedExpenseCandidateRegisterRequest;
@@ -130,6 +131,38 @@ public class FixedExpenseRegistrationService {
         if (candidate != null) {
             candidate.reopen();
         }
+    }
+
+    /**
+     * 경로 C: 예·적금 가입 시 자동 등록(fixedExpense.md §7). subscription 도메인이 발행한 이벤트를
+     * 구독해 호출되므로, 이벤트 재전달로 두 번 불려도 같은 결과가 되도록 이미 연동된 행이 있으면
+     * 조용히 건너뛴다(멱등).
+     */
+    @Transactional
+    public void registerFromSavingsSubscription(Long memberId, Long savingsSubscriptionId, String productName,
+                                                 Long monthlyAmount) {
+        if (fixedExpenseRepository.findBySavingsSubscriptionId(savingsSubscriptionId).isPresent()) {
+            return;
+        }
+        Member member = memberRepository.getReferenceById(memberId);
+        Category category = categoryRepository.findByCode(CategoryCode.SAVING.name())
+                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
+        fixedExpenseRepository.save(FixedExpense.fromSavingsSubscription(member, savingsSubscriptionId, productName,
+                category, BigDecimal.valueOf(monthlyAmount)));
+    }
+
+    /** 경로 C 연동 건의 월납입액 변경 반영. 연동된 고정지출이 없으면(이미 해지 등) 조용히 넘어간다. */
+    @Transactional
+    public void updateAmountFromSavingsSubscription(Long savingsSubscriptionId, Long monthlyAmount) {
+        fixedExpenseRepository.findBySavingsSubscriptionId(savingsSubscriptionId)
+                .ifPresent(fixedExpense -> fixedExpense.updateAmountFromSavingsSubscription(BigDecimal.valueOf(monthlyAmount)));
+    }
+
+    /** 경로 C 연동 건 해지. 가입 기록 삭제에 맞춰 고정지출도 다음 주기부터 예산 차감에서 뺀다. */
+    @Transactional
+    public void cancelFromSavingsSubscription(Long savingsSubscriptionId) {
+        fixedExpenseRepository.findBySavingsSubscriptionId(savingsSubscriptionId)
+                .ifPresent(FixedExpense::cancel);
     }
 
     private MerchantAlias resolveMerchantAliasForDirectRegister(Long memberId, FixedExpenseDirectRegisterRequest request) {

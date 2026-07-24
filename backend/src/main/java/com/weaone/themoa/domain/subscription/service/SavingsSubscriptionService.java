@@ -16,8 +16,12 @@ import com.weaone.themoa.domain.subscription.dto.response.SubscriptionDraftRespo
 import com.weaone.themoa.domain.subscription.dto.response.SubscriptionResponse;
 import com.weaone.themoa.domain.subscription.entity.SavingsSubscription;
 import com.weaone.themoa.domain.subscription.entity.SavingsSubscriptionCondition;
+import com.weaone.themoa.domain.subscription.event.SavingsSubscriptionAmountChangedEvent;
+import com.weaone.themoa.domain.subscription.event.SavingsSubscriptionCreatedEvent;
+import com.weaone.themoa.domain.subscription.event.SavingsSubscriptionDeletedEvent;
 import com.weaone.themoa.domain.subscription.repository.SavingsSubscriptionConditionRepository;
 import com.weaone.themoa.domain.subscription.repository.SavingsSubscriptionRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -52,6 +56,7 @@ public class SavingsSubscriptionService {
     private final PreferentialConditionCacheService conditionCacheService;
     private final BankUrlResolver bankUrlResolver;
     private final BankNameFormatter bankNameFormatter;
+    private final ApplicationEventPublisher eventPublisher;
 
     public SavingsSubscriptionService(SavingsSubscriptionRepository subscriptionRepository,
                                       SavingsSubscriptionConditionRepository conditionRepository,
@@ -59,7 +64,8 @@ public class SavingsSubscriptionService {
                                       MemberRepository memberRepository,
                                       PreferentialConditionCacheService conditionCacheService,
                                       BankUrlResolver bankUrlResolver,
-                                      BankNameFormatter bankNameFormatter) {
+                                      BankNameFormatter bankNameFormatter,
+                                      ApplicationEventPublisher eventPublisher) {
         this.subscriptionRepository = subscriptionRepository;
         this.conditionRepository = conditionRepository;
         this.savingsProductRepository = savingsProductRepository;
@@ -67,6 +73,7 @@ public class SavingsSubscriptionService {
         this.conditionCacheService = conditionCacheService;
         this.bankUrlResolver = bankUrlResolver;
         this.bankNameFormatter = bankNameFormatter;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -161,7 +168,9 @@ public class SavingsSubscriptionService {
                         input.description().trim(), input.rateBonus(), input.met()));
             }
         }
-        return subscriptionRepository.save(subscription).getId();
+        Long id = subscriptionRepository.save(subscription).getId();
+        eventPublisher.publishEvent(new SavingsSubscriptionCreatedEvent(memberId, id, productName, request.monthlyAmount()));
+        return id;
     }
 
     /** 대시보드 목록(만기 예상금액 포함). */
@@ -205,6 +214,7 @@ public class SavingsSubscriptionService {
         }
         subscription.update(request.monthlyAmount(), appliedRate, request.termMonth(),
                 compound, request.startDate());
+        eventPublisher.publishEvent(new SavingsSubscriptionAmountChangedEvent(subscriptionId, request.monthlyAmount()));
     }
 
     @Transactional
@@ -213,6 +223,7 @@ public class SavingsSubscriptionService {
                 .findByIdAndMember_Id(subscriptionId, memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
         subscriptionRepository.delete(subscription);
+        eventPublisher.publishEvent(new SavingsSubscriptionDeletedEvent(subscriptionId));
     }
 
     /** 적용금리가 상품 최고우대금리를 넘으면 최고금리로 깎는다. 최고금리 정보가 없으면 그대로 둔다. */

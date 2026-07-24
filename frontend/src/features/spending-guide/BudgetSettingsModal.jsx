@@ -6,6 +6,7 @@ import {
   updateWorkSchedule,
 } from "../../api/spendingGuideApi";
 import DashboardIcon from "../../components/common/DashboardIcon";
+import { toNumber } from "../spendingGuideUtils";
 import IncomeProfileFields from "./components/IncomeProfileFields";
 
 function BudgetSettingsModal({ summary, onClose, onSaved }) {
@@ -29,6 +30,11 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
   const [payday, setPayday] = useState(String(summary.payday || ""));
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const hasIncompleteHours =
+    isHourly &&
+    (workSchedule.length === 0 ||
+      workSchedule.some((item) => !toNumber(item.hours)));
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -163,7 +169,7 @@ function BudgetSettingsModal({ summary, onClose, onSaved }) {
           <button
             type="submit"
             className="spending-primary wide"
-            disabled={isSubmitting}
+            disabled={isSubmitting || hasIncompleteHours}
           >
             {isSubmitting ? "저장 중..." : "소득 정보 저장"}
           </button>

@@ -5,7 +5,7 @@ import {
   setupSpendingGuide,
 } from "../../../api/spendingGuideApi";
 import DashboardIcon from "../../../components/common/DashboardIcon";
-import { errorMessage } from "../spendingGuideUtils";
+import { errorMessage, toNumber } from "../spendingGuideUtils";
 import IncomeProfileFields from "./IncomeProfileFields";
 
 function SpendingGuideSetup({ onComplete, onCardConnected }) {
@@ -18,6 +18,7 @@ function SpendingGuideSetup({ onComplete, onCardConnected }) {
   const [isPaydayOpen, setIsPaydayOpen] = useState(false);
   const [issuers, setIssuers] = useState([]);
   const [isIssuerLoading, setIsIssuerLoading] = useState(false);
+  const [isIssuerOpen, setIsIssuerOpen] = useState(false);
   const [showBirthDate, setShowBirthDate] = useState(false);
   const [cardForm, setCardForm] = useState({
     organization: "",
@@ -40,7 +41,7 @@ function SpendingGuideSetup({ onComplete, onCardConnected }) {
   const canSubmitStep1 = isHourly
     ? hourlyWage &&
       workSchedule.length > 0 &&
-      workSchedule.every((item) => item.hours) &&
+      workSchedule.every((item) => toNumber(item.hours) > 0) &&
       payday
     : salaryAmount && payday;
 
@@ -90,6 +91,12 @@ function SpendingGuideSetup({ onComplete, onCardConnected }) {
   const updateCardForm = (key) => (event) => {
     setCardForm((current) => ({ ...current, [key]: event.target.value }));
     setError("");
+  };
+
+  const selectIssuer = (organization) => {
+    setCardForm((current) => ({ ...current, organization }));
+    setError("");
+    setIsIssuerOpen(false);
   };
 
   const handleCardSubmit = async (event) => {
@@ -266,26 +273,49 @@ function SpendingGuideSetup({ onComplete, onCardConnected }) {
             className="spending-setup-card-form"
             onSubmit={handleCardSubmit}
           >
-            <label>
+            <div className="spending-issuer-field">
               <span>카드사 *</span>
-              <select
-                value={cardForm.organization}
-                onChange={updateCardForm("organization")}
+              <button
+                type="button"
+                className="spending-issuer-trigger"
+                aria-expanded={isIssuerOpen}
                 disabled={isIssuerLoading}
-                required
+                onClick={() => setIsIssuerOpen((open) => !open)}
               >
-                <option value="" disabled>
+                <strong>
                   {isIssuerLoading
                     ? "카드사를 불러오는 중..."
-                    : "카드사를 선택해주세요"}
-                </option>
-                {issuers.map((issuer) => (
-                  <option value={issuer.organization} key={issuer.organization}>
-                    {issuer.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+                    : selectedIssuer?.name || "카드사를 선택해주세요"}
+                </strong>
+                <DashboardIcon name="chevron-down" size={16} />
+              </button>
+              {isIssuerOpen && (
+                <>
+                  <div
+                    className="spending-issuer-backdrop"
+                    role="presentation"
+                    onMouseDown={() => setIsIssuerOpen(false)}
+                  />
+                  <ul className="spending-issuer-picker" role="listbox">
+                    {issuers.map((issuer) => (
+                      <li key={issuer.organization}>
+                        <button
+                          type="button"
+                          className={
+                            cardForm.organization === issuer.organization
+                              ? "selected"
+                              : ""
+                          }
+                          onClick={() => selectIssuer(issuer.organization)}
+                        >
+                          {issuer.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
             <label>
               <span>카드사 로그인 아이디 *</span>
               <input
@@ -361,7 +391,9 @@ function SpendingGuideSetup({ onComplete, onCardConnected }) {
             <button
               className="spending-setup-action"
               type="submit"
-              disabled={isSubmitting || isIssuerLoading}
+              disabled={
+                isSubmitting || isIssuerLoading || !cardForm.organization
+              }
             >
               {isSubmitting
                 ? "카드사에 연결하고 있어요"
