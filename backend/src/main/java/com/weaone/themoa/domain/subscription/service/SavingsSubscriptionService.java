@@ -11,6 +11,7 @@ import com.weaone.themoa.domain.recommend.entity.SavingsProduct;
 import com.weaone.themoa.domain.recommend.entity.SavingsProductOption;
 import com.weaone.themoa.domain.recommend.service.MaturityCalculator;
 import com.weaone.themoa.domain.subscription.dto.request.SubscriptionCreateRequest;
+import com.weaone.themoa.domain.subscription.dto.request.SubscriptionUpdateRequest;
 import com.weaone.themoa.domain.subscription.dto.response.SubscriptionDraftResponse;
 import com.weaone.themoa.domain.subscription.dto.response.SubscriptionResponse;
 import com.weaone.themoa.domain.subscription.entity.SavingsSubscription;
@@ -178,6 +179,32 @@ public class SavingsSubscriptionService {
                 .findByIdAndSubscription_Member_Id(conditionId, memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
         condition.updateMet(met);
+    }
+
+    /**
+     * 가입 정보 수정(본인 것만). 원본 상품이 있으면 복리 여부는 바뀐 기간에 맞춰 다시 판단하고,
+     * 적용금리는 상품 최고금리를 넘지 못하도록 서버에서 깎는다(등록과 같은 규칙).
+     */
+    @Transactional
+    public void update(Long memberId, Long subscriptionId, SubscriptionUpdateRequest request) {
+        SavingsSubscription subscription = subscriptionRepository
+                .findByIdAndMember_Id(subscriptionId, memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
+
+        BigDecimal appliedRate = request.appliedRate();
+        boolean compound = subscription.isCompound();
+        if (subscription.getProductId() != null) {
+            SavingsProduct product = savingsProductRepository
+                    .findAllWithOptionsByIdIn(List.of(subscription.getProductId())).stream()
+                    .findFirst()
+                    .orElse(null);
+            if (product != null) {
+                compound = isCompound(product, request.termMonth());
+                appliedRate = capToMaxRate(appliedRate, product);
+            }
+        }
+        subscription.update(request.monthlyAmount(), appliedRate, request.termMonth(),
+                compound, request.startDate());
     }
 
     @Transactional

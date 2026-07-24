@@ -45,11 +45,11 @@ function PreferentialConditionManager() {
   const [editItems, setEditItems] = useState(null);
   const [saved, setSaved] = useState(false);
 
-  // 조회한 캐시의 항목을 편집용 복사본으로 옮긴다(원본을 직접 건드리지 않도록).
-  const loadIntoEditor = (cache) => {
+  // 항목 배열을 편집용 복사본으로 옮긴다(원본을 직접 건드리지 않도록).
+  const fillEditor = (items) => {
     setSaved(false);
     setEditItems(
-      (cache?.items || []).map((item) => ({
+      (items || []).map((item) => ({
         description: item.description || "",
         rateBonus: item.rateBonus ?? 0,
       })),
@@ -64,7 +64,7 @@ function PreferentialConditionManager() {
     }
     const cache = await conditions.lookup(id);
     if (cache) {
-      loadIntoEditor(cache);
+      fillEditor(cache.items);
     } else {
       setEditItems(null);
     }
@@ -74,7 +74,25 @@ function PreferentialConditionManager() {
     setProductIdInput(String(productId));
     const cache = await conditions.lookup(productId);
     if (cache) {
-      loadIntoEditor(cache);
+      fillEditor(cache.items);
+    }
+  };
+
+  // 재검토 목록에서: 상세(뱃지·시각)를 불러오면서 최신 원문 재파싱 초안을 편집기에 채운다.
+  const handleReparse = async (productId) => {
+    setProductIdInput(String(productId));
+    await conditions.lookup(productId);
+    const items = await conditions.reparse(productId);
+    if (items) {
+      fillEditor(items);
+    }
+  };
+
+  // 편집기에서: 현재 조회한 상품을 최신 원문으로 다시 파싱해 항목을 교체한다.
+  const handleReparseCurrent = async () => {
+    const items = await conditions.reparse(conditions.detail.productId);
+    if (items) {
+      fillEditor(items);
     }
   };
 
@@ -173,6 +191,16 @@ function PreferentialConditionManager() {
                       </span>
                       <button
                         type="button"
+                        className="admin-btn fa-btn-primary"
+                        disabled={conditions.reparsing}
+                        onClick={() => handleReparse(cache.productId)}
+                      >
+                        {conditions.reparsing
+                          ? "재파싱 중…"
+                          : "최신 원문 재파싱"}
+                      </button>
+                      <button
+                        type="button"
                         className="admin-btn admin-btn-secondary"
                         onClick={() => handleReviewEdit(cache.productId)}
                       >
@@ -241,7 +269,21 @@ function PreferentialConditionManager() {
               <span className="pc-time">
                 {formatDateTime(conditions.detail.updatedAt)}
               </span>
+              <button
+                type="button"
+                className="admin-btn admin-btn-secondary pc-reparse"
+                disabled={conditions.reparsing}
+                onClick={handleReparseCurrent}
+              >
+                {conditions.reparsing ? "재파싱 중…" : "최신 원문으로 재파싱"}
+              </button>
             </div>
+
+            {conditions.reparsing && (
+              <div className="fa-alert fa-alert-info">
+                최신 원문을 LLM으로 다시 파싱하고 있어요. 잠시만 기다려 주세요.
+              </div>
+            )}
 
             {saved && (
               <div className="fa-note fa-note-done">
