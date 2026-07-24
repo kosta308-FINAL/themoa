@@ -1198,6 +1198,27 @@
   font-size: 11px;
 }
 
+.fx-manual-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--fx-border);
+}
+
+.fx-manual-confirm-head h4 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.fx-manual-confirm-head p {
+  margin: 2px 0 0;
+  color: var(--fx-muted);
+  font-size: 11px;
+}
+
 .fx-detail-danger {
   display: flex;
   align-items: center;

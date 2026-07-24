@@ -3,10 +3,14 @@ package com.weaone.themoa.domain.fixedexpense.service;
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.cardtransaction.entity.CardTransaction;
+import com.weaone.themoa.domain.cardtransaction.entity.PaymentMethod;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
+import com.weaone.themoa.domain.fixedexpense.entity.FixedExpensePaymentMethod;
 import com.weaone.themoa.domain.fixedexpense.repository.FixedExpenseRepository;
+import com.weaone.themoa.domain.member.entity.Member;
+import com.weaone.themoa.domain.member.repository.MemberRepository;
 import com.weaone.themoa.domain.merchant.entity.Merchant;
 import com.weaone.themoa.domain.merchant.entity.MerchantAlias;
 import com.weaone.themoa.domain.merchant.repository.BillerRepository;
@@ -38,6 +42,7 @@ public class FixedExpenseConfirmationService {
     private final BillerRepository billerRepository;
     private final MerchantIdentityService merchantIdentityService;
     private final FixedExpenseMatchingService fixedExpenseMatchingService;
+    private final MemberRepository memberRepository;
 
     /** 미납 알림을 탭했을 때 보여줄 후보 거래 목록. 굳혀 둔 값이 아니라 그 시점 기준으로 재조회한다(§6). */
     @Transactional(readOnly = true)
@@ -74,6 +79,26 @@ public class FixedExpenseConfirmationService {
         } else {
             learnTermAndRetag(memberId, fixedExpense, merchant, transaction.getMerchantNameRaw());
         }
+        fixedExpenseMatchingService.confirmMatch(transaction, fixedExpense);
+    }
+
+    /**
+     * 카드 미연동·계좌이체형의 수기 결제처리. 대조할 실거래가 없으니 사용자가 스스로 "결제했다"고
+     * 확정하는 F-05의 대체 경로다 — 오늘 날짜로 수기 거래를 만들고 자동 매칭과 동일한 태깅·이행기록
+     * 경로({@link FixedExpenseMatchingService#confirmMatch})를 그대로 태워서 결제내역 조회와 이번 달
+     * 이행 상태(PAID) 판정이 카드형과 동일하게 동작하게 한다. 이름형 학습·재태깅은 실거래 신원이 없어
+     * 대상이 아니다.
+     */
+    @Transactional
+    public void confirmManually(Long memberId, Long fixedExpenseId) {
+        FixedExpense fixedExpense = getOwned(memberId, fixedExpenseId);
+        Member member = memberRepository.getReferenceById(memberId);
+        LocalDate today = LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL);
+        PaymentMethod paymentMethod = fixedExpense.getPaymentMethod() == FixedExpensePaymentMethod.CARD
+                ? PaymentMethod.CARD : PaymentMethod.TRANSFER;
+        CardTransaction transaction = CardTransaction.manual(member, fixedExpense.getCategory(), paymentMethod,
+                today, today.atStartOfDay(), fixedExpense.getExpectedAmountKrw(), fixedExpense.getName(), null);
+        cardTransactionRepository.save(transaction);
         fixedExpenseMatchingService.confirmMatch(transaction, fixedExpense);
     }
 

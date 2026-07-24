@@ -1,10 +1,7 @@
 package com.weaone.themoa.domain.fixedexpense.service;
 
 import com.weaone.themoa.domain.budget.service.BudgetCycleService;
-import com.weaone.themoa.domain.cardconnection.entity.ConnectionStatus;
-import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
-import com.weaone.themoa.domain.fixedexpense.entity.FixedExpensePaymentMethod;
 import com.weaone.themoa.domain.fixedexpense.repository.FixedExpensePaymentRepository;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
@@ -15,9 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 
 /**
- * F-01/F-04 상태 배지 계산(view/fixedExpense.md §4). 카드 미연동이거나 이체형이면 대조 대상이 없어
- * null(배지 없음)을 반환한다. {@link FixedExpenseNotificationBatchService}가 쓰는 미납·예정일 판정과
- * 같은 기준(±3일 유예)을 그대로 따른다 — 여기는 조회 시점 계산이고, 그쪽은 알림 생성 배치라는 차이만 있다.
+ * F-01/F-04 상태 배지 계산(view/fixedExpense.md §4). 연동 여부·결제수단과 무관하게 결제일 윈도우로 계산한다 —
+ * PAID는 카드 자동매칭(연동형) 또는 사용자의 수동 결제처리(미연동·이체형, {@link FixedExpenseConfirmationService#confirmManually})
+ * 어느 쪽으로 만들어진 이행 기록이든 동일하게 인정한다. {@link FixedExpenseNotificationBatchService}가 쓰는
+ * 미납·예정일 판정과 같은 기준(±3일 유예)을 그대로 따른다 — 여기는 조회 시점 계산이고, 그쪽은 알림 생성 배치라는 차이만 있다.
  */
 @Service
 @RequiredArgsConstructor
@@ -27,7 +25,6 @@ public class FixedExpensePaymentStatusService {
     private static final long MISSED_GRACE_DAYS = 3;
 
     private final FixedExpensePaymentRepository fixedExpensePaymentRepository;
-    private final CardConnectionRepository cardConnectionRepository;
     private final MemberRepository memberRepository;
     private final BudgetCycleService budgetCycleService;
 
@@ -39,14 +36,10 @@ public class FixedExpensePaymentStatusService {
      */
     @Transactional(readOnly = true)
     public String resolve(FixedExpense fixedExpense) {
-        Long memberId = fixedExpense.getMember().getId();
-        boolean cardLinked = fixedExpense.getPaymentMethod() == FixedExpensePaymentMethod.CARD
-                && fixedExpense.getExpectedPayDay() != null
-                && cardConnectionRepository.existsByMember_IdAndStatus(memberId, ConnectionStatus.ACTIVE);
-        if (!cardLinked) {
+        if (fixedExpense.getExpectedPayDay() == null) {
             return null;
         }
-
+        Long memberId = fixedExpense.getMember().getId();
         Member member = memberRepository.getReferenceById(memberId);
         LocalDate today = LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL);
         String yearMonth = member.getPayday() == null

@@ -3,6 +3,7 @@ import DashboardIcon from "../../../components/common/DashboardIcon";
 import { getApiErrorMessage } from "../../../utils/apiError";
 import {
   cancelFixedExpense,
+  confirmManualPayment,
   confirmMissedPayment,
   getMissedPaymentCandidates,
   updateFixedExpense,
@@ -117,6 +118,7 @@ function ExpenseDetailModal({
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
 
   const handleAmount = (event) =>
     setEditForm((current) => ({
@@ -140,6 +142,20 @@ function ExpenseDetailModal({
       setError(getApiErrorMessage(requestError, "수정하지 못했어요."));
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleConfirmPayment = async () => {
+    setError("");
+    setIsConfirmingPayment(true);
+    try {
+      await confirmManualPayment(expense.id);
+      await onChanged("결제 처리했어요.");
+      onClose();
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, "결제 처리에 실패했어요."));
+    } finally {
+      setIsConfirmingPayment(false);
     }
   };
 
@@ -288,6 +304,27 @@ function ExpenseDetailModal({
                   onConfirmed={onChanged}
                 />
               )}
+
+              {!(expense.paymentMethod === "CARD" && hasCardConnection) &&
+                (expense.paymentStatus === "DUE_SOON" ||
+                  expense.paymentStatus === "MISSED") && (
+                  <div className="fx-manual-confirm">
+                    <div className="fx-manual-confirm-head">
+                      <h4>이번 달 결제, 하셨나요?</h4>
+                      <p>
+                        카드내역과 자동으로 대조할 수 없어 직접 확인이 필요해요.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="fx-secondary-button"
+                      disabled={isConfirmingPayment}
+                      onClick={handleConfirmPayment}
+                    >
+                      {isConfirmingPayment ? "처리 중..." : "결제처리"}
+                    </button>
+                  </div>
+                )}
 
               {error && <p className="fx-form-error-text">{error}</p>}
 
