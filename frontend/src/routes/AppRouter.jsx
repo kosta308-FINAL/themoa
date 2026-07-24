@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "../features/landing/LandingPage";
 import LoginPage from "../features/auth/LoginPage";
 import SignupPage from "../features/auth/SignupPage";
@@ -46,6 +46,13 @@ function AppRouter() {
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="products" element={<ProductsPage />} />
             <Route path="products/search" element={<FinancialSearchPage />} />
+            {/* 가입 예·적금 관리는 마이페이지 탭으로 통합됨 — 구 경로는 리다이렉트 */}
+            <Route
+              path="products/subscriptions"
+              element={
+                <Navigate to="/dashboard/mypage?tab=subscriptions" replace />
+              }
+            />
             <Route path="policy" element={<PolicyPage />} />
             <Route path="spending" element={<SpendingGuidePage />} />
             <Route

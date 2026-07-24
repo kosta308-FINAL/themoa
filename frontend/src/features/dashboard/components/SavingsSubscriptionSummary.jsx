@@ -53,12 +53,19 @@ function SavingsSubscriptionSummary() {
     (sum, item) => sum + (Number(item.expectedMaturityAmount) || 0),
     0,
   );
+  const totalCurrent = items.reduce(
+    (sum, item) => sum + (Number(item.currentValue) || 0),
+    0,
+  );
 
   return (
     <div className="widget-panel">
       <div className="widget-panel-header">
         <h3>가입한 예·적금</h3>
-        <Link to="/dashboard/mypage" className="sub-summary-manage">
+        <Link
+          to="/dashboard/mypage?tab=subscriptions"
+          className="sub-summary-manage"
+        >
           관리
         </Link>
       </div>
@@ -80,9 +87,15 @@ function SavingsSubscriptionSummary() {
 
       {!loading && !error && items.length > 0 && (
         <>
-          <div className="sub-summary-total">
-            <span>만기 예상 합계</span>
-            <strong>{won(totalMaturity)}</strong>
+          <div className="sub-summary-totals">
+            <div className="sub-summary-total sub-summary-total-current">
+              <span>현재 평가 합계</span>
+              <strong>{won(totalCurrent)}</strong>
+            </div>
+            <div className="sub-summary-total">
+              <span>만기 예상 합계</span>
+              <strong>{won(totalMaturity)}</strong>
+            </div>
           </div>
           <ul className="sub-summary-list">
             {items.slice(0, 3).map((item) => (
@@ -95,7 +108,10 @@ function SavingsSubscriptionSummary() {
                   </p>
                 </div>
                 <div className="sub-summary-item-side">
-                  <strong>{won(item.expectedMaturityAmount)}</strong>
+                  <span className="sub-summary-current">
+                    현재 {won(item.currentValue)}
+                  </span>
+                  <strong>만기 {won(item.expectedMaturityAmount)}</strong>
                   {item.unmetConditionCount > 0 && (
                     <span className="sub-summary-warn">
                       우대 {item.unmetConditionCount}개 미충족
@@ -106,7 +122,10 @@ function SavingsSubscriptionSummary() {
             ))}
           </ul>
           {items.length > 3 && (
-            <Link to="/dashboard/mypage" className="sub-summary-more">
+            <Link
+              to="/dashboard/mypage?tab=subscriptions"
+              className="sub-summary-more"
+            >
               +{items.length - 3}개 더 보기
             </Link>
           )}
