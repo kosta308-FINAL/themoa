@@ -5,8 +5,10 @@ const policyLocalToolsEnabled =
   import.meta.env.DEV && import.meta.env.VITE_POLICY_LOCAL_TOOLS_ENABLED === 'true'
 const localPolicyRequestConfig = policyLocalToolsEnabled ? { skipAuth: true } : undefined
 
-export const searchPolicies = ({ query, page = 0, size = 10 }) =>
-  axiosInstance.post('/api/policies/search', { query, page, size }, localPolicyRequestConfig).then(responseData)
+export const searchPolicies = ({ query, resultSize, page = 0, size = 10 }) =>
+  axiosInstance
+    .post('/api/policies/search', { query, resultSize, page, size }, localPolicyRequestConfig)
+    .then(responseData)
 
 export const getPolicyDetail = (policyId) =>
   axiosInstance.get(`/api/policies/${policyId}`, localPolicyRequestConfig).then(responseData)

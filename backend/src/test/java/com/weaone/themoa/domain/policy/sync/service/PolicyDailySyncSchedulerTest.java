@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.policy.sync.service;
 
 import com.weaone.themoa.domain.datarefresh.service.DataRefreshStatusService;
 import com.weaone.themoa.domain.policy.policy.service.PolicyCollectionExecutionType;
+import com.weaone.themoa.domain.policy.recommendation.service.PolicyRecommendationBatchService;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.task.SyncTaskExecutor;
 
@@ -15,6 +16,7 @@ class PolicyDailySyncSchedulerTest {
     private final PolicySyncExecutionGuard executionGuard = mock(PolicySyncExecutionGuard.class);
     private final PolicySyncPipelineService pipelineService = mock(PolicySyncPipelineService.class);
     private final DataRefreshStatusService dataRefreshStatusService = mock(DataRefreshStatusService.class);
+    private final PolicyRecommendationBatchService recommendationBatchService = mock(PolicyRecommendationBatchService.class);
 
     @Test
     void successfulAcquireRunsIncrementalScheduledPipeline() {
@@ -70,7 +72,8 @@ class PolicyDailySyncSchedulerTest {
                 executionGuard,
                 pipelineService,
                 new SyncTaskExecutor(),
-                dataRefreshStatusService
+                dataRefreshStatusService,
+                recommendationBatchService
         );
     }
 }

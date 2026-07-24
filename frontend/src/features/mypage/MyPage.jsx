@@ -18,6 +18,7 @@ import ComingSoonCard from "./components/ComingSoonCard";
 import PolicyBookmarksCard from "./components/PolicyBookmarksCard";
 import FinancialBookmarksCard from "./components/FinancialBookmarksCard";
 import SavingsSubscriptionsCard from "./components/SavingsSubscriptionsCard";
+import PolicyRecommendationProfileCard from "./components/PolicyRecommendationProfileCard";
 import {
   ENTRY_MODE_LABELS,
   INCOME_TYPE_LABELS,
@@ -213,6 +214,7 @@ function MyPage() {
                     savingsTargetAmount={myPage.savingsTargetAmount}
                     onSaved={handleDataSaved}
                   />
+                  <PolicyRecommendationProfileCard onSaved={showToast} />
                 </div>
               )}
 

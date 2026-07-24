@@ -16,6 +16,7 @@ import com.weaone.themoa.domain.policy.rag.service.PolicyEmbeddingService;
 import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndex;
 import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndexBuilder;
 import com.weaone.themoa.domain.policy.rag.service.PolicySearchProjectionService;
+import com.weaone.themoa.domain.policy.recommendation.service.PolicyRecommendationBatchService;
 import com.weaone.themoa.domain.policy.region.service.RegionSynchronizationService;
 import com.weaone.themoa.domain.policy.sync.service.PolicySyncExecutionGuard;
 import com.weaone.themoa.domain.policy.sync.service.PolicySyncMode;
@@ -31,6 +32,7 @@ import java.util.function.Consumer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -46,6 +48,7 @@ class AdminJobServiceTest {
     private final RegionCodeRepository regionCodeRepository = mock(RegionCodeRepository.class);
     private final PolicySyncPipelineService policySyncPipelineService = mock(PolicySyncPipelineService.class);
     private final PolicySyncExecutionGuard policySyncExecutionGuard = mock(PolicySyncExecutionGuard.class);
+    private final PolicyRecommendationBatchService recommendationBatchService = mock(PolicyRecommendationBatchService.class);
 
     @Test
     void searchProjectionRebuildRefreshesLexicalIndexAndCompletes() {
@@ -90,6 +93,7 @@ class AdminJobServiceTest {
         assertThat(status.message()).contains("POLICY_SYNC_COMPLETED", "queuedEmbeddingCount=12");
         verify(policySyncPipelineService).synchronize(eq(PolicySyncMode.INCREMENTAL), eq(PolicyCollectionExecutionType.MANUAL),
                 anyJobProgressConsumer());
+        verify(recommendationBatchService).refreshAllProfiles();
         verify(policySyncExecutionGuard).release();
     }
 
@@ -105,6 +109,21 @@ class AdminJobServiceTest {
         assertThat(status.message()).contains("FULL_REINDEX_COMPLETED");
         verify(policySyncPipelineService).synchronize(eq(PolicySyncMode.FULL_REINDEX), eq(PolicyCollectionExecutionType.MANUAL),
                 anyJobProgressConsumer());
+        verify(recommendationBatchService).refreshAllProfiles();
+        verify(policySyncExecutionGuard).release();
+    }
+
+    @Test
+    void policyRecommendationBatchFailureDoesNotFailPolicySyncJob() {
+        allowJobStart();
+        when(policySyncPipelineService.synchronize(eq(PolicySyncMode.INCREMENTAL), eq(PolicyCollectionExecutionType.MANUAL),
+                anyJobProgressConsumer())).thenReturn(syncResult(0));
+        doThrow(new IllegalStateException("batch failed")).when(recommendationBatchService).refreshAllProfiles();
+
+        AdminJobStatus status = service().start("POLICY_SYNC");
+
+        assertThat(status.status()).isEqualTo("COMPLETED");
+        assertThat(status.message()).contains("POLICY_SYNC_COMPLETED");
         verify(policySyncExecutionGuard).release();
     }
 
@@ -179,7 +198,7 @@ class AdminJobServiceTest {
     private AdminJobService service() {
         return new AdminJobService(collectionService, embeddingService, regionRebuildService, regionSynchronizationService,
                 projectionService, lexicalIndexBuilder, regionCodeRepository,
-                policySyncPipelineService, policySyncExecutionGuard, new SyncTaskExecutor());
+                policySyncPipelineService, policySyncExecutionGuard, recommendationBatchService, new SyncTaskExecutor());
     }
 
     private PolicySyncPipelineResult syncResult(int embeddingFailedCount) {

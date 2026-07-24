@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { getPolicyDetail, searchPolicies } from '../../../api/policyApi'
 
+const POLICY_PAGE_SIZE = 10
+const POLICY_SEARCH_RESULT_LIMIT = 50
+
 const errorMessage = (error) => {
   const code = error?.response?.data?.code
   if (code === 'POLICY_SEARCH_NOT_READY') {
@@ -19,32 +22,56 @@ export const usePolicySearch = (initialQuery) => {
   const [error, setError] = useState('')
   const detailRequestIdRef = useRef(0)
 
-  const results = result?.results || []
+  const allResults = useMemo(() => result?.results || [], [result])
+  const totalPages = useMemo(() => Math.ceil(allResults.length / POLICY_PAGE_SIZE), [allResults.length])
+  const results = useMemo(() => {
+    const start = page * POLICY_PAGE_SIZE
+    return allResults.slice(start, start + POLICY_PAGE_SIZE)
+  }, [allResults, page])
+  const hasPreviousPage = page > 0
+  const hasNextPage = page + 1 < totalPages
   const totalText = useMemo(() => {
     if (!result) return '검색 전'
-    return `${result.totalMatched ?? results.length}건`
-  }, [result, results.length])
+    return `${result.totalMatched ?? allResults.length}건`
+  }, [allResults.length, result])
 
-  const runSearch = async (nextPage = 0) => {
+  const runSearch = async () => {
     if (!query.trim()) {
       setError('검색어를 입력하세요.')
       return
     }
     detailRequestIdRef.current += 1
+    setPage(0)
     setLoading(true)
     setError('')
     setSelected(null)
     setDetailLoading(false)
     try {
-      const data = await searchPolicies({ query: query.trim(), page: nextPage, size: 10 })
+      const data = await searchPolicies({
+        query: query.trim(),
+        resultSize: POLICY_SEARCH_RESULT_LIMIT,
+        page: 0,
+        size: POLICY_SEARCH_RESULT_LIMIT,
+      })
       setResult(data)
-      setPage(nextPage)
     } catch (searchError) {
       setResult(null)
+      setPage(0)
       setError(errorMessage(searchError))
     } finally {
       setLoading(false)
     }
+  }
+
+  const changePage = (nextPage) => {
+    if (nextPage < 0 || nextPage >= totalPages) {
+      return
+    }
+
+    detailRequestIdRef.current += 1
+    setPage(nextPage)
+    setSelected(null)
+    setDetailLoading(false)
   }
 
   const openDetail = async (policyId) => {
@@ -83,7 +110,11 @@ export const usePolicySearch = (initialQuery) => {
     detailLoading,
     error,
     totalText,
+    totalPages,
+    hasNextPage,
+    hasPreviousPage,
     runSearch,
+    changePage,
     openDetail,
   }
 }
