@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import DashboardIcon from "../../../components/common/DashboardIcon";
+import HourPicker from "../../../components/common/HourPicker";
 import {
   getSpendingGuideSummary,
   setupSpendingGuide,
@@ -9,6 +10,16 @@ import {
   updateWorkSchedule,
 } from "../../../api/spendingGuideApi";
 import { getApiErrorMessage } from "../../../utils/apiError";
+import {
+  AVG_WEEKS_PER_MONTH,
+  TAX_OPTIONS,
+  estimateNetPay,
+  formatHourLabel,
+  parseDecimalHours,
+  roundToThousand,
+  withHour,
+  withMinute,
+} from "../../../utils/workScheduleEstimate";
 import { WON, toNumber } from "../mypageUtils";
 
 const WEEKDAYS = [
@@ -21,8 +32,6 @@ const WEEKDAYS = [
   { value: "SUNDAY", label: "일" },
 ];
 
-const AVG_WEEKS_PER_MONTH = 4.345;
-
 const digits = (value) => value.replace(/\D/g, "").slice(0, 12);
 
 function IncomeSettingsModal({ profile, onClose, onSaved }) {
@@ -34,6 +43,8 @@ function IncomeSettingsModal({ profile, onClose, onSaved }) {
     String(toNumber(profile.hourlyWage)),
   );
   const [workSchedule, setWorkSchedule] = useState([]);
+  const [taxType, setTaxType] = useState("INSURANCE");
+  const [openHourDay, setOpenHourDay] = useState(null);
   const [payday, setPayday] = useState(String(profile.payday || ""));
   const [pendingPayday, setPendingPayday] = useState(null);
   const [applyFrom, setApplyFrom] = useState("CURRENT_CYCLE");
@@ -78,17 +89,32 @@ function IncomeSettingsModal({ profile, onClose, onSaved }) {
   const setDayHours = (dayOfWeek, hours) => {
     setWorkSchedule(
       workSchedule.map((item) =>
-        item.dayOfWeek === dayOfWeek
-          ? { ...item, hours: digits(hours).slice(0, 2) }
-          : item,
+        item.dayOfWeek === dayOfWeek ? { ...item, hours } : item,
       ),
     );
   };
 
-  const monthlyEstimate = Math.round(
+  const setDayHour = (dayOfWeek, currentHours, hour) =>
+    setDayHours(dayOfWeek, withHour(currentHours, hour));
+
+  const setDayMinute = (dayOfWeek, currentHours, minute) =>
+    setDayHours(dayOfWeek, withMinute(currentHours, minute));
+
+  const hasIncompleteHours =
+    isHourly &&
+    (workSchedule.length === 0 ||
+      workSchedule.some((item) => !toNumber(item.hours)));
+
+  const grossEstimate = roundToThousand(
     workSchedule.reduce((sum, item) => sum + toNumber(item.hours), 0) *
       toNumber(hourlyWage) *
       AVG_WEEKS_PER_MONTH,
+  );
+  const netEstimate = estimateNetPay(
+    workSchedule.reduce((sum, item) => sum + toNumber(item.hours), 0) *
+      toNumber(hourlyWage) *
+      AVG_WEEKS_PER_MONTH,
+    taxType,
   );
 
   const handleSubmit = async (event) => {
@@ -261,32 +287,93 @@ function IncomeSettingsModal({ profile, onClose, onSaved }) {
                         workSchedule.some(
                           (item) => item.dayOfWeek === day.value,
                         ),
-                      ).map((day) => (
-                        <li key={day.value}>
-                          <span>{day.label}요일</span>
-                          <input
-                            inputMode="numeric"
-                            value={
-                              workSchedule.find(
-                                (item) => item.dayOfWeek === day.value,
-                              )?.hours || ""
-                            }
-                            onChange={(event) =>
-                              setDayHours(day.value, event.target.value)
-                            }
-                            placeholder="0"
-                            required
-                          />
-                          <em>시간</em>
-                        </li>
-                      ))}
+                      ).map((day) => {
+                        const currentHours = workSchedule.find(
+                          (item) => item.dayOfWeek === day.value,
+                        )?.hours;
+                        const { minute } = parseDecimalHours(currentHours);
+                        return (
+                          <li key={day.value}>
+                            <span>{day.label}요일</span>
+                            <div className="mp-hour-field">
+                              <button
+                                type="button"
+                                className="mp-hour-trigger"
+                                aria-expanded={openHourDay === day.value}
+                                onClick={() =>
+                                  setOpenHourDay((current) =>
+                                    current === day.value ? null : day.value,
+                                  )
+                                }
+                              >
+                                {formatHourLabel(currentHours)}
+                                <DashboardIcon name="chevron-down" size={13} />
+                              </button>
+                              {openHourDay === day.value && (
+                                <HourPicker
+                                  value={currentHours}
+                                  onChange={(hour) =>
+                                    setDayHour(day.value, currentHours, hour)
+                                  }
+                                  onClose={() => setOpenHourDay(null)}
+                                />
+                              )}
+                            </div>
+                            <div className="mp-minute-toggle">
+                              <button
+                                type="button"
+                                className={minute === 0 ? "selected" : ""}
+                                onClick={() =>
+                                  setDayMinute(day.value, currentHours, 0)
+                                }
+                              >
+                                0분
+                              </button>
+                              <button
+                                type="button"
+                                className={minute === 30 ? "selected" : ""}
+                                onClick={() =>
+                                  setDayMinute(day.value, currentHours, 30)
+                                }
+                              >
+                                30분
+                              </button>
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
-                  {monthlyEstimate > 0 && (
-                    <p className="mp-weekday-estimate">
-                      <DashboardIcon name="info" size={13} />이 스케줄이면 매달
-                      약 {WON.format(monthlyEstimate)}원(참고용)
-                    </p>
+                  <div className="mp-weekday-tax">
+                    <span>예상 공제 *</span>
+                    <div className="mp-segmented-toggle">
+                      {TAX_OPTIONS.map((option) => (
+                        <button
+                          type="button"
+                          key={option.value}
+                          className={taxType === option.value ? "selected" : ""}
+                          onClick={() => setTaxType(option.value)}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {grossEstimate > 0 && (
+                    <div className="mp-weekday-estimate-block">
+                      <p className="mp-weekday-estimate">
+                        <DashboardIcon name="info" size={13} />이 스케줄이면
+                        이번 주기 약 {WON.format(netEstimate)}원 받아요 (세전{" "}
+                        {WON.format(grossEstimate)}원 ·{" "}
+                        {TAX_OPTIONS.find((o) => o.value === taxType)?.label}{" "}
+                        적용)
+                      </p>
+                      <p className="mp-weekday-estimate-note">
+                        1,000원 단위 근사치예요. 주휴수당 등은 반영하지 않으니,
+                        정확한 금액은 실제 입금 후 수입 내역에서 직접
+                        조정해주세요.
+                      </p>
+                    </div>
                   )}
                 </div>
               </>
@@ -337,7 +424,7 @@ function IncomeSettingsModal({ profile, onClose, onSaved }) {
             <button
               type="submit"
               className="mp-primary-button"
-              disabled={isSubmitting}
+              disabled={isSubmitting || hasIncompleteHours}
             >
               {isSubmitting ? "저장 중..." : "저장하기"}
             </button>
