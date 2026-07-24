@@ -3,6 +3,8 @@ import {
   getConditionCache,
   getConditionReviewList,
   refreshConditionCache,
+  reparseConditionCache,
+  searchConditionProducts,
   updateConditionCache,
 } from "../../../api/financialAdminApi";
 import { getApiErrorMessage } from "../../../utils/apiError";
@@ -26,6 +28,10 @@ export const usePreferentialConditions = () => {
   const [lookupBusy, setLookupBusy] = useState(false);
   const [lookupError, setLookupError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [reparsing, setReparsing] = useState(false);
+
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -51,6 +57,41 @@ export const usePreferentialConditions = () => {
       active = false;
     };
   }, []);
+
+  // 첫 진입 시 keyword 없이 전체 대상 상품을 한 번 받아온다.
+  useEffect(() => {
+    let active = true;
+    searchConditionProducts("")
+      .then((data) => {
+        if (active) {
+          setProducts(data || []);
+        }
+      })
+      .catch(() => {
+        // 상품 목록을 못 받아와도 ID 직접 입력 조회는 그대로 동작하므로 조용히 넘어간다.
+      })
+      .finally(() => {
+        if (active) {
+          setProductsLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const searchProducts = async (keyword) => {
+    setProductsLoading(true);
+    try {
+      setProducts((await searchConditionProducts(keyword)) || []);
+    } catch (searchError) {
+      setLookupError(
+        getApiErrorMessage(searchError, "상품 검색에 실패했어요."),
+      );
+    } finally {
+      setProductsLoading(false);
+    }
+  };
 
   const reloadReview = async () => {
     setReviewItems((await getConditionReviewList()) || []);
@@ -91,6 +132,26 @@ export const usePreferentialConditions = () => {
     }
   };
 
+  // 최신 원문으로 재파싱한 초안 항목을 받아 반환한다(저장은 별도 PUT). 실패 시 null.
+  const reparse = async (productId) => {
+    if (reparsing) {
+      return null;
+    }
+    setReparsing(true);
+    setLookupError("");
+    try {
+      const items = await reparseConditionCache(productId);
+      return items || [];
+    } catch (reparseError) {
+      setLookupError(
+        getApiErrorMessage(reparseError, "최신 원문 재파싱에 실패했어요."),
+      );
+      return null;
+    } finally {
+      setReparsing(false);
+    }
+  };
+
   const save = async (productId, items) => {
     setSaving(true);
     setLookupError("");
@@ -119,7 +180,12 @@ export const usePreferentialConditions = () => {
     lookupBusy,
     lookupError,
     saving,
+    reparsing,
     lookup,
+    reparse,
     save,
+    products,
+    productsLoading,
+    searchProducts,
   };
 };

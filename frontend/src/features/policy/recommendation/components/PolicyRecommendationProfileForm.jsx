@@ -17,9 +17,12 @@ function PolicyRecommendationProfileForm({
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
-    setSido(profile?.residenceSido || "");
-    setSigungu(profile?.residenceSigungu || "");
-    setEmploymentStatus(profile?.employmentStatus || "");
+    const timer = setTimeout(() => {
+      setSido(profile?.residenceSido || "");
+      setSigungu(profile?.residenceSigungu || "");
+      setEmploymentStatus(profile?.employmentStatus || "");
+    }, 0);
+    return () => clearTimeout(timer);
   }, [profile]);
 
   const selectedRegion = useMemo(

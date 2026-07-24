@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import DashboardIcon from "./DashboardIcon";
 import "./CalendarPopover.css";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 const pad = (n) => String(n).padStart(2, "0");
 const toIso = (year, month, day) => `${year}-${pad(month)}-${pad(day)}`;
@@ -35,6 +36,8 @@ function CalendarPopover({
   const [maxYear, maxMonth] = max.split("-").map(Number);
   const [viewYear, setViewYear] = useState(selYear);
   const [viewMonth, setViewMonth] = useState(selMonth);
+  const [openField, setOpenField] = useState(null); // "year" | "month" | null
+  const yearListRef = useRef(null);
 
   const days = buildCalendarDays(viewYear, viewMonth);
   const yearFloor = minYear ?? maxYear - 5;
@@ -43,6 +46,16 @@ function CalendarPopover({
     (_, i) => yearFloor + i,
   );
   const isAtMaxMonth = viewYear === maxYear && viewMonth === maxMonth;
+
+  useEffect(() => {
+    if (openField !== "year") return;
+    const frame = requestAnimationFrame(() => {
+      yearListRef.current
+        ?.querySelector(".selected")
+        ?.scrollIntoView({ block: "center" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [openField]);
 
   const changeMonth = (delta) => {
     let nextMonth = viewMonth + delta;
@@ -94,28 +107,77 @@ function CalendarPopover({
               <DashboardIcon name="chevron-left" size={16} />
             </button>
             <div className="calendar-popover-selects">
-              <select
-                value={viewYear}
-                onChange={(event) => setViewYear(Number(event.target.value))}
-                aria-label="연도 선택"
-              >
-                {yearOptions.map((year) => (
-                  <option key={year} value={year}>
-                    {year}년
-                  </option>
-                ))}
-              </select>
-              <select
-                value={viewMonth}
-                onChange={(event) => setViewMonth(Number(event.target.value))}
-                aria-label="월 선택"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                  <option key={month} value={month}>
-                    {month}월
-                  </option>
-                ))}
-              </select>
+              <div className="calendar-popover-select">
+                <button
+                  type="button"
+                  className="calendar-popover-select-trigger"
+                  aria-expanded={openField === "year"}
+                  onClick={() =>
+                    setOpenField((field) => (field === "year" ? null : "year"))
+                  }
+                >
+                  {viewYear}년
+                  <DashboardIcon name="chevron-down" size={13} />
+                </button>
+                {openField === "year" && (
+                  <ul
+                    className="calendar-popover-select-dropdown"
+                    role="listbox"
+                    ref={yearListRef}
+                  >
+                    {yearOptions.map((year) => (
+                      <li key={year}>
+                        <button
+                          type="button"
+                          className={year === viewYear ? "selected" : ""}
+                          onClick={() => {
+                            setViewYear(year);
+                            setOpenField(null);
+                          }}
+                        >
+                          {year}년
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="calendar-popover-select">
+                <button
+                  type="button"
+                  className="calendar-popover-select-trigger"
+                  aria-expanded={openField === "month"}
+                  onClick={() =>
+                    setOpenField((field) =>
+                      field === "month" ? null : "month",
+                    )
+                  }
+                >
+                  {viewMonth}월
+                  <DashboardIcon name="chevron-down" size={13} />
+                </button>
+                {openField === "month" && (
+                  <ul
+                    className="calendar-popover-select-dropdown"
+                    role="listbox"
+                  >
+                    {MONTHS.map((month) => (
+                      <li key={month}>
+                        <button
+                          type="button"
+                          className={month === viewMonth ? "selected" : ""}
+                          onClick={() => {
+                            setViewMonth(month);
+                            setOpenField(null);
+                          }}
+                        >
+                          {month}월
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
             <button
               type="button"

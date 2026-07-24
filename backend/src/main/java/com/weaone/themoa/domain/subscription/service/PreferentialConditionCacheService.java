@@ -3,6 +3,7 @@ package com.weaone.themoa.domain.subscription.service;
 import com.weaone.themoa.domain.financialsearch.service.BankNameFormatter;
 import com.weaone.themoa.domain.recommend.repository.SavingsProductRepository;
 import com.weaone.themoa.domain.recommend.repository.SavingsProductRepository.ProductConditionSummaryView;
+import com.weaone.themoa.domain.subscription.dto.response.PreferentialConditionCacheResponse;
 import com.weaone.themoa.domain.subscription.dto.response.ProductConditionSummaryResponse;
 import com.weaone.themoa.domain.subscription.entity.PreferentialConditionCache;
 import com.weaone.themoa.domain.subscription.entity.PreferentialConditionCache.ParsedItem;
@@ -148,6 +149,20 @@ public class PreferentialConditionCacheService {
     @Transactional(readOnly = true)
     public List<PreferentialConditionCache> findStaleForReview() {
         return cacheRepository.findByStaleTrue();
+    }
+
+    /**
+     * 관리자 재검토용: 상품의 <b>최신 원문</b>을 지금 다시 파싱해 초안만 돌려준다(저장하지 않음).
+     * 관리자가 이 초안을 손봐서 {@link #updateManually}로 저장하면 잠금·stale이 정리된다.
+     */
+    @Transactional(readOnly = true)
+    public List<PreferentialConditionCacheResponse.Item> reparse(Long productId) {
+        return savingsProductRepository.findById(productId)
+                .map(product -> parse(product.getSpecialCondition()))
+                .orElse(List.of())
+                .stream()
+                .map(item -> new PreferentialConditionCacheResponse.Item(item.description(), item.rateBonus()))
+                .toList();
     }
 
     @Transactional(readOnly = true)

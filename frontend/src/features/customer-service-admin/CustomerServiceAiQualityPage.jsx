@@ -109,16 +109,19 @@ function CustomerServiceAiQualityPage() {
   };
 
   useEffect(() => {
-    Promise.all([loadSettings(), loadDocuments(), loadMetadataOptions()]).catch(
-      (requestError) => {
-        setError(
-          getApiErrorMessage(
-            requestError,
-            "AI 품질관리 정보를 불러오지 못했어요.",
-          ),
-        );
-      },
-    );
+    const timer = setTimeout(() => {
+      Promise.all([loadSettings(), loadDocuments(), loadMetadataOptions()]).catch(
+        (requestError) => {
+          setError(
+            getApiErrorMessage(
+              requestError,
+              "AI 품질관리 정보를 불러오지 못했어요.",
+            ),
+          );
+        },
+      );
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {

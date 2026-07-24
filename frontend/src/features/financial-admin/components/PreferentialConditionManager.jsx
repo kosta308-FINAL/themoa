@@ -42,14 +42,20 @@ function StatusBadges({ cache }) {
 function PreferentialConditionManager() {
   const conditions = usePreferentialConditions();
   const [productIdInput, setProductIdInput] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [editItems, setEditItems] = useState(null);
   const [saved, setSaved] = useState(false);
 
-  // 조회한 캐시의 항목을 편집용 복사본으로 옮긴다(원본을 직접 건드리지 않도록).
-  const loadIntoEditor = (cache) => {
+  const handleSearch = (event) => {
+    event.preventDefault();
+    conditions.searchProducts(searchInput.trim());
+  };
+
+  // 항목 배열을 편집용 복사본으로 옮긴다(원본을 직접 건드리지 않도록).
+  const fillEditor = (items) => {
     setSaved(false);
     setEditItems(
-      (cache?.items || []).map((item) => ({
+      (items || []).map((item) => ({
         description: item.description || "",
         rateBonus: item.rateBonus ?? 0,
       })),
@@ -64,7 +70,7 @@ function PreferentialConditionManager() {
     }
     const cache = await conditions.lookup(id);
     if (cache) {
-      loadIntoEditor(cache);
+      fillEditor(cache.items);
     } else {
       setEditItems(null);
     }
@@ -74,7 +80,25 @@ function PreferentialConditionManager() {
     setProductIdInput(String(productId));
     const cache = await conditions.lookup(productId);
     if (cache) {
-      loadIntoEditor(cache);
+      fillEditor(cache.items);
+    }
+  };
+
+  // 재검토 목록에서: 상세(뱃지·시각)를 불러오면서 최신 원문 재파싱 초안을 편집기에 채운다.
+  const handleReparse = async (productId) => {
+    setProductIdInput(String(productId));
+    await conditions.lookup(productId);
+    const items = await conditions.reparse(productId);
+    if (items) {
+      fillEditor(items);
+    }
+  };
+
+  // 편집기에서: 현재 조회한 상품을 최신 원문으로 다시 파싱해 항목을 교체한다.
+  const handleReparseCurrent = async () => {
+    const items = await conditions.reparse(conditions.detail.productId);
+    if (items) {
+      fillEditor(items);
     }
   };
 
@@ -173,6 +197,16 @@ function PreferentialConditionManager() {
                       </span>
                       <button
                         type="button"
+                        className="admin-btn fa-btn-primary"
+                        disabled={conditions.reparsing}
+                        onClick={() => handleReparse(cache.productId)}
+                      >
+                        {conditions.reparsing
+                          ? "재파싱 중…"
+                          : "최신 원문 재파싱"}
+                      </button>
+                      <button
+                        type="button"
                         className="admin-btn admin-btn-secondary"
                         onClick={() => handleReviewEdit(cache.productId)}
                       >
@@ -204,10 +238,69 @@ function PreferentialConditionManager() {
           <div>
             <h2>상품별 우대조건 수정</h2>
             <p>
-              상품 ID로 캐시를 조회해 항목을 직접 고치고 저장합니다. 저장하면
-              잠금 처리되어 이후 배치가 덮어쓰지 않습니다.
+              은행·상품명으로 검색해 고르거나 상품 ID로 조회해 항목을 고치고
+              저장합니다. 저장하면 잠금 처리되어 이후 배치가 덮어쓰지 않습니다.
             </p>
           </div>
+        </div>
+
+        <div className="pc-search">
+          <form className="pc-search-form" onSubmit={handleSearch}>
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="은행·상품명으로 검색 (비우면 전체)"
+            />
+            <button
+              type="submit"
+              className="admin-btn admin-btn-secondary"
+              disabled={conditions.productsLoading}
+            >
+              {conditions.productsLoading ? "검색 중…" : "검색"}
+            </button>
+          </form>
+
+          {conditions.productsLoading ? (
+            <p className="fa-note">상품 목록을 불러오고 있어요.</p>
+          ) : conditions.products.length === 0 ? (
+            <p className="fa-note">검색 결과가 없어요.</p>
+          ) : (
+            <ul className="pc-product-list">
+              {conditions.products.map((product) => (
+                <li key={product.productId}>
+                  <button
+                    type="button"
+                    className="pc-product-row"
+                    onClick={() => handleReviewEdit(product.productId)}
+                  >
+                    <span className="pc-product-main">
+                      <strong>{product.companyName}</strong> ·{" "}
+                      {product.productName}
+                    </span>
+                    <span className="pc-product-side">
+                      <span className="pc-product-count">
+                        조건 {product.itemCount}개
+                      </span>
+                      {product.editedByAdmin && (
+                        <span className="pc-badge pc-badge-lock">🔒 잠금</span>
+                      )}
+                      {product.stale && (
+                        <span className="pc-badge pc-badge-stale">
+                          ⚠️ 재검토
+                        </span>
+                      )}
+                      {product.itemCount === 0 && (
+                        <span className="pc-badge pc-badge-empty">
+                          조건없음
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <form className="pc-lookup" onSubmit={handleLookup}>
@@ -241,7 +334,21 @@ function PreferentialConditionManager() {
               <span className="pc-time">
                 {formatDateTime(conditions.detail.updatedAt)}
               </span>
+              <button
+                type="button"
+                className="admin-btn admin-btn-secondary pc-reparse"
+                disabled={conditions.reparsing}
+                onClick={handleReparseCurrent}
+              >
+                {conditions.reparsing ? "재파싱 중…" : "최신 원문으로 재파싱"}
+              </button>
             </div>
+
+            {conditions.reparsing && (
+              <div className="fa-alert fa-alert-info">
+                최신 원문을 LLM으로 다시 파싱하고 있어요. 잠시만 기다려 주세요.
+              </div>
+            )}
 
             {saved && (
               <div className="fa-note fa-note-done">

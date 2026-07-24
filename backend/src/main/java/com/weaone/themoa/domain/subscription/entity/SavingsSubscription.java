@@ -116,4 +116,15 @@ public class SavingsSubscription {
         this.conditions.add(condition);
         condition.assignTo(this);
     }
+
+    /** 가입 정보 수정(월납입·적용금리·기간·가입일·복리여부). 만기일은 가입일+기간으로 다시 계산한다. */
+    public void update(Long monthlyAmount, BigDecimal appliedRate, int termMonth,
+                       boolean compound, LocalDate startDate) {
+        this.monthlyAmount = monthlyAmount;
+        this.appliedRate = appliedRate;
+        this.termMonth = termMonth;
+        this.compound = compound;
+        this.startDate = startDate;
+        this.maturityDate = startDate.plusMonths(termMonth);
+    }
 }

@@ -1,6 +1,7 @@
-import PolicyResultCard from "../../components/PolicyResultCard";
+import { usePolicyBookmarks } from "../../hooks/usePolicyBookmarks";
 import PolicyRecommendationProfileForm from "./PolicyRecommendationProfileForm";
 import PolicyRecommendationProfileSummary from "./PolicyRecommendationProfileSummary";
+import PolicyRecommendationTile from "./PolicyRecommendationTile";
 
 function PolicyRecommendationSection({
   recommendation,
@@ -9,6 +10,7 @@ function PolicyRecommendationSection({
   onOpenDetail,
   selected,
 }) {
+  const bookmarks = usePolicyBookmarks();
   const {
     profile,
     recommendations,
@@ -114,19 +116,21 @@ function PolicyRecommendationSection({
             </div>
           )}
           {!recommendationError && recommendations?.items?.length > 0 && (
-            <div className="policy-recommendation-list">
+            <div className="policy-recommendation-grid">
               {recommendations.items.map((item) => (
-                <div className="policy-recommendation-item" key={item.policyId}>
-                  <PolicyResultCard
-                    item={item}
-                    active={selected?.policyId === item.policyId}
-                    onOpen={onOpenDetail}
-                  />
-                  <p className="policy-recommendation-reason">{item.matchReason}</p>
-                </div>
+                <PolicyRecommendationTile
+                  key={item.policyId}
+                  item={item}
+                  active={selected?.policyId === item.policyId}
+                  bookmarked={bookmarks.isBookmarked(item.policyId)}
+                  bookmarkBusy={bookmarks.loading || bookmarks.busyPolicyId === item.policyId}
+                  onBookmarkToggle={bookmarks.toggleBookmark}
+                  onOpenDetail={onOpenDetail}
+                />
               ))}
             </div>
           )}
+          {bookmarks.error && <p className="policy-bookmark-error">{bookmarks.error}</p>}
         </>
       )}
     </section>

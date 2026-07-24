@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -43,7 +44,9 @@ public class FixedExpenseCoachingCandidateExtractionService {
     }
 
     private FixedExpenseCoachingCandidate toCandidate(FixedExpense fixedExpense) {
-        BigDecimal monthlyAmount = fixedExpense.getExpectedAmountKrw();
+        // 환율 변환으로 소수점이 붙은 원화 금액을 그대로 넘기면 LLM이 문구에 그 소수점까지 echo한다 —
+        // 원 단위는 소수점이 없는 게 자연스러워 여기서 정수로 반올림해 넘긴다.
+        BigDecimal monthlyAmount = fixedExpense.getExpectedAmountKrw().setScale(0, RoundingMode.HALF_UP);
         BigDecimal annualAmount = monthlyAmount.multiply(BigDecimal.valueOf(ANNUAL_MONTHS));
         return new FixedExpenseCoachingCandidate(fixedExpense.getId(), fixedExpense.getName(),
                 fixedExpense.getCategory().getName(), monthlyAmount, annualAmount);

@@ -3,6 +3,7 @@ package com.weaone.themoa.domain.subscription.controller;
 import com.weaone.themoa.common.response.ApiResponse;
 import com.weaone.themoa.domain.subscription.dto.request.ConditionMetUpdateRequest;
 import com.weaone.themoa.domain.subscription.dto.request.SubscriptionCreateRequest;
+import com.weaone.themoa.domain.subscription.dto.request.SubscriptionUpdateRequest;
 import com.weaone.themoa.domain.subscription.dto.response.SubscriptionDraftResponse;
 import com.weaone.themoa.domain.subscription.dto.response.SubscriptionResponse;
 import com.weaone.themoa.domain.subscription.service.SavingsSubscriptionService;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -65,6 +67,16 @@ public class SavingsSubscriptionController {
             @PathVariable Long conditionId,
             @Valid @RequestBody ConditionMetUpdateRequest request) {
         subscriptionService.updateConditionMet(memberId, conditionId, request.met());
+        return ResponseEntity.noContent().build();
+    }
+
+    /** 가입 정보 수정(월납입·적용금리·기간·가입일). 우대조건 토글은 별도 PATCH 사용. */
+    @PutMapping("/{subscriptionId}")
+    public ResponseEntity<Void> update(
+            @AuthenticationPrincipal Long memberId,
+            @PathVariable Long subscriptionId,
+            @Valid @RequestBody SubscriptionUpdateRequest request) {
+        subscriptionService.update(memberId, subscriptionId, request);
         return ResponseEntity.noContent().build();
     }
 
