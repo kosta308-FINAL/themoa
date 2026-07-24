@@ -181,6 +181,7 @@ function FixedExpensePage() {
   const salaryAmount = toNumber(salarySummary?.salaryAmount);
   const totalExpected = toNumber(expenseList?.totalExpectedAmountKrw);
   const ratio = salaryAmount > 0 ? (totalExpected / salaryAmount) * 100 : null;
+  const remaining = salaryAmount - totalExpected;
 
   return (
     <div className="fixed-expense">
@@ -251,7 +252,10 @@ function FixedExpensePage() {
                 {ratio !== null ? (
                   <>
                     <div className="fx-salary-head">
-                      <span>급여 대비 고정지출</span>
+                      <span>
+                        <DashboardIcon name="wallet" size={15} />
+                        급여 대비 고정지출
+                      </span>
                       <strong>{ratio.toFixed(1)}%</strong>
                     </div>
                     <span className="fx-salary-base">
@@ -274,6 +278,14 @@ function FixedExpensePage() {
                       급여 중 {formatWon(totalExpected)}이 고정지출로 먼저
                       나가요.
                     </p>
+                    <div className="fx-salary-remaining">
+                      <span>
+                        {remaining >= 0
+                          ? "고정지출 제외 후 남는 급여"
+                          : "급여보다 많은 고정지출"}
+                      </span>
+                      <strong>{formatWon(Math.abs(remaining))}</strong>
+                    </div>
                   </>
                 ) : (
                   <div className="fx-salary-empty">
@@ -300,10 +312,6 @@ function FixedExpensePage() {
                   onReject={handleCandidateReject}
                   onReclassifyHabit={handleCandidateReclassifyHabit}
                 />
-                <FixedExpenseCoachingCards
-                  cards={coachingCards}
-                  onDismissed={reloadCoachingCards}
-                />
                 <FixedExpenseList
                   items={items}
                   filter={filter}
@@ -314,7 +322,13 @@ function FixedExpensePage() {
                   onRegisterNew={() => setRegisterState({ candidate: null })}
                 />
               </div>
-              <UpcomingPayments items={items} />
+              <div className="fx-side-col">
+                <UpcomingPayments items={items} />
+                <FixedExpenseCoachingCards
+                  cards={coachingCards}
+                  onDismissed={reloadCoachingCards}
+                />
+              </div>
             </div>
           </>
         )}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import DashboardIcon from "../../../components/common/DashboardIcon";
+import ServiceIcon from "./ServiceIcon";
 import { formatWon, serviceInitial, toneForId } from "../fixedExpenseUtils";
 
 const PAGE_SIZE = 2;
@@ -57,7 +58,7 @@ function FixedExpenseSuggestions({
     >
       <div className="fx-panel-head">
         <div className="fx-panel-title">
-          <span className="fx-panel-title-icon fx-tone-orange">
+          <span className="fx-panel-title-icon fx-tone-accent">
             <DashboardIcon name="sparkle" size={18} />
           </span>
           <div>
@@ -77,11 +78,9 @@ function FixedExpenseSuggestions({
               key={candidate.id}
             >
               <div className="fx-suggestion-top">
-                <span
-                  className={`fx-service-icon ${toneForId(candidate.recurringGroupId)}`}
-                >
+                <ServiceIcon tone={toneForId(candidate.recurringGroupId)}>
                   {serviceInitial(candidate.merchantAliasName)}
-                </span>
+                </ServiceIcon>
                 <div className="fx-service-info">
                   <strong>{candidate.merchantAliasName}</strong>
                   <span>

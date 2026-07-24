@@ -718,14 +718,14 @@
 .spending-coaching-list article > p {
   margin-top: 5px;
   color: var(--spending-muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.55;
 }
 .spending-coaching-list article > strong {
   display: block;
   margin-top: 8px;
   color: var(--spending-green-dark);
-  font-size: 11px;
+  font-size: 12px;
 }
 .spending-coaching-list article > div {
   display: flex;
@@ -1910,14 +1910,14 @@
   margin: 0;
   overflow-wrap: anywhere;
   color: var(--spending-muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
 }
 .spending-coaching-list article > strong {
   display: block;
   margin-top: 7px;
   color: var(--spending-green-dark);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.55;
 }
 .spending-coaching-list article > .spending-coach-actions {
@@ -3054,12 +3054,12 @@
   background: #fff7df;
 }
 .spending-guide .spending-candidate-list strong {
-  font-size: 11px;
+  font-size: 12px;
 }
 .spending-guide .spending-candidate-list p {
   margin-top: 2px;
   color: #96a29b;
-  font-size: 9px;
+  font-size: 10px;
   white-space: nowrap;
 }
 .spending-guide .spending-candidate-list a {

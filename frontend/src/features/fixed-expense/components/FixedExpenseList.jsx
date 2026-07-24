@@ -1,4 +1,5 @@
 import DashboardIcon from "../../../components/common/DashboardIcon";
+import ServiceIcon from "./ServiceIcon";
 import {
   formatAmount,
   METHOD_LABEL,
@@ -125,9 +126,9 @@ function FixedExpenseList({
                 key={item.id}
                 onClick={() => onSelect(item)}
               >
-                <span className={`fx-service-icon ${toneForId(item.id)}`}>
+                <ServiceIcon tone={toneForId(item.id)}>
                   {serviceInitial(item.merchantAliasName || item.name)}
-                </span>
+                </ServiceIcon>
                 <span className="fx-expense-info">
                   <span className="fx-expense-name">
                     <strong>{item.name}</strong>
