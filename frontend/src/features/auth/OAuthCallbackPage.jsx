@@ -7,10 +7,10 @@ import { isAdminAccessToken } from "../../utils/accessToken";
 import AuthLayout from "./components/AuthLayout";
 
 /**
- * 카카오 콜백(KakaoLoginSuccessHandler)이 리다이렉트하는 착지 페이지.
+ * 소셜(카카오·구글) 콜백(SocialLoginSuccessHandler)이 리다이렉트하는 착지 페이지.
  * 교환코드를 1회 소비해 기존 회원 로그인 또는 신규가입 분기를 이어받는다(auth.md §6·§8).
  */
-function KakaoCallbackPage() {
+function OAuthCallbackPage() {
   const [searchParams] = useSearchParams();
   const code = searchParams.get("code");
   const { login } = useAuth();
@@ -26,9 +26,13 @@ function KakaoCallbackPage() {
       .then((res) => {
         const data = res.data.data;
         if (data.requiresSignup) {
-          navigate("/oauth/kakao/signup", {
+          navigate("/oauth/signup", {
             replace: true,
-            state: { signupTicket: data.signupTicket, nickname: data.nickname },
+            state: {
+              signupTicket: data.signupTicket,
+              nickname: data.nickname,
+              email: data.email,
+            },
           });
           return;
         }
@@ -42,19 +46,19 @@ function KakaoCallbackPage() {
         setError(
           getApiErrorMessage(
             err,
-            "카카오 로그인 처리 중 문제가 생겼어요. 다시 시도해 주세요.",
+            "소셜 로그인 처리 중 문제가 생겼어요. 다시 시도해 주세요.",
           ),
         );
       });
   }, [code, login, navigate]);
 
   const displayError =
-    error || (!code ? "카카오 로그인 정보를 확인하지 못했어요." : "");
+    error || (!code ? "소셜 로그인 정보를 확인하지 못했어요." : "");
 
   return (
     <AuthLayout>
       <div className="auth-head">
-        <h2 className="auth-title">카카오 로그인</h2>
+        <h2 className="auth-title">소셜 로그인</h2>
       </div>
       {displayError ? (
         <>
@@ -76,4 +80,4 @@ function KakaoCallbackPage() {
   );
 }
 
-export default KakaoCallbackPage;
+export default OAuthCallbackPage;
