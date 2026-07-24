@@ -353,48 +353,6 @@
   overflow-y: auto;
 }
 
-.ela-ai-section {
-  margin-top: 22px;
-  border-top: 1px dashed var(--border);
-  padding-top: 16px;
-}
-
-.ela-ai-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.ela-ai-result {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: var(--bg-subtle);
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
-  margin-bottom: 14px;
-}
-
-.ela-ai-row {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 13px;
-}
-
-.ela-ai-row-label {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--text-secondary);
-}
-
-.ela-ai-meta {
-  font-size: 11.5px;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
 /* 파일 로그 뷰어 */
 .ela-level-tabs {
   display: flex;

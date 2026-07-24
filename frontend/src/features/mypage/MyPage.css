@@ -349,6 +349,26 @@
   font-size: 13px;
 }
 
+.mp-savings-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.mp-savings-empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 160px;
+  text-align: center;
+}
+
+.mp-savings-empty .mp-empty {
+  padding: 0;
+}
+
 /* Buttons */
 .mp-primary-button,
 .mp-ghost-button,

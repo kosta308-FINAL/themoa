@@ -7,19 +7,6 @@ import { getAdminErrorLogs } from "../../api/errorLogApi";
 import { getApiErrorMessage } from "../../utils/apiError";
 import "./ErrorLogAdminPage.css";
 
-const DIAGNOSIS_LABEL = {
-  PENDING: "AI 분석 중",
-  COMPLETED: "AI 분석 완료",
-  FAILED: "AI 분석 실패",
-};
-
-function diagnosisBadgeClass(status) {
-  if (status === "COMPLETED") return "green";
-  if (status === "PENDING") return "yellow";
-  if (status === "FAILED") return "red";
-  return "gray";
-}
-
 function formatDateTime(value) {
   if (!value) return "";
   const date = new Date(value);
@@ -83,7 +70,7 @@ function ErrorLogAdminPage() {
   return (
     <AdminLayout
       title="오류 로그 관리"
-      subtitle="예상하지 못한 서버 오류(500) 추적·AI 진단, 서버 파일 로그(WARN/ERROR) 열람, API 응답시간 통계를 제공합니다"
+      subtitle="예상하지 못한 서버 오류(500) 추적, 서버 파일 로그(WARN/ERROR) 열람, API 응답시간 통계를 제공합니다"
     >
       <div className="ela-page">
         <div className="ela-tabs">
@@ -159,7 +146,7 @@ function ErrorLogAdminPage() {
                   <div className="ela-panel-title">발생한 오류 목록</div>
                   <div className="ela-panel-sub">
                     500으로 응답한 예상하지 못한 오류와 서버 내부 실패를 모두
-                    포함합니다. 클릭하면 상세와 AI 진단을 볼 수 있어요.
+                    포함합니다. 클릭하면 상세를 볼 수 있어요.
                   </div>
                 </div>
               </div>
@@ -179,7 +166,6 @@ function ErrorLogAdminPage() {
                       <th>상태코드</th>
                       <th>예외 클래스</th>
                       <th>회원ID</th>
-                      <th>AI 진단</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -198,13 +184,6 @@ function ErrorLogAdminPage() {
                           {item.exceptionClass}
                         </td>
                         <td>{item.memberId ?? "-"}</td>
-                        <td>
-                          <span
-                            className={`ela-badge ${diagnosisBadgeClass(item.diagnosisStatus)}`}
-                          >
-                            {DIAGNOSIS_LABEL[item.diagnosisStatus] || "미요청"}
-                          </span>
-                        </td>
                       </tr>
                     ))}
                   </tbody>
