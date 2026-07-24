@@ -1,0 +1,210 @@
+/* 우대조건 파싱 관리 섹션. 카드·버튼·노트 등 공통 요소는 FinancialProductAdminPage.css의
+   fa-* / admin-* 클래스를 그대로 쓰고, 여기서는 이 섹션 고유 요소만 정의한다. */
+
+.pc-block {
+  margin-top: 8px;
+}
+
+.pc-block h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--admin-text, #0f172a);
+}
+
+.pc-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.pc-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pc-badge-lock {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.pc-badge-stale {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.pc-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pc-review-item {
+  padding: 12px 14px;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.pc-review-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pc-review-head strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--admin-text, #0f172a);
+}
+
+.pc-review-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.pc-time {
+  font-size: 12px;
+  color: var(--admin-text-sub, #64748b);
+  white-space: nowrap;
+}
+
+.pc-item-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--admin-border, #e2e8f0);
+}
+
+.pc-item-preview li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--admin-text, #0f172a);
+}
+
+.pc-item-preview em {
+  font-style: normal;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.pc-lookup {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pc-lookup input {
+  width: 200px;
+  max-width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.pc-editor {
+  padding: 14px;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.pc-editor-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pc-editor-head strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--admin-text, #0f172a);
+}
+
+.pc-edit-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pc-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pc-edit-desc {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 8px;
+  font: inherit;
+  background: #fff;
+}
+
+.pc-edit-bonus {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.pc-edit-bonus span,
+.pc-edit-bonus em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--admin-text-sub, #64748b);
+}
+
+.pc-edit-bonus input {
+  width: 72px;
+  padding: 8px;
+  border: 1px solid var(--admin-border, #e2e8f0);
+  border-radius: 8px;
+  font: inherit;
+  text-align: right;
+  background: #fff;
+}
+
+.pc-edit-remove {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--admin-text-sub, #94a3b8);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pc-edit-remove:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.pc-editor-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+}

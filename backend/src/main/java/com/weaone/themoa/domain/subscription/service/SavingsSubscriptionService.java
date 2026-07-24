@@ -3,6 +3,7 @@ package com.weaone.themoa.domain.subscription.service;
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.bookmark.repository.BookmarkSavingsProductRepository;
+import com.weaone.themoa.domain.financialsearch.service.BankNameFormatter;
 import com.weaone.themoa.domain.financialsearch.service.BankUrlResolver;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
@@ -45,28 +46,31 @@ public class SavingsSubscriptionService {
     private final SavingsSubscriptionConditionRepository conditionRepository;
     private final BookmarkSavingsProductRepository savingsProductRepository;
     private final MemberRepository memberRepository;
-    private final PreferentialConditionLlmParser conditionLlmParser;
-    private final PreferentialConditionParser conditionParser;
+    private final PreferentialConditionCacheService conditionCacheService;
     private final BankUrlResolver bankUrlResolver;
+    private final BankNameFormatter bankNameFormatter;
 
     public SavingsSubscriptionService(SavingsSubscriptionRepository subscriptionRepository,
                                       SavingsSubscriptionConditionRepository conditionRepository,
                                       BookmarkSavingsProductRepository savingsProductRepository,
                                       MemberRepository memberRepository,
-                                      PreferentialConditionLlmParser conditionLlmParser,
-                                      PreferentialConditionParser conditionParser,
-                                      BankUrlResolver bankUrlResolver) {
+                                      PreferentialConditionCacheService conditionCacheService,
+                                      BankUrlResolver bankUrlResolver,
+                                      BankNameFormatter bankNameFormatter) {
         this.subscriptionRepository = subscriptionRepository;
         this.conditionRepository = conditionRepository;
         this.savingsProductRepository = savingsProductRepository;
         this.memberRepository = memberRepository;
-        this.conditionLlmParser = conditionLlmParser;
-        this.conditionParser = conditionParser;
+        this.conditionCacheService = conditionCacheService;
         this.bankUrlResolver = bankUrlResolver;
+        this.bankNameFormatter = bankNameFormatter;
     }
 
-    /** 상품을 골랐을 때 가입 등록 화면을 채울 초안. 우대조건은 원문을 AI로 분해한 초안이며 사용자가 수정한다. */
-    @Transactional(readOnly = true)
+    /**
+     * 상품을 골랐을 때 가입 등록 화면을 채울 초안. 우대조건은 DB 캐시에서 읽어 매번 같은 체크리스트를
+     * 보장한다(캐시가 없는 신규 상품은 여기서 파싱해 저장하므로 readOnly가 아니다).
+     */
+    @Transactional
     public SubscriptionDraftResponse draftFromProduct(Long productId) {
         SavingsProduct product = savingsProductRepository.findAllWithOptionsByIdIn(List.of(productId)).stream()
                 .findFirst()
@@ -89,12 +93,10 @@ public class SavingsSubscriptionService {
                 .sorted()
                 .toList();
 
-        // LLM 파싱을 우선 시도하고, 미가용·실패 시 정규식 파서로 폴백한다.
+        // 파싱 결과는 DB 캐시에서 읽는다(상품당 1회 파싱해 고정 → 몇 번을 눌러도 같은 체크리스트).
+        // 캐시가 없으면(배치 전 신규 상품 등) 캐시 서비스가 지금 파싱해 저장하고 그 값을 돌려준다.
         List<PreferentialConditionParser.ParsedCondition> parsed =
-                conditionLlmParser.parse(product.getSpecialCondition());
-        if (parsed == null) {
-            parsed = conditionParser.parse(product.getSpecialCondition());
-        }
+                conditionCacheService.getOrParse(product.getId(), product.getSpecialCondition());
         List<SubscriptionDraftResponse.ConditionDraft> conditions = parsed.stream()
                 .map(item -> new SubscriptionDraftResponse.ConditionDraft(item.description(), item.ratePercent()))
                 .toList();
@@ -102,7 +104,7 @@ public class SavingsSubscriptionService {
         return new SubscriptionDraftResponse(
                 product.getId(),
                 product.getProductName(),
-                product.getCompanyName(),
+                bankNameFormatter.toDisplayName(product.getCompanyName()),
                 product.getProductType() == null ? null : product.getProductType().name(),
                 baseRate,
                 maxRate,

@@ -27,10 +27,13 @@ public class RecommendationService {
 
     private final SavingsProductRepository repository;
     private final LlmSelector llmSelector;
+    private final com.weaone.themoa.domain.financialsearch.service.BankNameFormatter bankNameFormatter;
 
-    public RecommendationService(SavingsProductRepository repository, LlmSelector llmSelector) {
+    public RecommendationService(SavingsProductRepository repository, LlmSelector llmSelector,
+                                 com.weaone.themoa.domain.financialsearch.service.BankNameFormatter bankNameFormatter) {
         this.repository = repository;
         this.llmSelector = llmSelector;
+        this.bankNameFormatter = bankNameFormatter;
     }
 
     @Transactional(readOnly = true)
@@ -175,7 +178,7 @@ public class RecommendationService {
 
         return new Recommendation(
                 p.getId(),
-                p.getCompanyName(),
+                bankNameFormatter.toDisplayName(p.getCompanyName()),
                 p.getProductName(),
                 p.getProductType().name(),
                 result.score(),
