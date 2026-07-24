@@ -68,7 +68,9 @@
 .pc-review-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -136,6 +138,11 @@
   font-size: 14px;
   font-weight: 700;
   color: var(--admin-text, #0f172a);
+}
+
+/* 편집기 헤더의 재파싱 버튼은 오른쪽 끝으로 */
+.pc-reparse {
+  margin-left: auto;
 }
 
 .pc-edit-rows {

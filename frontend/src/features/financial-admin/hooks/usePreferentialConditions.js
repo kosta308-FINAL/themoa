@@ -3,6 +3,7 @@ import {
   getConditionCache,
   getConditionReviewList,
   refreshConditionCache,
+  reparseConditionCache,
   updateConditionCache,
 } from "../../../api/financialAdminApi";
 import { getApiErrorMessage } from "../../../utils/apiError";
@@ -26,6 +27,7 @@ export const usePreferentialConditions = () => {
   const [lookupBusy, setLookupBusy] = useState(false);
   const [lookupError, setLookupError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [reparsing, setReparsing] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -91,6 +93,26 @@ export const usePreferentialConditions = () => {
     }
   };
 
+  // 최신 원문으로 재파싱한 초안 항목을 받아 반환한다(저장은 별도 PUT). 실패 시 null.
+  const reparse = async (productId) => {
+    if (reparsing) {
+      return null;
+    }
+    setReparsing(true);
+    setLookupError("");
+    try {
+      const items = await reparseConditionCache(productId);
+      return items || [];
+    } catch (reparseError) {
+      setLookupError(
+        getApiErrorMessage(reparseError, "최신 원문 재파싱에 실패했어요."),
+      );
+      return null;
+    } finally {
+      setReparsing(false);
+    }
+  };
+
   const save = async (productId, items) => {
     setSaving(true);
     setLookupError("");
@@ -119,7 +141,9 @@ export const usePreferentialConditions = () => {
     lookupBusy,
     lookupError,
     saving,
+    reparsing,
     lookup,
+    reparse,
     save,
   };
 };
