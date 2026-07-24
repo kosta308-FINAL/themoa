@@ -10,6 +10,7 @@ import com.weaone.themoa.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,8 +22,9 @@ import java.util.stream.Collectors;
 
 /**
  * 고정지출 코칭 카드 생성 오케스트레이션. 규칙 계층(dismiss·기부회비 제외) → LLM(대상 선정+문구) → 저장
- * 순서로 조립한다. 주기(yearMonth) 단위 존재 확인으로 멱등이다 — 조회 시점에 그 주기 카드가 없으면 그때
- * 만든다(습관 코칭과 달리 몇 개월치 데이터 축적을 기다릴 필요가 없어 새벽 배치 없이 지연 생성으로 충분하다).
+ * 순서로 조립한다. 주기(yearMonth) 단위 존재 확인으로 멱등이라, 매일 새벽 3시 배치가 전 회원을 훑으며 이번
+ * 주기 카드를 미리 만들어 둔다 — 조회 시점 지연 생성은 고정지출을 막 등록한 직후 화면에서 LLM 호출 지연이
+ * 그대로 드러나 사용자 경험을 해쳐 배치 방식으로 바꿨다.
  */
 @Slf4j
 @Service
@@ -36,6 +38,22 @@ public class FixedExpenseCoachingCardService {
     private final FixedExpenseCoachingLlmClient coachingLlmClient;
     private final FixedExpenseCoachingTemplateCardFactory templateCardFactory;
     private final BudgetCycleService budgetCycleService;
+
+    /** 전 회원 대상 새벽 배치. 회원별 이번 주기 카드가 없으면 만든다(멱등이라 매일 돌려도 안전하다). */
+    @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Seoul")
+    public void runNightlyBatch() {
+        LocalDate today = LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL);
+        for (Member member : memberRepository.findAll()) {
+            String yearMonth = member.getPayday() == null
+                    ? FixedExpenseCyclePolicy.currentYearMonth(null)
+                    : budgetCycleService.resolveCycleForDate(member, today).yearMonth();
+            try {
+                generateForMemberIfMissing(member.getId(), yearMonth);
+            } catch (RuntimeException e) {
+                log.warn("고정지출 코칭 카드 생성 1건 실패, 다음 회원으로 계속 진행합니다. memberId={}", member.getId(), e);
+            }
+        }
+    }
 
     /** 이번 주기 카드가 이미 있으면 아무 것도 하지 않는다(멱등). */
     @Transactional
