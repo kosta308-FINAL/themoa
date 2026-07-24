@@ -22,7 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -216,6 +218,14 @@ public class SavingsSubscriptionService {
                 subscription.getMonthlyAmount(), subscription.getAppliedRate(),
                 subscription.getTermMonth(), subscription.isCompound());
 
+        // 현재 시점: 가입일부터 오늘까지 경과한 개월(만기 초과 시 만기로 고정)로 원금·평가액을 계산한다.
+        // 만기 계산과 같은 공식에 개월수만 경과분으로 바꿔 넣어, 만기 예상치와 일관되게 근사한다.
+        int elapsed = elapsedMonths(subscription);
+        long currentPrincipal = subscription.getMonthlyAmount() * elapsed;
+        long currentValue = MaturityCalculator.installmentMaturity(
+                subscription.getMonthlyAmount(), subscription.getAppliedRate(),
+                elapsed, subscription.isCompound());
+
         List<SubscriptionResponse.ConditionResponse> conditions = subscription.getConditions().stream()
                 .map(c -> new SubscriptionResponse.ConditionResponse(
                         c.getId(), c.getDescription(), c.getRateBonus(), c.isMet()))
@@ -235,8 +245,23 @@ public class SavingsSubscriptionService {
                 subscription.getStartDate(),
                 subscription.getMaturityDate(),
                 totalPrincipal,
+                currentPrincipal,
+                currentValue,
                 expectedMaturity,
                 unmet,
                 conditions);
+    }
+
+    /** 가입일 포함 지금까지 납입한 회차 수. 가입 당일 첫 납입을 1회차로 본다. 만기(termMonth) 초과면 termMonth로 고정. */
+    private int elapsedMonths(SavingsSubscription subscription) {
+        if (subscription.getStartDate() == null) {
+            return 0;
+        }
+        // 미래 가입일이면 아직 납입 전이라 0.
+        if (subscription.getStartDate().isAfter(LocalDate.now())) {
+            return 0;
+        }
+        long months = ChronoUnit.MONTHS.between(subscription.getStartDate(), LocalDate.now());
+        return (int) Math.min(months + 1, subscription.getTermMonth());
     }
 }
