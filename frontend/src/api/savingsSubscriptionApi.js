@@ -16,6 +16,12 @@ export const createSubscription = (payload) =>
 export const getSubscriptions = () =>
   axiosInstance.get("/api/savings-subscriptions").then(responseData);
 
+/** 가입 상품 수정(월납입액·적용금리·기간·가입일). body는 생성과 유사하되 상품은 그대로 둔다. */
+export const updateSubscription = (id, payload) =>
+  axiosInstance
+    .put(`/api/savings-subscriptions/${id}`, payload)
+    .then(responseData);
+
 /** 우대조건 충족 여부 토글. */
 export const updateSubscriptionCondition = (conditionId, met) =>
   axiosInstance.patch(`/api/savings-subscriptions/conditions/${conditionId}`, {
