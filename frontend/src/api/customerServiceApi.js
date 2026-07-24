@@ -146,3 +146,18 @@ export const disableAdminCustomerKnowledgeDocument = (documentId) =>
   axiosInstance
     .delete(`/api/admin/customer-service/ai-quality/documents/${documentId}`)
     .then(responseData);
+
+export const getAdminUnansweredQuestions = (params) =>
+  axiosInstance
+    .get("/api/admin/customer-service/ai-quality/unanswered-questions", {
+      params,
+    })
+    .then(responseData);
+
+export const updateAdminUnansweredQuestionStatus = (questionId, status) =>
+  axiosInstance
+    .put(
+      `/api/admin/customer-service/ai-quality/unanswered-questions/${questionId}/status`,
+      { status },
+    )
+    .then(responseData);

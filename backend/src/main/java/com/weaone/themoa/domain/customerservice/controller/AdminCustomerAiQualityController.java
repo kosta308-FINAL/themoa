@@ -6,13 +6,18 @@ import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiSearc
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiSettingsRequest;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerKnowledgeChunkPreviewRequest;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerKnowledgeTextRequest;
+import com.weaone.themoa.domain.customerservice.dto.request.AdminUnansweredQuestionStatusRequest;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiPreviewResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiSearchResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiSettingsResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeChunkPreviewResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeFileResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeMetadataOptionsResponse;
+import com.weaone.themoa.domain.customerservice.dto.response.AdminUnansweredQuestionItemResponse;
+import com.weaone.themoa.domain.customerservice.dto.response.AdminUnansweredQuestionListResponse;
+import com.weaone.themoa.domain.customerservice.entity.UnansweredQuestionStatus;
 import com.weaone.themoa.domain.customerservice.service.AdminCustomerAiQualityService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -114,5 +119,20 @@ public class AdminCustomerAiQualityController {
     public ApiResponse<Void> disable(@PathVariable Long documentId) {
         aiQualityService.disable(documentId);
         return ApiResponse.success(null);
+    }
+
+    @GetMapping("/unanswered-questions")
+    public ApiResponse<AdminUnansweredQuestionListResponse> unansweredQuestions(
+            @RequestParam(required = false) UnansweredQuestionStatus status,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ApiResponse.success(aiQualityService.unansweredQuestions(status, page, size));
+    }
+
+    @PutMapping("/unanswered-questions/{questionId}/status")
+    public ApiResponse<AdminUnansweredQuestionItemResponse> updateUnansweredQuestionStatus(
+            @PathVariable Long questionId,
+            @Valid @RequestBody AdminUnansweredQuestionStatusRequest request) {
+        return ApiResponse.success(aiQualityService.updateUnansweredQuestionStatus(questionId, request));
     }
 }

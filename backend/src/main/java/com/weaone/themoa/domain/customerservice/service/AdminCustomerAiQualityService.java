@@ -7,6 +7,7 @@ import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiSearc
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerAiSettingsRequest;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerKnowledgeChunkPreviewRequest;
 import com.weaone.themoa.domain.customerservice.dto.request.AdminCustomerKnowledgeTextRequest;
+import com.weaone.themoa.domain.customerservice.dto.request.AdminUnansweredQuestionStatusRequest;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiPreviewResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiSearchResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerAiSearchResultResponse;
@@ -15,8 +16,12 @@ import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowle
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeChunkResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeFileResponse;
 import com.weaone.themoa.domain.customerservice.dto.response.AdminCustomerKnowledgeMetadataOptionsResponse;
+import com.weaone.themoa.domain.customerservice.dto.response.AdminUnansweredQuestionItemResponse;
+import com.weaone.themoa.domain.customerservice.dto.response.AdminUnansweredQuestionListResponse;
 import com.weaone.themoa.domain.customerservice.entity.CustomerKnowledgeChunk;
 import com.weaone.themoa.domain.customerservice.entity.CustomerKnowledgeFile;
+import com.weaone.themoa.domain.customerservice.entity.CustomerServiceUnansweredQuestion;
+import com.weaone.themoa.domain.customerservice.entity.UnansweredQuestionStatus;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeDocument;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeDocumentChunker;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeDocumentProvider;
@@ -28,9 +33,12 @@ import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeSourceType;
 import com.weaone.themoa.domain.customerservice.rag.CustomerServiceRagSettingValues;
 import com.weaone.themoa.domain.customerservice.repository.CustomerKnowledgeChunkRepository;
 import com.weaone.themoa.domain.customerservice.repository.CustomerKnowledgeFileRepository;
+import com.weaone.themoa.domain.customerservice.repository.CustomerServiceUnansweredQuestionRepository;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -53,6 +61,8 @@ public class AdminCustomerAiQualityService {
     private static final int TITLE_MAX_LENGTH = 150;
     private static final int CATEGORY_MAX_LENGTH = 80;
     private static final String TEXT_INPUT_FILENAME = "direct-text.txt";
+    private static final int UNANSWERED_DEFAULT_SIZE = 10;
+    private static final int UNANSWERED_MAX_SIZE = 50;
     private static final List<String> DEFAULT_CATEGORIES = List.of(
             "고객센터 운영정책",
             "사용가이드",
@@ -71,6 +81,7 @@ public class AdminCustomerAiQualityService {
     private final CustomerKnowledgeEmbeddingService embeddingService;
     private final CustomerKnowledgeFileRepository knowledgeFileRepository;
     private final CustomerKnowledgeChunkRepository knowledgeChunkRepository;
+    private final CustomerServiceUnansweredQuestionRepository unansweredQuestionRepository;
     private final MemberRepository memberRepository;
 
     @Transactional(readOnly = true)
@@ -270,6 +281,35 @@ public class AdminCustomerAiQualityService {
                 .map(CustomerKnowledgeDocumentProvider::adminDocumentKnowledgeId)
                 .toList());
         file.disable();
+    }
+
+    @Transactional(readOnly = true)
+    public AdminUnansweredQuestionListResponse unansweredQuestions(UnansweredQuestionStatus status, Integer page,
+                                                                    Integer size) {
+        Page<CustomerServiceUnansweredQuestion> result = unansweredQuestionRepository.searchForAdmin(
+                status, PageRequest.of(normalizePage(page), clampUnansweredSize(size)));
+        long newCount = unansweredQuestionRepository.countByStatus(UnansweredQuestionStatus.NEW);
+        return AdminUnansweredQuestionListResponse.from(result.map(AdminUnansweredQuestionItemResponse::from), newCount);
+    }
+
+    @Transactional
+    public AdminUnansweredQuestionItemResponse updateUnansweredQuestionStatus(Long questionId,
+                                                                               AdminUnansweredQuestionStatusRequest request) {
+        CustomerServiceUnansweredQuestion question = unansweredQuestionRepository.findById(questionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CUSTOMER_UNANSWERED_QUESTION_NOT_FOUND));
+        question.updateStatus(request.status(), LocalDateTime.now());
+        return AdminUnansweredQuestionItemResponse.from(question);
+    }
+
+    private int normalizePage(Integer page) {
+        return page == null || page < 0 ? 0 : page;
+    }
+
+    private int clampUnansweredSize(Integer size) {
+        if (size == null || size <= 0) {
+            return UNANSWERED_DEFAULT_SIZE;
+        }
+        return Math.min(size, UNANSWERED_MAX_SIZE);
     }
 
     private CustomerServiceRagSettingValues requestValues(AdminCustomerAiSearchRequest request) {
