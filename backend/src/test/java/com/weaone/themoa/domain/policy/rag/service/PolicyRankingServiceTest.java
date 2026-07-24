@@ -184,6 +184,81 @@ class PolicyRankingServiceTest {
         assertThat(result.rankedCandidates()).isEmpty();
     }
 
+    @Test
+    void regionExplicitGeneralSearchOrdersRegionPriorityBeforeScore() {
+        Policy daegu = policy(1, "대구광역시 청년 금융 지원", PolicyCategory.금융);
+        Policy dalseo = policy(2, "대구 달서구 청년 금융 지원", PolicyCategory.금융);
+        Policy multipleChild = policy(3, "대구 달서구 수성구 청년 금융 지원", PolicyCategory.금융);
+        Policy multipleSido = policy(4, "대구 경북 청년 금융 지원", PolicyCategory.금융);
+        Policy nationwide = policy(5, "전국 청년 금융 지원", PolicyCategory.금융);
+        Policy unspecified = policy(6, "청년 금융 지원", PolicyCategory.금융);
+
+        PolicyRankingResult result = rankingService.rank(context(regionalPlan(SearchQueryType.BROAD_DISCOVERY)),
+                new PolicyEvaluationResult(List.of(
+                        candidate(unspecified, 0.98, 0.98, 0.0, RecommendationTier.PRIMARY, RegionCompatibility.REGION_UNSPECIFIED),
+                        candidate(nationwide, 1.0, 1.0, 0.0, RecommendationTier.PRIMARY, RegionCompatibility.NATIONWIDE),
+                        candidate(multipleSido, 0.95, 0.95, 0.0, RecommendationTier.PRIMARY, RegionCompatibility.MULTIPLE_SIDO_MATCH),
+                        candidate(multipleChild, 0.90, 0.90, 0.0, RecommendationTier.PRIMARY, RegionCompatibility.MULTIPLE_CHILD_SIGUNGU_MATCH),
+                        candidate(dalseo, 0.80, 0.80, 0.0, RecommendationTier.PRIMARY, RegionCompatibility.CHILD_SIGUNGU_MATCH),
+                        candidate(daegu, 0.55, 0.55, 0.0, RecommendationTier.PRIMARY, RegionCompatibility.EXACT_SIDO)),
+                        new PolicySearchFilterMetrics()));
+
+        assertThat(result.rankedCandidates()).extracting(item -> item.candidate().policy().getId())
+                .containsExactly(1, 2, 3, 4, 5, 6);
+    }
+
+    @Test
+    void sigunguRegionExplicitSearchOrdersChildParentAndNationwideInRegionOrder() {
+        Policy dalseo = policy(1, "달서구 청년 지원", PolicyCategory.복지);
+        Policy multipleSigungu = policy(2, "달서구 수성구 청년 지원", PolicyCategory.복지);
+        Policy daegu = policy(3, "대구광역시 청년 지원", PolicyCategory.복지);
+        Policy multipleSido = policy(4, "대구 경북 청년 지원", PolicyCategory.복지);
+        Policy nationwide = policy(5, "전국 청년 지원", PolicyCategory.복지);
+
+        PolicyRankingResult result = rankingService.rank(context(regionalSigunguPlan()),
+                new PolicyEvaluationResult(List.of(
+                        candidate(nationwide, 0.99, 0.99, 0.0, RecommendationTier.PRIMARY, RegionCompatibility.NATIONWIDE),
+                        candidate(multipleSido, 0.92, 0.92, 0.0, RecommendationTier.PRIMARY, RegionCompatibility.MULTIPLE_SIDO_MATCH),
+                        candidate(daegu, 0.88, 0.88, 0.0, RecommendationTier.PRIMARY, RegionCompatibility.PARENT_SIDO),
+                        candidate(multipleSigungu, 0.70, 0.70, 0.0, RecommendationTier.PRIMARY, RegionCompatibility.MULTIPLE_SIGUNGU_MATCH),
+                        candidate(dalseo, 0.60, 0.60, 0.0, RecommendationTier.PRIMARY, RegionCompatibility.EXACT_SIGUNGU)),
+                        new PolicySearchFilterMetrics()));
+
+        assertThat(result.rankedCandidates()).extracting(item -> item.candidate().policy().getId())
+                .containsExactly(1, 2, 3, 4, 5);
+    }
+
+    @Test
+    void policyNameSearchKeepsExactTitleBeforeRegionPriorityEvenWhenRegionExplicit() {
+        Policy exactTitle = policy(1, "청년도약계좌", PolicyCategory.금융);
+        Policy localHighScore = policy(2, "대구 청년 금융 지원", PolicyCategory.금융);
+
+        PolicyRankingResult result = rankingService.rank(context(regionalPlan(SearchQueryType.POLICY_NAME)),
+                new PolicyEvaluationResult(List.of(
+                        candidate(localHighScore, 0.95, 0.95, 0.0, RecommendationTier.PRIMARY, RegionCompatibility.EXACT_SIDO),
+                        candidate(exactTitle, 0.40, 0.40, 1.0, RecommendationTier.PRIMARY, RegionCompatibility.NATIONWIDE)),
+                        new PolicySearchFilterMetrics()));
+
+        assertThat(result.rankedCandidates()).extracting(item -> item.candidate().policy().getId())
+                .containsExactly(1, 2);
+    }
+
+    @Test
+    void regionUnsetSearchKeepsExistingScoreOrderWithoutRegionPriority() {
+        Policy localLowScore = policy(1, "대구 청년 지원", PolicyCategory.복지);
+        Policy nationwideHighScore = policy(2, "전국 청년 지원", PolicyCategory.복지);
+
+        PolicyRankingResult result = rankingService.rank(context(plan(SearchQueryType.BROAD_DISCOVERY, "22살 청년 지원",
+                        Set.of(SearchDomain.GENERAL), Set.of(SupportIntent.GENERAL))),
+                new PolicyEvaluationResult(List.of(
+                        candidate(localLowScore, 0.55, 0.55, 0.0, RecommendationTier.PRIMARY, RegionCompatibility.EXACT_SIDO),
+                        candidate(nationwideHighScore, 0.90, 0.90, 0.0, RecommendationTier.PRIMARY, RegionCompatibility.NATIONWIDE)),
+                        new PolicySearchFilterMetrics()));
+
+        assertThat(result.rankedCandidates()).extracting(item -> item.candidate().policy().getId())
+                .containsExactly(2, 1);
+    }
+
     private PolicySearchExecutionContext context(PolicySearchPlan plan) {
         return new PolicySearchExecutionContext(new PolicySearchRequest(plan.originalQuery(), 10), plan, 1L);
     }
@@ -198,6 +273,24 @@ class PolicyRankingServiceTest {
                 Set.of("청년"), Set.of(), condition(), Set.of(EducationStage.UNKNOWN), false, false, "TEST");
     }
 
+    private PolicySearchPlan regionalPlan(SearchQueryType type) {
+        PolicySearchCondition condition = new PolicySearchCondition("대구광역시", null, null, 22, null, null, null,
+                "general", Set.of(), Set.of("청년", "금융"), Set.of("청년", "금융"), "대구", "RESOLVED", "SIDO",
+                Set.of("대구광역시"), true, true, false, false, false, false, PolicySearchMode.HYBRID, 10);
+        return new PolicySearchPlan(type, "대구에 사는 22살 청년 금융 지원", "청년 금융 지원",
+                Set.of(SearchDomain.GENERAL), Set.of(), Set.of(SupportIntent.GENERAL), Set.of(),
+                Set.of("청년", "금융"), Set.of(), condition, Set.of(EducationStage.UNKNOWN), false, false, "TEST");
+    }
+
+    private PolicySearchPlan regionalSigunguPlan() {
+        PolicySearchCondition condition = new PolicySearchCondition("대구광역시", "달서구", null, 22, null, null, null,
+                "general", Set.of(), Set.of("청년"), Set.of("청년"), "대구 달서구", "RESOLVED", "SIGUNGU",
+                Set.of("대구광역시", "달서구"), true, true, false, false, false, false, PolicySearchMode.HYBRID, 10);
+        return new PolicySearchPlan(SearchQueryType.BROAD_DISCOVERY, "대구 달서구 22살 청년 지원", "청년 지원",
+                Set.of(SearchDomain.GENERAL), Set.of(), Set.of(SupportIntent.GENERAL), Set.of(),
+                Set.of("청년"), Set.of(), condition, Set.of(EducationStage.UNKNOWN), false, false, "TEST");
+    }
+
     private PolicySearchCondition condition() {
         return new PolicySearchCondition(null, null, null, null, null, null, null, "general",
                 Set.of(), Set.of("청년"), Set.of("청년"), null, null, null, Set.of(),
@@ -206,11 +299,17 @@ class PolicyRankingServiceTest {
 
     private EvaluatedPolicyCandidate candidate(Policy policy, double semantic, double lexical, double title,
                                                RecommendationTier tier) {
+        return candidate(policy, semantic, lexical, title, tier, RegionCompatibility.NATIONWIDE);
+    }
+
+    private EvaluatedPolicyCandidate candidate(Policy policy, double semantic, double lexical, double title,
+                                               RecommendationTier tier, RegionCompatibility compatibility) {
         CandidateEvidence evidence = new CandidateEvidence(policy.getId(),
                 title >= 1.0 ? List.of(new CandidateSourceEvidence(CandidateSource.EXACT_TITLE, 1, title, title, "TITLE")) : List.of(),
                 semantic, lexical, title);
         PolicyEligibilityEvaluation eligibility = new PolicyEligibilityEvaluation(policy.getId(), true,
-                new RegionMatchResult(RegionCompatibility.NATIONWIDE, true, 100, "전국"),
+                new RegionMatchResult(compatibility, true, compatibility == RegionCompatibility.REGION_UNSPECIFIED ? 0 : 100,
+                        compatibility.label()),
                 ConditionMatchResult.unknown("나이 미입력"), ConditionMatchResult.unknown("취업 미입력"),
                 ConditionMatchResult.unknown("학생 미입력"), TargetStageMatchResult.unknown("교육 미입력"),
                 new EmploymentAudienceMatch(com.weaone.themoa.domain.policy.rag.dto.ConditionMatchStatus.UNKNOWN, "취업 미입력"),

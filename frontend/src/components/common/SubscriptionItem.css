@@ -1,0 +1,231 @@
+/* 가입 예·적금 항목 공용 스타일. 대시보드 --dash-* 토큰을 그대로 쓴다. */
+
+.si-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--dash-border, #e5ede8);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.si-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.si-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.si-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.si-type {
+  align-self: flex-start;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--dash-accent-light, #e7f9ee);
+  color: var(--dash-accent-dark, #16a34a);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.si-name {
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--dash-text, #1f2a24);
+  cursor: pointer;
+}
+
+.si-name:hover {
+  text-decoration: underline;
+  color: var(--dash-accent-dark, #16a34a);
+}
+
+.si-title p {
+  font-size: 12px;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.si-head-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.si-edit,
+.si-delete {
+  padding: 6px 12px;
+  border: 1px solid var(--dash-border, #e5ede8);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.si-edit {
+  border-color: var(--dash-accent, #22c55e);
+  color: var(--dash-accent-dark, #16a34a);
+}
+
+.si-edit:hover {
+  background: var(--dash-accent-light, #e7f9ee);
+}
+
+.si-delete {
+  color: #e11d48;
+}
+
+.si-delete:hover:not(:disabled) {
+  border-color: #e11d48;
+  background: #fff1f3;
+}
+
+.si-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.si-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.si-meta span {
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--dash-surface-muted, #f4f8f5);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dash-text, #1f2a24);
+}
+
+/* 원금(회색) / 현재 평가(파랑) / 만기 예상(초록) */
+.si-amounts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.si-amount {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.si-amount span {
+  font-size: 11.5px;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.si-amount strong {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.si-principal {
+  background: #f1f5f9;
+}
+
+.si-principal strong {
+  color: #475569;
+}
+
+.si-current {
+  background: #eff6ff;
+}
+
+.si-current strong {
+  color: #2563eb;
+}
+
+.si-maturity {
+  background: var(--dash-accent-light, #e7f9ee);
+}
+
+.si-maturity strong {
+  color: var(--dash-accent-dark, #16a34a);
+}
+
+.si-amounts-note {
+  font-size: 11.5px;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.si-warn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.si-conditions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.si-conditions li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.si-conditions label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.si-conditions input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  accent-color: var(--dash-accent, #22c55e);
+  cursor: pointer;
+}
+
+.si-conditions span {
+  font-size: 13px;
+  color: var(--dash-text, #1f2a24);
+}
+
+.si-conditions em {
+  flex-shrink: 0;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--dash-accent-dark, #16a34a);
+}
+
+@media (max-width: 520px) {
+  .si-amounts {
+    grid-template-columns: 1fr;
+  }
+}

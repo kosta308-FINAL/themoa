@@ -336,6 +336,50 @@
   font-size: 13px;
 }
 
+/* 로그인 폼: 일반 로그인과 카카오 로그인 구분선 */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: var(--auth-sub);
+  font-size: 12px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--auth-border);
+}
+
+/* 카카오 로그인 버튼: 카카오 브랜드 가이드 색상(#FEE500 배경 + 검정 텍스트)을 그대로 쓴다 */
+.auth-kakao-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px;
+  border-radius: 12px;
+  background: #fee500;
+  color: #191600;
+  font-size: 15px;
+  font-weight: 700;
+  transition: background 0.15s ease;
+}
+
+.auth-kakao-btn:hover {
+  background: #fada00;
+}
+
+.auth-kakao-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 .auth-switch {
   margin-top: 24px;
   font-size: 14px;

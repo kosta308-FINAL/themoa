@@ -1,8 +1,10 @@
 import { useState } from "react";
 import DashboardIcon from "../../../components/common/DashboardIcon";
+import ServiceIcon from "./ServiceIcon";
 import { getApiErrorMessage } from "../../../utils/apiError";
 import {
   cancelFixedExpense,
+  confirmManualPayment,
   confirmMissedPayment,
   getMissedPaymentCandidates,
   updateFixedExpense,
@@ -102,7 +104,12 @@ function MissedPaymentSection({ fixedExpenseId, onConfirmed }) {
   );
 }
 
-function ExpenseDetailModal({ expense, onClose, onChanged }) {
+function ExpenseDetailModal({
+  expense,
+  hasCardConnection,
+  onClose,
+  onChanged,
+}) {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     amount: String(Number(expense.expectedAmount)),
@@ -112,6 +119,7 @@ function ExpenseDetailModal({ expense, onClose, onChanged }) {
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
 
   const handleAmount = (event) =>
     setEditForm((current) => ({
@@ -135,6 +143,20 @@ function ExpenseDetailModal({ expense, onClose, onChanged }) {
       setError(getApiErrorMessage(requestError, "수정하지 못했어요."));
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleConfirmPayment = async () => {
+    setError("");
+    setIsConfirmingPayment(true);
+    try {
+      await confirmManualPayment(expense.id);
+      await onChanged("결제 처리했어요.");
+      onClose();
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, "결제 처리에 실패했어요."));
+    } finally {
+      setIsConfirmingPayment(false);
     }
   };
 
@@ -180,9 +202,9 @@ function ExpenseDetailModal({ expense, onClose, onChanged }) {
         </div>
         <div className="fx-modal-body">
           <div className="fx-detail-hero">
-            <span className={`fx-service-icon ${toneForId(expense.id)}`}>
+            <ServiceIcon tone={toneForId(expense.id)}>
               {serviceInitial(expense.merchantAliasName || expense.name)}
-            </span>
+            </ServiceIcon>
             <h3>{expense.name}</h3>
             <strong>
               {formatAmount(expense.expectedAmount, expense.expectedCurrency)}
@@ -277,12 +299,33 @@ function ExpenseDetailModal({ expense, onClose, onChanged }) {
                 )}
               </div>
 
-              {expense.paymentMethod === "CARD" && (
+              {expense.paymentMethod === "CARD" && hasCardConnection && (
                 <MissedPaymentSection
                   fixedExpenseId={expense.id}
                   onConfirmed={onChanged}
                 />
               )}
+
+              {!(expense.paymentMethod === "CARD" && hasCardConnection) &&
+                (expense.paymentStatus === "DUE_SOON" ||
+                  expense.paymentStatus === "MISSED") && (
+                  <div className="fx-manual-confirm">
+                    <div className="fx-manual-confirm-head">
+                      <h4>이번 달 결제, 하셨나요?</h4>
+                      <p>
+                        카드내역과 자동으로 대조할 수 없어 직접 확인이 필요해요.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="fx-secondary-button"
+                      disabled={isConfirmingPayment}
+                      onClick={handleConfirmPayment}
+                    >
+                      {isConfirmingPayment ? "처리 중..." : "결제처리"}
+                    </button>
+                  </div>
+                )}
 
               {error && <p className="fx-form-error-text">{error}</p>}
 

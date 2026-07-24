@@ -5,6 +5,7 @@ import ProductChangeModal from "../common/ProductChangeModal";
 import { getApiErrorMessage } from "../../utils/apiError";
 import {
   getNotifications,
+  markAllNotificationsRead,
   markNotificationRead,
   prepareDailyNotifications,
 } from "../../api/notificationApi";
@@ -41,6 +42,7 @@ function NotificationBell() {
   const [items, setItems] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
   const [error, setError] = useState("");
   const [changeNotificationId, setChangeNotificationId] = useState(null);
   const rootRef = useRef(null);
@@ -100,6 +102,28 @@ function NotificationBell() {
     if (next) prepareAndLoad();
   };
 
+  const handleMarkAllRead = async () => {
+    if (isMarkingAllRead || unreadCount === 0) {
+      return;
+    }
+    setIsMarkingAllRead(true);
+    try {
+      await markAllNotificationsRead();
+      setItems((prev) => prev.map((item) => ({ ...item, read: true })));
+      setUnreadCount(0);
+      setError("");
+    } catch (requestError) {
+      setError(
+        getApiErrorMessage(
+          requestError,
+          "알림을 모두 읽음 처리하지 못했어요.",
+        ),
+      );
+    } finally {
+      setIsMarkingAllRead(false);
+    }
+  };
+
   const handleItemClick = async (item) => {
     if (!item.read) {
       setItems((prev) =>
@@ -147,9 +171,21 @@ function NotificationBell() {
         <div className="dash-notif-panel" role="dialog" aria-label="알림 목록">
           <div className="dash-notif-panel-head">
             <strong>알림</strong>
-            {isLoading && (
-              <span className="dash-notif-loading">불러오는 중...</span>
-            )}
+            <div className="dash-notif-panel-actions">
+              {isLoading && (
+                <span className="dash-notif-loading">불러오는 중...</span>
+              )}
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  className="dash-notif-read-all"
+                  onClick={handleMarkAllRead}
+                  disabled={isLoading || isMarkingAllRead}
+                >
+                  {isMarkingAllRead ? "처리 중..." : "모두 읽기"}
+                </button>
+              )}
+            </div>
           </div>
           {error && <div className="dash-notif-error">{error}</div>}
           {!error && !isLoading && items.length === 0 && (

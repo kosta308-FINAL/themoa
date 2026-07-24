@@ -142,4 +142,15 @@ public class FixedExpenseController {
         fixedExpenseConfirmationService.confirm(memberId, fixedExpenseId, transactionId);
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(summary = "수기 결제처리",
+            description = "카드 미연동 또는 계좌이체형처럼 대조할 실거래가 없는 고정지출을 사용자가 직접 \"결제했다\"고 확정합니다. " +
+                    "오늘 날짜의 수기 거래를 만들어 이번 달 이행으로 기록하므로 결제내역에서도 조회할 수 있습니다.")
+    @PostMapping("/{fixedExpenseId}/confirm-payment")
+    public ResponseEntity<Void> confirmPayment(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
+            @PathVariable Long fixedExpenseId) {
+        fixedExpenseConfirmationService.confirmManually(memberId, fixedExpenseId);
+        return ResponseEntity.noContent().build();
+    }
 }

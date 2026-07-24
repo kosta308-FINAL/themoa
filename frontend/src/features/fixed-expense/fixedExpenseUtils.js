@@ -56,7 +56,7 @@ const scheduleBadge = (daysLeft) => {
   return { label: `D-${daysLeft}`, tone: "" };
 };
 
-/** 서버가 계산한 이번 주기 이행 상태(view/fixedExpense.md §4). 카드 미연동·이체형은 null(배지 없음). */
+/** 서버가 계산한 이번 주기 이행 상태(view/fixedExpense.md §4). 결제일 윈도우 밖이면 null(배지 없음). */
 const PAYMENT_STATUS_BADGE = {
   PAID: { label: "결제완료", tone: "paid" },
   DUE_SOON: { label: "결제예정", tone: "today" },
@@ -80,7 +80,7 @@ const serviceInitial = (name = "") => {
     : trimmed.slice(0, 1);
 };
 
-const ICON_TONES = ["red", "blue", "purple", "green"];
+const ICON_TONES = ["red", "blue", "accent", "green"];
 const toneForId = (id) => ICON_TONES[toNumber(id) % ICON_TONES.length];
 
 export {

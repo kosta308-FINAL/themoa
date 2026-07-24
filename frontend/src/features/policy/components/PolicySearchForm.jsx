@@ -17,7 +17,7 @@ function PolicySearchForm({ query, examples, loading, totalText, onQueryChange, 
         ))}
       </div>
       <div className="policy-search-actions">
-        <button type="button" className="policy-primary-button" disabled={loading} onClick={() => onSearch(0)}>
+        <button type="button" className="policy-primary-button" disabled={loading} onClick={() => onSearch()}>
           <DashboardIcon name="search" size={17} />
           {loading ? '검색 중' : '정책 찾기'}
         </button>

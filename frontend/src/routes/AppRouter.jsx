@@ -1,9 +1,11 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "../features/landing/LandingPage";
 import LoginPage from "../features/auth/LoginPage";
 import SignupPage from "../features/auth/SignupPage";
 import FindIdPage from "../features/auth/FindIdPage";
 import FindPasswordPage from "../features/auth/FindPasswordPage";
+import KakaoCallbackPage from "../features/auth/KakaoCallbackPage";
+import KakaoSignupPage from "../features/auth/KakaoSignupPage";
 import Dashboard from "../features/dashboard/Dashboard";
 import CalendarPage from "../features/calendar/CalendarPage";
 import ProductsPage from "../features/products/ProductsPage";
@@ -34,6 +36,8 @@ function AppRouter() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/find-email" element={<FindIdPage />} />
       <Route path="/find-password" element={<FindPasswordPage />} />
+      <Route path="/oauth/callback" element={<KakaoCallbackPage />} />
+      <Route path="/oauth/kakao/signup" element={<KakaoSignupPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<UserOnlyRoute />}>
@@ -42,6 +46,13 @@ function AppRouter() {
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="products" element={<ProductsPage />} />
             <Route path="products/search" element={<FinancialSearchPage />} />
+            {/* 가입 예·적금 관리는 마이페이지 탭으로 통합됨 — 구 경로는 리다이렉트 */}
+            <Route
+              path="products/subscriptions"
+              element={
+                <Navigate to="/dashboard/mypage?tab=subscriptions" replace />
+              }
+            />
             <Route path="policy" element={<PolicyPage />} />
             <Route path="spending" element={<SpendingGuidePage />} />
             <Route

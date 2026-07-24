@@ -39,6 +39,10 @@ public enum ErrorCode {
     // 인증 - 비밀번호 찾기(재설정)
     AUTH_PASSWORD_RESET_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "가입되지 않은 이메일입니다."),
 
+    // 인증 - 카카오 OAuth
+    AUTH_OAUTH_EXCHANGE_CODE_INVALID(HttpStatus.UNAUTHORIZED, "로그인 처리가 만료되었습니다. 다시 시도해 주세요."),
+    AUTH_OAUTH_SIGNUP_TICKET_INVALID(HttpStatus.UNAUTHORIZED, "가입 세션이 만료되었습니다. 카카오 로그인을 다시 시도해 주세요."),
+
     // 카드 연동 - 커넥션
     CARD_ISSUER_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "지원하지 않는 카드사입니다."),
     CARD_CONNECTION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 연결된 카드사입니다."),
@@ -76,6 +80,7 @@ public enum ErrorCode {
     FIXED_EXPENSE_NOT_FOUND(HttpStatus.NOT_FOUND, "고정지출을 찾을 수 없습니다."),
     FIXED_EXPENSE_MERCHANT_ALIAS_REQUIRED(HttpStatus.BAD_REQUEST, "카드형 고정지출은 가맹점을 선택해야 합니다."),
     FIXED_EXPENSE_EXCHANGE_RATE_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "환율 정보를 구하지 못해 등록할 수 없습니다. 잠시 후 다시 시도해 주세요."),
+    FIXED_EXPENSE_COACHING_CARD_NOT_FOUND(HttpStatus.NOT_FOUND, "고정지출 코칭 카드를 찾을 수 없습니다."),
 
     // 캘린더
     CALENDAR_SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "일정을 찾을 수 없습니다."),
@@ -123,6 +128,12 @@ public enum ErrorCode {
     POLICY_EMBEDDING_CONFIG_REQUIRED(HttpStatus.CONFLICT, "정책 임베딩 설정이 필요합니다."),
     POLICY_EMBEDDING_SYNC_NOT_FOUND(HttpStatus.CONFLICT, "정책 임베딩 동기화 정보를 찾을 수 없습니다."),
     POLICY_QDRANT_ERROR(HttpStatus.BAD_GATEWAY, "정책 벡터 저장소 요청을 처리하지 못했습니다."),
+    POLICY_RECOMMENDATION_PROFILE_ALREADY_EXISTS(HttpStatus.CONFLICT, "정책 추천 기본정보가 이미 설정되어 있습니다."),
+    POLICY_RECOMMENDATION_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "정책 추천 기본정보를 찾을 수 없습니다."),
+    POLICY_RECOMMENDATION_BIRTH_DATE_REQUIRED(HttpStatus.BAD_REQUEST, "회원 생년월일이 필요합니다."),
+    POLICY_RECOMMENDATION_REGION_INVALID(HttpStatus.BAD_REQUEST, "정책 추천 거주지 정보가 올바르지 않습니다."),
+    POLICY_RECOMMENDATION_EMPLOYMENT_INVALID(HttpStatus.BAD_REQUEST, "정책 추천 취업 상태가 올바르지 않습니다."),
+    POLICY_RECOMMENDATION_REFRESH_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "정책 추천을 다시 계산하지 못했습니다."),
 
     // 고객센터 - FAQ
     FAQ_NOT_FOUND(HttpStatus.NOT_FOUND, "FAQ를 찾을 수 없습니다."),

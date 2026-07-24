@@ -24,25 +24,35 @@ public interface RegionEligiblePolicyCandidateRepository extends Repository<com.
     List<Object[]> findEligibleRegionRows(@Param("eligibleRegionIds") List<Integer> eligibleRegionIds);
 
     @Query(value = """
+            select p.id
+            from policy p
+            left join policy_region pr on pr.policy_id = p.id
+            where p.is_active = true
+              and pr.policy_id is null
+            order by p.id asc
+            """, nativeQuery = true)
+    List<Integer> findRegionUnspecifiedPolicyIds();
+
+    @Query(value = """
             select distinct p.id as policy_id,
                    case
                        when :userLevel = 'SIGUNGU'
                             and pr.region_id = :userRegionId
-                            and cnt.region_count > 1 then 'MULTIPLE_REGION_MATCH'
+                            and cnt.region_count > 1 then 'MULTIPLE_SIGUNGU_MATCH'
                        when :userLevel = 'SIGUNGU'
                             and pr.region_id = :userRegionId then 'EXACT_SIGUNGU'
                        when :userLevel = 'SIGUNGU'
                             and pr.region_id = :parentSidoId
-                            and cnt.region_count > 1 then 'MULTIPLE_REGION_MATCH'
+                            and cnt.region_count > 1 then 'MULTIPLE_SIDO_MATCH'
                        when :userLevel = 'SIGUNGU'
                             and pr.region_id = :parentSidoId then 'PARENT_SIDO'
                        when :userLevel = 'SIDO'
                             and pr.region_id = :userRegionId
-                            and cnt.region_count > 1 then 'MULTIPLE_REGION_MATCH'
+                            and cnt.region_count > 1 then 'MULTIPLE_SIDO_MATCH'
                        when :userLevel = 'SIDO'
                             and pr.region_id = :userRegionId then 'EXACT_SIDO'
                        when pr.region_id = :nationwideRegionId then 'NATIONWIDE'
-                       else 'MULTIPLE_REGION_MATCH'
+                       else 'UNKNOWN'
                    end as compatibility
             from policy p
             join policy_region pr on pr.policy_id = p.id

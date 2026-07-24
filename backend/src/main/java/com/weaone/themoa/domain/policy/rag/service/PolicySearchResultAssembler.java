@@ -125,16 +125,23 @@ public class PolicySearchResultAssembler {
     }
 
     private String regionText(Policy policy) {
-        return policy.getRegions().stream()
-                .map(region -> region.getRegion().displayName())
+        if (policy.getRegions().isEmpty()) {
+            return "지역 제한 미지정";
+        }
+        String text = policy.getRegions().stream()
+                .map(PolicyRegion::getRegion)
+                .filter(java.util.Objects::nonNull)
+                .map(region -> region.displayName())
                 .distinct()
                 .reduce((a, b) -> a + ", " + b)
-                .orElse("확인 필요");
+                .orElse("");
+        return text.isBlank() ? "지역 확인 필요" : text;
     }
 
     private List<String> regionEvidence(Policy policy) {
         return policy.getRegions().stream()
                 .map(PolicyRegion::getRegion)
+                .filter(java.util.Objects::nonNull)
                 .map(region -> region.getRegionLevel() + ": " + region.displayName())
                 .distinct()
                 .toList();

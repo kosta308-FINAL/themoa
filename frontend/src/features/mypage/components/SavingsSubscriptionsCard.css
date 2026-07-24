@@ -1,6 +1,48 @@
 /* 마이페이지 "가입한 예·적금" 카드. 카드 뼈대(mp-card 등)는 MyPage.css 것을 쓰고,
    목록 내부 스타일만 여기서 정의한다. */
 
+.mp-sub-totals {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.mp-sub-total {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 12px;
+}
+
+.mp-sub-total span {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dash-text-secondary, #6b7a72);
+}
+
+.mp-sub-total strong {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.mp-sub-total-current {
+  background: #eff6ff;
+}
+
+.mp-sub-total-current strong {
+  color: #2563eb;
+}
+
+.mp-sub-total-maturity {
+  background: var(--dash-accent-light, #e7f9ee);
+}
+
+.mp-sub-total-maturity strong {
+  color: var(--dash-accent-dark, #16a34a);
+}
+
 .mp-sub-list {
   display: flex;
   flex-direction: column;
@@ -97,35 +139,62 @@
   color: var(--dash-text, #1f2a24);
 }
 
-.mp-sub-maturity {
+/* 원금 / 현재 평가 / 만기 예상 — 세 금액을 색으로 구분한 타일 */
+.mp-sub-amounts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.mp-sub-amount {
   display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-  padding: 12px 14px;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
   border-radius: 10px;
   background: var(--dash-surface-muted, #f4f8f5);
 }
 
-.mp-sub-maturity > div {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.mp-sub-maturity span {
+.mp-sub-amount span {
   font-size: 11.5px;
   color: var(--dash-text-secondary, #6b7a72);
 }
 
-.mp-sub-maturity strong {
-  font-size: 17px;
+.mp-sub-amount strong {
+  font-size: 15px;
   font-weight: 800;
+}
+
+/* 납입 원금 = 중립(회색): 내가 넣은 돈 */
+.mp-sub-principal {
+  background: #f1f5f9;
+}
+
+.mp-sub-principal strong {
+  color: #475569;
+}
+
+/* 현재 평가 = 파랑: 지금 가치 */
+.mp-sub-current {
+  background: #eff6ff;
+}
+
+.mp-sub-current strong {
+  color: #2563eb;
+}
+
+/* 만기 예상 = 초록(기존 색): 미래 목표 */
+.mp-sub-maturity {
+  background: var(--dash-accent-light, #e7f9ee);
+}
+
+.mp-sub-maturity strong {
   color: var(--dash-accent-dark, #16a34a);
 }
 
-.mp-sub-maturity b {
-  font-size: 13.5px;
-  font-weight: 700;
+.mp-sub-amounts-note {
+  font-size: 11.5px;
+  color: var(--dash-text-secondary, #6b7a72);
 }
 
 .mp-sub-warn {

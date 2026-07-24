@@ -6,6 +6,7 @@ import {
   registerFixedExpenseDirect,
   registerFixedExpenseFromCandidate,
 } from "../../../api/fixedExpenseApi";
+import FxSelect from "./FxSelect";
 import MerchantAliasPicker from "./MerchantAliasPicker";
 
 const PAY_DAYS = Array.from({ length: 31 }, (_, index) => index + 1);
@@ -15,6 +16,7 @@ function RegisterExpenseModal({
   candidate = null,
   initial = null,
   categories,
+  hasCardConnection = false,
   onClose,
   onSaved,
   onStale,
@@ -49,10 +51,18 @@ function RegisterExpenseModal({
     }));
 
   const isCard = form.method === "CARD";
+  // 연동된 카드가 없으면 실제 결제내역과 대조할 방법이 없어 가맹점 선택 UI를 보여줄 필요가 없다.
+  // 이 경우 백엔드가 요구하는 merchantAlias는 고정지출 이름으로 대신 채운다.
+  const showMerchantPicker =
+    isCard && Boolean(candidate || initial || hasCardConnection);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (isSubmittingRef.current) return;
+    if (!form.categoryId || !form.payDay) {
+      setError("카테고리와 결제일을 선택해주세요.");
+      return;
+    }
     isSubmittingRef.current = true;
     setError("");
     setIsSubmitting(true);
@@ -68,13 +78,19 @@ function RegisterExpenseModal({
           expectedPayDay: Number(form.payDay),
         });
       } else {
+        const merchantAliasId = showMerchantPicker
+          ? form.merchantAliasId
+          : null;
+        const newMerchantAliasName =
+          isCard && !merchantAliasId
+            ? (showMerchantPicker ? form.merchantName : form.name).trim()
+            : null;
         const created = await registerFixedExpenseDirect({
           name: form.name.trim(),
           categoryId: Number(form.categoryId),
           paymentMethod: form.method,
-          merchantAliasId: isCard ? form.merchantAliasId : null,
-          newMerchantAliasName:
-            isCard && !form.merchantAliasId ? form.merchantName.trim() : null,
+          merchantAliasId,
+          newMerchantAliasName,
           expectedAmount: Number(form.amount),
           expectedCurrency: form.currency,
           expectedPayDay: Number(form.payDay),
@@ -194,7 +210,7 @@ function RegisterExpenseModal({
                   </label>
                 </div>
               </div>
-              {isCard && (
+              {showMerchantPicker && (
                 <div className="fx-field full">
                   <span className="fx-field-label">서비스/가맹점 *</span>
                   {candidate || (initial && form.merchantAliasId) ? (
@@ -215,36 +231,32 @@ function RegisterExpenseModal({
               )}
               <div className="fx-field">
                 <label htmlFor="fx-category">카테고리 *</label>
-                <select
+                <FxSelect
                   id="fx-category"
                   value={form.categoryId}
-                  onChange={update("categoryId")}
-                  required
-                >
-                  <option value="">선택</option>
-                  {(categories || []).map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(next) =>
+                    setForm((current) => ({ ...current, categoryId: next }))
+                  }
+                  options={(categories || []).map((category) => ({
+                    value: String(category.id),
+                    label: category.name,
+                  }))}
+                />
               </div>
               <div className="fx-field">
                 <label htmlFor="fx-pay-day">매월 결제일 *</label>
-                <select
+                <FxSelect
                   id="fx-pay-day"
                   value={form.payDay}
-                  onChange={update("payDay")}
+                  onChange={(next) =>
+                    setForm((current) => ({ ...current, payDay: next }))
+                  }
+                  options={PAY_DAYS.map((day) => ({
+                    value: String(day),
+                    label: `${day}일`,
+                  }))}
                   disabled={Boolean(initial)}
-                  required
-                >
-                  <option value="">선택</option>
-                  {PAY_DAYS.map((day) => (
-                    <option key={day} value={day}>
-                      {day}일
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
               <div className="fx-field full">
                 <label htmlFor="fx-amount">예상 금액 *</label>
@@ -262,24 +274,30 @@ function RegisterExpenseModal({
                     required
                     placeholder="0"
                   />
-                  <select
-                    aria-label="통화"
+                  <FxSelect
+                    className="fx-currency-select"
+                    ariaLabel="통화"
                     value={form.currency}
-                    onChange={update("currency")}
+                    onChange={(next) =>
+                      setForm((current) => ({ ...current, currency: next }))
+                    }
+                    options={[
+                      { value: "KRW", label: "KRW" },
+                      { value: "USD", label: "USD" },
+                    ]}
                     disabled={Boolean(initial)}
-                  >
-                    <option value="KRW">KRW</option>
-                    <option value="USD">USD</option>
-                  </select>
+                  />
                 </div>
               </div>
             </div>
             <div className="fx-form-notice">
               <DashboardIcon name="info" size={15} />
               <span>
-                {isCard
+                {showMerchantPicker
                   ? "카드 고정지출은 서비스 정보가 있어야 다음 결제내역과 자동으로 연결할 수 있어요."
-                  : "계좌이체 고정지출은 카드내역과 대조하지 않고 결제 예정일만 알려드려요."}
+                  : isCard
+                    ? "연동된 카드가 없어 결제내역과 자동으로 대조할 수 없어요. 결제 예정일만 알려드려요."
+                    : "계좌이체 고정지출은 카드내역과 대조하지 않고 결제 예정일만 알려드려요."}
               </span>
             </div>
             {error && (

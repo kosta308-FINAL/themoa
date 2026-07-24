@@ -3,6 +3,7 @@ package com.weaone.themoa.domain.subscription.service;
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.bookmark.repository.BookmarkSavingsProductRepository;
+import com.weaone.themoa.domain.financialsearch.service.BankNameFormatter;
 import com.weaone.themoa.domain.financialsearch.service.BankUrlResolver;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
@@ -21,7 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -45,28 +48,31 @@ public class SavingsSubscriptionService {
     private final SavingsSubscriptionConditionRepository conditionRepository;
     private final BookmarkSavingsProductRepository savingsProductRepository;
     private final MemberRepository memberRepository;
-    private final PreferentialConditionLlmParser conditionLlmParser;
-    private final PreferentialConditionParser conditionParser;
+    private final PreferentialConditionCacheService conditionCacheService;
     private final BankUrlResolver bankUrlResolver;
+    private final BankNameFormatter bankNameFormatter;
 
     public SavingsSubscriptionService(SavingsSubscriptionRepository subscriptionRepository,
                                       SavingsSubscriptionConditionRepository conditionRepository,
                                       BookmarkSavingsProductRepository savingsProductRepository,
                                       MemberRepository memberRepository,
-                                      PreferentialConditionLlmParser conditionLlmParser,
-                                      PreferentialConditionParser conditionParser,
-                                      BankUrlResolver bankUrlResolver) {
+                                      PreferentialConditionCacheService conditionCacheService,
+                                      BankUrlResolver bankUrlResolver,
+                                      BankNameFormatter bankNameFormatter) {
         this.subscriptionRepository = subscriptionRepository;
         this.conditionRepository = conditionRepository;
         this.savingsProductRepository = savingsProductRepository;
         this.memberRepository = memberRepository;
-        this.conditionLlmParser = conditionLlmParser;
-        this.conditionParser = conditionParser;
+        this.conditionCacheService = conditionCacheService;
         this.bankUrlResolver = bankUrlResolver;
+        this.bankNameFormatter = bankNameFormatter;
     }
 
-    /** 상품을 골랐을 때 가입 등록 화면을 채울 초안. 우대조건은 원문을 AI로 분해한 초안이며 사용자가 수정한다. */
-    @Transactional(readOnly = true)
+    /**
+     * 상품을 골랐을 때 가입 등록 화면을 채울 초안. 우대조건은 DB 캐시에서 읽어 매번 같은 체크리스트를
+     * 보장한다(캐시가 없는 신규 상품은 여기서 파싱해 저장하므로 readOnly가 아니다).
+     */
+    @Transactional
     public SubscriptionDraftResponse draftFromProduct(Long productId) {
         SavingsProduct product = savingsProductRepository.findAllWithOptionsByIdIn(List.of(productId)).stream()
                 .findFirst()
@@ -89,12 +95,10 @@ public class SavingsSubscriptionService {
                 .sorted()
                 .toList();
 
-        // LLM 파싱을 우선 시도하고, 미가용·실패 시 정규식 파서로 폴백한다.
+        // 파싱 결과는 DB 캐시에서 읽는다(상품당 1회 파싱해 고정 → 몇 번을 눌러도 같은 체크리스트).
+        // 캐시가 없으면(배치 전 신규 상품 등) 캐시 서비스가 지금 파싱해 저장하고 그 값을 돌려준다.
         List<PreferentialConditionParser.ParsedCondition> parsed =
-                conditionLlmParser.parse(product.getSpecialCondition());
-        if (parsed == null) {
-            parsed = conditionParser.parse(product.getSpecialCondition());
-        }
+                conditionCacheService.getOrParse(product.getId(), product.getSpecialCondition());
         List<SubscriptionDraftResponse.ConditionDraft> conditions = parsed.stream()
                 .map(item -> new SubscriptionDraftResponse.ConditionDraft(item.description(), item.ratePercent()))
                 .toList();
@@ -102,7 +106,7 @@ public class SavingsSubscriptionService {
         return new SubscriptionDraftResponse(
                 product.getId(),
                 product.getProductName(),
-                product.getCompanyName(),
+                bankNameFormatter.toDisplayName(product.getCompanyName()),
                 product.getProductType() == null ? null : product.getProductType().name(),
                 baseRate,
                 maxRate,
@@ -214,6 +218,14 @@ public class SavingsSubscriptionService {
                 subscription.getMonthlyAmount(), subscription.getAppliedRate(),
                 subscription.getTermMonth(), subscription.isCompound());
 
+        // 현재 시점: 가입일부터 오늘까지 경과한 개월(만기 초과 시 만기로 고정)로 원금·평가액을 계산한다.
+        // 만기 계산과 같은 공식에 개월수만 경과분으로 바꿔 넣어, 만기 예상치와 일관되게 근사한다.
+        int elapsed = elapsedMonths(subscription);
+        long currentPrincipal = subscription.getMonthlyAmount() * elapsed;
+        long currentValue = MaturityCalculator.installmentMaturity(
+                subscription.getMonthlyAmount(), subscription.getAppliedRate(),
+                elapsed, subscription.isCompound());
+
         List<SubscriptionResponse.ConditionResponse> conditions = subscription.getConditions().stream()
                 .map(c -> new SubscriptionResponse.ConditionResponse(
                         c.getId(), c.getDescription(), c.getRateBonus(), c.isMet()))
@@ -233,8 +245,23 @@ public class SavingsSubscriptionService {
                 subscription.getStartDate(),
                 subscription.getMaturityDate(),
                 totalPrincipal,
+                currentPrincipal,
+                currentValue,
                 expectedMaturity,
                 unmet,
                 conditions);
+    }
+
+    /** 가입일 포함 지금까지 납입한 회차 수. 가입 당일 첫 납입을 1회차로 본다. 만기(termMonth) 초과면 termMonth로 고정. */
+    private int elapsedMonths(SavingsSubscription subscription) {
+        if (subscription.getStartDate() == null) {
+            return 0;
+        }
+        // 미래 가입일이면 아직 납입 전이라 0.
+        if (subscription.getStartDate().isAfter(LocalDate.now())) {
+            return 0;
+        }
+        long months = ChronoUnit.MONTHS.between(subscription.getStartDate(), LocalDate.now());
+        return (int) Math.min(months + 1, subscription.getTermMonth());
     }
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { getMyPage } from "../../api/mypageApi";
 import { getCardConnections } from "../../api/spendingGuideApi";
@@ -18,6 +18,7 @@ import ComingSoonCard from "./components/ComingSoonCard";
 import PolicyBookmarksCard from "./components/PolicyBookmarksCard";
 import FinancialBookmarksCard from "./components/FinancialBookmarksCard";
 import SavingsSubscriptionsCard from "./components/SavingsSubscriptionsCard";
+import PolicyRecommendationProfileCard from "./components/PolicyRecommendationProfileCard";
 import {
   ENTRY_MODE_LABELS,
   INCOME_TYPE_LABELS,
@@ -29,6 +30,7 @@ import "./MyPage.css";
 const TABS = [
   { key: "profile", label: "회원 정보", icon: "user" },
   { key: "cards", label: "카드 연동", icon: "card" },
+  { key: "subscriptions", label: "가입 예·적금", icon: "wallet" },
   { key: "account", label: "계정 관리", icon: "settings" },
   { key: "soon", label: "북마크 · 진단", icon: "sparkle" },
 ];
@@ -45,7 +47,12 @@ function MyPage() {
   const [isEditingIncome, setIsEditingIncome] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [toast, setToast] = useState("");
-  const [activeTab, setActiveTab] = useState("profile");
+  // 홈 요약 등에서 ?tab=subscriptions로 들어오면 해당 탭이 바로 열리게 한다.
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(
+    TABS.some((tab) => tab.key === initialTab) ? initialTab : "profile",
+  );
 
   const showToast = (message) => setToast(message);
 
@@ -213,6 +220,7 @@ function MyPage() {
                     savingsTargetAmount={myPage.savingsTargetAmount}
                     onSaved={handleDataSaved}
                   />
+                  <PolicyRecommendationProfileCard onSaved={showToast} />
                 </div>
               )}
 
@@ -222,6 +230,12 @@ function MyPage() {
                     cardConnections={cardConnections}
                     onChanged={load}
                   />
+                </div>
+              )}
+
+              {activeTab === "subscriptions" && (
+                <div className="mp-tab-panel">
+                  <SavingsSubscriptionsCard />
                 </div>
               )}
 
@@ -240,7 +254,6 @@ function MyPage() {
                 <div className="mp-tab-panel mp-bookmark-tab">
                   <PolicyBookmarksCard />
                   <FinancialBookmarksCard />
-                  <SavingsSubscriptionsCard />
                   <ComingSoonCard />
                 </div>
               )}

@@ -65,3 +65,30 @@ export const verifyPasswordResetCode = (email, code) =>
  */
 export const resetPassword = (payload) =>
   axiosInstance.post("/api/auth/password/reset", payload);
+
+/**
+ * 카카오 로그인 시작 URL. 버튼 클릭 시 axios가 아니라 전체 페이지 이동(window.location.href)으로
+ * 써야 한다 — 카카오 동의 화면으로 브라우저 자체가 넘어가야 하기 때문이다.
+ * ALB가 "/api/*"만 백엔드로 보내므로(distribution/distributionSetting.md §10.2) /api 하위 경로다.
+ */
+export const kakaoLoginUrl = () =>
+  `${import.meta.env.VITE_API_BASE_URL ?? ""}/api/oauth2/authorization/kakao`;
+
+/**
+ * 카카오 콜백(/oauth/callback) 직후 1회 호출. 교환코드를 소비해 기존 회원이면 로그인을,
+ * 신규 회원이면 추가정보 입력에 필요한 signupTicket·nickname을 받는다.
+ * @returns {Promise<{ data: { data: { requiresSignup: boolean, token?: { accessToken, expiresIn },
+ *   signupTicket?: string, nickname?: string } } }>}
+ */
+export const exchangeOAuthCode = (code) =>
+  axiosInstance.post("/api/auth/oauth/exchange", { code }, { skipAuth: true });
+
+/**
+ * 카카오 신규 회원 가입 완료. 성공 시 { accessToken, expiresIn }(Refresh는 HttpOnly 쿠키)으로 자동 로그인.
+ * @param {{ signupTicket, email, gender: 'MALE'|'FEMALE', birthDate: 'YYYY-MM-DD',
+ *   agreedServiceTerms: boolean, agreedPrivacyPolicy: boolean, agreedDataCollection: boolean }} payload
+ */
+export const completeKakaoSignup = (payload) =>
+  axiosInstance.post("/api/auth/oauth/kakao/complete-signup", payload, {
+    skipAuth: true,
+  });

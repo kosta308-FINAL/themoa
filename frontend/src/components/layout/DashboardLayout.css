@@ -136,6 +136,29 @@
   color: var(--dash-text-secondary);
 }
 
+.dash-notif-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-notif-read-all {
+  padding: 4px 0;
+  background: transparent;
+  color: var(--dash-accent-dark);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dash-notif-read-all:hover:not(:disabled) {
+  color: var(--dash-accent);
+}
+
+.dash-notif-read-all:disabled {
+  color: var(--dash-text-secondary);
+  cursor: not-allowed;
+}
+
 .dash-notif-error,
 .dash-notif-empty {
   padding: 24px 16px;

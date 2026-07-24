@@ -93,7 +93,7 @@ public class FixedExpenseNotificationBatchService {
             return;
         }
         String dedupKey = "PAYMENT_DUE:fe=" + fixedExpense.getId() + ":" + yearMonth;
-        String message = "오늘 " + fixedExpense.getName() + " 결제일이에요.";
+        String message = "오늘 " + fixedExpense.getName() + " 결제일이에요. 결제하셨나요?";
         notificationService.createIfAbsent(member, NotificationTypeCode.PAYMENT_DUE, message, fixedExpense, null,
                 dedupKey);
     }

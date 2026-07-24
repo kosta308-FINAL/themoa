@@ -29,6 +29,9 @@ export const confirmMissedPayment = (fixedExpenseId, transactionId) =>
     `/api/fixed-expenses/${fixedExpenseId}/missed-payment-candidates/${transactionId}/confirm`,
   );
 
+export const confirmManualPayment = (fixedExpenseId) =>
+  axiosInstance.post(`/api/fixed-expenses/${fixedExpenseId}/confirm-payment`);
+
 export const rejectFixedExpenseCandidate = (candidateId) =>
   axiosInstance.post(`/api/fixed-expense-candidates/${candidateId}/reject`);
 
@@ -39,3 +42,9 @@ export const reclassifyFixedExpenseCandidateAsHabit = (candidateId) =>
   axiosInstance.post(
     `/api/fixed-expense-candidates/${candidateId}/reclassify-habit`,
   );
+
+export const getFixedExpenseCoachingCards = () =>
+  axiosInstance.get("/api/fixed-expenses/coaching-cards").then(responseData);
+
+export const dismissFixedExpenseCoachingCard = (cardId) =>
+  axiosInstance.post(`/api/fixed-expenses/coaching-cards/${cardId}/dismiss`);

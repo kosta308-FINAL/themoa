@@ -18,6 +18,7 @@ import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndexBuilder;
 import com.weaone.themoa.domain.policy.rag.service.PolicySearchProjectionService;
 import com.weaone.themoa.domain.policy.region.service.RegionSynchronizationResult;
 import com.weaone.themoa.domain.policy.region.service.RegionSynchronizationService;
+import com.weaone.themoa.domain.policy.recommendation.service.PolicyRecommendationBatchService;
 import com.weaone.themoa.domain.policy.sync.service.PolicySyncExecutionGuard;
 import com.weaone.themoa.domain.policy.sync.service.PolicySyncMode;
 import com.weaone.themoa.domain.policy.sync.service.PolicySyncPipelineResult;
@@ -25,6 +26,8 @@ import com.weaone.themoa.domain.policy.sync.service.PolicySyncPipelineService;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -37,6 +40,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AdminJobService {
+    private static final Logger log = LoggerFactory.getLogger(AdminJobService.class);
+
     private final YouthCenterPolicyCollectionService collectionService;
     private final PolicyEmbeddingService embeddingService;
     private final PolicyRegionRebuildService regionRebuildService;
@@ -46,6 +51,7 @@ public class AdminJobService {
     private final RegionCodeRepository regionCodeRepository;
     private final PolicySyncPipelineService policySyncPipelineService;
     private final PolicySyncExecutionGuard policySyncExecutionGuard;
+    private final PolicyRecommendationBatchService recommendationBatchService;
     private final TaskExecutor adminJobExecutor;
     private final Map<String, MutableJob> jobs = new ConcurrentHashMap<>();
 
@@ -57,6 +63,7 @@ public class AdminJobService {
                            RegionCodeRepository regionCodeRepository,
                            PolicySyncPipelineService policySyncPipelineService,
                            PolicySyncExecutionGuard policySyncExecutionGuard,
+                           PolicyRecommendationBatchService recommendationBatchService,
                            @Qualifier("adminJobExecutor") TaskExecutor adminJobExecutor) {
         this.collectionService = collectionService;
         this.embeddingService = embeddingService;
@@ -67,6 +74,7 @@ public class AdminJobService {
         this.regionCodeRepository = regionCodeRepository;
         this.policySyncPipelineService = policySyncPipelineService;
         this.policySyncExecutionGuard = policySyncExecutionGuard;
+        this.recommendationBatchService = recommendationBatchService;
         this.adminJobExecutor = adminJobExecutor;
     }
 
@@ -260,6 +268,7 @@ public class AdminJobService {
                 + result.embeddingProcess().failedCount();
         job.remaining = result.embeddingProcess().pendingCountAfter();
         String prefix = mode == PolicySyncMode.FULL_REINDEX ? "FULL_REINDEX_COMPLETED" : "POLICY_SYNC_COMPLETED";
+        refreshPolicyRecommendations();
         job.message = prefix
                 + " projectionCount=" + result.projectionRebuild().processed()
                 + ", indexDocumentCount=" + result.lexicalIndexDocumentCount()
@@ -267,6 +276,14 @@ public class AdminJobService {
                 + ", embeddingSuccess=" + result.embeddingProcess().successCount()
                 + ", embeddingFailed=" + result.embeddingProcess().failedCount()
                 + ", syncedEmbeddingCount=" + result.readiness().syncedEmbeddingCount();
+    }
+
+    private void refreshPolicyRecommendations() {
+        try {
+            recommendationBatchService.refreshAllProfiles();
+        } catch (RuntimeException ex) {
+            log.warn("정책 추천 Batch 실행에 실패했습니다. errorType={}", ex.getClass().getSimpleName());
+        }
     }
 
     public Optional<AdminJobStatus> find(String jobId) {

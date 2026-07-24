@@ -108,6 +108,17 @@ public class FixedExpenseMatchingService {
     }
 
     /**
+     * 카드 미연동·이체형의 수기 결제처리 전용({@link FixedExpenseConfirmationService#confirmManually}).
+     * 거래의 표시일은 원래 결제 예정일(과거)로 두면서도, 이행 판정({@link FixedExpensePaymentStatusService#resolve})은
+     * 항상 확정 시점(오늘) 기준 주기로 조회하므로 yearMonth를 거래일에서 다시 계산하지 않고 호출자가 넘긴 값을
+     * 그대로 쓴다 — 그렇지 않으면 결제일과 확정일이 다른 주기에 걸쳐 있을 때 PAID로 안 잡히는 불일치가 생긴다.
+     */
+    @Transactional
+    public void confirmManualPayment(CardTransaction transaction, FixedExpense fixedExpense, String yearMonth) {
+        tagAndRecord(transaction, fixedExpense, yearMonth);
+    }
+
+    /**
      * 거래일이 속한 급여 주기 라벨. {@code member.payday}를 그대로 쓰지 않고 급여일 변경 이력까지 반영해
      * 계산한다(payday.md §급여일 변경) — 거래일이 과거라 그 시점엔 지금과 다른 payday가 유효했을 수 있다.
      */
