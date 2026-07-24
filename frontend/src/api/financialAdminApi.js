@@ -128,3 +128,14 @@ export const reparseConditionCache = (productId) =>
 /** 우대조건 수동 수정(전체 교체 + 잠금). items: [{ description, rateBonus }]. */
 export const updateConditionCache = (productId, items) =>
   axiosInstance.put(`${CONDITIONS_URL}/${productId}`, { items });
+
+/**
+ * 우대조건 편집 대상 상품 검색. keyword 생략 시 우대조건 있는 판매중 상품 전체,
+ * 있으면 은행·상품명 부분검색. data: [{ productId, companyName, productName, productType, itemCount, editedByAdmin, stale, cached }].
+ */
+export const searchConditionProducts = (keyword) =>
+  axiosInstance
+    .get(`${CONDITIONS_URL}/products`, {
+      params: { keyword: keyword || undefined },
+    })
+    .then(responseData);
