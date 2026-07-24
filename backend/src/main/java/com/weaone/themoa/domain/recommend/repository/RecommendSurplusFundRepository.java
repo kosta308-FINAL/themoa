@@ -1,9 +1,10 @@
 package com.weaone.themoa.domain.recommend.repository;
 
 import com.weaone.themoa.domain.budget.entity.SurplusFund;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.Optional;
+import java.util.List;
 
 /**
  * 추천 폼 기본값(월 납입가능금액)에 쓸 잉여금을 읽는 전용 레포지토리.
@@ -12,6 +13,9 @@ import java.util.Optional;
  */
 public interface RecommendSurplusFundRepository extends JpaRepository<SurplusFund, Long> {
 
-    /** 가장 최근 급여주기의 잉여금. year_month는 "YYYY-MM" 문자열이라 사전순 정렬이 곧 시간순이다. */
-    Optional<SurplusFund> findFirstByMember_IdOrderByYearMonthDesc(Long memberId);
+    /**
+     * 최근 급여주기 잉여금을 최신순으로 최대 {@code pageable}의 페이지 크기만큼 반환한다(평균 계산용).
+     * year_month는 "YYYY-MM" 문자열이라 사전순 정렬이 곧 시간순이다.
+     */
+    List<SurplusFund> findByMember_IdOrderByYearMonthDesc(Long memberId, Pageable pageable);
 }
