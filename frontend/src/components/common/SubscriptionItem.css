@@ -1,55 +1,6 @@
-/* 마이페이지 "가입한 예·적금" 카드. 카드 뼈대(mp-card 등)는 MyPage.css 것을 쓰고,
-   목록 내부 스타일만 여기서 정의한다. */
+/* 가입 예·적금 항목 공용 스타일. 대시보드 --dash-* 토큰을 그대로 쓴다. */
 
-.mp-sub-totals {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.mp-sub-total {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 14px 16px;
-  border-radius: 12px;
-}
-
-.mp-sub-total span {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--dash-text-secondary, #6b7a72);
-}
-
-.mp-sub-total strong {
-  font-size: 20px;
-  font-weight: 800;
-}
-
-.mp-sub-total-current {
-  background: #eff6ff;
-}
-
-.mp-sub-total-current strong {
-  color: #2563eb;
-}
-
-.mp-sub-total-maturity {
-  background: var(--dash-accent-light, #e7f9ee);
-}
-
-.mp-sub-total-maturity strong {
-  color: var(--dash-accent-dark, #16a34a);
-}
-
-.mp-sub-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.mp-sub-item {
+.si-item {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -59,28 +10,28 @@
   background: #fff;
 }
 
-.mp-sub-item-head {
+.si-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 }
 
-.mp-sub-item-left {
+.si-left {
   display: flex;
   align-items: flex-start;
   gap: 10px;
   min-width: 0;
 }
 
-.mp-sub-item-title {
+.si-title {
   display: flex;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
 }
 
-.mp-sub-type {
+.si-type {
   align-self: flex-start;
   padding: 3px 9px;
   border-radius: 999px;
@@ -90,47 +41,76 @@
   font-weight: 700;
 }
 
-.mp-sub-item-title h3 {
+.si-name {
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
   font-size: 15px;
   font-weight: 700;
   line-height: 1.4;
+  color: var(--dash-text, #1f2a24);
+  cursor: pointer;
 }
 
-.mp-sub-item-title p {
+.si-name:hover {
+  text-decoration: underline;
+  color: var(--dash-accent-dark, #16a34a);
+}
+
+.si-title p {
   font-size: 12px;
   color: var(--dash-text-secondary, #6b7a72);
 }
 
-.mp-sub-delete {
+.si-head-actions {
+  display: flex;
+  gap: 6px;
   flex-shrink: 0;
+}
+
+.si-edit,
+.si-delete {
   padding: 6px 12px;
   border: 1px solid var(--dash-border, #e5ede8);
   border-radius: 999px;
   background: #fff;
-  color: #e11d48;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
 }
 
-.mp-sub-delete:hover:not(:disabled) {
+.si-edit {
+  border-color: var(--dash-accent, #22c55e);
+  color: var(--dash-accent-dark, #16a34a);
+}
+
+.si-edit:hover {
+  background: var(--dash-accent-light, #e7f9ee);
+}
+
+.si-delete {
+  color: #e11d48;
+}
+
+.si-delete:hover:not(:disabled) {
   border-color: #e11d48;
   background: #fff1f3;
 }
 
-.mp-sub-delete:disabled {
+.si-delete:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.mp-sub-meta {
+.si-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.mp-sub-meta span {
+.si-meta span {
   padding: 4px 10px;
   border-radius: 8px;
   background: var(--dash-surface-muted, #f4f8f5);
@@ -139,65 +119,61 @@
   color: var(--dash-text, #1f2a24);
 }
 
-/* 원금 / 현재 평가 / 만기 예상 — 세 금액을 색으로 구분한 타일 */
-.mp-sub-amounts {
+/* 원금(회색) / 현재 평가(파랑) / 만기 예상(초록) */
+.si-amounts {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 
-.mp-sub-amount {
+.si-amount {
   display: flex;
   flex-direction: column;
   gap: 3px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: var(--dash-surface-muted, #f4f8f5);
 }
 
-.mp-sub-amount span {
+.si-amount span {
   font-size: 11.5px;
   color: var(--dash-text-secondary, #6b7a72);
 }
 
-.mp-sub-amount strong {
+.si-amount strong {
   font-size: 15px;
   font-weight: 800;
 }
 
-/* 납입 원금 = 중립(회색): 내가 넣은 돈 */
-.mp-sub-principal {
+.si-principal {
   background: #f1f5f9;
 }
 
-.mp-sub-principal strong {
+.si-principal strong {
   color: #475569;
 }
 
-/* 현재 평가 = 파랑: 지금 가치 */
-.mp-sub-current {
+.si-current {
   background: #eff6ff;
 }
 
-.mp-sub-current strong {
+.si-current strong {
   color: #2563eb;
 }
 
-/* 만기 예상 = 초록(기존 색): 미래 목표 */
-.mp-sub-maturity {
+.si-maturity {
   background: var(--dash-accent-light, #e7f9ee);
 }
 
-.mp-sub-maturity strong {
+.si-maturity strong {
   color: var(--dash-accent-dark, #16a34a);
 }
 
-.mp-sub-amounts-note {
+.si-amounts-note {
   font-size: 11.5px;
   color: var(--dash-text-secondary, #6b7a72);
 }
 
-.mp-sub-warn {
+.si-warn {
   padding: 8px 12px;
   border-radius: 8px;
   background: #fef3c7;
@@ -206,20 +182,20 @@
   font-weight: 600;
 }
 
-.mp-sub-conditions {
+.si-conditions {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.mp-sub-conditions li {
+.si-conditions li {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
 
-.mp-sub-conditions label {
+.si-conditions label {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -227,7 +203,7 @@
   cursor: pointer;
 }
 
-.mp-sub-conditions input[type="checkbox"] {
+.si-conditions input[type="checkbox"] {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
@@ -235,12 +211,12 @@
   cursor: pointer;
 }
 
-.mp-sub-conditions span {
+.si-conditions span {
   font-size: 13px;
   color: var(--dash-text, #1f2a24);
 }
 
-.mp-sub-conditions em {
+.si-conditions em {
   flex-shrink: 0;
   font-style: normal;
   font-size: 12px;
@@ -248,34 +224,8 @@
   color: var(--dash-accent-dark, #16a34a);
 }
 
-.mp-sub-empty {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 24px;
-  text-align: center;
-  color: var(--dash-text-secondary, #6b7a72);
-  font-size: 13px;
-}
-
-.mp-sub-error {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: #fdeeee;
-  color: #a12c2c;
-  font-size: 13px;
-}
-
-.mp-sub-error button {
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: #fff;
-  color: #a12c2c;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
+@media (max-width: 520px) {
+  .si-amounts {
+    grid-template-columns: 1fr;
+  }
 }
