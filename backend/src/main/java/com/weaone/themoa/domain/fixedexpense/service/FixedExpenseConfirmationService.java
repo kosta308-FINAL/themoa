@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.fixedexpense.service;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
+import com.weaone.themoa.domain.budget.service.BudgetCycleService;
 import com.weaone.themoa.domain.cardtransaction.entity.CardTransaction;
 import com.weaone.themoa.domain.cardtransaction.entity.PaymentMethod;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
@@ -43,6 +44,7 @@ public class FixedExpenseConfirmationService {
     private final MerchantIdentityService merchantIdentityService;
     private final FixedExpenseMatchingService fixedExpenseMatchingService;
     private final MemberRepository memberRepository;
+    private final BudgetCycleService budgetCycleService;
 
     /** 미납 알림을 탭했을 때 보여줄 후보 거래 목록. 굳혀 둔 값이 아니라 그 시점 기준으로 재조회한다(§6). */
     @Transactional(readOnly = true)
@@ -84,22 +86,29 @@ public class FixedExpenseConfirmationService {
 
     /**
      * 카드 미연동·계좌이체형의 수기 결제처리. 대조할 실거래가 없으니 사용자가 스스로 "결제했다"고
-     * 확정하는 F-05의 대체 경로다 — 오늘 날짜로 수기 거래를 만들고 자동 매칭과 동일한 태깅·이행기록
-     * 경로({@link FixedExpenseMatchingService#confirmMatch})를 그대로 태워서 결제내역 조회와 이번 달
-     * 이행 상태(PAID) 판정이 카드형과 동일하게 동작하게 한다. 이름형 학습·재태깅은 실거래 신원이 없어
-     * 대상이 아니다.
+     * 확정하는 F-05의 대체 경로다. 수기 거래의 거래일은 오늘이 아니라 이번 달 결제 예정일로 남긴다 —
+     * 결제일이 14일인데 24일에 결제처리를 눌렀다고 결제내역에 24일 거래로 찍히면 고정지출의 실제 결제
+     * 시점과 어긋난다(미래에 아직 안 온 결제일이면 오늘을 넘기지 않는다). 이행 판정에 쓰는 yearMonth는
+     * 거래일이 아니라 확정 시점(오늘) 기준 주기로 별도 계산해 {@link FixedExpenseMatchingService#confirmManualPayment}에
+     * 넘긴다 — {@link FixedExpensePaymentStatusService#resolve}가 조회하는 주기와 반드시 같아야 PAID로 반영된다.
+     * 이름형 학습·재태깅은 실거래 신원이 없어 대상이 아니다.
      */
     @Transactional
     public void confirmManually(Long memberId, Long fixedExpenseId) {
         FixedExpense fixedExpense = getOwned(memberId, fixedExpenseId);
         Member member = memberRepository.getReferenceById(memberId);
         LocalDate today = LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL);
+        LocalDate expectedDate = expectedDateInMonth(fixedExpense, today);
+        LocalDate paidDate = expectedDate.isAfter(today) ? today : expectedDate;
+        String yearMonth = member.getPayday() == null
+                ? FixedExpenseCyclePolicy.currentYearMonth(null)
+                : budgetCycleService.resolveCycleForDate(member, today).yearMonth();
         PaymentMethod paymentMethod = fixedExpense.getPaymentMethod() == FixedExpensePaymentMethod.CARD
                 ? PaymentMethod.CARD : PaymentMethod.TRANSFER;
         CardTransaction transaction = CardTransaction.manual(member, fixedExpense.getCategory(), paymentMethod,
-                today, today.atStartOfDay(), fixedExpense.getExpectedAmountKrw(), fixedExpense.getName(), null);
+                paidDate, paidDate.atStartOfDay(), fixedExpense.getExpectedAmountKrw(), fixedExpense.getName(), null);
         cardTransactionRepository.save(transaction);
-        fixedExpenseMatchingService.confirmMatch(transaction, fixedExpense);
+        fixedExpenseMatchingService.confirmManualPayment(transaction, fixedExpense, yearMonth);
     }
 
     /** merchant.md §3 4단계 ①②: terms 학습 + 이 회원의 같은 원본가맹점 거래 전체 재태깅. */
