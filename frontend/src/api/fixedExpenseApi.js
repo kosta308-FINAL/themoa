@@ -29,6 +29,9 @@ export const confirmMissedPayment = (fixedExpenseId, transactionId) =>
     `/api/fixed-expenses/${fixedExpenseId}/missed-payment-candidates/${transactionId}/confirm`,
   );
 
+export const confirmManualPayment = (fixedExpenseId) =>
+  axiosInstance.post(`/api/fixed-expenses/${fixedExpenseId}/confirm-payment`);
+
 export const rejectFixedExpenseCandidate = (candidateId) =>
   axiosInstance.post(`/api/fixed-expense-candidates/${candidateId}/reject`);
 

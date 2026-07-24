@@ -17,7 +17,8 @@ public record AuthProperties(
         @Valid @NotNull Jwt jwt,
         @Valid @NotNull Refresh refresh,
         @Valid @NotNull EmailVerification emailVerification,
-        @Valid @NotNull Terms terms
+        @Valid @NotNull Terms terms,
+        @Valid @NotNull Oauth oauth
 ) {
 
     /**
@@ -64,6 +65,20 @@ public record AuthProperties(
      */
     public record Terms(
             @NotBlank String version
+    ) {
+    }
+
+    /**
+     * @param exchangeCodeTtl        OAuth 콜백 → 프론트 1회용 교환코드 유효기간(60초). URL에 Access/Refresh
+     *                                Token 원문을 싣지 않기 위한 중계용이다(auth.md §8).
+     * @param signupTicketTtl        카카오 신규 회원이 이메일 인증·성별·출생일을 제출할 때까지의 유예시간(10분).
+     * @param frontendRedirectBaseUrl 콜백 처리 후 리다이렉트할 프론트 origin. 비어 있으면 상대 경로를 쓴다
+     *                                (배포는 동일 origin이라 필요 없고, 로컬은 Vite 포트가 달라 필요하다).
+     */
+    public record Oauth(
+            @NotNull Duration exchangeCodeTtl,
+            @NotNull Duration signupTicketTtl,
+            String frontendRedirectBaseUrl
     ) {
     }
 }

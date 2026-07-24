@@ -39,6 +39,10 @@ public enum ErrorCode {
     // 인증 - 비밀번호 찾기(재설정)
     AUTH_PASSWORD_RESET_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "가입되지 않은 이메일입니다."),
 
+    // 인증 - 카카오 OAuth
+    AUTH_OAUTH_EXCHANGE_CODE_INVALID(HttpStatus.UNAUTHORIZED, "로그인 처리가 만료되었습니다. 다시 시도해 주세요."),
+    AUTH_OAUTH_SIGNUP_TICKET_INVALID(HttpStatus.UNAUTHORIZED, "가입 세션이 만료되었습니다. 카카오 로그인을 다시 시도해 주세요."),
+
     // 카드 연동 - 커넥션
     CARD_ISSUER_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "지원하지 않는 카드사입니다."),
     CARD_CONNECTION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 연결된 카드사입니다."),

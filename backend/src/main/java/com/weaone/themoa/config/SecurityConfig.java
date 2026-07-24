@@ -4,6 +4,10 @@ import com.weaone.themoa.common.logging.MdcLoggingFilter;
 import com.weaone.themoa.security.handler.JwtAccessDeniedHandler;
 import com.weaone.themoa.security.handler.JwtAuthenticationEntryPoint;
 import com.weaone.themoa.security.jwt.JwtAuthenticationFilter;
+import com.weaone.themoa.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
+import com.weaone.themoa.security.oauth.KakaoLoginFailureHandler;
+import com.weaone.themoa.security.oauth.KakaoLoginSuccessHandler;
+import com.weaone.themoa.security.oauth.KakaoOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -35,7 +39,19 @@ public class SecurityConfig {
             "/api/auth/refresh",
             "/api/auth/logout",
             "/api/auth/email/code",
-            "/api/auth/email/code/verify"
+            "/api/auth/email/code/verify",
+            "/api/auth/oauth/exchange",
+            "/api/auth/oauth/kakao/complete-signup"
+    };
+
+    /**
+     * OAuth2Login이 처리하는 GET 경로. 기본값(/oauth2/authorization/**, /login/oauth2/code/**)을
+     * /api 하위로 옮겼다 — ALB 리스너 규칙이 "/api/*"만 Spring EC2로 보내기 때문이다
+     * (distribution/distributionSetting.md §10.2).
+     */
+    private static final String[] OAUTH_ENDPOINTS = {
+            "/api/oauth2/authorization/**",
+            "/api/login/oauth2/code/**"
     };
 
     private static final String[] DOCS_ENDPOINTS = {
@@ -58,6 +74,10 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final Environment environment;
+    private final KakaoOAuth2UserService kakaoOAuth2UserService;
+    private final KakaoLoginSuccessHandler kakaoLoginSuccessHandler;
+    private final KakaoLoginFailureHandler kakaoLoginFailureHandler;
+    private final HttpCookieOAuth2AuthorizationRequestRepository authorizationRequestRepository;
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -69,6 +89,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(HttpMethod.GET, HEALTH_ENDPOINTS).permitAll();
                     auth.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll();
+                    auth.requestMatchers(HttpMethod.GET, OAUTH_ENDPOINTS).permitAll();
                     auth.requestMatchers(DOCS_ENDPOINTS).permitAll();
                     auth.requestMatchers(POLICY_ADMIN_ENDPOINT).hasRole("ADMIN");
                     if (isPolicyLocalToolsEnabled()) {
@@ -86,6 +107,19 @@ public class SecurityConfig {
                 .exceptionHandling(handler -> handler
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(jwtAccessDeniedHandler)
+                )
+                // 카카오 로그인(auth.md §6). 인가 URL 생성·code 교환은 Spring이 처리하고, 그 뒤 커스텀
+                // 분기(기존 회원 로그인 vs 신규가입)는 KakaoLoginSuccessHandler가 이어받는다.
+                // state는 HttpSession이 아니라 쿠키에 둔다(authorizationRequestRepository) — 이 프로젝트의
+                // 인증은 완전히 stateless가 원칙이라 핸드셰이크 동안도 서버 세션을 만들지 않는다.
+                .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(endpoint -> endpoint
+                                .baseUri("/api/oauth2/authorization")
+                                .authorizationRequestRepository(authorizationRequestRepository))
+                        .redirectionEndpoint(endpoint -> endpoint.baseUri("/api/login/oauth2/code/*"))
+                        .userInfoEndpoint(endpoint -> endpoint.userService(kakaoOAuth2UserService))
+                        .successHandler(kakaoLoginSuccessHandler)
+                        .failureHandler(kakaoLoginFailureHandler)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(mdcLoggingFilter, JwtAuthenticationFilter.class);
