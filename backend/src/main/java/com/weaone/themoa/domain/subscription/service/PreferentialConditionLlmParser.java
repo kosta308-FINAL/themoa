@@ -1,9 +1,10 @@
 package com.weaone.themoa.domain.subscription.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
+import com.openai.models.chat.completions.StructuredChatCompletionCreateParams;
 import com.weaone.themoa.domain.recommend.service.OpenAiProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,14 +18,12 @@ import java.util.List;
 /**
  * 우대조건 원문을 LLM으로 "충족 조건 + 가산금리(%p)" 항목으로 분해한다.
  *
- * <p>정규식 파서보다 정확하다 — "최고우대금리 0.45%p"처럼 상한을 안내하는 문구를 조건으로 오인하지 않고,
- * "가/나 중 하나" 같은 구조도 개별 조건으로 풀어낸다.
+ * <p>추천 기능(LlmSelector)과 같은 방식으로 OpenAI의 <b>구조화 출력(Structured Outputs)</b>을 쓴다.
+ * 응답을 {@link Extracted} 스키마로 강제하므로 모델이 형식을 어길 수 없어, "JSON이 아니라 파싱 실패 →
+ * 정규식 폴백"이 나지 않는다.
  *
- * <p>추천 기능(LlmSelector)과 같은 방식으로 OpenAI SDK를 직접 호출한다. themoa는 채팅모델이 둘(google·openai)이라
- * Spring AI의 단일 ChatClient 빈이 만들어지지 않으므로, 검증된 SDK 직접 호출을 쓴다.
- *
- * <p>키가 없거나 호출이 실패하면 null을 반환해, 호출측이 정규식 파서로 폴백한다. 실패가 화면을 막지 않도록
- * 예외를 밖으로 던지지 않는다.
+ * <p>정규식 파서로는 못 잡던 문제들(줄바꿈으로 쪼개진 조건, 은행마다 다른 글머리, "최고 …%p" 상한 안내)을
+ * 프롬프트와 필드 설명으로 처리한다. 키가 없거나 호출이 실패하면 null을 반환해 정규식 파서로 폴백한다.
  */
 @Component
 public class PreferentialConditionLlmParser {
@@ -33,17 +32,29 @@ public class PreferentialConditionLlmParser {
     private static final int MAX_ITEMS = 20;
 
     private final OpenAiProperties props;
-    private volatile OpenAIClient client; // 키 있을 때 최초 1회 생성
+    private volatile OpenAIClient client;
 
-    public PreferentialConditionLlmParser(OpenAiProperties props, ObjectMapper objectMapper) {
+    public PreferentialConditionLlmParser(OpenAiProperties props) {
         this.props = props;
-        this.objectMapper = objectMapper;
     }
 
-    private final ObjectMapper objectMapper;
+    /** 구조화 출력 스키마. 필드 설명이 그대로 모델에 전달되어 추출 규칙 역할을 한다. */
+    public static class Extracted {
+        @JsonPropertyDescription("""
+                사용자가 체크리스트로 고를 수 있는 '개별 우대조건'만 담는다.
+                - '최고 연 3%p', '최대 …우대', '우대금리 최고 …' 처럼 전체 상한/합계를 안내하는 문구는 제외한다(조건 아님).
+                - 원문이 줄바꿈으로 쪼개져 있어도 앞뒤 줄을 합쳐 하나의 온전한 조건 문장으로 만든다.
+                - 글머리 기호(가., 1., ①, - 등)는 떼고 핵심 내용만 남긴다.
+                - 조건이 하나도 없으면 빈 배열.""")
+        public List<Item> conditions;
 
-    /** LLM 출력용 구조. rateBonus는 %p 숫자만(예: 0.1). */
-    private record LlmItem(String description, BigDecimal rateBonus) {
+        public static class Item {
+            @JsonPropertyDescription("이 조건을 사용자가 이해할 짧은 한국어 문장(예: '급여이체 월 50만원 이상 6개월')")
+            public String description;
+
+            @JsonPropertyDescription("이 조건 하나가 주는 우대금리 %p 숫자만(예: 1.0). 원문에 개별 %p가 없으면 0")
+            public BigDecimal rateBonus;
+        }
     }
 
     /**
@@ -54,21 +65,17 @@ public class PreferentialConditionLlmParser {
             return null;
         }
         try {
-            String content = callOpenAi(specialCondition);
-            LlmItem[] parsed = objectMapper.readValue(stripJsonFence(content), LlmItem[].class);
-
+            Extracted extracted = callOpenAi(specialCondition);
+            if (extracted == null || extracted.conditions == null) {
+                return null;
+            }
             List<PreferentialConditionParser.ParsedCondition> items = new ArrayList<>();
-            for (LlmItem item : parsed) {
-                if (!StringUtils.hasText(item.description())) {
+            for (Extracted.Item item : extracted.conditions) {
+                if (item == null || !StringUtils.hasText(item.description)) {
                     continue;
                 }
-                // 프롬프트로 걸러도 LLM이 "…우대금리 제공: 최고 3%p" 같은 상한 안내를 항목으로 남기는 경우가 있어,
-                // 코드에서 한 번 더 제외한다("최고/최대"가 들어간 총량 문구는 개별 충족 조건이 아니다).
-                if (isLimitDescription(item.description())) {
-                    continue;
-                }
-                BigDecimal bonus = item.rateBonus() == null ? BigDecimal.ZERO : item.rateBonus();
-                items.add(new PreferentialConditionParser.ParsedCondition(item.description().trim(), bonus));
+                BigDecimal bonus = item.rateBonus == null ? BigDecimal.ZERO : item.rateBonus;
+                items.add(new PreferentialConditionParser.ParsedCondition(item.description.trim(), bonus));
                 if (items.size() >= MAX_ITEMS) {
                     break;
                 }
@@ -80,35 +87,24 @@ public class PreferentialConditionLlmParser {
         }
     }
 
-    private String callOpenAi(String specialCondition) {
+    private Extracted callOpenAi(String specialCondition) {
         String prompt = """
-                아래는 은행 예·적금 상품의 우대조건 원문이다. 사용자가 체크리스트로 고를 수 있도록
-                "실제로 충족해야 하는 개별 조건"만 뽑아서 JSON 배열로만 출력하라. 다른 설명은 넣지 마라.
+                아래는 은행 예·적금 상품의 우대조건 원문이다. 사용자가 체크리스트로 고를 수 있도록 실제로
+                충족해야 하는 개별 우대조건만 뽑아라.
 
-                규칙:
-                - 각 원소는 {"description": string, "rateBonus": number} 형식. rateBonus는 그 조건 하나가 주는
-                  우대금리 %p 숫자만(예: 0.1). 원문에 개별 %p가 없으면 0으로 둔다.
-                - ⚠️ 전체 우대 상한을 안내하는 문구는 조건이 아니므로 반드시 제외한다. 다음은 모두 상한 안내다:
-                  "최고우대금리 0.45%p", "최대 연 0.2%p 우대", "자동이체 우대금리 제공: 최고 3%p",
-                  "우대금리 최대 …" 등 '최고/최대/합산'이라는 말과 함께 총량을 말하는 줄. 개별 충족 항목만 남긴다.
-                - 각 항목의 rateBonus를 다 더한 값이 원문에 적힌 "최고/최대 우대금리"를 넘으면 안 된다. 넘는다면
-                  상한 안내문을 조건으로 잘못 포함한 것이니 그 항목을 빼라.
-                - "가/나 중 하나" 같은 묶음은 개별 조건으로 각각 풀어서 나열한다.
-                - description은 사용자가 이해할 짧은 한국어로 다듬는다(예: "급여이체 월 30만원 이상").
-                - 조건이 하나도 없으면 빈 배열 [] 을 출력한다.
-
-                우대조건 원문:
+                원문:
                 %s""".formatted(specialCondition);
 
-        ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
+        StructuredChatCompletionCreateParams<Extracted> params = ChatCompletionCreateParams.builder()
                 .model(props.model())
                 .addUserMessage(prompt)
+                .responseFormat(Extracted.class)
                 .build();
 
         return client().chat().completions().create(params).choices().stream()
                 .flatMap(choice -> choice.message().content().stream())
                 .findFirst()
-                .orElse("[]");
+                .orElse(null);
     }
 
     private OpenAIClient client() {
@@ -120,32 +116,5 @@ public class PreferentialConditionLlmParser {
             }
         }
         return client;
-    }
-
-    /**
-     * "최고 우대금리 제공", "최대 …우대", "우대금리 합산 …" 처럼 개별 충족 조건이 아니라 상한/총량을
-     * 안내하는 문구인지. 이런 문구는 그 아래 실제 조건들의 합계라서 체크리스트에 넣으면 금리가 이중 계산된다.
-     */
-    private boolean isLimitDescription(String description) {
-        String text = description.replaceAll("\\s+", "");
-        boolean mentionsRate = text.contains("금리") || text.contains("이율") || text.contains("우대");
-        boolean mentionsCap = text.contains("최고") || text.contains("최대") || text.contains("합산");
-        // "최고 3%p 제공"처럼 상한 표현 + 금리 언급이면 개별 조건이 아니라 총량 안내로 본다.
-        return mentionsCap && mentionsRate;
-    }
-
-    private String stripJsonFence(String content) {
-        if (content == null) {
-            return "[]";
-        }
-        String trimmed = content.trim();
-        if (trimmed.startsWith("```")) {
-            trimmed = trimmed.replaceFirst("^```json", "").replaceFirst("^```", "");
-            int end = trimmed.lastIndexOf("```");
-            if (end >= 0) {
-                trimmed = trimmed.substring(0, end);
-            }
-        }
-        return trimmed.trim();
     }
 }

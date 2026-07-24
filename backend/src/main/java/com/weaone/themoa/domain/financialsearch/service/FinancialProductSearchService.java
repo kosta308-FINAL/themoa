@@ -48,28 +48,15 @@ public class FinancialProductSearchService {
     private static final double SEMANTIC_WEIGHT = 0.4;
     private static final double LEXICAL_WEIGHT = 0.6;
 
-    // 특정 인구집단을 겨냥한 상품인지 룰 기반으로 감지하기 위한 키워드 그룹.
-    // 검색어가 어느 그룹에 속하는지 감지되면, 상품 텍스트가 "다른 그룹"에만 해당하고 검색어 그룹엔
+    // 인구집단 키워드와 상품의도 키워드는 관리자가 화면에서 편집할 수 있어 DB에서 읽는다
+    // (FinancialSearchKeywordProvider가 캐시해 두고, 변경 시 갱신한다).
+    //
+    // 인구집단: 검색어가 어느 그룹에 속하는지 감지되면, 상품 텍스트가 "다른 그룹"에만 해당하고 검색어 그룹엔
     // 전혀 해당하지 않을 경우 유사도 점수와 무관하게 결과에서 제외한다(하드필터).
     // 예: "청년"으로 검색했는데 상품이 "임산부/육아" 전용이고 "청년"이란 언급이 전혀 없으면 제외.
-    private static final Map<String, List<String>> DEMOGRAPHIC_GROUPS = Map.ofEntries(
-            Map.entry("YOUTH", List.of("청년", "MZ", "사회초년생", "청소년", "대학생")),
-            Map.entry("CHILDCARE", List.of("임산부", "임신", "출산", "육아", "다자녀", "아이사랑", "자녀", "키즈", "꿈나무", "아동")),
-            Map.entry("DISABILITY", List.of("장애인", "장애우", "장애")),
-            Map.entry("SENIOR", List.of("시니어", "고령자", "실버", "어르신", "노인")),
-            Map.entry("MULTICULTURAL", List.of("다문화", "외국인")),
-            Map.entry("VETERAN", List.of("국가유공자", "보훈", "상이군경")),
-            Map.entry("LOW_INCOME", List.of("기초생활수급자", "차상위", "서민", "저소득")),
-            Map.entry("FARMER_FISHER", List.of("농업인", "어업인", "농어민", "귀농", "귀어")),
-            Map.entry("NEWLYWED", List.of("신혼부부", "예비부부"))
-    );
-
-    // 검색어가 "대출"을 원하는지 "예금/적금(저축)"을 원하는지 감지하는 키워드.
-    // 둘 다 걸리면(예: "돈 없을 때 돈 불리기"처럼 대출 트리거와 저축 트리거가 같이 있는 경우) 저축 쪽을 우선한다.
-    private static final List<String> LOAN_INTENT_KEYWORDS =
-            List.of("대출", "빌리", "빌려", "급전", "돈이 없", "돈 없");
-    private static final List<String> SAVINGS_INTENT_KEYWORDS =
-            List.of("적금", "예금", "저축", "모으", "불리");
+    //
+    // 상품의도: 검색어가 "대출"을 원하는지 "예금/적금(저축)"을 원하는지 감지한다.
+    // 둘 다 걸리면(예: "돈 없을 때 돈 불리기") 저축 쪽을 우선한다.
 
     // 결과 화면에 한 번에 보여줄 최대 개수(topK)만큼만 LLM에 설명을 부탁한다. 그 이상은 토큰 낭비.
     private final FinancialSavingsSearchRepository savingsProductRepository;
@@ -81,6 +68,7 @@ public class FinancialProductSearchService {
     private final FinancialRagProperties ragProperties;
     // 튜닝값(topK·유사도 임계값)은 관리자가 화면에서 바꿀 수 있어 매 검색마다 현재 값을 읽는다.
     private final FinancialRagSettingService settingService;
+    private final FinancialSearchKeywordProvider keywordProvider;
     private final BankUrlResolver bankUrlResolver;
     private final ObjectMapper objectMapper;
 
@@ -90,6 +78,7 @@ public class FinancialProductSearchService {
                                          ObjectProvider<FinancialVectorStore> financialVectorStoreProvider,
                                          FinancialRagProperties ragProperties,
                                          FinancialRagSettingService settingService,
+                                         FinancialSearchKeywordProvider keywordProvider,
                                          BankUrlResolver bankUrlResolver,
                                          ObjectMapper objectMapper) {
         this.savingsProductRepository = savingsProductRepository;
@@ -98,6 +87,7 @@ public class FinancialProductSearchService {
         this.financialVectorStoreProvider = financialVectorStoreProvider;
         this.ragProperties = ragProperties;
         this.settingService = settingService;
+        this.keywordProvider = keywordProvider;
         this.bankUrlResolver = bankUrlResolver;
         this.objectMapper = objectMapper;
     }
@@ -323,7 +313,8 @@ public class FinancialProductSearchService {
                 if (hint.age() != null) {
                     queryAge = hint.age();
                 }
-                if (hint.populationGroup() != null && DEMOGRAPHIC_GROUPS.containsKey(hint.populationGroup())) {
+                if (hint.populationGroup() != null
+                        && keywordProvider.demographicGroups().containsKey(hint.populationGroup())) {
                     queryGroups = Set.of(hint.populationGroup());
                 }
             }
@@ -468,11 +459,11 @@ public class FinancialProductSearchService {
     // 검색어에 저축 관련 단어가 있으면 무조건 "SAVINGS"(저축 트리거가 대출 트리거보다 우선).
     // 저축 단어가 없고 대출 단어만 있으면 "LOAN". 둘 다 없으면 null(필터 없이 예금/적금+대출 다 보여줌).
     private String detectProductTypeIntent(String query) {
-        boolean hasSavingsIntent = SAVINGS_INTENT_KEYWORDS.stream().anyMatch(query::contains);
+        boolean hasSavingsIntent = keywordProvider.savingsIntentKeywords().stream().anyMatch(query::contains);
         if (hasSavingsIntent) {
             return "SAVINGS";
         }
-        boolean hasLoanIntent = LOAN_INTENT_KEYWORDS.stream().anyMatch(query::contains);
+        boolean hasLoanIntent = keywordProvider.loanIntentKeywords().stream().anyMatch(query::contains);
         return hasLoanIntent ? "LOAN" : null;
     }
 
@@ -481,7 +472,7 @@ public class FinancialProductSearchService {
             return Set.of();
         }
         Set<String> groups = new LinkedHashSet<>();
-        DEMOGRAPHIC_GROUPS.forEach((group, keywords) -> {
+        keywordProvider.demographicGroups().forEach((group, keywords) -> {
             if (keywords.stream().anyMatch(text::contains)) {
                 groups.add(group);
             }
@@ -571,7 +562,7 @@ public class FinancialProductSearchService {
         return matches;
     }
 
-    // 검색어 단어가 인구집단 그룹(DEMOGRAPHIC_GROUPS)의 동의어 중 하나면, 그 그룹의 나머지 동의어도
+    // 검색어 단어가 인구집단 그룹의 동의어 중 하나면, 그 그룹의 나머지 동의어도
     // 같이 검색 대상에 넣는다. 예: "임산부"로 검색해도 상품 텍스트엔 "임신"으로만 적혀 있는 경우가 많아서
     // (실측: DB에 "임산부" 0건, "임신" 5건), 원래 단어만으론 후보가 아예 안 잡히는 문제가 있었다.
     private List<String> expandWithDemographicSynonyms(String[] originalTerms) {
@@ -581,7 +572,7 @@ public class FinancialProductSearchService {
                 continue;
             }
             expanded.add(term);
-            for (List<String> synonyms : DEMOGRAPHIC_GROUPS.values()) {
+            for (List<String> synonyms : keywordProvider.demographicGroups().values()) {
                 if (synonyms.contains(term)) {
                     expanded.addAll(synonyms);
                 }
@@ -651,7 +642,7 @@ public class FinancialProductSearchService {
             if (builder == null) {
                 return null;
             }
-            String groupKeys = String.join("|", DEMOGRAPHIC_GROUPS.keySet());
+            String groupKeys = String.join("|", keywordProvider.demographicGroups().keySet());
             String prompt = """
                     사용자가 금융상품(예금/적금/대출) 검색창에 아래처럼 정형화된 단어 없이 말로 풀어서
                     검색어를 입력했습니다. 이 문장에서 아래 3가지 정보를 추론해서 JSON 한 줄로만 출력하세요.

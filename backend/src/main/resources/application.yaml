@@ -138,7 +138,8 @@ finlife:
 
 openai:
   api-key: ${OPENAI_API_KEY:}
-  model: gpt-5-mini
+  # 추천 AI 총평·우대조건 파싱용. 추출·문장생성 작업이라 소형 일반 모델로 충분(추론 모델 불필요).
+  model: ${OPENAI_RECOMMEND_MODEL:gpt-4.1-mini}
 
 app:
   cors:
