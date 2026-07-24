@@ -427,7 +427,7 @@
 .fx-panel-title p {
   margin: 3px 0 0;
   color: var(--fx-muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .fx-panel-count {
@@ -606,7 +606,7 @@
   margin: 0;
   overflow-wrap: anywhere;
   color: var(--fx-muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
 }
 
