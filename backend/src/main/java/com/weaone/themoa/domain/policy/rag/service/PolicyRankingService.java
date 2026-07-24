@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.policy.rag.service;
 
 import com.weaone.themoa.domain.policy.policy.entity.Policy;
 import com.weaone.themoa.domain.policy.policy.region.RegionCompatibility;
+import com.weaone.themoa.domain.policy.policy.region.SearchRegionLevel;
 import com.weaone.themoa.domain.policy.rag.config.RagProperties;
 import com.weaone.themoa.domain.policy.rag.dto.BenefitGroup;
 import com.weaone.themoa.domain.policy.rag.dto.EligibilityBreadth;
@@ -262,6 +263,11 @@ public class PolicyRankingService {
 
     private Comparator<RankedPolicyCandidate> resultComparator(PolicySearchCondition condition, SearchQueryType queryType) {
         return (left, right) -> {
+            boolean regionPriorityFirst = regionPriorityFirst(condition, queryType);
+            if (regionPriorityFirst) {
+                int region = Integer.compare(regionPriority(left, condition), regionPriority(right, condition));
+                if (region != 0) return region;
+            }
             if (queryType == SearchQueryType.POLICY_NAME) {
                 // 정책명 검색은 사용자가 특정 명칭을 찾는 상황이므로 exact title을 tier보다 먼저 둔다.
                 int titlePriority = Integer.compare(titlePriority(right), titlePriority(left));
@@ -274,15 +280,19 @@ public class PolicyRankingService {
                 if (titlePriority != 0) return titlePriority;
             }
             double diff = right.ranking().rawFinalScore() - left.ranking().rawFinalScore();
-            if (condition.regionExplicit() && Math.abs(diff) <= properties.getSearch().getRegionSpecificityTieWindow() * 100.0) {
-                int region = Integer.compare(specificity(left.candidate().eligibility().regionMatch().compatibility()),
-                        specificity(right.candidate().eligibility().regionMatch().compatibility()));
+            if (!regionPriorityFirst && condition.regionExplicit()
+                    && Math.abs(diff) <= properties.getSearch().getRegionSpecificityTieWindow() * 100.0) {
+                int region = Integer.compare(regionPriority(left, condition), regionPriority(right, condition));
                 if (region != 0) return region;
             }
             if (diff > 0) return 1;
             if (diff < 0) return -1;
             return Integer.compare(left.candidate().policy().getId(), right.candidate().policy().getId());
         };
+    }
+
+    private boolean regionPriorityFirst(PolicySearchCondition condition, SearchQueryType queryType) {
+        return condition.regionExplicit() && queryType != SearchQueryType.POLICY_NAME;
     }
 
     private boolean desiredDomainPasses(PolicyDomainClassification domain, PolicySearchPlan plan) {
@@ -412,14 +422,33 @@ public class PolicyRankingService {
         return 0;
     }
 
-    private int specificity(RegionCompatibility compatibility) {
+    private int regionPriority(RankedPolicyCandidate item, PolicySearchCondition condition) {
+        return specificity(item.candidate().eligibility().regionMatch().compatibility(), condition);
+    }
+
+    private int specificity(RegionCompatibility compatibility, PolicySearchCondition condition) {
+        if (SearchRegionLevel.SIDO.name().equals(condition.regionLevel())) {
+            return switch (compatibility) {
+                case EXACT_SIDO -> 0;
+                case CHILD_SIGUNGU_MATCH -> 1;
+                case MULTIPLE_CHILD_SIGUNGU_MATCH -> 2;
+                case MULTIPLE_SIDO_MATCH, MULTIPLE_REGION_MATCH -> 3;
+                case NATIONWIDE -> 4;
+                case REGION_UNSPECIFIED -> 5;
+                case UNKNOWN -> 6;
+                case EXACT_SIGUNGU, MULTIPLE_SIGUNGU_MATCH, PARENT_SIDO, NOT_MATCHED -> 7;
+            };
+        }
         return switch (compatibility) {
             case EXACT_SIGUNGU -> 0;
-            case PARENT_SIDO, EXACT_SIDO -> 1;
-            case NATIONWIDE -> 2;
-            case MULTIPLE_REGION_MATCH -> 3;
-            case UNKNOWN -> 4;
-            case NOT_MATCHED -> 5;
+            case MULTIPLE_SIGUNGU_MATCH -> 1;
+            case PARENT_SIDO, EXACT_SIDO -> 2;
+            case CHILD_SIGUNGU_MATCH, MULTIPLE_CHILD_SIGUNGU_MATCH -> 3;
+            case MULTIPLE_SIDO_MATCH, MULTIPLE_REGION_MATCH -> 3;
+            case NATIONWIDE -> 4;
+            case REGION_UNSPECIFIED -> 5;
+            case UNKNOWN -> 6;
+            case NOT_MATCHED -> 7;
         };
     }
 
