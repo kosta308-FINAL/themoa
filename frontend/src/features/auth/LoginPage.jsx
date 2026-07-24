@@ -1,15 +1,20 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { login as requestLogin } from "../../api/authApi";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { kakaoLoginUrl, login as requestLogin } from "../../api/authApi";
 import { useAuth } from "../../hooks/useAuth";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { isAdminAccessToken } from "../../utils/accessToken";
 import AuthLayout from "./components/AuthLayout";
 
 function LoginPage() {
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    searchParams.get("error") === "kakao"
+      ? "카카오 로그인에 실패했어요. 다시 시도해 주세요."
+      : "",
+  );
   const [submitting, setSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -85,6 +90,26 @@ function LoginPage() {
           {submitting ? "로그인 중…" : "로그인"}
         </button>
       </form>
+
+      <div className="auth-divider">
+        <span>또는</span>
+      </div>
+
+      <button
+        type="button"
+        className="auth-kakao-btn"
+        onClick={() => {
+          window.location.href = kakaoLoginUrl();
+        }}
+      >
+        <svg className="auth-kakao-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            fill="#191600"
+            d="M12 3C6.98 3 2.9 6.24 2.9 10.24c0 2.56 1.68 4.81 4.22 6.1-.18.66-.68 2.5-.78 2.9-.12.5.18.49.39.36.16-.1 2.6-1.77 3.66-2.49.53.08 1.07.11 1.61.11 5.02 0 9.1-3.24 9.1-7.24C21.1 6.24 17.02 3 12 3Z"
+          />
+        </svg>
+        카카오로 로그인
+      </button>
 
       <p className="auth-switch">
         아직 계정이 없나요? <Link to="/signup">회원가입</Link>

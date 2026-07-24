@@ -23,7 +23,8 @@ class JwtTokenProviderTest {
                 new AuthProperties.Refresh(Duration.ofDays(5), "/api/auth", false),
                 new AuthProperties.EmailVerification(Duration.ofMinutes(5), Duration.ofSeconds(60), 5,
                         Duration.ofMinutes(30), "test@example.com"),
-                new AuthProperties.Terms("2026-07-21")
+                new AuthProperties.Terms("2026-07-21"),
+                new AuthProperties.Oauth(Duration.ofSeconds(60), Duration.ofMinutes(10), "")
         );
         return new JwtTokenProvider(properties);
     }

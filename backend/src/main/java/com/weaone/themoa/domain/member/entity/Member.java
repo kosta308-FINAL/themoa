@@ -135,6 +135,12 @@ public class Member {
         return new Member(email, passwordHash, name, gender, birthDate, now);
     }
 
+    /** 카카오 신규 회원(auth.md §6-2). 비밀번호가 없다 — 가짜 비밀번호를 만들지 않는다(§2-1). */
+    public static Member signUpSocial(String email, String name, Gender gender, LocalDate birthDate,
+                                       LocalDateTime now) {
+        return new Member(email, null, name, gender, birthDate, now);
+    }
+
     public boolean isLocked(LocalDateTime now) {
         return lockedUntil != null && lockedUntil.isAfter(now);
     }
