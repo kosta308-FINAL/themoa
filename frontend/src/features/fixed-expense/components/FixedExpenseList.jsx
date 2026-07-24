@@ -159,9 +159,21 @@ function FixedExpenseList({
             );
           })}
         </div>
+      ) : items.length === 0 ? (
+        <div className="fx-empty-state">
+          <p>등록된 고정지출이 없어요. 고정지출을 등록해 관리해보세요.</p>
+          <button
+            type="button"
+            className="fx-primary-button"
+            onClick={onRegisterNew}
+          >
+            <DashboardIcon name="plus" size={15} />
+            고정지출 등록
+          </button>
+        </div>
       ) : (
         <div className="fx-empty-state">
-          <p>표시할 고정지출이 없어요.</p>
+          <p>조건에 맞는 고정지출이 없어요.</p>
         </div>
       )}
     </section>

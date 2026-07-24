@@ -349,6 +349,11 @@
   background: var(--fx-blue-soft);
 }
 
+.fx-panel-title-icon.fx-tone-purple {
+  color: var(--fx-purple);
+  background: var(--fx-purple-soft);
+}
+
 .fx-panel-title h2 {
   margin: 0;
   font-size: 16px;
@@ -428,6 +433,36 @@
 .fx-suggestion-card.is-pending {
   opacity: 0.55;
   pointer-events: none;
+}
+
+.fx-coaching-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px;
+}
+
+.fx-coaching-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 13px 14px;
+  border: 1px solid var(--fx-purple-soft);
+  border-radius: 13px;
+  background: linear-gradient(150deg, #fff, var(--fx-purple-soft));
+}
+
+.fx-coaching-body strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.fx-coaching-body p {
+  margin: 0;
+  color: var(--fx-muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .fx-suggestion-top {
@@ -753,6 +788,10 @@
 }
 
 .fx-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
   padding: 40px 18px;
   color: var(--fx-muted);
   font-size: 13px;
@@ -1367,6 +1406,10 @@
   }
 
   .fx-suggestion-list {
+    grid-template-columns: 1fr;
+  }
+
+  .fx-coaching-list {
     grid-template-columns: 1fr;
   }
 

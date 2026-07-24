@@ -9,11 +9,13 @@ import {
   getSpendingGuideSummary,
 } from "../../api/spendingGuideApi";
 import {
+  getFixedExpenseCoachingCards,
   getFixedExpenses,
   reclassifyFixedExpenseCandidateAsHabit,
   rejectFixedExpenseCandidate,
   snoozeFixedExpenseCandidate,
 } from "../../api/fixedExpenseApi";
+import FixedExpenseCoachingCards from "./components/FixedExpenseCoachingCards";
 import FixedExpenseSuggestions from "./components/FixedExpenseSuggestions";
 import FixedExpenseList from "./components/FixedExpenseList";
 import UpcomingPayments from "./components/UpcomingPayments";
@@ -25,6 +27,7 @@ import "./FixedExpensePage.css";
 function FixedExpensePage() {
   const [expenseList, setExpenseList] = useState(null);
   const [candidates, setCandidates] = useState([]);
+  const [coachingCards, setCoachingCards] = useState([]);
   const [categories, setCategories] = useState([]);
   const [salarySummary, setSalarySummary] = useState(null);
   const [hasCardConnection, setHasCardConnection] = useState(false);
@@ -55,12 +58,14 @@ function FixedExpensePage() {
         categoriesResult,
         summaryResult,
         cardConnectionsResult,
+        coachingCardsResult,
       ] = await Promise.allSettled([
         getFixedExpenses(),
         getFixedExpenseCandidates(),
         getCategories(),
         getSpendingGuideSummary(),
         getCardConnections(),
+        getFixedExpenseCoachingCards(),
       ]);
       if (expensesResult.status === "fulfilled")
         setExpenseList(expensesResult.value);
@@ -87,6 +92,11 @@ function FixedExpensePage() {
             )
           : false,
       );
+      setCoachingCards(
+        coachingCardsResult.status === "fulfilled"
+          ? coachingCardsResult.value
+          : [],
+      );
     } finally {
       setIsLoading(false);
     }
@@ -100,6 +110,14 @@ function FixedExpensePage() {
   const reloadCandidates = async () => {
     try {
       setCandidates(await getFixedExpenseCandidates());
+    } catch {
+      // 목록 갱신 실패는 다음 새로고침에서 다시 시도한다.
+    }
+  };
+
+  const reloadCoachingCards = async () => {
+    try {
+      setCoachingCards(await getFixedExpenseCoachingCards());
     } catch {
       // 목록 갱신 실패는 다음 새로고침에서 다시 시도한다.
     }
@@ -281,6 +299,10 @@ function FixedExpensePage() {
                   onSnooze={handleCandidateSnooze}
                   onReject={handleCandidateReject}
                   onReclassifyHabit={handleCandidateReclassifyHabit}
+                />
+                <FixedExpenseCoachingCards
+                  cards={coachingCards}
+                  onDismissed={reloadCoachingCards}
                 />
                 <FixedExpenseList
                   items={items}
