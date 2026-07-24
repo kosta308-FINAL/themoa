@@ -127,6 +127,12 @@ public enum ErrorCode {
     POLICY_EMBEDDING_CONFIG_REQUIRED(HttpStatus.CONFLICT, "정책 임베딩 설정이 필요합니다."),
     POLICY_EMBEDDING_SYNC_NOT_FOUND(HttpStatus.CONFLICT, "정책 임베딩 동기화 정보를 찾을 수 없습니다."),
     POLICY_QDRANT_ERROR(HttpStatus.BAD_GATEWAY, "정책 벡터 저장소 요청을 처리하지 못했습니다."),
+    POLICY_RECOMMENDATION_PROFILE_ALREADY_EXISTS(HttpStatus.CONFLICT, "정책 추천 기본정보가 이미 설정되어 있습니다."),
+    POLICY_RECOMMENDATION_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "정책 추천 기본정보를 찾을 수 없습니다."),
+    POLICY_RECOMMENDATION_BIRTH_DATE_REQUIRED(HttpStatus.BAD_REQUEST, "회원 생년월일이 필요합니다."),
+    POLICY_RECOMMENDATION_REGION_INVALID(HttpStatus.BAD_REQUEST, "정책 추천 거주지 정보가 올바르지 않습니다."),
+    POLICY_RECOMMENDATION_EMPLOYMENT_INVALID(HttpStatus.BAD_REQUEST, "정책 추천 취업 상태가 올바르지 않습니다."),
+    POLICY_RECOMMENDATION_REFRESH_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "정책 추천을 다시 계산하지 못했습니다."),
 
     // 고객센터 - FAQ
     FAQ_NOT_FOUND(HttpStatus.NOT_FOUND, "FAQ를 찾을 수 없습니다."),

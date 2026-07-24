@@ -3,6 +3,8 @@ import PolicySearchForm from './components/PolicySearchForm'
 import PolicySearchResults from './components/PolicySearchResults'
 import PolicySearchStatus from './components/PolicySearchStatus'
 import { usePolicySearch } from './hooks/usePolicySearch'
+import PolicyRecommendationSection from './recommendation/components/PolicyRecommendationSection'
+import { usePolicyRecommendations } from './recommendation/hooks/usePolicyRecommendations'
 import './PolicyPage.css'
 
 const examples = [
@@ -14,6 +16,15 @@ const examples = [
 
 function PolicyPage() {
   const search = usePolicySearch('')
+  const recommendation = usePolicyRecommendations()
+
+  const handleSaveRecommendationProfile = async (payload) => {
+    await recommendation.saveProfile(payload)
+  }
+
+  const handleRefreshRecommendations = async () => {
+    await recommendation.refresh()
+  }
 
   return (
     <main className="dash-main policy-page">
@@ -25,6 +36,14 @@ function PolicyPage() {
           </p>
         </div>
       </div>
+
+      <PolicyRecommendationSection
+        recommendation={recommendation}
+        selected={search.selected}
+        onSaveProfile={handleSaveRecommendationProfile}
+        onRefresh={handleRefreshRecommendations}
+        onOpenDetail={search.openDetail}
+      />
 
       <PolicySearchForm
         query={search.query}
@@ -45,7 +64,10 @@ function PolicyPage() {
           results={search.results}
           selected={search.selected}
           page={search.page}
-          onSearch={search.runSearch}
+          totalPages={search.totalPages}
+          hasNextPage={search.hasNextPage}
+          hasPreviousPage={search.hasPreviousPage}
+          onPageChange={search.changePage}
           onOpenDetail={search.openDetail}
         />
         <PolicyDetailPanel selected={search.selected} detailLoading={search.detailLoading} />

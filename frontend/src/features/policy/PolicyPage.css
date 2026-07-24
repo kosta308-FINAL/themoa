@@ -32,6 +32,200 @@
   box-shadow: var(--dash-shadow);
 }
 
+.policy-recommendation-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius);
+  background: var(--dash-bg-card);
+  box-shadow: var(--dash-shadow);
+}
+
+.policy-recommendation-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.policy-recommendation-head h2 {
+  margin: 0 0 6px;
+  color: var(--dash-text-primary);
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.policy-recommendation-head p,
+.policy-recommendation-age p,
+.policy-recommendation-reason {
+  margin: 0;
+  color: var(--dash-text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.policy-recommendation-refresh {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--dash-border);
+  border-radius: 999px;
+  background: var(--dash-bg-card);
+  color: var(--dash-accent-dark);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.policy-recommendation-refresh:hover:not(:disabled) {
+  border-color: var(--dash-accent);
+  background: var(--dash-accent-light);
+}
+
+.policy-recommendation-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) repeat(3, minmax(0, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.policy-recommendation-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--dash-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.policy-recommendation-form select {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  background: var(--dash-bg-card);
+  color: var(--dash-text-primary);
+  font: inherit;
+  font-size: 13px;
+}
+
+.policy-recommendation-form select:focus {
+  border-color: var(--dash-accent);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+}
+
+.policy-recommendation-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.policy-recommendation-age {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--dash-accent-light);
+}
+
+.policy-recommendation-age span {
+  color: var(--dash-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.policy-recommendation-age strong {
+  color: var(--dash-accent-dark);
+  font-size: 18px;
+}
+
+.policy-recommendation-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.policy-recommendation-summary span,
+.policy-recommendation-summary a {
+  padding: 6px 10px;
+  border: 1px solid var(--dash-border);
+  border-radius: 999px;
+  background: #f8fbf9;
+  color: var(--dash-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.policy-recommendation-summary a {
+  border-color: var(--dash-accent);
+  background: var(--dash-accent-light);
+  color: var(--dash-accent-dark);
+}
+
+.policy-recommendation-list {
+  display: grid;
+  gap: 12px;
+}
+
+.policy-recommendation-item {
+  display: grid;
+  gap: 8px;
+}
+
+.policy-recommendation-reason {
+  padding: 0 4px;
+}
+
+.policy-recommendation-error {
+  margin: 0;
+  color: #a12c2c;
+  font-size: 13px;
+}
+
+.policy-recommendation-form > .policy-recommendation-error {
+  grid-column: 1 / -1;
+}
+
+.policy-recommendation-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+  background: var(--dash-accent-light);
+  color: var(--dash-accent-dark);
+  font-size: 13px;
+}
+
+.policy-recommendation-warning p {
+  margin: 0;
+}
+
+.policy-recommendation-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #f3c2c2;
+  border-radius: 12px;
+  background: #fdeeee;
+  color: #a12c2c;
+  font-size: 13px;
+}
+
+.policy-recommendation-state p {
+  margin: 0;
+}
+
 .policy-search-panel textarea {
   width: 100%;
   min-height: 104px;
@@ -425,6 +619,20 @@
 @media (max-width: 720px) {
   .policy-search-panel {
     padding: 16px;
+  }
+
+  .policy-recommendation-panel {
+    padding: 16px;
+  }
+
+  .policy-recommendation-head,
+  .policy-recommendation-state {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .policy-recommendation-form {
+    grid-template-columns: 1fr;
   }
 
   .policy-search-actions {

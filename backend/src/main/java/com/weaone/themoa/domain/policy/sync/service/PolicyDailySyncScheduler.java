@@ -4,6 +4,7 @@ import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.domain.datarefresh.entity.DataRefreshSource;
 import com.weaone.themoa.domain.datarefresh.service.DataRefreshStatusService;
 import com.weaone.themoa.domain.policy.policy.service.PolicyCollectionExecutionType;
+import com.weaone.themoa.domain.policy.recommendation.service.PolicyRecommendationBatchService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -25,15 +26,18 @@ public class PolicyDailySyncScheduler {
     private final PolicySyncPipelineService pipelineService;
     private final TaskExecutor adminJobExecutor;
     private final DataRefreshStatusService dataRefreshStatusService;
+    private final PolicyRecommendationBatchService recommendationBatchService;
 
     public PolicyDailySyncScheduler(PolicySyncExecutionGuard executionGuard,
                                     PolicySyncPipelineService pipelineService,
                                     @Qualifier("adminJobExecutor") TaskExecutor adminJobExecutor,
-                                    DataRefreshStatusService dataRefreshStatusService) {
+                                    DataRefreshStatusService dataRefreshStatusService,
+                                    PolicyRecommendationBatchService recommendationBatchService) {
         this.executionGuard = executionGuard;
         this.pipelineService = pipelineService;
         this.adminJobExecutor = adminJobExecutor;
         this.dataRefreshStatusService = dataRefreshStatusService;
+        this.recommendationBatchService = recommendationBatchService;
     }
 
     @Scheduled(
@@ -71,6 +75,7 @@ public class PolicyDailySyncScheduler {
                     result.readiness().ready());
             if (result.readiness().ready()) {
                 dataRefreshStatusService.recordSuccess(DataRefreshSource.POLICY, LocalDateTime.now(SEOUL_ZONE));
+                refreshPolicyRecommendations();
             }
         } catch (BusinessException ex) {
             log.warn("정책 일일 동기화에 실패했습니다. errorCode={}",
@@ -80,6 +85,14 @@ public class PolicyDailySyncScheduler {
                     ex.getClass().getSimpleName());
         } finally {
             executionGuard.release();
+        }
+    }
+
+    private void refreshPolicyRecommendations() {
+        try {
+            recommendationBatchService.refreshAllProfiles();
+        } catch (RuntimeException ex) {
+            log.warn("정책 추천 Batch 실행에 실패했습니다. errorType={}", ex.getClass().getSimpleName());
         }
     }
 }
