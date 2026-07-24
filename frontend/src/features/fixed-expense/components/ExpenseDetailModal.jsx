@@ -102,7 +102,12 @@ function MissedPaymentSection({ fixedExpenseId, onConfirmed }) {
   );
 }
 
-function ExpenseDetailModal({ expense, onClose, onChanged }) {
+function ExpenseDetailModal({
+  expense,
+  hasCardConnection,
+  onClose,
+  onChanged,
+}) {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     amount: String(Number(expense.expectedAmount)),
@@ -277,7 +282,7 @@ function ExpenseDetailModal({ expense, onClose, onChanged }) {
                 )}
               </div>
 
-              {expense.paymentMethod === "CARD" && (
+              {expense.paymentMethod === "CARD" && hasCardConnection && (
                 <MissedPaymentSection
                   fixedExpenseId={expense.id}
                   onConfirmed={onChanged}

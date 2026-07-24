@@ -312,6 +312,7 @@ function FixedExpensePage() {
       {detailExpense && (
         <ExpenseDetailModal
           expense={detailExpense}
+          hasCardConnection={hasCardConnection}
           onClose={() => setDetailExpense(null)}
           onChanged={handleDetailChanged}
         />
