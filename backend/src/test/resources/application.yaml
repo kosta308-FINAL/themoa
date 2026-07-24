@@ -19,6 +19,25 @@ spring:
     username: test@example.com
     password: test
 
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: test-kakao-client-id
+            client-secret: test-kakao-client-secret
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/api/login/oauth2/code/{registrationId}"
+            scope: profile_nickname
+            client-name: Kakao
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+
   ai:
     # 테스트 전용 더미값. 실제 Gemini 호출은 컨텍스트 기동 테스트에서 일어나지 않는다.
     google:
@@ -26,6 +45,8 @@ spring:
         api-key: test-gemini-api-key
         chat:
           model: gemini-3.1-flash-lite
+    openai:
+      api-key: test-openai-api-key
 
 app:
   auth:
@@ -45,6 +66,10 @@ app:
       from: test@example.com
     terms:
       version: 2026-07-21
+    oauth:
+      exchange-code-ttl: 60s
+      signup-ticket-ttl: 10m
+      frontend-redirect-base-url:
   codef:
     # 테스트 전용 더미값. 실제 CODEF 호출은 컨텍스트 기동 테스트에서 일어나지 않는다.
     client-id: test-client-id
