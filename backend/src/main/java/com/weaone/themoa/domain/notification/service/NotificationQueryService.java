@@ -39,4 +39,9 @@ public class NotificationQueryService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND));
         notification.markRead(LocalDateTime.now());
     }
+
+    @Transactional
+    public void markAllRead(Long memberId) {
+        notificationRepository.markAllReadByMemberId(memberId, LocalDateTime.now());
+    }
 }
