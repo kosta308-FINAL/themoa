@@ -1,5 +1,6 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Toast from "../../components/common/Toast";
+import ProductsTabNav from "../../components/common/ProductsTabNav";
 import { useBookmarks } from "../../hooks/useBookmarks";
 import RecommendForm from "./components/RecommendForm";
 import RecommendResults from "./components/RecommendResults";
@@ -36,16 +37,15 @@ function ProductsPage() {
     <main className="dash-main products-page">
       <div className="dash-topbar">
         <div>
-          <h1>맞춤형 적금 추천</h1>
+          <h1>맞춤형 금융 상품 추천</h1>
           <p>
             내 정보를 입력하면 가입 가능한 적금 중 딱 맞는 상품을 골라드려요.
             목돈 예치(예금)는 상품 검색을 이용해 보세요.
           </p>
         </div>
-        <Link className="products-nav-link" to="/dashboard/products/search">
-          상품 검색하기 →
-        </Link>
       </div>
+
+      <ProductsTabNav />
 
       <div className="products-layout">
         {/* 기본값이 준비된 뒤에 폼을 올려서, 서버 값을 초기값으로 그대로 쓰게 한다. */}

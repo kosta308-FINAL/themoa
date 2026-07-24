@@ -6,7 +6,7 @@ import {
   updateWorkSchedule,
 } from "../../api/spendingGuideApi";
 import DashboardIcon from "../../components/common/DashboardIcon";
-import { toNumber } from "../spendingGuideUtils";
+import { toNumber } from "./spendingGuideUtils";
 import IncomeProfileFields from "./components/IncomeProfileFields";
 
 function BudgetSettingsModal({ summary, onClose, onSaved }) {
