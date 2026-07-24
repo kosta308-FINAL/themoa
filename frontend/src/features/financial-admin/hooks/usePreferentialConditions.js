@@ -4,6 +4,7 @@ import {
   getConditionReviewList,
   refreshConditionCache,
   reparseConditionCache,
+  searchConditionProducts,
   updateConditionCache,
 } from "../../../api/financialAdminApi";
 import { getApiErrorMessage } from "../../../utils/apiError";
@@ -29,6 +30,9 @@ export const usePreferentialConditions = () => {
   const [saving, setSaving] = useState(false);
   const [reparsing, setReparsing] = useState(false);
 
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+
   useEffect(() => {
     let active = true;
     getConditionReviewList()
@@ -53,6 +57,41 @@ export const usePreferentialConditions = () => {
       active = false;
     };
   }, []);
+
+  // 첫 진입 시 keyword 없이 전체 대상 상품을 한 번 받아온다.
+  useEffect(() => {
+    let active = true;
+    searchConditionProducts("")
+      .then((data) => {
+        if (active) {
+          setProducts(data || []);
+        }
+      })
+      .catch(() => {
+        // 상품 목록을 못 받아와도 ID 직접 입력 조회는 그대로 동작하므로 조용히 넘어간다.
+      })
+      .finally(() => {
+        if (active) {
+          setProductsLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const searchProducts = async (keyword) => {
+    setProductsLoading(true);
+    try {
+      setProducts((await searchConditionProducts(keyword)) || []);
+    } catch (searchError) {
+      setLookupError(
+        getApiErrorMessage(searchError, "상품 검색에 실패했어요."),
+      );
+    } finally {
+      setProductsLoading(false);
+    }
+  };
 
   const reloadReview = async () => {
     setReviewItems((await getConditionReviewList()) || []);
@@ -145,5 +184,8 @@ export const usePreferentialConditions = () => {
     lookup,
     reparse,
     save,
+    products,
+    productsLoading,
+    searchProducts,
   };
 };
