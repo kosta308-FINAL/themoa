@@ -657,12 +657,18 @@
   flex: 1;
   min-height: 30px;
   padding: 0 9px;
-  border: 0;
+  border: 1px solid var(--fx-border);
   border-radius: 8px;
   color: var(--fx-muted);
-  background: var(--fx-page);
+  background: #fff;
   font-size: 10px;
   font-weight: 750;
+}
+
+.fx-coach-actions button:hover:not(:disabled) {
+  border-color: var(--fx-border-strong);
+  color: var(--fx-text);
+  background: #fafdfb;
 }
 
 .fx-coach-actions button:disabled {
@@ -1547,12 +1553,17 @@
 
 .fx-manual-confirm {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   margin-top: 18px;
   padding-top: 16px;
   border-top: 1px solid var(--fx-border);
+}
+
+.fx-manual-confirm > .fx-form-error-text {
+  flex-basis: 100%;
 }
 
 .fx-manual-confirm-head h4 {
@@ -1568,6 +1579,7 @@
 
 .fx-detail-danger {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -1576,11 +1588,22 @@
   border-top: 1px solid var(--fx-border);
 }
 
+.fx-detail-danger > .fx-form-error-text {
+  flex-basis: 100%;
+}
+
 .fx-detail-danger p {
   margin: 0;
   color: var(--fx-muted);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.5;
+}
+
+.fx-detail-danger-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .fx-modal.sm .fx-primary-button,
