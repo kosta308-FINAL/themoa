@@ -182,6 +182,7 @@ function FixedExpensePage() {
   const totalExpected = toNumber(expenseList?.totalExpectedAmountKrw);
   const ratio = salaryAmount > 0 ? (totalExpected / salaryAmount) * 100 : null;
   const remaining = salaryAmount - totalExpected;
+  const isEmptyState = items.length === 0 && candidates.length === 0;
 
   return (
     <div className="fixed-expense">
@@ -205,6 +206,26 @@ function FixedExpensePage() {
 
         {isLoading && !expenseList ? (
           <div className="fx-loading">고정지출을 불러오고 있어요.</div>
+        ) : isEmptyState ? (
+          <section className="fx-empty-hero" aria-label="고정지출 시작하기">
+            <span className="fx-empty-hero-icon">
+              <DashboardIcon name="receipt" size={26} />
+            </span>
+            <h2>등록된 고정지출이 없어요</h2>
+            <p>
+              매달 반복되는 구독료, 월세, 보험료 같은 지출을 등록하면
+              <br />
+              결제일과 급여 대비 비율을 한눈에 관리할 수 있어요.
+            </p>
+            <button
+              type="button"
+              className="fx-primary-button"
+              onClick={() => setRegisterState({ candidate: null })}
+            >
+              <DashboardIcon name="plus" size={15} />
+              고정지출 등록해서 시작하기
+            </button>
+          </section>
         ) : (
           <>
             <section className="fx-summary-hero" aria-label="월 고정지출 요약">
