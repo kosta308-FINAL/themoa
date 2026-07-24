@@ -32,13 +32,16 @@ public class PopularFinancialProductService {
     private final BookmarkRepository bookmarkRepository;
     private final BookmarkSavingsProductRepository savingsProductRepository;
     private final BankUrlResolver bankUrlResolver;
+    private final BankNameFormatter bankNameFormatter;
 
     public PopularFinancialProductService(BookmarkRepository bookmarkRepository,
                                           BookmarkSavingsProductRepository savingsProductRepository,
-                                          BankUrlResolver bankUrlResolver) {
+                                          BankUrlResolver bankUrlResolver,
+                                          BankNameFormatter bankNameFormatter) {
         this.bookmarkRepository = bookmarkRepository;
         this.savingsProductRepository = savingsProductRepository;
         this.bankUrlResolver = bankUrlResolver;
+        this.bankNameFormatter = bankNameFormatter;
     }
 
     @Transactional(readOnly = true)
@@ -80,7 +83,7 @@ public class PopularFinancialProductService {
                     rank,
                     product.getId(),
                     product.getProductName(),
-                    product.getCompanyName(),
+                    bankNameFormatter.toDisplayName(product.getCompanyName()),
                     product.getProductType() == null ? null : product.getProductType().name(),
                     bestRate,
                     shortestTerm,

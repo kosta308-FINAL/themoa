@@ -70,6 +70,7 @@ public class FinancialProductSearchService {
     private final FinancialRagSettingService settingService;
     private final FinancialSearchKeywordProvider keywordProvider;
     private final BankUrlResolver bankUrlResolver;
+    private final BankNameFormatter bankNameFormatter;
     private final ObjectMapper objectMapper;
 
     public FinancialProductSearchService(FinancialSavingsSearchRepository savingsProductRepository,
@@ -80,6 +81,7 @@ public class FinancialProductSearchService {
                                          FinancialRagSettingService settingService,
                                          FinancialSearchKeywordProvider keywordProvider,
                                          BankUrlResolver bankUrlResolver,
+                                         BankNameFormatter bankNameFormatter,
                                          ObjectMapper objectMapper) {
         this.savingsProductRepository = savingsProductRepository;
         this.loanProductRepository = loanProductRepository;
@@ -89,6 +91,7 @@ public class FinancialProductSearchService {
         this.settingService = settingService;
         this.keywordProvider = keywordProvider;
         this.bankUrlResolver = bankUrlResolver;
+        this.bankNameFormatter = bankNameFormatter;
         this.objectMapper = objectMapper;
     }
 
@@ -593,7 +596,9 @@ public class FinancialProductSearchService {
                 .min(Comparator.naturalOrder())
                 .orElse(null);
         // recommend 엔티티의 productType은 SavingsType enum이라, 검색 응답 DTO의 String 필드에 맞춰 name()으로 변환한다.
-        return new FinancialSearchResultItem(product.getId(), product.getProductType().name(), product.getCompanyName(),
+        // 회사명은 사용자에게 친숙한 표시명으로 바꾸되, 링크 조회에는 매칭 어긋남을 막기 위해 원본을 그대로 쓴다.
+        return new FinancialSearchResultItem(product.getId(), product.getProductType().name(),
+                bankNameFormatter.toDisplayName(product.getCompanyName()),
                 product.getProductName(), product.getJoinMethod(), bestRate, shortestTerm, product.getSpecialCondition(),
                 matchReason, bankUrlResolver.resolve(product.getCompanyName()));
     }
@@ -605,7 +610,8 @@ public class FinancialProductSearchService {
                 .min(Comparator.naturalOrder())
                 .orElse(null);
         // recommend 엔티티의 productType은 LoanType enum이라, 검색 응답 DTO의 String 필드에 맞춰 name()으로 변환한다.
-        return new FinancialSearchResultItem(product.getId(), product.getProductType().name(), product.getCompanyName(),
+        return new FinancialSearchResultItem(product.getId(), product.getProductType().name(),
+                bankNameFormatter.toDisplayName(product.getCompanyName()),
                 product.getProductName(), product.getJoinMethod(), minRate, null, product.getSpecialCondition(),
                 matchReason, bankUrlResolver.resolve(product.getCompanyName()));
     }

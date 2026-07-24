@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.bookmark.service;
 
 import com.weaone.themoa.domain.bookmark.entity.BookmarkTargetType;
 import com.weaone.themoa.domain.bookmark.repository.BookmarkLoanProductRepository;
+import com.weaone.themoa.domain.financialsearch.service.BankNameFormatter;
 import com.weaone.themoa.domain.financialsearch.service.BankUrlResolver;
 import com.weaone.themoa.domain.recommend.entity.LoanProduct;
 import com.weaone.themoa.domain.recommend.entity.LoanProductOption;
@@ -23,11 +24,14 @@ public class LoanProductBookmarkTargetReader implements BookmarkTargetReader {
 
     private final BookmarkLoanProductRepository loanProductRepository;
     private final BankUrlResolver bankUrlResolver;
+    private final BankNameFormatter bankNameFormatter;
 
     public LoanProductBookmarkTargetReader(BookmarkLoanProductRepository loanProductRepository,
-                                           BankUrlResolver bankUrlResolver) {
+                                           BankUrlResolver bankUrlResolver,
+                                              BankNameFormatter bankNameFormatter) {
         this.loanProductRepository = loanProductRepository;
         this.bankUrlResolver = bankUrlResolver;
+        this.bankNameFormatter = bankNameFormatter;
     }
 
     @Override
@@ -49,7 +53,7 @@ public class LoanProductBookmarkTargetReader implements BookmarkTargetReader {
                     .orElse(null);
             details.put(product.getId(), new BookmarkTargetDetail(
                     product.getProductName(),
-                    product.getCompanyName(),
+                    bankNameFormatter.toDisplayName(product.getCompanyName()),
                     product.getProductType() == null ? null : product.getProductType().name(),
                     product.getJoinMethod(),
                     minRate,

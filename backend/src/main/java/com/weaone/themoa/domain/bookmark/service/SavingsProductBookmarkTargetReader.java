@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.bookmark.service;
 
 import com.weaone.themoa.domain.bookmark.entity.BookmarkTargetType;
 import com.weaone.themoa.domain.bookmark.repository.BookmarkSavingsProductRepository;
+import com.weaone.themoa.domain.financialsearch.service.BankNameFormatter;
 import com.weaone.themoa.domain.financialsearch.service.BankUrlResolver;
 import com.weaone.themoa.domain.recommend.entity.SavingsProduct;
 import com.weaone.themoa.domain.recommend.entity.SavingsProductOption;
@@ -21,11 +22,14 @@ public class SavingsProductBookmarkTargetReader implements BookmarkTargetReader 
     private final BookmarkSavingsProductRepository savingsProductRepository;
     // 검색 결과와 같은 기준으로 공식 링크를 보여주기 위해 financialsearch의 resolver를 그대로 쓴다.
     private final BankUrlResolver bankUrlResolver;
+    private final BankNameFormatter bankNameFormatter;
 
     public SavingsProductBookmarkTargetReader(BookmarkSavingsProductRepository savingsProductRepository,
-                                              BankUrlResolver bankUrlResolver) {
+                                              BankUrlResolver bankUrlResolver,
+                                              BankNameFormatter bankNameFormatter) {
         this.savingsProductRepository = savingsProductRepository;
         this.bankUrlResolver = bankUrlResolver;
+        this.bankNameFormatter = bankNameFormatter;
     }
 
     @Override
@@ -53,7 +57,7 @@ public class SavingsProductBookmarkTargetReader implements BookmarkTargetReader 
                     .orElse(null);
             details.put(product.getId(), new BookmarkTargetDetail(
                     product.getProductName(),
-                    product.getCompanyName(),
+                    bankNameFormatter.toDisplayName(product.getCompanyName()),
                     product.getProductType() == null ? null : product.getProductType().name(),
                     product.getJoinMethod(),
                     bestRate,
