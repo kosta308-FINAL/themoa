@@ -4,6 +4,8 @@ import {
   updateManualTransaction,
 } from "../../api/spendingGuideApi";
 import DashboardIcon from "../../components/common/DashboardIcon";
+import SelectFieldModal from "./components/SelectFieldModal";
+import DateTimeFieldModal from "./components/DateTimeFieldModal";
 
 const WON = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
 const nowValue = () => {
@@ -33,6 +35,8 @@ function ManualTransactionModal({
 
   const update = (key) => (event) =>
     setForm((current) => ({ ...current, [key]: event.target.value }));
+  const setField = (key) => (value) =>
+    setForm((current) => ({ ...current, [key]: value }));
   const handleAmount = (event) =>
     setForm((current) => ({
       ...current,
@@ -41,6 +45,14 @@ function ManualTransactionModal({
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!form.paymentMethod) {
+      setError("결제수단을 선택해주세요.");
+      return;
+    }
+    if (!form.categoryId) {
+      setError("카테고리를 선택해주세요.");
+      return;
+    }
     setError("");
     setIsSubmitting(true);
     const [usedDate, usedTime] = form.usedAt.split("T");
@@ -110,21 +122,16 @@ function ManualTransactionModal({
               <em>원</em>
             </div>
           </label>
-          <label>
-            <span>결제수단 *</span>
-            <select
-              value={form.paymentMethod}
-              onChange={update("paymentMethod")}
-              required
-            >
-              <option value="" disabled>
-                선택
-              </option>
-              {showCard && <option value="CARD">카드</option>}
-              <option value="CASH">현금</option>
-              <option value="TRANSFER">계좌이체</option>
-            </select>
-          </label>
+          <SelectFieldModal
+            label="결제수단 *"
+            value={form.paymentMethod}
+            onChange={setField("paymentMethod")}
+            options={[
+              ...(showCard ? [{ value: "CARD", label: "카드" }] : []),
+              { value: "CASH", label: "현금" },
+              { value: "TRANSFER", label: "계좌이체" },
+            ]}
+          />
           <label className="wide">
             <span>사용처/내용 *</span>
             <input
@@ -135,33 +142,22 @@ function ManualTransactionModal({
               required
             />
           </label>
-          <label>
-            <span>사용일시 *</span>
-            <input
-              type="datetime-local"
-              value={form.usedAt}
-              onChange={update("usedAt")}
-              max={nowValue()}
-              required
-            />
-          </label>
-          <label>
-            <span>카테고리 *</span>
-            <select
-              value={form.categoryId}
-              onChange={update("categoryId")}
-              required
-            >
-              <option value="" disabled>
-                선택
-              </option>
-              {(categories || []).map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <DateTimeFieldModal
+            label="사용일시 *"
+            value={form.usedAt}
+            onChange={setField("usedAt")}
+            max={nowValue()}
+          />
+          <SelectFieldModal
+            label="카테고리 *"
+            value={form.categoryId}
+            onChange={setField("categoryId")}
+            disabled={!categories?.length}
+            options={(categories || []).map((category) => ({
+              value: String(category.id),
+              label: category.name,
+            }))}
+          />
           <label className="wide">
             <span>메모</span>
             <textarea

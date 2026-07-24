@@ -9,11 +9,13 @@ import {
   getSpendingGuideSummary,
 } from "../../api/spendingGuideApi";
 import {
+  getFixedExpenseCoachingCards,
   getFixedExpenses,
   reclassifyFixedExpenseCandidateAsHabit,
   rejectFixedExpenseCandidate,
   snoozeFixedExpenseCandidate,
 } from "../../api/fixedExpenseApi";
+import FixedExpenseCoachingCards from "./components/FixedExpenseCoachingCards";
 import FixedExpenseSuggestions from "./components/FixedExpenseSuggestions";
 import FixedExpenseList from "./components/FixedExpenseList";
 import UpcomingPayments from "./components/UpcomingPayments";
@@ -25,6 +27,7 @@ import "./FixedExpensePage.css";
 function FixedExpensePage() {
   const [expenseList, setExpenseList] = useState(null);
   const [candidates, setCandidates] = useState([]);
+  const [coachingCards, setCoachingCards] = useState([]);
   const [categories, setCategories] = useState([]);
   const [salarySummary, setSalarySummary] = useState(null);
   const [hasCardConnection, setHasCardConnection] = useState(false);
@@ -55,12 +58,14 @@ function FixedExpensePage() {
         categoriesResult,
         summaryResult,
         cardConnectionsResult,
+        coachingCardsResult,
       ] = await Promise.allSettled([
         getFixedExpenses(),
         getFixedExpenseCandidates(),
         getCategories(),
         getSpendingGuideSummary(),
         getCardConnections(),
+        getFixedExpenseCoachingCards(),
       ]);
       if (expensesResult.status === "fulfilled")
         setExpenseList(expensesResult.value);
@@ -87,6 +92,11 @@ function FixedExpensePage() {
             )
           : false,
       );
+      setCoachingCards(
+        coachingCardsResult.status === "fulfilled"
+          ? coachingCardsResult.value
+          : [],
+      );
     } finally {
       setIsLoading(false);
     }
@@ -100,6 +110,14 @@ function FixedExpensePage() {
   const reloadCandidates = async () => {
     try {
       setCandidates(await getFixedExpenseCandidates());
+    } catch {
+      // 목록 갱신 실패는 다음 새로고침에서 다시 시도한다.
+    }
+  };
+
+  const reloadCoachingCards = async () => {
+    try {
+      setCoachingCards(await getFixedExpenseCoachingCards());
     } catch {
       // 목록 갱신 실패는 다음 새로고침에서 다시 시도한다.
     }
@@ -163,10 +181,11 @@ function FixedExpensePage() {
   const salaryAmount = toNumber(salarySummary?.salaryAmount);
   const totalExpected = toNumber(expenseList?.totalExpectedAmountKrw);
   const ratio = salaryAmount > 0 ? (totalExpected / salaryAmount) * 100 : null;
+  const remaining = salaryAmount - totalExpected;
 
   return (
     <div className="fixed-expense">
-      <main className="fx-page">
+      <main className="spending-main">
         <div className="fx-page-head">
           <div>
             <h1>고정지출</h1>
@@ -233,7 +252,10 @@ function FixedExpensePage() {
                 {ratio !== null ? (
                   <>
                     <div className="fx-salary-head">
-                      <span>급여 대비 고정지출</span>
+                      <span>
+                        <DashboardIcon name="wallet" size={15} />
+                        급여 대비 고정지출
+                      </span>
                       <strong>{ratio.toFixed(1)}%</strong>
                     </div>
                     <span className="fx-salary-base">
@@ -256,6 +278,14 @@ function FixedExpensePage() {
                       급여 중 {formatWon(totalExpected)}이 고정지출로 먼저
                       나가요.
                     </p>
+                    <div className="fx-salary-remaining">
+                      <span>
+                        {remaining >= 0
+                          ? "고정지출 제외 후 남는 급여"
+                          : "급여보다 많은 고정지출"}
+                      </span>
+                      <strong>{formatWon(Math.abs(remaining))}</strong>
+                    </div>
                   </>
                 ) : (
                   <div className="fx-salary-empty">
@@ -292,7 +322,13 @@ function FixedExpensePage() {
                   onRegisterNew={() => setRegisterState({ candidate: null })}
                 />
               </div>
-              <UpcomingPayments items={items} />
+              <div className="fx-side-col">
+                <UpcomingPayments items={items} />
+                <FixedExpenseCoachingCards
+                  cards={coachingCards}
+                  onDismissed={reloadCoachingCards}
+                />
+              </div>
             </div>
           </>
         )}

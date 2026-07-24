@@ -42,3 +42,9 @@ export const reclassifyFixedExpenseCandidateAsHabit = (candidateId) =>
   axiosInstance.post(
     `/api/fixed-expense-candidates/${candidateId}/reclassify-habit`,
   );
+
+export const getFixedExpenseCoachingCards = () =>
+  axiosInstance.get("/api/fixed-expenses/coaching-cards").then(responseData);
+
+export const dismissFixedExpenseCoachingCard = (cardId) =>
+  axiosInstance.post(`/api/fixed-expenses/coaching-cards/${cardId}/dismiss`);
