@@ -143,7 +143,23 @@
   border-radius: 20px;
   background:
     radial-gradient(circle at 5% 0%, rgba(52, 211, 153, 0.24), transparent 38%),
+    radial-gradient(
+      circle at 94% 8%,
+      rgba(20, 184, 166, 0.15),
+      transparent 38%
+    ),
     linear-gradient(145deg, #e5faee, #f4fbf6 72%);
+}
+
+.fx-summary-hero::after {
+  content: "";
+  position: absolute;
+  right: -60px;
+  bottom: -110px;
+  width: 310px;
+  height: 310px;
+  border: 55px solid rgba(34, 197, 94, 0.07);
+  border-radius: 50%;
 }
 
 .fx-summary-main,
@@ -251,6 +267,10 @@
   letter-spacing: -0.7px;
 }
 
+.fx-salary-head strong.over {
+  color: var(--fx-red);
+}
+
 .fx-salary-base {
   display: block;
   margin-top: 5px;
@@ -259,17 +279,25 @@
 }
 
 .fx-progress-track {
-  height: 8px;
+  height: 10px;
   margin-top: 16px;
   overflow: hidden;
   border-radius: 999px;
   background: #e9efeb;
+  box-shadow: inset 0 1px 2px rgba(22, 36, 28, 0.08);
 }
 
 .fx-progress-value {
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--fx-green), #18a957);
+  transition:
+    width 0.25s ease,
+    background 0.25s ease;
+}
+
+.fx-progress-value.over {
+  background: linear-gradient(90deg, #f36a6a, var(--fx-red));
 }
 
 .fx-ratio-help {
@@ -289,6 +317,10 @@
   background: var(--fx-green-pale);
 }
 
+.fx-salary-remaining.over {
+  background: var(--fx-red-soft);
+}
+
 .fx-salary-remaining span {
   color: var(--fx-muted);
   font-size: 11px;
@@ -299,11 +331,16 @@
   letter-spacing: -0.3px;
 }
 
+.fx-salary-remaining.over strong {
+  color: var(--fx-red);
+}
+
 .fx-salary-empty {
   display: flex;
   flex-direction: column;
   gap: 8px;
   align-self: center;
+  margin: auto 0;
   text-align: center;
 }
 
@@ -863,7 +900,13 @@
 }
 
 .fx-sort-select {
+  flex: 0 0 auto;
+  width: 168px;
+}
+
+.fx-sort-select .fx-select-trigger {
   min-height: 34px;
+  height: 34px;
   padding: 0 12px;
   border: 1px solid var(--fx-border);
   border-radius: 10px;
