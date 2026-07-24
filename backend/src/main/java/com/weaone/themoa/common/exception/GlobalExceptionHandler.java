@@ -11,7 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -36,13 +37,13 @@ public class GlobalExceptionHandler {
     private final AsyncErrorLogRecorder asyncErrorLogRecorder;
 
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException e, HttpServletRequest request,
-                                                              @AuthenticationPrincipal Long memberId) {
+    public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException e, HttpServletRequest request) {
         ErrorCode errorCode = e.getErrorCode();
         if (errorCode.getStatus() == HttpStatus.INTERNAL_SERVER_ERROR) {
             log.error("서버 내부 실패로 정의된 BusinessException. errorCode={}", errorCode.name(), e);
             String exceptionClass = "BusinessException:" + errorCode.name();
-            asyncErrorLogRecorder.record(buildEvent(e, request, memberId, exceptionClass, errorCode.getStatus().value()));
+            asyncErrorLogRecorder.record(buildEvent(
+                    e, request, currentMemberId(), exceptionClass, errorCode.getStatus().value()));
         }
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiResponse.error(errorCode.name(), errorCode.getMessage()));
@@ -78,13 +79,29 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception e, HttpServletRequest request,
-                                                                @AuthenticationPrincipal Long memberId) {
+    public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception e, HttpServletRequest request) {
         log.error("처리하지 못한 예외", e);
         asyncErrorLogRecorder.record(
-                buildEvent(e, request, memberId, e.getClass().getName(), ErrorCode.INTERNAL_ERROR.getStatus().value()));
+                buildEvent(
+                        e,
+                        request,
+                        currentMemberId(),
+                        e.getClass().getName(),
+                        ErrorCode.INTERNAL_ERROR.getStatus().value()));
         return ResponseEntity.status(ErrorCode.INTERNAL_ERROR.getStatus())
                 .body(ApiResponse.error(ErrorCode.INTERNAL_ERROR.name(), ErrorCode.INTERNAL_ERROR.getMessage()));
+    }
+
+    private Long currentMemberId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return null;
+        }
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof Long memberId) {
+            return memberId;
+        }
+        return null;
     }
 
     private UnexpectedErrorEvent buildEvent(Exception e, HttpServletRequest request, Long memberId,

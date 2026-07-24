@@ -2,6 +2,13 @@ package com.weaone.themoa.config;
 
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
+import com.weaone.themoa.common.logging.MdcLoggingFilter;
+import com.weaone.themoa.common.logging.ErrorLogSanitizer;
+import com.weaone.themoa.domain.logging.service.AsyncErrorLogRecorder;
+import com.weaone.themoa.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
+import com.weaone.themoa.security.oauth.KakaoLoginFailureHandler;
+import com.weaone.themoa.security.oauth.KakaoLoginSuccessHandler;
+import com.weaone.themoa.security.oauth.KakaoOAuth2UserService;
 import com.weaone.themoa.security.handler.JwtAccessDeniedHandler;
 import com.weaone.themoa.security.handler.JwtAuthenticationEntryPoint;
 import com.weaone.themoa.security.handler.SecurityErrorResponder;
@@ -188,6 +195,41 @@ class SecurityConfigTest {
         @Bean
         TokenVersionCache tokenVersionCache() {
             return mock(TokenVersionCache.class);
+        }
+
+        @Bean
+        ErrorLogSanitizer errorLogSanitizer() {
+            return new ErrorLogSanitizer();
+        }
+
+        @Bean
+        AsyncErrorLogRecorder asyncErrorLogRecorder() {
+            return mock(AsyncErrorLogRecorder.class);
+        }
+
+        @Bean
+        KakaoOAuth2UserService kakaoOAuth2UserService() {
+            return mock(KakaoOAuth2UserService.class);
+        }
+
+        @Bean
+        KakaoLoginSuccessHandler kakaoLoginSuccessHandler() {
+            return mock(KakaoLoginSuccessHandler.class);
+        }
+
+        @Bean
+        KakaoLoginFailureHandler kakaoLoginFailureHandler() {
+            return mock(KakaoLoginFailureHandler.class);
+        }
+
+        @Bean
+        HttpCookieOAuth2AuthorizationRequestRepository authorizationRequestRepository() {
+            return mock(HttpCookieOAuth2AuthorizationRequestRepository.class);
+        }
+
+        @Bean
+        MdcLoggingFilter mdcLoggingFilter() {
+            return new MdcLoggingFilter();
         }
     }
 
