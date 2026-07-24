@@ -12,3 +12,6 @@ export const prepareDailyNotifications = (params) =>
 
 export const markNotificationRead = (notificationId) =>
   axiosInstance.patch(`/api/notifications/${notificationId}/read`);
+
+export const markAllNotificationsRead = () =>
+  axiosInstance.patch("/api/notifications/read-all");

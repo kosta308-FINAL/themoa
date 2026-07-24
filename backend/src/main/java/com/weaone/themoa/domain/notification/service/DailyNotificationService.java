@@ -120,16 +120,33 @@ public class DailyNotificationService {
     }
 
     private void prepareContentUpdated(Member member, LocalDate today) {
-        boolean policyUpdated = dataRefreshStatusService.wasSuccessfulOn(DataRefreshSource.POLICY, today);
-        boolean financialUpdated = dataRefreshStatusService.wasSuccessfulOn(DataRefreshSource.FINANCIAL, today);
-        if (!policyUpdated || !financialUpdated) {
-            return;
+        if (dataRefreshStatusService.wasSuccessfulOn(DataRefreshSource.POLICY, today)) {
+            preparePolicyContentUpdated(member, today);
         }
-        String dedupKey = "CONTENT_UPDATED:date=" + today;
+
+        if (dataRefreshStatusService.wasSuccessfulOn(DataRefreshSource.FINANCIAL, today)) {
+            prepareFinancialContentUpdated(member, today);
+        }
+    }
+
+    private void preparePolicyContentUpdated(Member member, LocalDate today) {
+        String dedupKey = "CONTENT_UPDATED:POLICY:date=" + today;
         notificationService.createIfAbsent(
                 member,
                 NotificationTypeCode.CONTENT_UPDATED,
-                "정책 및 금융상품 정보가 최신화됐어요.",
+                "오늘 새로운 정책 정보를 반영했어요.",
+                null,
+                null,
+                dedupKey
+        );
+    }
+
+    private void prepareFinancialContentUpdated(Member member, LocalDate today) {
+        String dedupKey = "CONTENT_UPDATED:FINANCIAL:date=" + today;
+        notificationService.createIfAbsent(
+                member,
+                NotificationTypeCode.CONTENT_UPDATED,
+                "오늘 금융상품 정보를 최신화했어요.",
                 null,
                 null,
                 dedupKey

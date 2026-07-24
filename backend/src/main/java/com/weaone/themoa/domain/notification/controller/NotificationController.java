@@ -46,6 +46,15 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success(dailyNotificationService.prepareAndList(memberId, pageable)));
     }
 
+    @Operation(summary = "알림 모두 읽음 처리",
+            description = "로그인 사용자의 읽지 않은 알림을 모두 읽음으로 표시합니다.")
+    @PatchMapping("/read-all")
+    public ResponseEntity<Void> markAllRead(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long memberId) {
+        notificationQueryService.markAllRead(memberId);
+        return ResponseEntity.noContent().build();
+    }
+
     @Operation(summary = "알림 읽음 처리",
             description = "선택한 알림을 읽음으로 표시합니다. 먼저 /api/notifications에서 읽음 처리할 notificationId를 확인하세요.")
     @PatchMapping("/{notificationId}/read")
