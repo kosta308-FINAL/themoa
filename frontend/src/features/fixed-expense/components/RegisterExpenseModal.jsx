@@ -6,6 +6,7 @@ import {
   registerFixedExpenseDirect,
   registerFixedExpenseFromCandidate,
 } from "../../../api/fixedExpenseApi";
+import FxSelect from "./FxSelect";
 import MerchantAliasPicker from "./MerchantAliasPicker";
 
 const PAY_DAYS = Array.from({ length: 31 }, (_, index) => index + 1);
@@ -58,6 +59,10 @@ function RegisterExpenseModal({
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (isSubmittingRef.current) return;
+    if (!form.categoryId || !form.payDay) {
+      setError("카테고리와 결제일을 선택해주세요.");
+      return;
+    }
     isSubmittingRef.current = true;
     setError("");
     setIsSubmitting(true);
@@ -226,36 +231,32 @@ function RegisterExpenseModal({
               )}
               <div className="fx-field">
                 <label htmlFor="fx-category">카테고리 *</label>
-                <select
+                <FxSelect
                   id="fx-category"
                   value={form.categoryId}
-                  onChange={update("categoryId")}
-                  required
-                >
-                  <option value="">선택</option>
-                  {(categories || []).map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(next) =>
+                    setForm((current) => ({ ...current, categoryId: next }))
+                  }
+                  options={(categories || []).map((category) => ({
+                    value: String(category.id),
+                    label: category.name,
+                  }))}
+                />
               </div>
               <div className="fx-field">
                 <label htmlFor="fx-pay-day">매월 결제일 *</label>
-                <select
+                <FxSelect
                   id="fx-pay-day"
                   value={form.payDay}
-                  onChange={update("payDay")}
+                  onChange={(next) =>
+                    setForm((current) => ({ ...current, payDay: next }))
+                  }
+                  options={PAY_DAYS.map((day) => ({
+                    value: String(day),
+                    label: `${day}일`,
+                  }))}
                   disabled={Boolean(initial)}
-                  required
-                >
-                  <option value="">선택</option>
-                  {PAY_DAYS.map((day) => (
-                    <option key={day} value={day}>
-                      {day}일
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
               <div className="fx-field full">
                 <label htmlFor="fx-amount">예상 금액 *</label>
@@ -273,15 +274,19 @@ function RegisterExpenseModal({
                     required
                     placeholder="0"
                   />
-                  <select
-                    aria-label="통화"
+                  <FxSelect
+                    className="fx-currency-select"
+                    ariaLabel="통화"
                     value={form.currency}
-                    onChange={update("currency")}
+                    onChange={(next) =>
+                      setForm((current) => ({ ...current, currency: next }))
+                    }
+                    options={[
+                      { value: "KRW", label: "KRW" },
+                      { value: "USD", label: "USD" },
+                    ]}
                     disabled={Boolean(initial)}
-                  >
-                    <option value="KRW">KRW</option>
-                    <option value="USD">USD</option>
-                  </select>
+                  />
                 </div>
               </div>
             </div>
