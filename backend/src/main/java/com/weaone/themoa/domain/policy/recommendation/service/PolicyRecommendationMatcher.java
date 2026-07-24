@@ -30,6 +30,9 @@ public class PolicyRecommendationMatcher {
         if (!employmentMatches(employmentStatus, employmentAudience)) {
             return PolicyRecommendationMatch.excluded();
         }
+        if (regionCompatibility == RegionCompatibility.NOT_MATCHED) {
+            return PolicyRecommendationMatch.excluded();
+        }
 
         int score = 0;
         List<String> reasons = new ArrayList<>();
@@ -58,7 +61,7 @@ public class PolicyRecommendationMatcher {
         if (score <= 0) {
             return PolicyRecommendationMatch.excluded();
         }
-        return new PolicyRecommendationMatch(true, score, trimReason(String.join(" · ", reasons)));
+        return new PolicyRecommendationMatch(true, score, regionCompatibility, trimReason(String.join(" · ", reasons)));
     }
 
     private boolean ageMatches(PolicyCondition condition, int age) {
@@ -92,28 +95,45 @@ public class PolicyRecommendationMatcher {
         if (compatibility == null) {
             return 0;
         }
-        return switch (compatibility) {
-            case EXACT_SIGUNGU -> 40;
-            case EXACT_SIDO, PARENT_SIDO -> 25;
-            case NATIONWIDE -> 15;
-            case MULTIPLE_REGION_MATCH -> 10;
-            case UNKNOWN, NOT_MATCHED -> 0;
-        };
+        return compatibility.recommendationScore();
     }
 
     private String regionReason(Policy policy, RegionCompatibility compatibility) {
         if (compatibility == RegionCompatibility.NATIONWIDE) {
-            return "전국 대상";
+            return "전국 대상 정책";
+        }
+        if (compatibility == RegionCompatibility.REGION_UNSPECIFIED) {
+            return "지역 제한이 명시되지 않은 정책";
         }
         if (compatibility == RegionCompatibility.EXACT_SIGUNGU) {
-            return policy.getRegions().stream()
-                    .map(policyRegion -> policyRegion.getRegion().getCity())
-                    .filter(city -> city != null && !city.isBlank())
-                    .findFirst()
-                    .map(city -> city + " 거주 조건 일치")
-                    .orElse("시·군·구 거주 조건 일치");
+            return sigunguName(policy) + " 거주 조건 일치";
         }
-        return "시·도 거주 조건 일치";
+        if (compatibility == RegionCompatibility.MULTIPLE_SIGUNGU_MATCH) {
+            return "복수 대상 지역 중 " + sigunguName(policy) + " 포함";
+        }
+        if (compatibility == RegionCompatibility.MULTIPLE_SIDO_MATCH) {
+            return "복수 대상 시·도 중 " + sidoName(policy) + " 포함";
+        }
+        if (compatibility == RegionCompatibility.EXACT_SIDO || compatibility == RegionCompatibility.PARENT_SIDO) {
+            return sidoName(policy) + " 거주 조건 일치";
+        }
+        return "지역 조건 일치";
+    }
+
+    private String sigunguName(Policy policy) {
+        return policy.getRegions().stream()
+                .map(policyRegion -> policyRegion.getRegion().getCity())
+                .filter(city -> city != null && !city.isBlank())
+                .findFirst()
+                .orElse("시·군·구");
+    }
+
+    private String sidoName(Policy policy) {
+        return policy.getRegions().stream()
+                .map(policyRegion -> policyRegion.getRegion().getProvince())
+                .filter(province -> province != null && !province.isBlank())
+                .findFirst()
+                .orElse("시·도");
     }
 
     private String employmentLabel(UserEmploymentStatus employmentStatus) {

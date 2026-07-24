@@ -125,7 +125,7 @@ class BroadDiscoveryRegressionTest {
         when(runtime.classifyTargetAudiences(any())).thenReturn(Map.of());
         when(runtime.classifyEmploymentAudiences(any())).thenReturn(Map.of());
         when(runtime.detectEmploymentStatus(any())).thenReturn(new UserEmploymentStatusResult(UserEmploymentStatus.EMPLOYED, true, 1.0, List.of("직장인")));
-        when(runtime.selectRegionCoverage(any(), anyInt(), anyInt(), any())).thenAnswer(invocation ->
+        when(runtime.selectRegionCoverage(any(), anyInt(), anyInt(), any(), any())).thenAnswer(invocation ->
                 new RegionCoverageResultSelector.Selection(invocation.getArgument(0), 0, 0, 0));
 
         PolicyRagSearchService service = new PolicyRagSearchService(properties(), planService, retriever,

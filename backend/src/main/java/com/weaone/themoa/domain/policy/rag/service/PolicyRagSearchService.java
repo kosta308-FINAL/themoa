@@ -3,13 +3,16 @@ package com.weaone.themoa.domain.policy.rag.service;
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.common.exception.YouthCenterApiException;
-import com.weaone.themoa.domain.policy.policy.region.ResolvedUserRegion;
 import com.weaone.themoa.domain.policy.policy.entity.Policy;
+import com.weaone.themoa.domain.policy.policy.region.RegionCompatibility;
+import com.weaone.themoa.domain.policy.policy.region.ResolvedUserRegion;
+import com.weaone.themoa.domain.policy.policy.region.SearchRegionLevel;
 import com.weaone.themoa.domain.policy.rag.config.RagProperties;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyEmploymentAudience;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchCondition;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchDiagnostics;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchIntent;
+import com.weaone.themoa.domain.policy.rag.dto.PolicySearchPlan;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchRequest;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchResponse;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchResultItem;
@@ -144,7 +147,8 @@ public class PolicyRagSearchService {
                 targetAudiences = mergeMap(targetAudiences, fallbackTargetAudiences);
                 employmentAudiences = mergeMap(employmentAudiences, fallbackEmploymentAudiences);
                 evaluated = mergeEvaluations(evaluated, fallbackEvaluated);
-                ranked = new PolicyRankingResult(mergeRanked(ranked.rankedCandidates(), fallbackRanked.rankedCandidates()), ranked.metrics());
+                ranked = new PolicyRankingResult(mergeRanked(ranked.rankedCandidates(), fallbackRanked.rankedCandidates(),
+                        context.plan()), ranked.metrics());
                 candidates = mergeCandidates(candidates, fallbackCandidates, ranked.metrics());
             }
         }
@@ -154,7 +158,8 @@ public class PolicyRagSearchService {
         List<PolicySearchResultItem> allResults = ranked.rankedCandidates().stream()
                 .map(item -> resultAssembler.assemble(item, finalTargetAudiences, finalEmploymentAudiences))
                 .toList();
-        RegionCoverageResultSelector.Selection selection = runtimeSupport.selectRegionCoverage(allResults, page, size, context.plan().queryType());
+        RegionCoverageResultSelector.Selection selection = runtimeSupport.selectRegionCoverage(allResults, page, size,
+                context.plan().queryType(), condition);
         List<PolicySearchResultItem> orderedResults = selection.orderedResults();
         int from = Math.min(orderedResults.size(), page * size);
         int to = Math.min(orderedResults.size(), from + size);
@@ -201,7 +206,9 @@ public class PolicyRagSearchService {
         return new PolicyEvaluationResult(passed, evaluations, left.metrics());
     }
 
-    private List<RankedPolicyCandidate> mergeRanked(List<RankedPolicyCandidate> left, List<RankedPolicyCandidate> right) {
+    private List<RankedPolicyCandidate> mergeRanked(List<RankedPolicyCandidate> left,
+                                                    List<RankedPolicyCandidate> right,
+                                                    PolicySearchPlan plan) {
         Map<Integer, RankedPolicyCandidate> byId = new LinkedHashMap<>();
         for (RankedPolicyCandidate item : left) {
             byId.put(item.candidate().policy().getId(), item);
@@ -212,6 +219,10 @@ public class PolicyRagSearchService {
         }
         List<RankedPolicyCandidate> ordered = byId.values().stream()
                 .sorted((a, b) -> {
+                    if (regionPriorityFirst(plan)) {
+                        int region = Integer.compare(regionPriority(a, plan), regionPriority(b, plan));
+                        if (region != 0) return region;
+                    }
                     int tier = Integer.compare(tierPriority(a), tierPriority(b));
                     if (tier != 0) return tier;
                     int title = Double.compare(b.ranking().titleScore(), a.ranking().titleScore());
@@ -237,6 +248,37 @@ public class PolicyRagSearchService {
 
     private int tierPriority(RankedPolicyCandidate item) {
         return item.ranking().recommendationTier() == com.weaone.themoa.domain.policy.rag.dto.RecommendationTier.PRIMARY ? 0 : 1;
+    }
+
+    private boolean regionPriorityFirst(PolicySearchPlan plan) {
+        return plan.condition().regionExplicit() && plan.queryType() != SearchQueryType.POLICY_NAME;
+    }
+
+    private int regionPriority(RankedPolicyCandidate item, PolicySearchPlan plan) {
+        RegionCompatibility compatibility = item.candidate().eligibility().regionMatch().compatibility();
+        if (SearchRegionLevel.SIDO.name().equals(plan.condition().regionLevel())) {
+            return switch (compatibility) {
+                case EXACT_SIDO -> 0;
+                case CHILD_SIGUNGU_MATCH -> 1;
+                case MULTIPLE_CHILD_SIGUNGU_MATCH -> 2;
+                case MULTIPLE_SIDO_MATCH, MULTIPLE_REGION_MATCH -> 3;
+                case NATIONWIDE -> 4;
+                case REGION_UNSPECIFIED -> 5;
+                case UNKNOWN -> 6;
+                case EXACT_SIGUNGU, MULTIPLE_SIGUNGU_MATCH, PARENT_SIDO, NOT_MATCHED -> 7;
+            };
+        }
+        return switch (compatibility) {
+            case EXACT_SIGUNGU -> 0;
+            case MULTIPLE_SIGUNGU_MATCH -> 1;
+            case PARENT_SIDO, EXACT_SIDO -> 2;
+            case CHILD_SIGUNGU_MATCH, MULTIPLE_CHILD_SIGUNGU_MATCH -> 3;
+            case MULTIPLE_SIDO_MATCH, MULTIPLE_REGION_MATCH -> 3;
+            case NATIONWIDE -> 4;
+            case REGION_UNSPECIFIED -> 5;
+            case UNKNOWN -> 6;
+            case NOT_MATCHED -> 7;
+        };
     }
 
     private PolicyCandidateCollection mergeCandidates(PolicyCandidateCollection left,

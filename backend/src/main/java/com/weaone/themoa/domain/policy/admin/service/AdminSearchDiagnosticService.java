@@ -110,7 +110,7 @@ public class AdminSearchDiagnosticService {
             String query = alias + " 사는 30살 청년 정책";
             ResolvedUserRegion resolved = new ResolvedUserRegion(
                     region.getProvince(), region.getCity(), null, SearchRegionLevel.SIGUNGU, region);
-            List<RegionEligiblePolicyCandidate> candidates = regionEligiblePolicyCandidateService.findEligibleCandidates(resolved);
+            List<RegionEligiblePolicyCandidate> candidates = regionEligiblePolicyCandidateService.findSearchEligibleCandidates(resolved);
             Map<String, Long> counts = candidates.stream()
                     .collect(Collectors.groupingBy(
                             candidate -> candidate.compatibility().name(),
@@ -126,7 +126,9 @@ public class AdminSearchDiagnosticService {
                     .count();
             boolean pass = !candidates.isEmpty()
                     && violations.isEmpty()
-                    && counts.getOrDefault("EXACT_SIGUNGU", 0L) + counts.getOrDefault("MULTIPLE_REGION_MATCH", 0L) > 0
+                    && counts.getOrDefault("EXACT_SIGUNGU", 0L)
+                    + counts.getOrDefault("MULTIPLE_SIGUNGU_MATCH", 0L)
+                    + counts.getOrDefault("MULTIPLE_REGION_MATCH", 0L) > 0
                     && counts.getOrDefault("NATIONWIDE", 0L) > 0
                     && distinctCount == candidates.size();
             if (pass) {
@@ -141,7 +143,9 @@ public class AdminSearchDiagnosticService {
                     counts.getOrDefault("EXACT_SIGUNGU", 0L),
                     counts.getOrDefault("PARENT_SIDO", 0L),
                     counts.getOrDefault("NATIONWIDE", 0L),
-                    counts.getOrDefault("MULTIPLE_REGION_MATCH", 0L),
+                    counts.getOrDefault("MULTIPLE_SIGUNGU_MATCH", 0L)
+                            + counts.getOrDefault("MULTIPLE_SIDO_MATCH", 0L)
+                            + counts.getOrDefault("MULTIPLE_REGION_MATCH", 0L),
                     0,
                     0,
                     candidates.stream().limit(20).map(candidate -> candidate.compatibility().name()).toList(),
