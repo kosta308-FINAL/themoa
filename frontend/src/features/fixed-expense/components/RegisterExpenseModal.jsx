@@ -15,6 +15,7 @@ function RegisterExpenseModal({
   candidate = null,
   initial = null,
   categories,
+  hasCardConnection = false,
   onClose,
   onSaved,
   onStale,
@@ -49,6 +50,10 @@ function RegisterExpenseModal({
     }));
 
   const isCard = form.method === "CARD";
+  // 연동된 카드가 없으면 실제 결제내역과 대조할 방법이 없어 가맹점 선택 UI를 보여줄 필요가 없다.
+  // 이 경우 백엔드가 요구하는 merchantAlias는 고정지출 이름으로 대신 채운다.
+  const showMerchantPicker =
+    isCard && Boolean(candidate || initial || hasCardConnection);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -68,13 +73,19 @@ function RegisterExpenseModal({
           expectedPayDay: Number(form.payDay),
         });
       } else {
+        const merchantAliasId = showMerchantPicker
+          ? form.merchantAliasId
+          : null;
+        const newMerchantAliasName =
+          isCard && !merchantAliasId
+            ? (showMerchantPicker ? form.merchantName : form.name).trim()
+            : null;
         const created = await registerFixedExpenseDirect({
           name: form.name.trim(),
           categoryId: Number(form.categoryId),
           paymentMethod: form.method,
-          merchantAliasId: isCard ? form.merchantAliasId : null,
-          newMerchantAliasName:
-            isCard && !form.merchantAliasId ? form.merchantName.trim() : null,
+          merchantAliasId,
+          newMerchantAliasName,
           expectedAmount: Number(form.amount),
           expectedCurrency: form.currency,
           expectedPayDay: Number(form.payDay),
@@ -194,7 +205,7 @@ function RegisterExpenseModal({
                   </label>
                 </div>
               </div>
-              {isCard && (
+              {showMerchantPicker && (
                 <div className="fx-field full">
                   <span className="fx-field-label">서비스/가맹점 *</span>
                   {candidate || (initial && form.merchantAliasId) ? (
@@ -277,9 +288,11 @@ function RegisterExpenseModal({
             <div className="fx-form-notice">
               <DashboardIcon name="info" size={15} />
               <span>
-                {isCard
+                {showMerchantPicker
                   ? "카드 고정지출은 서비스 정보가 있어야 다음 결제내역과 자동으로 연결할 수 있어요."
-                  : "계좌이체 고정지출은 카드내역과 대조하지 않고 결제 예정일만 알려드려요."}
+                  : isCard
+                    ? "연동된 카드가 없어 결제내역과 자동으로 대조할 수 없어요. 결제 예정일만 알려드려요."
+                    : "계좌이체 고정지출은 카드내역과 대조하지 않고 결제 예정일만 알려드려요."}
               </span>
             </div>
             {error && (

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import DashboardIcon from "../../components/common/DashboardIcon";
 import { getApiErrorMessage } from "../../utils/apiError";
 import {
+  getCardConnections,
   getCategories,
   getFixedExpenseCandidates,
   getSpendingGuideSummary,
@@ -26,6 +27,7 @@ function FixedExpensePage() {
   const [candidates, setCandidates] = useState([]);
   const [categories, setCategories] = useState([]);
   const [salarySummary, setSalarySummary] = useState(null);
+  const [hasCardConnection, setHasCardConnection] = useState(false);
   const [pageError, setPageError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -52,11 +54,13 @@ function FixedExpensePage() {
         candidatesResult,
         categoriesResult,
         summaryResult,
+        cardConnectionsResult,
       ] = await Promise.allSettled([
         getFixedExpenses(),
         getFixedExpenseCandidates(),
         getCategories(),
         getSpendingGuideSummary(),
+        getCardConnections(),
       ]);
       if (expensesResult.status === "fulfilled")
         setExpenseList(expensesResult.value);
@@ -75,6 +79,13 @@ function FixedExpensePage() {
       );
       setSalarySummary(
         summaryResult.status === "fulfilled" ? summaryResult.value : null,
+      );
+      setHasCardConnection(
+        cardConnectionsResult.status === "fulfilled"
+          ? (cardConnectionsResult.value?.connections || []).some(
+              (connection) => connection.connectionStatus === "ACTIVE",
+            )
+          : false,
       );
     } finally {
       setIsLoading(false);
@@ -291,6 +302,7 @@ function FixedExpensePage() {
         <RegisterExpenseModal
           candidate={registerState.candidate}
           categories={categories}
+          hasCardConnection={hasCardConnection}
           onClose={() => setRegisterState(null)}
           onSaved={handleRegisterSaved}
           onStale={handleRegisterStale}
