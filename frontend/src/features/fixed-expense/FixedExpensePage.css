@@ -26,12 +26,6 @@
   background: var(--fx-page);
 }
 
-.fx-page {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 30px 32px 56px;
-}
-
 .fx-page-head {
   display: flex;
   align-items: flex-start;
@@ -1531,10 +1525,6 @@
 }
 
 @media (max-width: 780px) {
-  .fx-page {
-    padding: 24px 18px 44px;
-  }
-
   .fx-page-head {
     align-items: center;
   }

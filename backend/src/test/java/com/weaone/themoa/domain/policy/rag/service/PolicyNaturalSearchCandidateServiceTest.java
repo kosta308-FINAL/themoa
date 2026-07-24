@@ -101,6 +101,7 @@ class PolicyNaturalSearchCandidateServiceTest {
                 new ResolvedUserRegion("대구광역시", null, null, SearchRegionLevel.SIDO, daegu);
         given(catalog.nationwide()).willReturn(Optional.of(nationwide));
         given(catalog.allRegions()).willReturn(List.of(nationwide, daegu, dalseo, suseong, seoul, gangnam));
+        given(catalog.searchSupportedChildrenOf(daegu)).willReturn(List.of(dalseo, suseong));
         given(repository.findEligibleRegionRows(anyList()))
                 .willReturn(List.of(
                         row(30, daegu.getId(), 1),
@@ -112,6 +113,9 @@ class PolicyNaturalSearchCandidateServiceTest {
         given(repository.findRegionUnspecifiedPolicyIds()).willReturn(List.of(35));
 
         List<RegionEligiblePolicyCandidate> candidates = service.findSearchEligibleCandidates(userRegion);
+
+        ArgumentCaptor<List> regionIdsCaptor = ArgumentCaptor.forClass(List.class);
+        verify(repository).findEligibleRegionRows(regionIdsCaptor.capture());
 
         assertThat(candidates)
                 .extracting(RegionEligiblePolicyCandidate::policyId, RegionEligiblePolicyCandidate::compatibility)

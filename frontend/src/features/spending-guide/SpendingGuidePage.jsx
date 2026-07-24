@@ -13,6 +13,7 @@ import CategorySummary from "./components/CategorySummary";
 import CoachingPanel from "./components/CoachingPanel";
 import FixedCandidates from "./components/FixedCandidates";
 import InitialSyncView from "./components/InitialSyncView";
+import PanelActionMenu from "./components/PanelActionMenu";
 import RecentFlow from "./components/RecentFlow";
 import SpendingGuideSetup from "./components/SpendingGuideSetup";
 import {
@@ -173,6 +174,35 @@ function SpendingGuidePage() {
     ),
   );
   const budgetDetailHref = `/dashboard/spending/transactions${data.category?.budgetId ? `?budgetId=${data.category.budgetId}` : ""}`;
+  const todayActions = [
+    {
+      key: "sync",
+      icon: hasCardConnection ? "repeat" : "plus",
+      spinning: hasCardConnection && isSyncing,
+      label: hasCardConnection
+        ? isSyncing
+          ? "동기화 중..."
+          : "카드내역 동기화"
+        : "카드 연결",
+      onClick: hasCardConnection
+        ? handleManualSync
+        : () => setIsCardModalOpen(true),
+      disabled: hasCardConnection && (!canManualSync || isSyncing),
+    },
+    {
+      key: "expense",
+      icon: "plus",
+      label: "지출 직접 입력",
+      onClick: () => setIsEntryOpen(true),
+      disabled: !data.categories?.length,
+    },
+    {
+      key: "income",
+      icon: "plus",
+      label: "수입 직접 입력",
+      onClick: () => setIsIncomeAdjustmentOpen(true),
+    },
+  ];
 
   return (
     <div className="spending-guide">
@@ -469,50 +499,26 @@ function SpendingGuidePage() {
                       />
                       {isSelectedToday && (
                         <div className="spending-panel-actions">
-                          <button
-                            type="button"
-                            className="spending-secondary spending-sync-button"
-                            onClick={
-                              hasCardConnection
-                                ? handleManualSync
-                                : () => setIsCardModalOpen(true)
-                            }
-                            disabled={
-                              hasCardConnection && (!canManualSync || isSyncing)
-                            }
-                          >
-                            <DashboardIcon
-                              name={hasCardConnection ? "repeat" : "plus"}
-                              size={15}
-                              className={
-                                isSyncing
-                                  ? "spending-sync-icon-spin"
-                                  : undefined
-                              }
-                            />
-                            {hasCardConnection
-                              ? isSyncing
-                                ? "동기화 중..."
-                                : "카드내역 동기화"
-                              : "카드 연결"}
-                          </button>
-                          <button
-                            type="button"
-                            className="spending-secondary"
-                            onClick={() => setIsEntryOpen(true)}
-                            disabled={!data.categories?.length}
-                          >
-                            <DashboardIcon name="plus" size={15} />
-                            지출 직접 입력
-                          </button>
-                          <button
-                            type="button"
-                            className="spending-secondary"
-                            onClick={() => setIsIncomeAdjustmentOpen(true)}
-                          >
-                            <DashboardIcon name="plus" size={15} />
-                            수입 직접 입력
-                          </button>
+                          {todayActions.map((action) => (
+                            <button
+                              key={action.key}
+                              type="button"
+                              className={`spending-secondary${action.key === "sync" ? " spending-sync-button" : ""}`}
+                              onClick={action.onClick}
+                              disabled={action.disabled}
+                            >
+                              {action.spinning ? (
+                                <span className="spending-spinner spending-spinner-sm" />
+                              ) : (
+                                <DashboardIcon name={action.icon} size={15} />
+                              )}
+                              {action.label}
+                            </button>
+                          ))}
+                          <PanelActionMenu
+                            label="오늘 거래 작업"
+                            actions={todayActions}
+                          />
                         </div>
                       )}
                     </div>

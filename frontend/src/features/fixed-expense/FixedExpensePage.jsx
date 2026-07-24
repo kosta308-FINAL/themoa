@@ -185,7 +185,7 @@ function FixedExpensePage() {
 
   return (
     <div className="fixed-expense">
-      <main className="fx-page">
+      <main className="spending-main">
         <div className="fx-page-head">
           <div>
             <h1>고정지출</h1>
