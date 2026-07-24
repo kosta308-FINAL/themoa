@@ -5,7 +5,6 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,8 +36,6 @@ public class RecommendQueryService {
     private static final int DEFAULT_MONTHLY_DEPOSIT_WON = 300_000;
     /** 추천 요청이 허용하는 최소 월 납입금액(RecommendRequest의 @Min과 맞춘다). */
     private static final int MIN_MONTHLY_DEPOSIT_WON = 10_000;
-    /** 월 납입가능금액을 평균 낼 최근 주기 수. 한 주기의 우연한 흑자/적자에 좌우되지 않도록 여러 달을 본다. */
-    private static final int SURPLUS_AVERAGE_CYCLE_COUNT = 3;
     private static final BigDecimal WON_PER_MANWON = BigDecimal.valueOf(10_000);
 
     private final RecommendationService recommendationService;
@@ -65,10 +62,10 @@ public class RecommendQueryService {
      * <p>월소득은 최근 급여주기 스냅샷(budget.salary_amount)에서 가져온다. 소득유형(고정월급/시급제)에 맞는
      * 계산이 이미 반영된 값이라 여기서 다시 계산하지 않는다. 소비가이드 설정 전이면 주기가 없어 null이다.
      *
-     * <p>월 납입가능금액은 최근 {@value #SURPLUS_AVERAGE_CYCLE_COUNT}개 주기 잉여금의 평균을 쓴다. 적자 주기는
-     * 음수로 적립되어 있는데(SurplusFund 참고), 평균 낼 때도 0으로 깎지 않고 그대로 더한다 — 한두 달 우연히
-     * 많이 남았다고 평균이 부풀려지거나, 반대로 적자가 있었는데도 무시되면 안 되기 때문이다. 아직 적립된
-     * 잉여금이 없거나(가입 직후 등) 평균이 최소 납입금액에 못 미치면 기본값을 내려준다.
+     * <p>월 납입가능금액은 회원의 전체 급여주기 잉여금 평균을 쓴다. 적자 주기는 음수로 적립되어 있는데
+     * (SurplusFund 참고), 평균 낼 때도 0으로 깎지 않고 그대로 더한다 — 한두 달 우연히 많이 남았다고
+     * 평균이 부풀려지거나, 반대로 적자가 있었는데도 무시되면 안 되기 때문이다. 아직 적립된 잉여금이
+     * 없거나(가입 직후 등) 평균이 최소 납입금액에 못 미치면 기본값을 내려준다.
      */
     @Transactional(readOnly = true)
     public RecommendDefaultsResponse findDefaults(Long memberId) {
@@ -77,14 +74,13 @@ public class RecommendQueryService {
                 .map(salary -> salary.divide(WON_PER_MANWON, 0, RoundingMode.HALF_UP).intValue())
                 .orElse(null);
 
-        List<SurplusFund> recentCycles = surplusFundRepository.findByMember_IdOrderByYearMonthDesc(
-                memberId, PageRequest.of(0, SURPLUS_AVERAGE_CYCLE_COUNT));
-        BigDecimal averageSurplus = recentCycles.isEmpty()
+        List<SurplusFund> allCycles = surplusFundRepository.findByMember_Id(memberId);
+        BigDecimal averageSurplus = allCycles.isEmpty()
                 ? null
-                : recentCycles.stream()
+                : allCycles.stream()
                         .map(SurplusFund::getAmount)
                         .reduce(BigDecimal.ZERO, BigDecimal::add)
-                        .divide(BigDecimal.valueOf(recentCycles.size()), 0, RoundingMode.HALF_UP);
+                        .divide(BigDecimal.valueOf(allCycles.size()), 0, RoundingMode.HALF_UP);
         boolean usableSurplus = averageSurplus != null
                 && averageSurplus.compareTo(BigDecimal.valueOf(MIN_MONTHLY_DEPOSIT_WON)) >= 0;
         int monthlyDepositWon = usableSurplus ? averageSurplus.intValue() : DEFAULT_MONTHLY_DEPOSIT_WON;
