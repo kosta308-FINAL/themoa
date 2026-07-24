@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * 예·적금 상품 Repository.
@@ -28,4 +29,43 @@ public interface SavingsProductRepository extends JpaRepository<SavingsProduct, 
     /** 추천용 - 판매중(close_date 없음) 상품을 옵션까지 함께(fetch join) 조회. */
     @Query("select distinct p from SavingsProduct p left join fetch p.options where p.closeDate is null")
     List<SavingsProduct> findAllSellingWithOptions();
+
+    /** 우대조건 캐시 배치용 - 판매중이면서 우대조건 원문이 있는 상품의 id·원문만 가볍게 조회. */
+    @Query("""
+            select p.id as id, p.specialCondition as specialCondition
+            from SavingsProduct p
+            where p.closeDate is null and p.specialCondition is not null and p.specialCondition <> ''
+            """)
+    List<ProductConditionView> findSellingConditions();
+
+    /** {@link #findSellingConditions()} 프로젝션. */
+    interface ProductConditionView {
+        Long getId();
+        String getSpecialCondition();
+    }
+
+    /**
+     * 관리자 우대조건 관리용 - 판매중이면서 우대조건 원문이 있는 상품을 은행/상품명 키워드로 검색.
+     * keyword가 비면 전체(원문 있는 상품)를 은행·상품명 순으로 돌려준다.
+     */
+    @Query("""
+            select p.id as id, p.companyName as companyName,
+                   p.productName as productName, p.productType as productType
+            from SavingsProduct p
+            where p.closeDate is null
+              and p.specialCondition is not null and p.specialCondition <> ''
+              and (:keyword is null or :keyword = ''
+                   or p.companyName like concat('%', :keyword, '%')
+                   or p.productName like concat('%', :keyword, '%'))
+            order by p.companyName, p.productName
+            """)
+    List<ProductConditionSummaryView> searchConditionProducts(@Param("keyword") String keyword);
+
+    /** {@link #searchConditionProducts(String)} 프로젝션. */
+    interface ProductConditionSummaryView {
+        Long getId();
+        String getCompanyName();
+        String getProductName();
+        SavingsType getProductType();
+    }
 }

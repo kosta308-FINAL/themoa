@@ -92,3 +92,28 @@ export const saveBankLink = ({ companyName, officialUrl }) =>
 /** 은행 공식 링크 삭제. 회사명이 경로에 들어가므로 인코딩해서 보낸다. */
 export const deleteBankLink = (companyName) =>
   axiosInstance.delete(`${BANK_LINKS_URL}/${encodeURIComponent(companyName)}`);
+
+const CONDITIONS_URL = "/api/admin/financial-products/conditions";
+
+/**
+ * 판매중 상품의 우대조건 캐시를 지금 즉시 전부 재생성한다(4시 배치 수동 실행).
+ * 전체 상품을 LLM으로 다시 파싱하므로 오래 걸려 넉넉한 타임아웃을 준다. 응답은 {total, failed}.
+ */
+export const refreshConditionCache = () =>
+  axiosInstance
+    .post(`${CONDITIONS_URL}/refresh`, undefined, {
+      timeout: LONG_RUNNING_TIMEOUT_MS,
+    })
+    .then(responseData);
+
+/** 원문이 바뀌어 재검토가 필요한(stale) 상품 목록. */
+export const getConditionReviewList = () =>
+  axiosInstance.get(`${CONDITIONS_URL}/review`).then(responseData);
+
+/** 특정 상품의 현재 우대조건 캐시 상세. 캐시가 없으면 에러 응답. */
+export const getConditionCache = (productId) =>
+  axiosInstance.get(`${CONDITIONS_URL}/${productId}`).then(responseData);
+
+/** 우대조건 수동 수정(전체 교체 + 잠금). items: [{ description, rateBonus }]. */
+export const updateConditionCache = (productId, items) =>
+  axiosInstance.put(`${CONDITIONS_URL}/${productId}`, { items });
