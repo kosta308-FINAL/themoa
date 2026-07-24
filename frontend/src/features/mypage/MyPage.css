@@ -516,12 +516,18 @@
   gap: 8px;
 }
 
-.mp-policy-recommendation-card .policy-recommendation-form-actions .mp-ghost-button,
-.mp-policy-recommendation-card .policy-recommendation-form-actions .policy-primary-button {
+.mp-policy-recommendation-card
+  .policy-recommendation-form-actions
+  .mp-ghost-button,
+.mp-policy-recommendation-card
+  .policy-recommendation-form-actions
+  .policy-primary-button {
   min-height: 42px;
 }
 
-.mp-policy-recommendation-card .policy-recommendation-form > .policy-recommendation-error,
+.mp-policy-recommendation-card
+  .policy-recommendation-form
+  > .policy-recommendation-error,
 .mp-policy-recommendation-card .mp-form-error {
   grid-column: 1 / -1;
   margin: 0;
@@ -918,21 +924,73 @@
   font-size: 12px;
 }
 
-.mp-weekday-hours input {
+.mp-hour-field {
+  position: relative;
+  flex: 1;
+}
+
+.mp-hour-trigger {
+  width: 100%;
   min-height: 36px;
   padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   border: 1px solid #d9e5dd;
   border-radius: 9px;
   color: var(--mp-text);
+  background: #fff;
   font: inherit;
   font-size: 13px;
 }
 
-.mp-weekday-hours em {
-  flex: 0 0 auto;
+.mp-hour-trigger svg {
   color: var(--mp-muted);
-  font-size: 11px;
-  font-style: normal;
+}
+
+.mp-minute-toggle {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+.mp-minute-toggle button {
+  min-width: 44px;
+  min-height: 36px;
+  padding: 0 8px;
+  border: 1px solid #d9e5dd;
+  border-radius: 9px;
+  color: var(--mp-muted);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mp-minute-toggle button.selected {
+  color: #fff;
+  border-color: var(--mp-green-dark);
+  background: var(--mp-green-dark);
+}
+
+.mp-weekday-tax {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mp-weekday-tax > span {
+  color: var(--mp-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mp-weekday-estimate-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
 }
 
 .mp-weekday-estimate {
@@ -940,8 +998,16 @@
   align-items: center;
   gap: 5px;
   margin: 0;
+  color: var(--mp-green-dark);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.mp-weekday-estimate-note {
+  margin: 0;
   color: var(--mp-muted-2);
   font-size: 11px;
+  line-height: 1.5;
 }
 
 /* Card sync toggle switch */

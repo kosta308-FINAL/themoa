@@ -41,4 +41,7 @@ public interface FixedExpenseRepository extends JpaRepository<FixedExpense, Long
     List<FixedExpense> findByStatus(FixedExpenseStatus status);
 
     List<FixedExpense> findByMember_IdAndStatusAndExpectedPayDayIsNotNull(Long memberId, FixedExpenseStatus status);
+
+    /** 예·적금 가입 연동(경로 C) — 가입 건당 최대 1개라 이 값으로 바로 찾는다. */
+    Optional<FixedExpense> findBySavingsSubscriptionId(Long savingsSubscriptionId);
 }

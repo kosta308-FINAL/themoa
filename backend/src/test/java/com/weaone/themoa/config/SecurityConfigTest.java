@@ -6,9 +6,9 @@ import com.weaone.themoa.common.logging.MdcLoggingFilter;
 import com.weaone.themoa.common.logging.ErrorLogSanitizer;
 import com.weaone.themoa.domain.logging.service.AsyncErrorLogRecorder;
 import com.weaone.themoa.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
-import com.weaone.themoa.security.oauth.KakaoLoginFailureHandler;
-import com.weaone.themoa.security.oauth.KakaoLoginSuccessHandler;
-import com.weaone.themoa.security.oauth.KakaoOAuth2UserService;
+import com.weaone.themoa.security.oauth.SocialLoginFailureHandler;
+import com.weaone.themoa.security.oauth.SocialLoginSuccessHandler;
+import com.weaone.themoa.security.oauth.SocialOAuth2UserService;
 import com.weaone.themoa.security.handler.JwtAccessDeniedHandler;
 import com.weaone.themoa.security.handler.JwtAuthenticationEntryPoint;
 import com.weaone.themoa.security.handler.SecurityErrorResponder;
@@ -208,18 +208,18 @@ class SecurityConfigTest {
         }
 
         @Bean
-        KakaoOAuth2UserService kakaoOAuth2UserService() {
-            return mock(KakaoOAuth2UserService.class);
+        SocialOAuth2UserService socialOAuth2UserService() {
+            return mock(SocialOAuth2UserService.class);
         }
 
         @Bean
-        KakaoLoginSuccessHandler kakaoLoginSuccessHandler() {
-            return mock(KakaoLoginSuccessHandler.class);
+        SocialLoginSuccessHandler socialLoginSuccessHandler() {
+            return mock(SocialLoginSuccessHandler.class);
         }
 
         @Bean
-        KakaoLoginFailureHandler kakaoLoginFailureHandler() {
-            return mock(KakaoLoginFailureHandler.class);
+        SocialLoginFailureHandler socialLoginFailureHandler() {
+            return mock(SocialLoginFailureHandler.class);
         }
 
         @Bean
