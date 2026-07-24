@@ -61,7 +61,7 @@ function CustomerServicePage() {
         conversationId: chatAnswer?.conversationId || null,
       });
       setChatAnswer(response);
-    } catch (requestError) {
+    } catch {
       setChatError(
         "챗봇 답변을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
       );

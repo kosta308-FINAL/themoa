@@ -80,6 +80,7 @@ public enum ErrorCode {
     FIXED_EXPENSE_NOT_FOUND(HttpStatus.NOT_FOUND, "고정지출을 찾을 수 없습니다."),
     FIXED_EXPENSE_MERCHANT_ALIAS_REQUIRED(HttpStatus.BAD_REQUEST, "카드형 고정지출은 가맹점을 선택해야 합니다."),
     FIXED_EXPENSE_EXCHANGE_RATE_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "환율 정보를 구하지 못해 등록할 수 없습니다. 잠시 후 다시 시도해 주세요."),
+    FIXED_EXPENSE_COACHING_CARD_NOT_FOUND(HttpStatus.NOT_FOUND, "고정지출 코칭 카드를 찾을 수 없습니다."),
 
     // 캘린더
     CALENDAR_SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "일정을 찾을 수 없습니다."),
