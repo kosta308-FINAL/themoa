@@ -38,7 +38,9 @@ const FALLBACK_DEPOSIT_WON = "300000";
  * 사용자가 그대로 수정할 수 있다. defaults가 준비된 뒤에 마운트되므로 초기값으로만 쓰면 된다.
  */
 function RecommendForm({ loading, defaults, onSubmit }) {
-  const [age, setAge] = useState("26");
+  const [age, setAge] = useState(
+    defaults?.age != null ? String(defaults.age) : "",
+  );
   const [income, setIncome] = useState(
     defaults?.monthlyIncomeManwon != null
       ? String(defaults.monthlyIncomeManwon)
