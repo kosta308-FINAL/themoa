@@ -1294,7 +1294,7 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
 }
 
 .tip-card-header {
@@ -1329,7 +1329,7 @@
 .tip-body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .tip-title {
