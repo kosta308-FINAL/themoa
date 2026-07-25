@@ -1,6 +1,7 @@
 package com.weaone.themoa.domain.financialsearch.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 // 예금/적금/대출을 한 화면에서 같이 보여주기 위한 공통 결과 형태.
 // representativeRate: 예금/적금은 옵션 중 최고금리(maxRate), 대출은 최저금리(rateMin) — 상품 성격이 달라서 기준이 다름.
@@ -17,11 +18,16 @@ public record FinancialSearchResultItem(
         BigDecimal representativeRate,
         Integer representativeTermMonth,
         String specialCondition,
+        List<ConditionItem> conditions,
         String matchReason,
         String officialUrl
 ) {
+    /** 파싱된 우대조건 한 줄(설명 + 가산금리 %p). 캐시가 없거나 대출이면 빈 목록이다. */
+    public record ConditionItem(String description, BigDecimal rateBonus) {
+    }
+
     public FinancialSearchResultItem withMatchReason(String newMatchReason) {
         return new FinancialSearchResultItem(id, productType, companyName, productName, joinMethod,
-                representativeRate, representativeTermMonth, specialCondition, newMatchReason, officialUrl);
+                representativeRate, representativeTermMonth, specialCondition, conditions, newMatchReason, officialUrl);
     }
 }

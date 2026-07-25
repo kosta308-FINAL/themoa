@@ -64,9 +64,16 @@
   gap: 8px;
 }
 
-.calendar-popover-selects select {
+.calendar-popover-select {
+  position: relative;
+}
+
+.calendar-popover-select-trigger {
   height: 34px;
-  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
   border: 1px solid #e5ede8;
   border-radius: 8px;
   color: #16241c;
@@ -74,6 +81,57 @@
   font: inherit;
   font-size: 13px;
   font-weight: 600;
+}
+
+.calendar-popover-select-trigger svg {
+  color: #637169;
+}
+
+.calendar-popover-select-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 10;
+  width: max-content;
+  min-width: 100%;
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid #e5ede8;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 16px 38px rgba(22, 101, 52, 0.15);
+  list-style: none;
+  scrollbar-width: none;
+}
+
+.calendar-popover-select-dropdown::-webkit-scrollbar {
+  display: none;
+}
+
+.calendar-popover-select-dropdown button {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: #16241c;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.calendar-popover-select-dropdown button:hover {
+  background: #e7f9ee;
+}
+
+.calendar-popover-select-dropdown button.selected {
+  color: #fff;
+  background: #22c55e;
 }
 
 .calendar-popover-arrow {

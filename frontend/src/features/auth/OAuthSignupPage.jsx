@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  completeKakaoSignup,
+  completeSocialSignup,
   sendEmailCode,
   verifyEmailCode,
 } from "../../api/authApi";
@@ -28,20 +28,26 @@ const formatBirthDate = (iso) => {
 };
 
 /**
- * 카카오 신규 회원 추가정보 입력(auth.md §6-2). 카카오가 사용자 ID·닉네임만 주므로
+ * 소셜(카카오·구글) 신규 회원 추가정보 입력(auth.md §6-2). provider가 사용자 ID·닉네임만 주므로
  * 비밀번호·닉네임은 받지 않고, 이메일 인증 + 성별·출생일만 추가로 받는다.
  */
-function KakaoSignupPage() {
+function OAuthSignupPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { login } = useAuth();
-  const { signupTicket, nickname } = location.state || {};
+  const {
+    signupTicket,
+    nickname,
+    email: prefilledEmail,
+  } = location.state || {};
+  /** 구글처럼 provider가 이미 검증한 이메일이 있으면 입력·인증 단계 자체를 건너뛴다. */
+  const isEmailPrefilled = Boolean(prefilledEmail);
 
   const [step, setStep] = useState(1);
   const [error, setError] = useState("");
   const [agreements, setAgreements] = useState({});
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(prefilledEmail || "");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [codeTtl, setCodeTtl] = useState(0);
@@ -135,7 +141,7 @@ function KakaoSignupPage() {
     setAgreements((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleContinueToEmail = (e) => {
+  const handleContinueFromTerms = (e) => {
     e.preventDefault();
     const missingRequired = REQUIRED_TERMS_KEYS.some((key) => !agreements[key]);
     if (missingRequired) {
@@ -143,7 +149,7 @@ function KakaoSignupPage() {
       return;
     }
     setError("");
-    setStep(2);
+    setStep(isEmailPrefilled ? 3 : 2);
   };
 
   const handleSubmit = async (e) => {
@@ -153,7 +159,7 @@ function KakaoSignupPage() {
     if (!validateStep3()) return;
     setSubmitting(true);
     try {
-      const res = await completeKakaoSignup({
+      const res = await completeSocialSignup({
         signupTicket,
         email: normalizedEmail,
         gender,
@@ -183,10 +189,12 @@ function KakaoSignupPage() {
     <AuthLayout>
       <div className="auth-head">
         <h2 className="auth-title">
-          {nickname ? `${nickname}님, 환영해요` : "카카오로 가입하기"}
+          {nickname ? `${nickname}님, 환영해요` : "소셜 계정으로 가입하기"}
         </h2>
         <p className="auth-sub">
-          약관 동의와 이메일 인증, 성별·출생일만 입력하면 가입이 끝나요.
+          {isEmailPrefilled
+            ? "약관 동의와 성별·출생일만 입력하면 가입이 끝나요."
+            : "약관 동의와 이메일 인증, 성별·출생일만 입력하면 가입이 끝나요."}
         </p>
       </div>
 
@@ -198,7 +206,7 @@ function KakaoSignupPage() {
             aria-label="이전 단계로"
             onClick={() => {
               setError("");
-              setStep((s) => s - 1);
+              setStep(isEmailPrefilled && step === 3 ? 1 : step - 1);
             }}
           >
             <DashboardIcon name="chevron-left" size={16} />
@@ -209,19 +217,27 @@ function KakaoSignupPage() {
             <span className="auth-step-num">{step > 1 ? "✓" : "1"}</span>
             약관 동의
           </li>
-          <li className={step === 2 ? "current" : step > 2 ? "done" : ""}>
-            <span className="auth-step-num">{step > 2 ? "✓" : "2"}</span>
-            이메일 인증
-          </li>
+          {!isEmailPrefilled && (
+            <li className={step === 2 ? "current" : step > 2 ? "done" : ""}>
+              <span className="auth-step-num">{step > 2 ? "✓" : "2"}</span>
+              이메일 인증
+            </li>
+          )}
           <li className={step === 3 ? "current" : ""}>
-            <span className="auth-step-num">3</span>
+            <span className="auth-step-num">
+              {isEmailPrefilled ? "2" : "3"}
+            </span>
             성별·출생일
           </li>
         </ol>
       </div>
 
       {step === 1 && (
-        <form className="auth-form" onSubmit={handleContinueToEmail} noValidate>
+        <form
+          className="auth-form"
+          onSubmit={handleContinueFromTerms}
+          noValidate
+        >
           {error && (
             <p className="auth-error" role="alert">
               {error}
@@ -273,8 +289,8 @@ function KakaoSignupPage() {
             </div>
             {!codeSent && (
               <span className="auth-hint">
-                로그인에 사용할 이메일이에요. 카카오는 이메일을 제공하지 않아
-                직접 인증해야 해요.
+                로그인에 사용할 이메일이에요. 서비스 이용을 위해 직접 인증해야
+                해요.
               </span>
             )}
           </div>
@@ -419,4 +435,4 @@ function KakaoSignupPage() {
   );
 }
 
-export default KakaoSignupPage;
+export default OAuthSignupPage;

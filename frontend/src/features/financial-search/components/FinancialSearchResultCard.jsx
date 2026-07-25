@@ -64,8 +64,21 @@ function FinancialSearchResultCard({ item, bookmarks }) {
         <p className="fs-join">가입방법 · {item.joinMethod}</p>
       )}
 
-      {item.specialCondition && (
-        <p className="fs-special">{item.specialCondition}</p>
+      {/* 파싱된 우대조건이 있으면 체크리스트로, 없으면 원문 폴백.
+          (원문 첫 줄의 "(판매중단)" 같은 안내가 오해를 줘서 파싱 결과를 우선한다) */}
+      {item.conditions?.length > 0 ? (
+        <ul className="fs-conditions">
+          {item.conditions.map((condition, index) => (
+            <li key={index}>
+              <span>{condition.description}</span>
+              {condition.rateBonus > 0 && <em>+{condition.rateBonus}%p</em>}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        item.specialCondition && (
+          <p className="fs-special">{item.specialCondition}</p>
+        )
       )}
 
       {item.matchReason && (

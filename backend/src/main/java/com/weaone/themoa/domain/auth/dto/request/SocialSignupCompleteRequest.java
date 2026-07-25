@@ -10,10 +10,11 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 /**
- * 카카오 신규 회원 가입 완료(auth.md §6-2). 카카오 응답만으로는 이메일·성별·출생일이 없어 추가로 받는다.
- * 비밀번호·닉네임은 받지 않는다 — 비밀번호는 소셜 회원에게 요구하지 않고, 닉네임은 카카오 닉네임을 재사용한다.
+ * 소셜(카카오·구글) 신규 회원 가입 완료(auth.md §6-2). provider 응답만으로는 이메일·성별·출생일이
+ * 없어 추가로 받는다. 비밀번호는 받지 않는다 — 소셜 회원에게는 요구하지 않는다. 닉네임도 받지 않고
+ * signupTicket에 담긴 provider 닉네임을 재사용한다(SocialAuthService).
  */
-public record KakaoSignupCompleteRequest(
+public record SocialSignupCompleteRequest(
 
         @NotBlank(message = "가입 세션이 유효하지 않습니다.")
         String signupTicket,

@@ -16,5 +16,6 @@ public enum CategoryCode {
     MEDICAL,
     BEAUTY,
     DONATION,
+    SAVING,
     ETC
 }

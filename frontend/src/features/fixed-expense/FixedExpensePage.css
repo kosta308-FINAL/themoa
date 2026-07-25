@@ -143,7 +143,23 @@
   border-radius: 20px;
   background:
     radial-gradient(circle at 5% 0%, rgba(52, 211, 153, 0.24), transparent 38%),
+    radial-gradient(
+      circle at 94% 8%,
+      rgba(20, 184, 166, 0.15),
+      transparent 38%
+    ),
     linear-gradient(145deg, #e5faee, #f4fbf6 72%);
+}
+
+.fx-summary-hero::after {
+  content: "";
+  position: absolute;
+  right: -60px;
+  bottom: -110px;
+  width: 310px;
+  height: 310px;
+  border: 55px solid rgba(34, 197, 94, 0.07);
+  border-radius: 50%;
 }
 
 .fx-summary-main,
@@ -251,6 +267,10 @@
   letter-spacing: -0.7px;
 }
 
+.fx-salary-head strong.over {
+  color: var(--fx-red);
+}
+
 .fx-salary-base {
   display: block;
   margin-top: 5px;
@@ -259,17 +279,25 @@
 }
 
 .fx-progress-track {
-  height: 8px;
+  height: 10px;
   margin-top: 16px;
   overflow: hidden;
   border-radius: 999px;
   background: #e9efeb;
+  box-shadow: inset 0 1px 2px rgba(22, 36, 28, 0.08);
 }
 
 .fx-progress-value {
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--fx-green), #18a957);
+  transition:
+    width 0.25s ease,
+    background 0.25s ease;
+}
+
+.fx-progress-value.over {
+  background: linear-gradient(90deg, #f36a6a, var(--fx-red));
 }
 
 .fx-ratio-help {
@@ -289,6 +317,10 @@
   background: var(--fx-green-pale);
 }
 
+.fx-salary-remaining.over {
+  background: var(--fx-red-soft);
+}
+
 .fx-salary-remaining span {
   color: var(--fx-muted);
   font-size: 11px;
@@ -299,11 +331,16 @@
   letter-spacing: -0.3px;
 }
 
+.fx-salary-remaining.over strong {
+  color: var(--fx-red);
+}
+
 .fx-salary-empty {
   display: flex;
   flex-direction: column;
   gap: 8px;
   align-self: center;
+  margin: auto 0;
   text-align: center;
 }
 
@@ -319,6 +356,53 @@
 
 .fx-salary-empty .fx-secondary-button {
   margin: 4px auto 0;
+}
+
+/* Empty state hero */
+.fx-empty-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 64px 24px;
+  border-radius: 20px;
+  text-align: center;
+  background:
+    radial-gradient(circle at 5% 0%, rgba(52, 211, 153, 0.24), transparent 38%),
+    linear-gradient(145deg, #e5faee, #f4fbf6 72%);
+}
+
+.fx-empty-hero-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 6px;
+  border-radius: 16px;
+  color: var(--fx-green-dark);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--fx-shadow);
+}
+
+.fx-empty-hero h2 {
+  margin: 0;
+  color: var(--fx-text);
+  font-size: 19px;
+  letter-spacing: -0.5px;
+}
+
+.fx-empty-hero p {
+  margin: 0 0 8px;
+  color: var(--fx-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.fx-empty-hero .fx-primary-button {
+  min-height: 46px;
+  padding: 0 22px;
+  font-size: 14px;
 }
 
 /* Panels */
@@ -380,7 +464,7 @@
 .fx-panel-title p {
   margin: 3px 0 0;
   color: var(--fx-muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .fx-panel-count {
@@ -559,7 +643,7 @@
   margin: 0;
   overflow-wrap: anywhere;
   color: var(--fx-muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
 }
 
@@ -573,12 +657,18 @@
   flex: 1;
   min-height: 30px;
   padding: 0 9px;
-  border: 0;
+  border: 1px solid var(--fx-border);
   border-radius: 8px;
   color: var(--fx-muted);
-  background: var(--fx-page);
+  background: #fff;
   font-size: 10px;
   font-weight: 750;
+}
+
+.fx-coach-actions button:hover:not(:disabled) {
+  border-color: var(--fx-border-strong);
+  color: var(--fx-text);
+  background: #fafdfb;
 }
 
 .fx-coach-actions button:disabled {
@@ -816,7 +906,13 @@
 }
 
 .fx-sort-select {
+  flex: 0 0 auto;
+  width: 168px;
+}
+
+.fx-sort-select .fx-select-trigger {
   min-height: 34px;
+  height: 34px;
   padding: 0 12px;
   border: 1px solid var(--fx-border);
   border-radius: 10px;
@@ -1457,12 +1553,17 @@
 
 .fx-manual-confirm {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   margin-top: 18px;
   padding-top: 16px;
   border-top: 1px solid var(--fx-border);
+}
+
+.fx-manual-confirm > .fx-form-error-text {
+  flex-basis: 100%;
 }
 
 .fx-manual-confirm-head h4 {
@@ -1478,6 +1579,7 @@
 
 .fx-detail-danger {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -1486,11 +1588,22 @@
   border-top: 1px solid var(--fx-border);
 }
 
+.fx-detail-danger > .fx-form-error-text {
+  flex-basis: 100%;
+}
+
 .fx-detail-danger p {
   margin: 0;
   color: var(--fx-muted);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.5;
+}
+
+.fx-detail-danger-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .fx-modal.sm .fx-primary-button,

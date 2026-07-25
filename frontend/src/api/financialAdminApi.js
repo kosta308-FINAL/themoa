@@ -114,6 +114,28 @@ export const getConditionReviewList = () =>
 export const getConditionCache = (productId) =>
   axiosInstance.get(`${CONDITIONS_URL}/${productId}`).then(responseData);
 
+/**
+ * 상품 최신 원문을 다시 파싱한 초안을 받는다(저장하지 않음). data: [{ description, rateBonus }].
+ * LLM 호출이라 다소 걸릴 수 있어 넉넉한 타임아웃을 준다.
+ */
+export const reparseConditionCache = (productId) =>
+  axiosInstance
+    .post(`${CONDITIONS_URL}/${productId}/reparse`, undefined, {
+      timeout: LONG_RUNNING_TIMEOUT_MS,
+    })
+    .then(responseData);
+
 /** 우대조건 수동 수정(전체 교체 + 잠금). items: [{ description, rateBonus }]. */
 export const updateConditionCache = (productId, items) =>
   axiosInstance.put(`${CONDITIONS_URL}/${productId}`, { items });
+
+/**
+ * 우대조건 편집 대상 상품 검색. keyword 생략 시 우대조건 있는 판매중 상품 전체,
+ * 있으면 은행·상품명 부분검색. data: [{ productId, companyName, productName, productType, itemCount, editedByAdmin, stale, cached }].
+ */
+export const searchConditionProducts = (keyword) =>
+  axiosInstance
+    .get(`${CONDITIONS_URL}/products`, {
+      params: { keyword: keyword || undefined },
+    })
+    .then(responseData);

@@ -50,6 +50,14 @@ public class FixedExpense {
     @JoinColumn(name = "candidate_id", unique = true)
     private FixedExpenseCandidate candidate;
 
+    /**
+     * 경로 C: 예·적금 가입 연동. 원본 subscription id(savings_subscription.id). {@code productId}가
+     * FK를 걸지 않는 것과 같은 이유로 FK를 걸지 않는다 — subscription 도메인은 이 값의 존재를 모른다
+     * (이벤트로만 통지받는다). 가입 1건당 고정지출은 최대 1건이라 UNIQUE.
+     */
+    @Column(name = "savings_subscription_id", unique = true)
+    private Long savingsSubscriptionId;
+
     @Column(nullable = false, length = 100)
     private String name;
 
@@ -95,12 +103,14 @@ public class FixedExpense {
     @Column(nullable = false, length = 10)
     private FixedExpenseStatus status;
 
-    private FixedExpense(Member member, FixedExpenseCandidate candidate, String name, Category category,
-                          MerchantAlias merchantAlias, Merchant billerMerchant, FixedExpensePaymentMethod paymentMethod,
-                          Short expectedPayDay, BigDecimal expectedAmount, String expectedCurrency,
-                          BigDecimal expectedAmountKrw, LocalDate krwConvertedDate, BigDecimal krwExchangeRate) {
+    private FixedExpense(Member member, FixedExpenseCandidate candidate, Long savingsSubscriptionId, String name,
+                          Category category, MerchantAlias merchantAlias, Merchant billerMerchant,
+                          FixedExpensePaymentMethod paymentMethod, Short expectedPayDay, BigDecimal expectedAmount,
+                          String expectedCurrency, BigDecimal expectedAmountKrw, LocalDate krwConvertedDate,
+                          BigDecimal krwExchangeRate) {
         this.member = member;
         this.candidate = candidate;
+        this.savingsSubscriptionId = savingsSubscriptionId;
         this.name = name;
         this.category = category;
         this.merchantAlias = merchantAlias;
@@ -121,7 +131,7 @@ public class FixedExpense {
                                               Short expectedPayDay, BigDecimal expectedAmount, String expectedCurrency,
                                               BigDecimal expectedAmountKrw, LocalDate krwConvertedDate,
                                               BigDecimal krwExchangeRate) {
-        return new FixedExpense(member, candidate, name, category, merchantAlias, billerMerchant,
+        return new FixedExpense(member, candidate, null, name, category, merchantAlias, billerMerchant,
                 FixedExpensePaymentMethod.CARD, expectedPayDay, expectedAmount, expectedCurrency, expectedAmountKrw,
                 krwConvertedDate, krwExchangeRate);
     }
@@ -132,8 +142,20 @@ public class FixedExpense {
                                                Short expectedPayDay, BigDecimal expectedAmount, String expectedCurrency,
                                                BigDecimal expectedAmountKrw, LocalDate krwConvertedDate,
                                                BigDecimal krwExchangeRate) {
-        return new FixedExpense(member, null, name, category, merchantAlias, null, paymentMethod, expectedPayDay,
+        return new FixedExpense(member, null, null, name, category, merchantAlias, null, paymentMethod, expectedPayDay,
                 expectedAmount, expectedCurrency, expectedAmountKrw, krwConvertedDate, krwExchangeRate);
+    }
+
+    /**
+     * 경로 C: 예·적금 가입 연동(fixedExpense.md §7 "저축성 자동이체도 확정 유출로 보아 고정지출에 포함").
+     * 계좌이체형이라 merchantAlias·billerMerchant가 없고, 국내 원화 상품만 대상이라 환전이 없어
+     * expectedAmountKrw가 expectedAmount와 항상 같다. 결제일은 가입 시점엔 알 수 없어 사용자가
+     * 나중에 고정지출 화면에서 직접 입력할 때까지 NULL로 둔다.
+     */
+    public static FixedExpense fromSavingsSubscription(Member member, Long savingsSubscriptionId, String name,
+                                                        Category category, BigDecimal monthlyAmount) {
+        return new FixedExpense(member, null, savingsSubscriptionId, name, category, null, null,
+                FixedExpensePaymentMethod.TRANSFER, null, monthlyAmount, "KRW", monthlyAmount, null, null);
     }
 
     /** 금액·결제일 수정(F-04). */
@@ -160,6 +182,12 @@ public class FixedExpense {
     /** 해지. 물리 삭제하지 않는다 — 지난달까지의 이행 기록은 그대로 남는다. */
     public void cancel() {
         this.status = FixedExpenseStatus.CANCELED;
+    }
+
+    /** 연동된 예·적금의 월납입액이 바뀌었을 때(경로 C 전용). 국내 원화만 대상이라 환전 없이 그대로 반영한다. */
+    public void updateAmountFromSavingsSubscription(BigDecimal monthlyAmount) {
+        this.expectedAmount = monthlyAmount;
+        this.expectedAmountKrw = monthlyAmount;
     }
 
     /**

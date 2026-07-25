@@ -182,6 +182,183 @@
   padding: 0 4px;
 }
 
+.policy-recommendation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+.policy-recommendation-tile {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  flex-direction: column;
+  padding: 16px;
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius);
+  background: var(--dash-bg-card);
+  box-shadow: var(--dash-shadow);
+  color: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.policy-recommendation-tile:hover {
+  border-color: var(--dash-accent);
+}
+
+.policy-recommendation-tile:focus-visible {
+  border-color: var(--dash-accent);
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--dash-accent-light),
+    var(--dash-shadow);
+}
+
+.policy-recommendation-tile.active {
+  border-color: var(--dash-accent);
+  box-shadow:
+    0 0 0 2px var(--dash-accent-light),
+    var(--dash-shadow);
+}
+
+.policy-recommendation-tile-head {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.policy-recommendation-region {
+  min-width: 0;
+  overflow: hidden;
+  padding: 6px 10px;
+  border: 1px solid var(--dash-border);
+  border-radius: 999px;
+  background: var(--dash-accent-light);
+  color: var(--dash-accent-dark);
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.policy-recommendation-bookmark {
+  flex: 0 0 auto;
+}
+
+.policy-recommendation-tile-body {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.policy-recommendation-title {
+  display: -webkit-box;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--dash-text-primary);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.policy-recommendation-tile-summary {
+  display: -webkit-box;
+  margin: 10px 0 0;
+  overflow: hidden;
+  color: var(--dash-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.policy-recommendation-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.policy-recommendation-meta span {
+  min-width: 0;
+  padding: 5px 9px;
+  border: 1px solid var(--dash-border);
+  border-radius: 999px;
+  background: var(--dash-bg-subtle);
+  color: var(--dash-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.policy-recommendation-reason-box {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--dash-bg-subtle);
+}
+
+.policy-recommendation-reason-box > span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--dash-accent-dark);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.policy-recommendation-reason-box p {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--dash-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.policy-recommendation-tile-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.policy-recommendation-tile-footer button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--dash-border);
+  border-radius: 999px;
+  background: var(--dash-bg-card);
+  color: var(--dash-accent-dark);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.policy-recommendation-tile-footer button:hover {
+  border-color: var(--dash-accent);
+  background: var(--dash-accent-light);
+}
+
 .policy-recommendation-error {
   margin: 0;
   color: #a12c2c;
@@ -607,6 +784,10 @@
 }
 
 @media (max-width: 1024px) {
+  .policy-recommendation-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .policy-content {
     grid-template-columns: 1fr;
   }
@@ -633,6 +814,10 @@
 
   .policy-recommendation-form {
     grid-template-columns: 1fr;
+  }
+
+  .policy-recommendation-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .policy-search-actions {

@@ -13,7 +13,7 @@ const PUBLIC_AUTH_PATHS = new Set([
   "/api/auth/email/code",
   "/api/auth/email/code/verify",
   "/api/auth/oauth/exchange",
-  "/api/auth/oauth/kakao/complete-signup",
+  "/api/auth/oauth/complete-signup",
 ]);
 
 const isPublicAuthPath = (url = "") => PUBLIC_AUTH_PATHS.has(url.split("?")[0]);

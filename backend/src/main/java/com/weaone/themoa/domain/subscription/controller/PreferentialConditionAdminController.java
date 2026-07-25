@@ -73,6 +73,16 @@ public class PreferentialConditionAdminController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    /**
+     * 재검토: 상품의 최신 원문으로 다시 파싱한 초안을 돌려준다(저장하지 않음).
+     * 관리자가 이 초안을 손봐서 {@code PUT}으로 저장하면 잠금·stale이 정리된다.
+     */
+    @PostMapping("/{productId}/reparse")
+    public ResponseEntity<ApiResponse<List<PreferentialConditionCacheResponse.Item>>> reparse(
+            @PathVariable Long productId) {
+        return ResponseEntity.ok(ApiResponse.success(cacheService.reparse(productId)));
+    }
+
     /** 수동 수정: 전달된 항목으로 교체하고 잠근다(이후 배치가 덮지 않음). */
     @PutMapping("/{productId}")
     public ResponseEntity<ApiResponse<Void>> update(

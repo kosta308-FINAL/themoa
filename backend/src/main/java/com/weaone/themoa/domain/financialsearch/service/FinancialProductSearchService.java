@@ -12,6 +12,7 @@ import com.weaone.themoa.domain.recommend.entity.LoanProduct;
 import com.weaone.themoa.domain.recommend.entity.LoanProductOption;
 import com.weaone.themoa.domain.recommend.entity.SavingsProduct;
 import com.weaone.themoa.domain.recommend.entity.SavingsProductOption;
+import com.weaone.themoa.domain.subscription.repository.PreferentialConditionCacheRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
@@ -71,6 +72,7 @@ public class FinancialProductSearchService {
     private final FinancialSearchKeywordProvider keywordProvider;
     private final BankUrlResolver bankUrlResolver;
     private final BankNameFormatter bankNameFormatter;
+    private final PreferentialConditionCacheRepository conditionCacheRepository;
     private final ObjectMapper objectMapper;
 
     public FinancialProductSearchService(FinancialSavingsSearchRepository savingsProductRepository,
@@ -82,6 +84,7 @@ public class FinancialProductSearchService {
                                          FinancialSearchKeywordProvider keywordProvider,
                                          BankUrlResolver bankUrlResolver,
                                          BankNameFormatter bankNameFormatter,
+                                         PreferentialConditionCacheRepository conditionCacheRepository,
                                          ObjectMapper objectMapper) {
         this.savingsProductRepository = savingsProductRepository;
         this.loanProductRepository = loanProductRepository;
@@ -92,6 +95,7 @@ public class FinancialProductSearchService {
         this.keywordProvider = keywordProvider;
         this.bankUrlResolver = bankUrlResolver;
         this.bankNameFormatter = bankNameFormatter;
+        this.conditionCacheRepository = conditionCacheRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -595,12 +599,20 @@ public class FinancialProductSearchService {
                 .filter(term -> term != null)
                 .min(Comparator.naturalOrder())
                 .orElse(null);
+        // 우대조건은 파싱 캐시가 있으면 체크리스트로 내려준다(원문에 섞인 "(판매중단)" 같은 안내문이 조건에서
+        // 걸러짐). 캐시가 없으면 빈 목록 → 화면에서 원문(specialCondition)으로 폴백한다.
+        List<FinancialSearchResultItem.ConditionItem> conditions = conditionCacheRepository
+                .findWithItemsByProductId(product.getId())
+                .map(cache -> cache.getItems().stream()
+                        .map(i -> new FinancialSearchResultItem.ConditionItem(i.getDescription(), i.getRateBonus()))
+                        .toList())
+                .orElse(List.of());
         // recommend 엔티티의 productType은 SavingsType enum이라, 검색 응답 DTO의 String 필드에 맞춰 name()으로 변환한다.
         // 회사명은 사용자에게 친숙한 표시명으로 바꾸되, 링크 조회에는 매칭 어긋남을 막기 위해 원본을 그대로 쓴다.
         return new FinancialSearchResultItem(product.getId(), product.getProductType().name(),
                 bankNameFormatter.toDisplayName(product.getCompanyName()),
                 product.getProductName(), product.getJoinMethod(), bestRate, shortestTerm, product.getSpecialCondition(),
-                matchReason, bankUrlResolver.resolve(product.getCompanyName()));
+                conditions, matchReason, bankUrlResolver.resolve(product.getCompanyName()));
     }
 
     private FinancialSearchResultItem toItem(LoanProduct product, String matchReason) {
@@ -610,10 +622,11 @@ public class FinancialProductSearchService {
                 .min(Comparator.naturalOrder())
                 .orElse(null);
         // recommend 엔티티의 productType은 LoanType enum이라, 검색 응답 DTO의 String 필드에 맞춰 name()으로 변환한다.
+        // 대출은 예·적금 우대조건 파싱 대상이 아니라 conditions는 빈 목록으로 둔다.
         return new FinancialSearchResultItem(product.getId(), product.getProductType().name(),
                 bankNameFormatter.toDisplayName(product.getCompanyName()),
                 product.getProductName(), product.getJoinMethod(), minRate, null, product.getSpecialCondition(),
-                matchReason, bankUrlResolver.resolve(product.getCompanyName()));
+                List.of(), matchReason, bankUrlResolver.resolve(product.getCompanyName()));
     }
 
     // RELEVANCE는 vectorSearch/searchByKeyword가 이미 정해준 순서를 그대로 쓴다(재정렬 없음).

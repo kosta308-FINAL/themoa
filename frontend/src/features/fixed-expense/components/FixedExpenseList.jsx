@@ -1,5 +1,6 @@
 import DashboardIcon from "../../../components/common/DashboardIcon";
 import ServiceIcon from "./ServiceIcon";
+import FxSelect from "./FxSelect";
 import {
   formatAmount,
   METHOD_LABEL,
@@ -98,18 +99,13 @@ function FixedExpenseList({
             계좌이체 {transferCount}
           </button>
         </div>
-        <select
+        <FxSelect
           className="fx-sort-select"
-          aria-label="고정지출 정렬"
+          ariaLabel="고정지출 정렬"
           value={sort}
-          onChange={(event) => onSortChange(event.target.value)}
-        >
-          {SORT_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          onChange={onSortChange}
+          options={SORT_OPTIONS}
+        />
       </div>
       {sorted.length ? (
         <div className="fx-expense-list">

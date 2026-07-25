@@ -74,8 +74,12 @@ export const resetPassword = (payload) =>
 export const kakaoLoginUrl = () =>
   `${import.meta.env.VITE_API_BASE_URL ?? ""}/api/oauth2/authorization/kakao`;
 
+/** 구글 로그인 시작 URL. kakaoLoginUrl과 동일하게 전체 페이지 이동으로 써야 한다. */
+export const googleLoginUrl = () =>
+  `${import.meta.env.VITE_API_BASE_URL ?? ""}/api/oauth2/authorization/google`;
+
 /**
- * 카카오 콜백(/oauth/callback) 직후 1회 호출. 교환코드를 소비해 기존 회원이면 로그인을,
+ * 소셜(카카오/구글) 콜백(/oauth/callback) 직후 1회 호출. 교환코드를 소비해 기존 회원이면 로그인을,
  * 신규 회원이면 추가정보 입력에 필요한 signupTicket·nickname을 받는다.
  * @returns {Promise<{ data: { data: { requiresSignup: boolean, token?: { accessToken, expiresIn },
  *   signupTicket?: string, nickname?: string } } }>}
@@ -84,11 +88,11 @@ export const exchangeOAuthCode = (code) =>
   axiosInstance.post("/api/auth/oauth/exchange", { code }, { skipAuth: true });
 
 /**
- * 카카오 신규 회원 가입 완료. 성공 시 { accessToken, expiresIn }(Refresh는 HttpOnly 쿠키)으로 자동 로그인.
+ * 소셜 신규 회원 가입 완료. 성공 시 { accessToken, expiresIn }(Refresh는 HttpOnly 쿠키)으로 자동 로그인.
  * @param {{ signupTicket, email, gender: 'MALE'|'FEMALE', birthDate: 'YYYY-MM-DD',
  *   agreedServiceTerms: boolean, agreedPrivacyPolicy: boolean, agreedDataCollection: boolean }} payload
  */
-export const completeKakaoSignup = (payload) =>
-  axiosInstance.post("/api/auth/oauth/kakao/complete-signup", payload, {
+export const completeSocialSignup = (payload) =>
+  axiosInstance.post("/api/auth/oauth/complete-signup", payload, {
     skipAuth: true,
   });

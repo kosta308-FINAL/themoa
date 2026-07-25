@@ -178,10 +178,19 @@ function FixedExpensePage() {
   };
 
   const items = expenseList?.items || [];
-  const salaryAmount = toNumber(salarySummary?.salaryAmount);
   const totalExpected = toNumber(expenseList?.totalExpectedAmountKrw);
-  const ratio = salaryAmount > 0 ? (totalExpected / salaryAmount) * 100 : null;
-  const remaining = salaryAmount - totalExpected;
+  // availableAmount는 이미 salaryAmount - 고정지출 - 저축목표 + 이번 주기 수입 직접 입력 합계라, 거꾸로
+  // 더하면 "이번 주기 수입 직접 입력"까지 반영된 실질 소득이 나온다(수입 직접 입력은 응답에 별도 필드로
+  // 내려오지 않는다).
+  const cycleIncomeAmount =
+    toNumber(salarySummary?.availableAmount) +
+    toNumber(salarySummary?.expectedFixedExpenseTotal) +
+    toNumber(salarySummary?.savingsGoalAmount);
+  const ratio =
+    cycleIncomeAmount > 0 ? (totalExpected / cycleIncomeAmount) * 100 : null;
+  const remaining = cycleIncomeAmount - totalExpected;
+  const isOverBudget = ratio !== null && ratio > 100;
+  const isEmptyState = items.length === 0 && candidates.length === 0;
 
   return (
     <div className="fixed-expense">
@@ -205,6 +214,26 @@ function FixedExpensePage() {
 
         {isLoading && !expenseList ? (
           <div className="fx-loading">고정지출을 불러오고 있어요.</div>
+        ) : isEmptyState ? (
+          <section className="fx-empty-hero" aria-label="고정지출 시작하기">
+            <span className="fx-empty-hero-icon">
+              <DashboardIcon name="receipt" size={26} />
+            </span>
+            <h2>등록된 고정지출이 없어요</h2>
+            <p>
+              매달 반복되는 구독료, 월세, 보험료 같은 지출을 등록하면
+              <br />
+              결제일과 급여 대비 비율을 한눈에 관리할 수 있어요.
+            </p>
+            <button
+              type="button"
+              className="fx-primary-button"
+              onClick={() => setRegisterState({ candidate: null })}
+            >
+              <DashboardIcon name="plus" size={15} />
+              고정지출 등록해서 시작하기
+            </button>
+          </section>
         ) : (
           <>
             <section className="fx-summary-hero" aria-label="월 고정지출 요약">
@@ -256,10 +285,12 @@ function FixedExpensePage() {
                         <DashboardIcon name="wallet" size={15} />
                         급여 대비 고정지출
                       </span>
-                      <strong>{ratio.toFixed(1)}%</strong>
+                      <strong className={isOverBudget ? "over" : ""}>
+                        {ratio.toFixed(1)}%
+                      </strong>
                     </div>
                     <span className="fx-salary-base">
-                      월 급여 {formatWon(salaryAmount)} 기준
+                      이번 주기 소득 {formatWon(cycleIncomeAmount)} 기준
                     </span>
                     <div
                       className="fx-progress-track"
@@ -270,7 +301,7 @@ function FixedExpensePage() {
                       aria-valuenow={Math.min(100, Math.round(ratio))}
                     >
                       <div
-                        className="fx-progress-value"
+                        className={`fx-progress-value${isOverBudget ? " over" : ""}`}
                         style={{ width: `${Math.min(100, ratio)}%` }}
                       />
                     </div>
@@ -278,7 +309,9 @@ function FixedExpensePage() {
                       급여 중 {formatWon(totalExpected)}이 고정지출로 먼저
                       나가요.
                     </p>
-                    <div className="fx-salary-remaining">
+                    <div
+                      className={`fx-salary-remaining${isOverBudget ? " over" : ""}`}
+                    >
                       <span>
                         {remaining >= 0
                           ? "고정지출 제외 후 남는 급여"

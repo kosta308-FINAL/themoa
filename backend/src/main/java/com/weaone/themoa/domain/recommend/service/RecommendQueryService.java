@@ -62,8 +62,10 @@ public class RecommendQueryService {
      * <p>월소득은 최근 급여주기 스냅샷(budget.salary_amount)에서 가져온다. 소득유형(고정월급/시급제)에 맞는
      * 계산이 이미 반영된 값이라 여기서 다시 계산하지 않는다. 소비가이드 설정 전이면 주기가 없어 null이다.
      *
-     * <p>월 납입가능금액은 가장 최근 주기의 잉여금을 쓴다. 아직 적립된 잉여금이 없거나(가입 직후 등)
-     * 잉여금이 최소 납입금액에 못 미치면(적자 주기는 음수로 적립된다) 기본값을 내려준다.
+     * <p>월 납입가능금액은 회원의 전체 급여주기 잉여금 평균을 쓴다. 적자 주기는 음수로 적립되어 있는데
+     * (SurplusFund 참고), 평균 낼 때도 0으로 깎지 않고 그대로 더한다 — 한두 달 우연히 많이 남았다고
+     * 평균이 부풀려지거나, 반대로 적자가 있었는데도 무시되면 안 되기 때문이다. 아직 적립된 잉여금이
+     * 없거나(가입 직후 등) 평균이 최소 납입금액에 못 미치면 기본값을 내려준다.
      */
     @Transactional(readOnly = true)
     public RecommendDefaultsResponse findDefaults(Long memberId) {
@@ -72,12 +74,16 @@ public class RecommendQueryService {
                 .map(salary -> salary.divide(WON_PER_MANWON, 0, RoundingMode.HALF_UP).intValue())
                 .orElse(null);
 
-        BigDecimal surplus = surplusFundRepository.findFirstByMember_IdOrderByYearMonthDesc(memberId)
-                .map(SurplusFund::getAmount)
-                .orElse(null);
-        boolean usableSurplus = surplus != null
-                && surplus.compareTo(BigDecimal.valueOf(MIN_MONTHLY_DEPOSIT_WON)) >= 0;
-        int monthlyDepositWon = usableSurplus ? surplus.intValue() : DEFAULT_MONTHLY_DEPOSIT_WON;
+        List<SurplusFund> allCycles = surplusFundRepository.findByMember_Id(memberId);
+        BigDecimal averageSurplus = allCycles.isEmpty()
+                ? null
+                : allCycles.stream()
+                        .map(SurplusFund::getAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                        .divide(BigDecimal.valueOf(allCycles.size()), 0, RoundingMode.HALF_UP);
+        boolean usableSurplus = averageSurplus != null
+                && averageSurplus.compareTo(BigDecimal.valueOf(MIN_MONTHLY_DEPOSIT_WON)) >= 0;
+        int monthlyDepositWon = usableSurplus ? averageSurplus.intValue() : DEFAULT_MONTHLY_DEPOSIT_WON;
 
         return new RecommendDefaultsResponse(monthlyIncomeManwon, monthlyDepositWon, usableSurplus);
     }

@@ -279,6 +279,43 @@
   line-height: 1.5;
 }
 
+/* 파싱된 우대조건 체크리스트 */
+.fs-conditions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  list-style: none;
+}
+
+.fs-conditions li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--dash-text-primary);
+}
+
+.fs-conditions li::before {
+  content: "✓";
+  margin-right: 6px;
+  color: var(--dash-accent-dark);
+  font-weight: 700;
+}
+
+.fs-conditions li span {
+  flex: 1;
+  min-width: 0;
+}
+
+.fs-conditions li em {
+  flex-shrink: 0;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--dash-accent-dark);
+}
+
 .fs-reason {
   padding: 10px 12px;
   border-left: 3px solid var(--dash-accent);
