@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import DashEmptyState from "./DashEmptyState";
+import DashSectionError from "./DashSectionError";
 import { formatWon } from "../dashboardUtils";
 
 const CATEGORY_COLORS = [
@@ -61,16 +63,16 @@ function SpendingAnalysis({ category, loading, error }) {
       </div>
 
       {loading && !category && <div className="dash-loading">소비 분석을 불러오고 있어요.</div>}
-      {error && !category && <div className="dash-section-error">소비 분석을 불러오지 못했어요.</div>}
-      {!loading && !error && items.length === 0 && (
-        <div className="dash-empty-state">
-          <strong>아직 분석할 소비 데이터가 없어요.</strong>
-          <span>소비 내역이 쌓이면 카테고리별 비중을 확인할 수 있어요.</span>
-        </div>
+      {!loading && items.length === 0 && (
+        <DashEmptyState
+          icon="chart"
+          title="아직 분석할 소비 데이터가 없어요"
+          description="소비가이드를 설정하고 소비 내역이 쌓이면 카테고리별 비중을 확인할 수 있어요."
+        />
       )}
       {items.length > 0 && (
         <>
-          {error && <div className="dash-section-error">{error}</div>}
+          {error && <DashSectionError message={error} />}
           <div className="spending-chart-row">
             <div className="donut-wrap">
               <DonutChart categories={items} />

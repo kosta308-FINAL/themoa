@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import DashEmptyState from "./DashEmptyState";
+import DashSectionError from "./DashSectionError";
 import { formatWon } from "../dashboardUtils";
 
 function SpendingTipCard({ coaching, loading, error }) {
@@ -8,16 +10,16 @@ function SpendingTipCard({ coaching, loading, error }) {
     <div className="tip-card">
       <h3>소비 코칭</h3>
       {loading && !coaching && <div className="dash-loading">소비 코칭을 불러오고 있어요.</div>}
-      {error && !coaching && <div className="dash-section-error">소비 코칭을 불러오지 못했어요.</div>}
-      {!loading && !error && !tip && (
-        <div className="dash-empty-state">
-          <strong>현재 확인할 소비 코칭이 없어요.</strong>
-          <span>소비 내역이 쌓이면 맞춤 코칭을 확인할 수 있어요.</span>
-        </div>
+      {!loading && !tip && (
+        <DashEmptyState
+          icon="sparkle"
+          title="현재 확인할 소비 코칭이 없어요"
+          description="소비가이드를 설정하고 소비 내역이 쌓이면 맞춤 코칭을 확인할 수 있어요."
+        />
       )}
       {tip && (
         <>
-          {error && <div className="dash-section-error">{error}</div>}
+          {error && <DashSectionError message={error} />}
           <strong className="tip-title">{tip.title}</strong>
           <p>{tip.body}</p>
           {tip.targetLabel && <span className="tip-target">{tip.targetLabel}</span>}
