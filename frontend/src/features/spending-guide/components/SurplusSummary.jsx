@@ -1,3 +1,4 @@
+import AnimatedNumber from "../../../components/common/AnimatedNumber";
 import DashboardIcon from "../../../components/common/DashboardIcon";
 import { formatWon, toNumber } from "../spendingGuideUtils";
 import { EmptyState, PanelTitle } from "./SpendingGuideCommon";
@@ -45,7 +46,10 @@ function SurplusSummary({ data, onSetGoal }) {
             </span>
             <strong className={surplusTone(data.ongoingCycle.amount)}>
               {surplusSign(data.ongoingCycle.amount)}
-              {formatWon(data.ongoingCycle.amount)}
+              <AnimatedNumber
+                value={data.ongoingCycle.amount}
+                format={formatWon}
+              />
             </strong>
             <p>
               {toNumber(data.ongoingCycle.amount) > 0
@@ -59,7 +63,10 @@ function SurplusSummary({ data, onSetGoal }) {
               <>
                 <strong className={surplusTone(data.totalSurplusAmount)}>
                   {surplusSign(data.totalSurplusAmount)}
-                  {formatWon(data.totalSurplusAmount)}
+                  <AnimatedNumber
+                    value={data.totalSurplusAmount}
+                    format={formatWon}
+                  />
                 </strong>
                 <p>완료된 {data.completedCycleCount}개 주기 합산</p>
               </>
