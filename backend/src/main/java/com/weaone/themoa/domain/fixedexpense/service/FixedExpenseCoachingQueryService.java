@@ -12,26 +12,22 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
-/** 고정지출 화면의 "연 환산" 코칭 카드 조회. 이번 주기 카드가 없으면 조회 시점에 만든다(지연 생성). */
+/** 고정지출 화면의 "연 환산" 코칭 카드 조회. 카드 생성은 매일 새벽 3시 배치가 담당하고, 여기서는 읽기만 한다. */
 @Service
 @RequiredArgsConstructor
 public class FixedExpenseCoachingQueryService {
 
     private final MemberRepository memberRepository;
     private final FixedExpenseCoachingCardRepository coachingCardRepository;
-    private final FixedExpenseCoachingCardService coachingCardService;
     private final BudgetCycleService budgetCycleService;
 
-    /** readOnly가 아니다 — 카드 생성(쓰기)이 조회 경로 안에서 일어날 수 있다. */
-    @Transactional
+    @Transactional(readOnly = true)
     public List<FixedExpenseCoachingCardResponse> list(Long memberId) {
         Member member = memberRepository.getReferenceById(memberId);
         LocalDate today = LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL);
         String yearMonth = member.getPayday() == null
                 ? FixedExpenseCyclePolicy.currentYearMonth(null)
                 : budgetCycleService.resolveCycleForDate(member, today).yearMonth();
-
-        coachingCardService.generateForMemberIfMissing(memberId, yearMonth);
 
         return coachingCardRepository
                 .findByMember_IdAndYearMonthAndDismissedAtIsNullOrderByDisplayOrderAsc(memberId, yearMonth).stream()

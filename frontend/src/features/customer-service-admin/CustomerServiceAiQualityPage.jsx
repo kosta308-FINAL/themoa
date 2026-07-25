@@ -6,11 +6,13 @@ import {
   getAdminCustomerAiSettings,
   getAdminCustomerKnowledgeDocuments,
   getAdminCustomerKnowledgeMetadataOptions,
+  getAdminUnansweredQuestions,
   previewAdminCustomerAiAnswer,
   previewAdminCustomerKnowledgeChunks,
   reembedAdminCustomerKnowledgeDocument,
   searchAdminCustomerAiKnowledge,
   updateAdminCustomerAiSettings,
+  updateAdminUnansweredQuestionStatus,
   uploadAdminCustomerKnowledgeDocument,
 } from "../../api/customerServiceApi";
 import { getApiErrorMessage } from "../../utils/apiError";
@@ -20,6 +22,11 @@ const STATUS_LABEL = {
   EMBEDDED: "임베딩 완료",
   FAILED: "임베딩 실패",
   DISABLED: "비활성화",
+};
+
+const UNANSWERED_REASON_LABEL = {
+  NO_GROUNDING: "검색 결과 없음",
+  NEEDS_HUMAN_SUPPORT: "1:1 문의 안내",
 };
 
 function formatDateTime(value) {
@@ -82,6 +89,9 @@ function CustomerServiceAiQualityPage() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busyKey, setBusyKey] = useState("");
+  const [unansweredQuestions, setUnansweredQuestions] = useState([]);
+  const [unansweredNewCount, setUnansweredNewCount] = useState(0);
+  const [unansweredStatusFilter, setUnansweredStatusFilter] = useState("NEW");
 
   const embeddedCount = useMemo(
     () => documents.filter((item) => item.status === "EMBEDDED").length,
@@ -108,21 +118,46 @@ function CustomerServiceAiQualityPage() {
     });
   };
 
+  const loadUnansweredQuestions = async (
+    statusFilter = unansweredStatusFilter,
+  ) => {
+    const data = await getAdminUnansweredQuestions({
+      status: statusFilter || undefined,
+      size: 20,
+    });
+    setUnansweredQuestions(data?.items || []);
+    setUnansweredNewCount(data?.newCount || 0);
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      Promise.all([loadSettings(), loadDocuments(), loadMetadataOptions()]).catch(
-        (requestError) => {
-          setError(
-            getApiErrorMessage(
-              requestError,
-              "AI 품질관리 정보를 불러오지 못했어요.",
-            ),
-          );
-        },
-      );
+      Promise.all([
+        loadSettings(),
+        loadDocuments(),
+        loadMetadataOptions(),
+      ]).catch((requestError) => {
+        setError(
+          getApiErrorMessage(
+            requestError,
+            "AI 품질관리 정보를 불러오지 못했어요.",
+          ),
+        );
+      });
     }, 0);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadUnansweredQuestions(unansweredStatusFilter).catch((requestError) => {
+        setError(
+          getApiErrorMessage(requestError, "미답변 질문을 불러오지 못했어요."),
+        );
+      });
+    }, 0);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unansweredStatusFilter]);
 
   useEffect(() => {
     return () => {
@@ -440,6 +475,25 @@ function CustomerServiceAiQualityPage() {
     }
   };
 
+  const toggleUnansweredStatus = async (questionId, nextStatus) => {
+    setBusyKey(`unanswered-${questionId}`);
+    setError("");
+    setNotice("");
+    try {
+      await updateAdminUnansweredQuestionStatus(questionId, nextStatus);
+      await loadUnansweredQuestions();
+      setNotice(
+        nextStatus === "RESOLVED"
+          ? "해결 처리했어요."
+          : "다시 미해결로 되돌렸어요.",
+      );
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, "상태 변경에 실패했어요."));
+    } finally {
+      setBusyKey("");
+    }
+  };
+
   const disableDocument = async (documentId) => {
     setBusyKey(`disable-${documentId}`);
     setError("");
@@ -478,6 +532,10 @@ function CustomerServiceAiQualityPage() {
               {embeddedCount}/{documents.length}
             </strong>
           </div>
+          <div className="aiq-kpi-card">
+            <span>미답변 질문</span>
+            <strong>{unansweredNewCount}</strong>
+          </div>
         </section>
 
         {(notice || error) && (
@@ -486,6 +544,103 @@ function CustomerServiceAiQualityPage() {
             {error && <div className="aiq-toast error">{error}</div>}
           </div>
         )}
+
+        <section className="aiq-panel">
+          <div className="aiq-panel-heading">
+            <div>
+              <h2>미답변 질문 모음</h2>
+              <p>
+                Qdrant 검색 결과가 없거나 챗봇이 1:1 문의를 안내한 질문을
+                모아봅니다. 새 지식 문서를 등록할 때 참고하세요.
+              </p>
+            </div>
+            <div className="aiq-segmented" aria-label="미답변 질문 상태 필터">
+              <button
+                type="button"
+                className={unansweredStatusFilter === "NEW" ? "active" : ""}
+                onClick={() => setUnansweredStatusFilter("NEW")}
+              >
+                미해결
+              </button>
+              <button
+                type="button"
+                className={
+                  unansweredStatusFilter === "RESOLVED" ? "active" : ""
+                }
+                onClick={() => setUnansweredStatusFilter("RESOLVED")}
+              >
+                해결됨
+              </button>
+              <button
+                type="button"
+                className={unansweredStatusFilter === "" ? "active" : ""}
+                onClick={() => setUnansweredStatusFilter("")}
+              >
+                전체
+              </button>
+            </div>
+          </div>
+          {unansweredQuestions.length === 0 ? (
+            <div className="aiq-empty">해당 조건의 미답변 질문이 없습니다.</div>
+          ) : (
+            <div className="aiq-document-list">
+              {unansweredQuestions.map((item) => (
+                <article className="aiq-document-item" key={item.id}>
+                  <div className="aiq-document-main">
+                    <div className="aiq-document-title-row">
+                      <h3>{item.question}</h3>
+                      <span
+                        className={`aiq-status ${
+                          item.status === "NEW" ? "failed" : "embedded"
+                        }`}
+                      >
+                        {item.status === "NEW" ? "미해결" : "해결됨"}
+                      </span>
+                    </div>
+                    <div className="aiq-document-meta">
+                      <span>{item.memberEmail}</span>
+                      <span>
+                        {UNANSWERED_REASON_LABEL[item.reason] || item.reason}
+                      </span>
+                      <span>{formatDateTime(item.createdAt)}</span>
+                    </div>
+                    {item.answerMarkdown && (
+                      <details>
+                        <summary>챗봇이 안내한 답변 보기</summary>
+                        <p className="aiq-unanswered-answer">
+                          {item.answerMarkdown}
+                        </p>
+                      </details>
+                    )}
+                  </div>
+                  <div className="aiq-document-actions">
+                    {item.status === "NEW" ? (
+                      <button
+                        type="button"
+                        className="aiq-btn aiq-btn-secondary"
+                        onClick={() =>
+                          toggleUnansweredStatus(item.id, "RESOLVED")
+                        }
+                        disabled={Boolean(busyKey)}
+                      >
+                        해결 처리
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="aiq-btn aiq-btn-secondary"
+                        onClick={() => toggleUnansweredStatus(item.id, "NEW")}
+                        disabled={Boolean(busyKey)}
+                      >
+                        다시 열기
+                      </button>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
 
         <section className="aiq-panel aiq-playground">
           <div className="aiq-panel-heading">
