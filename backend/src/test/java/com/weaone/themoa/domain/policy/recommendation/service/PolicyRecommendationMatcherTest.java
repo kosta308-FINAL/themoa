@@ -6,8 +6,11 @@ import com.weaone.themoa.domain.policy.policy.entity.PolicyCondition;
 import com.weaone.themoa.domain.policy.policy.entity.PolicyRegion;
 import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
 import com.weaone.themoa.domain.policy.policy.region.RegionCompatibility;
+import com.weaone.themoa.domain.policy.rag.dto.EducationStage;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyEmploymentAudience;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyTargetAudienceClassification;
 import com.weaone.themoa.domain.policy.rag.dto.UserEmploymentStatus;
+import com.weaone.themoa.domain.policy.rag.service.PolicyTargetEligibilityFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -18,7 +21,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PolicyRecommendationMatcherTest {
-    private final PolicyRecommendationMatcher matcher = new PolicyRecommendationMatcher();
+    private final PolicyRecommendationMatcher matcher = new PolicyRecommendationMatcher(new PolicyTargetEligibilityFilter());
 
     @Test
     void exactSigunguAgeEmploymentAndOpenPolicyScores() {
@@ -32,6 +35,7 @@ class PolicyRecommendationMatcherTest {
                 27,
                 UserEmploymentStatus.UNEMPLOYED,
                 audience,
+                PolicyTargetAudienceClassification.unknown(),
                 LocalDate.of(2026, 7, 24)
         );
 
@@ -51,6 +55,7 @@ class PolicyRecommendationMatcherTest {
                 27,
                 UserEmploymentStatus.UNEMPLOYED,
                 PolicyEmploymentAudience.unknown(),
+                PolicyTargetAudienceClassification.unknown(),
                 LocalDate.of(2026, 7, 24)
         );
         PolicyRecommendationMatch exactSido = matcher.match(
@@ -59,6 +64,7 @@ class PolicyRecommendationMatcherTest {
                 27,
                 UserEmploymentStatus.UNEMPLOYED,
                 PolicyEmploymentAudience.unknown(),
+                PolicyTargetAudienceClassification.unknown(),
                 LocalDate.of(2026, 7, 24)
         );
         PolicyRecommendationMatch nationwide = matcher.match(
@@ -67,6 +73,7 @@ class PolicyRecommendationMatcherTest {
                 27,
                 UserEmploymentStatus.UNEMPLOYED,
                 PolicyEmploymentAudience.unknown(),
+                PolicyTargetAudienceClassification.unknown(),
                 LocalDate.of(2026, 7, 24)
         );
 
@@ -85,6 +92,7 @@ class PolicyRecommendationMatcherTest {
                 27,
                 UserEmploymentStatus.UNEMPLOYED,
                 PolicyEmploymentAudience.unknown(),
+                PolicyTargetAudienceClassification.unknown(),
                 LocalDate.of(2026, 7, 24)
         );
         PolicyRecommendationMatch nationwide = matcher.match(
@@ -93,6 +101,7 @@ class PolicyRecommendationMatcherTest {
                 27,
                 UserEmploymentStatus.UNEMPLOYED,
                 PolicyEmploymentAudience.unknown(),
+                PolicyTargetAudienceClassification.unknown(),
                 LocalDate.of(2026, 7, 24)
         );
 
@@ -110,6 +119,7 @@ class PolicyRecommendationMatcherTest {
                 27,
                 UserEmploymentStatus.UNEMPLOYED,
                 PolicyEmploymentAudience.unknown(),
+                PolicyTargetAudienceClassification.unknown(),
                 LocalDate.of(2026, 7, 24)
         );
 
@@ -129,6 +139,7 @@ class PolicyRecommendationMatcherTest {
                 27,
                 UserEmploymentStatus.UNEMPLOYED,
                 PolicyEmploymentAudience.unknown(),
+                PolicyTargetAudienceClassification.unknown(),
                 LocalDate.of(2026, 7, 24)
         );
 
@@ -145,6 +156,7 @@ class PolicyRecommendationMatcherTest {
                 27,
                 UserEmploymentStatus.UNEMPLOYED,
                 PolicyEmploymentAudience.unknown(),
+                PolicyTargetAudienceClassification.unknown(),
                 LocalDate.of(2026, 7, 24)
         );
 
@@ -163,10 +175,126 @@ class PolicyRecommendationMatcherTest {
                 27,
                 UserEmploymentStatus.EMPLOYED,
                 audience,
+                PolicyTargetAudienceClassification.unknown(),
                 LocalDate.of(2026, 7, 24)
         );
 
         assertThat(match.matched()).isFalse();
+        assertThat(match.exclusionReason()).isEqualTo("EMPLOYMENT_MISMATCH");
+    }
+
+    @Test
+    void missingProjectionIsExcludedFromAutomaticRecommendation() {
+        Policy policy = policy(1, null, null, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31));
+
+        PolicyRecommendationMatch match = matcher.match(
+                policy,
+                RegionCompatibility.PARENT_SIDO,
+                27,
+                UserEmploymentStatus.EMPLOYED,
+                null,
+                PolicyTargetAudienceClassification.unknown(),
+                LocalDate.of(2026, 7, 24)
+        );
+
+        assertThat(match.matched()).isFalse();
+        assertThat(match.exclusionReason()).isEqualTo("MISSING_SEARCH_PROJECTION");
+    }
+
+    @Test
+    void employmentConflictIsExcludedFromAutomaticRecommendation() {
+        Policy policy = policy(1, null, null, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31));
+        PolicyEmploymentAudience audience = new PolicyEmploymentAudience(
+                Set.of(UserEmploymentStatus.EMPLOYED, UserEmploymentStatus.UNEMPLOYED),
+                false,
+                true,
+                0.4,
+                List.of("충돌")
+        );
+
+        PolicyRecommendationMatch match = matcher.match(
+                policy,
+                RegionCompatibility.PARENT_SIDO,
+                27,
+                UserEmploymentStatus.EMPLOYED,
+                audience,
+                PolicyTargetAudienceClassification.unknown(),
+                LocalDate.of(2026, 7, 24)
+        );
+
+        assertThat(match.matched()).isFalse();
+        assertThat(match.exclusionReason()).isEqualTo("EMPLOYMENT_CONFLICT");
+    }
+
+    @Test
+    void bothAllowedPolicyDoesNotReceiveEmploymentScoreOrReason() {
+        Policy policy = policy(1, 19, 39, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31));
+        PolicyEmploymentAudience audience = new PolicyEmploymentAudience(
+                Set.of(UserEmploymentStatus.EMPLOYED, UserEmploymentStatus.UNEMPLOYED),
+                false,
+                false,
+                0.8,
+                List.of("취업 여부 무관")
+        );
+
+        PolicyRecommendationMatch match = matcher.match(
+                policy,
+                RegionCompatibility.PARENT_SIDO,
+                27,
+                UserEmploymentStatus.EMPLOYED,
+                audience,
+                PolicyTargetAudienceClassification.unknown(),
+                LocalDate.of(2026, 7, 24)
+        );
+
+        assertThat(match.matched()).isTrue();
+        assertThat(match.score()).isEqualTo(70);
+        assertThat(match.matchReason()).doesNotContain("재직자 대상 조건 일치");
+    }
+
+    @Test
+    void employmentTransitionProgramIsExcludedForEmployedAutomaticRecommendation() {
+        Policy policy = policy(1, null, null, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31));
+        PolicyEmploymentAudience audience = new PolicyEmploymentAudience(
+                Set.of(UserEmploymentStatus.UNKNOWN),
+                false,
+                false,
+                true,
+                0.55,
+                List.of("취업 전환 프로그램")
+        );
+
+        PolicyRecommendationMatch match = matcher.match(
+                policy,
+                RegionCompatibility.PARENT_SIDO,
+                27,
+                UserEmploymentStatus.EMPLOYED,
+                audience,
+                PolicyTargetAudienceClassification.unknown(),
+                LocalDate.of(2026, 7, 24)
+        );
+
+        assertThat(match.matched()).isFalse();
+        assertThat(match.exclusionReason()).isEqualTo("EMPLOYMENT_MISMATCH");
+    }
+
+    @Test
+    void regionClassificationConflictIsExcluded() {
+        Policy policy = policy(1, null, null, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31));
+
+        PolicyRecommendationMatch match = matcher.match(
+                policy,
+                RegionCompatibility.PARENT_SIDO,
+                27,
+                UserEmploymentStatus.EMPLOYED,
+                PolicyEmploymentAudience.unknown(),
+                PolicyTargetAudienceClassification.unknown(),
+                LocalDate.of(2026, 7, 24),
+                true
+        );
+
+        assertThat(match.matched()).isFalse();
+        assertThat(match.exclusionReason()).isEqualTo("REGION_CLASSIFICATION_CONFLICT");
     }
 
     @Test
@@ -179,6 +307,48 @@ class PolicyRecommendationMatcherTest {
                 27,
                 UserEmploymentStatus.UNEMPLOYED,
                 PolicyEmploymentAudience.unknown(),
+                PolicyTargetAudienceClassification.unknown(),
+                LocalDate.of(2026, 7, 24)
+        );
+
+        assertThat(match.matched()).isFalse();
+    }
+
+    @Test
+    void unknownRegionIsExcludedFromAutomaticRecommendation() {
+        Policy policy = policy(1, null, null, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31));
+
+        PolicyRecommendationMatch match = matcher.match(
+                policy,
+                RegionCompatibility.UNKNOWN,
+                27,
+                UserEmploymentStatus.EMPLOYED,
+                PolicyEmploymentAudience.unknown(),
+                PolicyTargetAudienceClassification.unknown(),
+                LocalDate.of(2026, 7, 24)
+        );
+
+        assertThat(match.matched()).isFalse();
+    }
+
+    @Test
+    void exclusiveStudentTargetIsExcludedWhenProfileHasNoEducationStage() {
+        Policy policy = policy(1, null, null, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31));
+        PolicyTargetAudienceClassification universityOnly = new PolicyTargetAudienceClassification(
+                Set.of(EducationStage.UNIVERSITY),
+                Set.of(),
+                true,
+                0.9,
+                List.of("대학생 전용")
+        );
+
+        PolicyRecommendationMatch match = matcher.match(
+                policy,
+                RegionCompatibility.PARENT_SIDO,
+                27,
+                UserEmploymentStatus.EMPLOYED,
+                PolicyEmploymentAudience.unknown(),
+                universityOnly,
                 LocalDate.of(2026, 7, 24)
         );
 

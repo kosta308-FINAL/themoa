@@ -64,6 +64,7 @@ class AdminJobServiceTest {
         assertThat(status.message()).contains("projectionCount=2650", "indexDocumentCount=2650");
         verify(projectionService).rebuildAll(anyProjectionProgressConsumer());
         verify(lexicalIndexBuilder).refresh();
+        verify(recommendationBatchService).refreshAllProfiles();
         verify(policySyncExecutionGuard).release();
     }
 
@@ -124,6 +125,38 @@ class AdminJobServiceTest {
 
         assertThat(status.status()).isEqualTo("COMPLETED");
         assertThat(status.message()).contains("POLICY_SYNC_COMPLETED");
+        verify(policySyncExecutionGuard).release();
+    }
+
+    @Test
+    void regionRebuildRefreshesPolicyRecommendationsWhenMappingsChanged() {
+        allowJobStart();
+        when(regionCodeRepository.countByRegionLevel("PROVINCE")).thenReturn(2L);
+        when(regionRebuildService.rebuildAll(anyJobProgressConsumer())).thenReturn(regionResult(2650, 10, 0));
+        when(projectionService.rebuildAll(anyProjectionProgressConsumer()))
+                .thenReturn(new PolicySearchProjectionService.ProjectionRebuildResult(2650, 2650, 0));
+        when(lexicalIndexBuilder.refresh()).thenReturn(index(2650));
+
+        AdminJobStatus status = service().start("POLICY_REGION_REBUILD");
+
+        assertThat(status.status()).isEqualTo("COMPLETED");
+        assertThat(status.message()).contains("REGION_REBUILD_COMPLETED changed=10");
+        verify(projectionService).rebuildAll(anyProjectionProgressConsumer());
+        verify(lexicalIndexBuilder).refresh();
+        verify(recommendationBatchService).refreshAllProfiles();
+        verify(policySyncExecutionGuard).release();
+    }
+
+    @Test
+    void regionRebuildSkipsPolicyRecommendationBatchWhenMappingsUnchanged() {
+        allowJobStart();
+        when(regionCodeRepository.countByRegionLevel("PROVINCE")).thenReturn(2L);
+        when(regionRebuildService.rebuildAll(anyJobProgressConsumer())).thenReturn(regionResult(2650, 0, 0));
+
+        AdminJobStatus status = service().start("POLICY_REGION_REBUILD");
+
+        assertThat(status.status()).isEqualTo("COMPLETED");
+        verify(recommendationBatchService, never()).refreshAllProfiles();
         verify(policySyncExecutionGuard).release();
     }
 
@@ -218,7 +251,12 @@ class AdminJobServiceTest {
     }
 
     private PolicyRegionRebuildResult regionResult(long processed, long failed) {
-        return new PolicyRegionRebuildResult(2650, processed, 10, 0, 0, 2640, failed, 0, 2650, 0, 0, 0);
+        return regionResult(processed, 10, failed);
+    }
+
+    private PolicyRegionRebuildResult regionResult(long processed, long changed, long failed) {
+        return new PolicyRegionRebuildResult(2650, processed, changed, 0, 0,
+                Math.max(0, 2650 - changed), failed, 0, 2650, 0, 0, 0);
     }
 
     private PolicyLexicalIndex index(int size) {

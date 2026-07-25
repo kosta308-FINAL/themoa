@@ -3,8 +3,12 @@ package com.weaone.themoa.domain.policy.recommendation.service;
 import com.weaone.themoa.domain.policy.policy.entity.Policy;
 import com.weaone.themoa.domain.policy.policy.entity.PolicyCondition;
 import com.weaone.themoa.domain.policy.policy.region.RegionCompatibility;
+import com.weaone.themoa.domain.policy.rag.dto.ConditionMatchStatus;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyEmploymentAudience;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyTargetAudienceClassification;
+import com.weaone.themoa.domain.policy.rag.dto.TargetStageMatchResult;
 import com.weaone.themoa.domain.policy.rag.dto.UserEmploymentStatus;
+import com.weaone.themoa.domain.policy.rag.service.PolicyTargetEligibilityFilter;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -13,25 +17,51 @@ import java.util.List;
 
 @Component
 public class PolicyRecommendationMatcher {
+    private final PolicyTargetEligibilityFilter targetEligibilityFilter;
+
+    public PolicyRecommendationMatcher(PolicyTargetEligibilityFilter targetEligibilityFilter) {
+        this.targetEligibilityFilter = targetEligibilityFilter;
+    }
 
     public PolicyRecommendationMatch match(Policy policy, RegionCompatibility regionCompatibility, int age,
                                            UserEmploymentStatus employmentStatus,
-                                           PolicyEmploymentAudience employmentAudience, LocalDate today) {
+                                           PolicyEmploymentAudience employmentAudience,
+                                           PolicyTargetAudienceClassification targetAudience,
+                                           LocalDate today) {
+        return match(policy, regionCompatibility, age, employmentStatus, employmentAudience, targetAudience, today, false);
+    }
+
+    public PolicyRecommendationMatch match(Policy policy, RegionCompatibility regionCompatibility, int age,
+                                           UserEmploymentStatus employmentStatus,
+                                           PolicyEmploymentAudience employmentAudience,
+                                           PolicyTargetAudienceClassification targetAudience,
+                                           LocalDate today,
+                                           boolean regionClassificationConflict) {
         if (policy == null || !policy.isActive()) {
-            return PolicyRecommendationMatch.excluded();
+            return PolicyRecommendationMatch.excluded("INACTIVE");
         }
         if (!policy.isAlwaysOpen() && policy.getDueDate() != null && policy.getDueDate().isBefore(today)) {
-            return PolicyRecommendationMatch.excluded();
+            return PolicyRecommendationMatch.excluded("EXPIRED");
         }
         PolicyCondition condition = policy.getCondition();
         if (!ageMatches(condition, age)) {
-            return PolicyRecommendationMatch.excluded();
+            return PolicyRecommendationMatch.excluded("AGE_MISMATCH");
         }
-        if (!employmentMatches(employmentStatus, employmentAudience)) {
-            return PolicyRecommendationMatch.excluded();
+        if (regionCompatibility == RegionCompatibility.NOT_MATCHED
+                || regionCompatibility == RegionCompatibility.UNKNOWN
+                || regionCompatibility == null) {
+            return PolicyRecommendationMatch.excluded("REGION_MISMATCH");
         }
-        if (regionCompatibility == RegionCompatibility.NOT_MATCHED) {
-            return PolicyRecommendationMatch.excluded();
+        if (regionClassificationConflict) {
+            return PolicyRecommendationMatch.excluded("REGION_CLASSIFICATION_CONFLICT");
+        }
+        EmploymentMatchResult employmentMatchResult = employmentMatches(employmentStatus, employmentAudience);
+        if (!employmentMatchResult.matched()) {
+            return PolicyRecommendationMatch.excluded(employmentMatchResult.reason());
+        }
+        TargetMatchResult targetMatchResult = targetAudienceMatches(targetAudience);
+        if (!targetMatchResult.matched()) {
+            return PolicyRecommendationMatch.excluded(targetMatchResult.reason());
         }
 
         int score = 0;
@@ -46,8 +76,10 @@ public class PolicyRecommendationMatcher {
             reasons.add("만 " + age + "세 연령 조건 일치");
         }
         if (employmentAudience != null
-                && employmentAudience.allowedStatuses().contains(employmentStatus)
-                && !employmentAudience.allowedStatuses().contains(UserEmploymentStatus.UNKNOWN)) {
+                && employmentAudience.exclusive()
+                && !employmentAudience.conflict()
+                && employmentAudience.allowedStatuses().size() == 1
+                && employmentAudience.allowedStatuses().contains(employmentStatus)) {
             score += 20;
             reasons.add(employmentLabel(employmentStatus) + " 대상 조건 일치");
         }
@@ -59,7 +91,7 @@ public class PolicyRecommendationMatcher {
             reasons.add("신청 시작 예정");
         }
         if (score <= 0) {
-            return PolicyRecommendationMatch.excluded();
+            return PolicyRecommendationMatch.excluded("NO_SCORE");
         }
         return new PolicyRecommendationMatch(true, score, regionCompatibility, trimReason(String.join(" · ", reasons)));
     }
@@ -78,11 +110,34 @@ public class PolicyRecommendationMatcher {
         return condition != null && (condition.getMinAge() != null || condition.getMaxAge() != null);
     }
 
-    private boolean employmentMatches(UserEmploymentStatus employmentStatus, PolicyEmploymentAudience employmentAudience) {
-        if (employmentAudience == null || !employmentAudience.exclusive()) {
-            return true;
+    private EmploymentMatchResult employmentMatches(UserEmploymentStatus employmentStatus, PolicyEmploymentAudience employmentAudience) {
+        if (employmentAudience == null) {
+            return EmploymentMatchResult.excluded("MISSING_SEARCH_PROJECTION");
         }
-        return employmentAudience.allowedStatuses().contains(employmentStatus);
+        if (employmentAudience.conflict()) {
+            return EmploymentMatchResult.excluded("EMPLOYMENT_CONFLICT");
+        }
+        if (employmentStatus == UserEmploymentStatus.EMPLOYED && employmentAudience.employmentTransitionProgram()) {
+            return EmploymentMatchResult.excluded("EMPLOYMENT_MISMATCH");
+        }
+        if (!employmentAudience.exclusive()) {
+            return EmploymentMatchResult.included();
+        }
+        if (employmentAudience.allowedStatuses().contains(employmentStatus)) {
+            return EmploymentMatchResult.included();
+        }
+        return EmploymentMatchResult.excluded("EMPLOYMENT_MISMATCH");
+    }
+
+    private TargetMatchResult targetAudienceMatches(PolicyTargetAudienceClassification targetAudience) {
+        if (targetAudience == null) {
+            return TargetMatchResult.excluded("MISSING_SEARCH_PROJECTION");
+        }
+        TargetStageMatchResult result = targetEligibilityFilter.matchAutomaticRecommendation(targetAudience);
+        if (result.status() == ConditionMatchStatus.MISMATCH) {
+            return TargetMatchResult.excluded("EDUCATION_STAGE_MISMATCH");
+        }
+        return TargetMatchResult.included();
     }
 
     private boolean isOpenNow(Policy policy, LocalDate today) {
@@ -149,5 +204,25 @@ public class PolicyRecommendationMatcher {
             return reason;
         }
         return reason.substring(0, 500);
+    }
+
+    private record EmploymentMatchResult(boolean matched, String reason) {
+        static EmploymentMatchResult included() {
+            return new EmploymentMatchResult(true, "");
+        }
+
+        static EmploymentMatchResult excluded(String reason) {
+            return new EmploymentMatchResult(false, reason);
+        }
+    }
+
+    private record TargetMatchResult(boolean matched, String reason) {
+        static TargetMatchResult included() {
+            return new TargetMatchResult(true, "");
+        }
+
+        static TargetMatchResult excluded(String reason) {
+            return new TargetMatchResult(false, reason);
+        }
     }
 }

@@ -18,6 +18,7 @@ import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndexBuilder;
 import com.weaone.themoa.domain.policy.rag.service.PolicySearchProjectionService;
 import com.weaone.themoa.domain.policy.rag.service.SearchReadinessService;
 import com.weaone.themoa.domain.policy.region.config.RegionSyncProperties;
+import com.weaone.themoa.domain.policy.region.service.RegionSynchronizationResult;
 import com.weaone.themoa.domain.policy.region.service.RegionSynchronizationService;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -60,7 +61,7 @@ class PolicySyncPipelineServiceTest {
         assertThat(result.embeddingProcess().failedCount()).isZero();
         InOrder order = inOrder(regionCodeRepository, collectionService, lexicalIndexBuilder, regionRebuildService,
                 projectionService, embeddingService, readinessService);
-        order.verify(regionCodeRepository).count();
+        order.verify(regionCodeRepository).countByRegionLevel("PROVINCE");
         order.verify(collectionService).collectAll(eq(PolicyCollectionExecutionType.MANUAL), anyJobProgressConsumer());
         order.verify(regionRebuildService).rebuildAll(anyJobProgressConsumer());
         order.verify(projectionService).rebuildAll(anyProjectionProgressConsumer());
@@ -90,8 +91,21 @@ class PolicySyncPipelineServiceTest {
     }
 
     @Test
+    void syncsRegionCatalogWhenOnlyNationwideCodeExists() {
+        when(regionCodeRepository.countByRegionLevel("PROVINCE")).thenReturn(0L, 1L);
+        when(regionSynchronizationService.synchronize(anyJobProgressConsumer()))
+                .thenReturn(new RegionSynchronizationResult(17, 229, 246, 0, 0, 0, List.of(), 100));
+        stubPipelineAfterRegionCatalog(true, 0);
+
+        service(regionSyncProperties(true, true))
+                .synchronize(PolicySyncMode.INCREMENTAL, PolicyCollectionExecutionType.MANUAL, null);
+
+        verify(regionSynchronizationService).synchronize(anyJobProgressConsumer());
+    }
+
+    @Test
     void failedCollectionStopsLaterSteps() {
-        when(regionCodeRepository.count()).thenReturn(1L);
+        when(regionCodeRepository.countByRegionLevel("PROVINCE")).thenReturn(1L);
         when(collectionService.collectAll(eq(PolicyCollectionExecutionType.MANUAL), anyJobProgressConsumer()))
                 .thenReturn(collectionResult("FAILED"));
 
@@ -108,7 +122,7 @@ class PolicySyncPipelineServiceTest {
 
     @Test
     void failedRegionRebuildStopsProjectionAndLaterSteps() {
-        when(regionCodeRepository.count()).thenReturn(1L);
+        when(regionCodeRepository.countByRegionLevel("PROVINCE")).thenReturn(1L);
         when(collectionService.collectAll(eq(PolicyCollectionExecutionType.MANUAL), anyJobProgressConsumer()))
                 .thenReturn(collectionResult("COMPLETED"));
         when(regionRebuildService.rebuildAll(anyJobProgressConsumer())).thenReturn(regionResult(2650, 1));
@@ -126,7 +140,7 @@ class PolicySyncPipelineServiceTest {
 
     @Test
     void projectionFailureKeepsExistingLexicalIndex() {
-        when(regionCodeRepository.count()).thenReturn(1L);
+        when(regionCodeRepository.countByRegionLevel("PROVINCE")).thenReturn(1L);
         when(collectionService.collectAll(eq(PolicyCollectionExecutionType.MANUAL), anyJobProgressConsumer()))
                 .thenReturn(collectionResult("COMPLETED"));
         when(regionRebuildService.rebuildAll(anyJobProgressConsumer())).thenReturn(regionResult(2650, 0));
@@ -176,7 +190,11 @@ class PolicySyncPipelineServiceTest {
     }
 
     private void stubSuccessUntilReadiness(boolean ready, int embeddingFailedCount) {
-        when(regionCodeRepository.count()).thenReturn(1L);
+        when(regionCodeRepository.countByRegionLevel("PROVINCE")).thenReturn(1L);
+        stubPipelineAfterRegionCatalog(ready, embeddingFailedCount);
+    }
+
+    private void stubPipelineAfterRegionCatalog(boolean ready, int embeddingFailedCount) {
         when(collectionService.collectAll(eq(PolicyCollectionExecutionType.MANUAL), anyJobProgressConsumer()))
                 .thenReturn(collectionResult("COMPLETED"));
         when(collectionService.collectAll(eq(PolicyCollectionExecutionType.SCHEDULED), anyJobProgressConsumer()))
@@ -198,9 +216,13 @@ class PolicySyncPipelineServiceTest {
     }
 
     private PolicySyncPipelineService service() {
+        return service(regionSyncProperties(false, false));
+    }
+
+    private PolicySyncPipelineService service(RegionSyncProperties properties) {
         return new PolicySyncPipelineService(collectionService, regionRebuildService, regionSynchronizationService,
                 projectionService, lexicalIndexBuilder, embeddingService, readinessService, regionCodeRepository,
-                regionSyncProperties());
+                properties);
     }
 
     private PolicyCollectionResult collectionResult(String status) {
@@ -218,8 +240,8 @@ class PolicySyncPipelineServiceTest {
         return index;
     }
 
-    private RegionSyncProperties regionSyncProperties() {
-        return new RegionSyncProperties(false, false, "0 0 4 1 * *",
+    private RegionSyncProperties regionSyncProperties(boolean enabled, boolean credentialsConfigured) {
+        return new RegionSyncProperties(enabled, credentialsConfigured, "0 0 4 1 * *",
                 Duration.ofMillis(100), Duration.ofSeconds(5), Duration.ofSeconds(20), 3,
                 new RegionSyncProperties.Sgis("https://sgisapi.mods.go.kr", "", ""));
     }
