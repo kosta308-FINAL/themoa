@@ -148,7 +148,7 @@ public class AdminJobService {
                     job.message = "FAILED_REQUEUED";
                 }
                 case "POLICY_REGION_REBUILD" -> {
-                    if (regionCodeRepository.count() <= 0) {
+                    if (regionCodeRepository.countByRegionLevel("PROVINCE") <= 0) {
                         throw new BusinessException(ErrorCode.POLICY_REGION_CATALOG_NOT_READY);
                     }
                     job.update(new JobProgressUpdate("REBUILDING", "지역 재계산 중", 0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0, "정책 지역을 다시 계산합니다."));
@@ -158,6 +158,10 @@ public class AdminJobService {
                     job.success = result.changedCount();
                     job.failed = result.failedCount();
                     job.remaining = Math.max(0, result.totalCount() - result.processedCount());
+                    if (result.changedCount() > 0) {
+                        rebuildSearchProjectionAndIndex(job);
+                        refreshPolicyRecommendations();
+                    }
                     job.message = "REGION_REBUILD_COMPLETED changed=" + result.changedCount()
                             + ", nationwideToRegion=" + result.nationwideToRegionCount()
                             + ", nationwideToUnknown=" + result.nationwideToUnknownCount()
@@ -222,6 +226,7 @@ public class AdminJobService {
                 result.total(), result.processed(), result.processed(), 0, 0, 0, 0, 0, null, 0, 0,
                 "Projection 생성 후 검색 인덱스를 갱신합니다."));
         PolicyLexicalIndex index = lexicalIndexBuilder.refresh();
+        refreshPolicyRecommendations();
         job.total = result.total();
         job.processed = result.processed();
         job.success = result.processed();
@@ -244,6 +249,20 @@ public class AdminJobService {
         job.remaining = 0;
         job.message = "SEARCH_INDEX_REFRESH_COMPLETED documentCount=" + index.size()
                 + ", builtAt=" + index.builtAt();
+    }
+
+    private void rebuildSearchProjectionAndIndex(MutableJob job) {
+        job.update(new JobProgressUpdate("SEARCH_PROJECTION_REBUILDING", "Search Projection 생성 중",
+                0, 0, 0, 0, 0, 0, 0, 0, null, 0, 0,
+                "지역 재계산 후 Search Projection을 갱신합니다."));
+        PolicySearchProjectionService.ProjectionRebuildResult projection = projectionService.rebuildAll(progress -> job.update(new JobProgressUpdate(
+                "SEARCH_PROJECTION_REBUILDING", "Search Projection 생성 중",
+                progress.total(), progress.processed(), progress.processed(), 0, 0, 0,
+                0, 0, null, 0, 0, "Search Projection 생성 중")));
+        job.update(new JobProgressUpdate("SEARCH_INDEX_REFRESHING", "검색 인덱스 생성 중",
+                projection.total(), projection.processed(), projection.processed(), 0, 0, 0,
+                0, 0, null, 0, 0, "Projection 생성 후 검색 인덱스를 갱신합니다."));
+        lexicalIndexBuilder.refresh();
     }
 
     private void runPolicySync(MutableJob job, PolicySyncMode mode) {

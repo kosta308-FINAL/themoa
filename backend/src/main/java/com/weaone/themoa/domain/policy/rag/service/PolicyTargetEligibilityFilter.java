@@ -45,4 +45,17 @@ public class PolicyTargetEligibilityFilter {
         }
         return TargetStageMatchResult.unknown("정책 대상 단계가 배타적인지 확인이 필요합니다.");
     }
+
+    public TargetStageMatchResult matchAutomaticRecommendation(PolicyTargetAudienceClassification target) {
+        if (target == null || target.includedStages().contains(EducationStage.UNKNOWN)) {
+            return TargetStageMatchResult.unknown("정책 대상 단계 확인 필요");
+        }
+        if (target.includedStages().contains(EducationStage.GENERAL_YOUTH)) {
+            return TargetStageMatchResult.match("일반 청년 대상 정책입니다.");
+        }
+        if (target.stageExclusive()) {
+            return TargetStageMatchResult.mismatch("사용자의 교육 단계가 확인되지 않아 특정 교육 단계 전용 정책은 자동 추천에서 제외합니다.");
+        }
+        return TargetStageMatchResult.unknown("정책 대상 단계가 배타적인지 확인이 필요합니다.");
+    }
 }

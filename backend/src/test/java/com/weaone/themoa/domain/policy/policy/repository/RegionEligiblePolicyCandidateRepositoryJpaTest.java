@@ -97,6 +97,51 @@ class RegionEligiblePolicyCandidateRepositoryJpaTest {
                 .doesNotHaveDuplicates();
     }
 
+    @Test
+    void recommendationCandidateMatrixRejectsOtherSigunguForEverySpecificRegion() {
+        RegionCode nationwide = persistRegion(null, "KR", "전국", null, "NATIONWIDE");
+        RegionCode gyeonggi = persistRegion(null, "P:41", "경기도", null, "PROVINCE");
+        RegionCode yangju = persistRegion(gyeonggi, "M:41630", "경기도", "양주시", "CITY");
+        RegionCode pyeongtaek = persistRegion(gyeonggi, "M:41220", "경기도", "평택시", "CITY");
+        RegionCode gangwon = persistRegion(null, "P:51", "강원특별자치도", null, "PROVINCE");
+        RegionCode wonju = persistRegion(gangwon, "M:51130", "강원특별자치도", "원주시", "CITY");
+
+        Policy nationwidePolicy = persistPolicy("MATRIX-NATIONWIDE", nationwide);
+        Policy gyeonggiPolicy = persistPolicy("MATRIX-GYEONGGI", gyeonggi);
+        Policy gangwonPolicy = persistPolicy("MATRIX-GANGWON", gangwon);
+        Policy yangjuPolicy = persistPolicy("MATRIX-YANGJU", yangju);
+        Policy pyeongtaekPolicy = persistPolicy("MATRIX-PYEONGTAEK", pyeongtaek);
+        Policy wonjuPolicy = persistPolicy("MATRIX-WONJU", wonju);
+        Policy unspecifiedPolicy = persistPolicy("MATRIX-UNSPECIFIED");
+        entityManager.flush();
+        entityManager.clear();
+
+        RegionEligiblePolicyCandidateService service = new RegionEligiblePolicyCandidateService(
+                candidateRepository,
+                new RegionCatalog(regionCodeRepository, new RegionAliasCatalog(), new RegionNormalizer(new RegionAliasCatalog()))
+        );
+        List<RegionCode> sigunguRegions = List.of(yangju, pyeongtaek, wonju);
+        for (RegionCode userRegion : sigunguRegions) {
+            List<RegionEligiblePolicyCandidate> candidates = service.findRecommendationEligibleCandidates(
+                    new ResolvedUserRegion(userRegion.getProvince(), userRegion.getCity(), null, SearchRegionLevel.SIGUNGU, userRegion)
+            );
+            Set<Integer> ids = candidates.stream()
+                    .map(RegionEligiblePolicyCandidate::policyId)
+                    .collect(java.util.stream.Collectors.toSet());
+            assertThat(ids).contains(nationwidePolicy.getId(), unspecifiedPolicy.getId());
+            if (userRegion.getId().equals(yangju.getId())) {
+                assertThat(ids).contains(yangjuPolicy.getId(), gyeonggiPolicy.getId());
+                assertThat(ids).doesNotContain(pyeongtaekPolicy.getId(), wonjuPolicy.getId(), gangwonPolicy.getId());
+            } else if (userRegion.getId().equals(pyeongtaek.getId())) {
+                assertThat(ids).contains(pyeongtaekPolicy.getId(), gyeonggiPolicy.getId());
+                assertThat(ids).doesNotContain(yangjuPolicy.getId(), wonjuPolicy.getId(), gangwonPolicy.getId());
+            } else if (userRegion.getId().equals(wonju.getId())) {
+                assertThat(ids).contains(wonjuPolicy.getId(), gangwonPolicy.getId());
+                assertThat(ids).doesNotContain(yangjuPolicy.getId(), pyeongtaekPolicy.getId(), gyeonggiPolicy.getId());
+            }
+        }
+    }
+
     private RegionCode persistRegion(RegionCode parent, String code, String province, String city, String level) {
         RegionCode region = new RegionCode(parent, code, province, city, level);
         entityManager.persist(region);

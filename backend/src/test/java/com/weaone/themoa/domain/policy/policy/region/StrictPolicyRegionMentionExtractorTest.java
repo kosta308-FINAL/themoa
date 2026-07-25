@@ -40,4 +40,18 @@ class StrictPolicyRegionMentionExtractorTest {
         assertThat(extractor.extract("수원 사례 연구", false))
                 .noneMatch(region -> "수원시".equals(region.getCity()));
     }
+
+    @Test
+    void sidoAliasAndSigunguNameCanResolveDuplicateSigungu() {
+        assertThat(extractor.extractFromTitle("인천시 동구 청년월세 지원사업"))
+                .anyMatch(region -> "인천광역시".equals(region.getProvince()) && "동구".equals(region.getCity()));
+    }
+
+    @Test
+    void ambiguousSigunguNameAloneIsNotResolved() {
+        assertThat(extractor.extractFromTitle("(동구) 청년월세 지원"))
+                .noneMatch(region -> "동구".equals(region.getCity()));
+        assertThat(extractor.extractFromTitle("(서구) 중소기업 재직청년 복지공유제"))
+                .noneMatch(region -> "서구".equals(region.getCity()));
+    }
 }

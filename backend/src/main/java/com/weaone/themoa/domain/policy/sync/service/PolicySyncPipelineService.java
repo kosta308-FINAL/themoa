@@ -126,7 +126,7 @@ public class PolicySyncPipelineService {
     }
 
     private void ensureRegionCatalogReady(Consumer<JobProgressUpdate> progressConsumer) {
-        if (regionCodeRepository.count() > 0) {
+        if (regionCodeRepository.countByRegionLevel("PROVINCE") > 0) {
             return;
         }
         if (!regionSyncProperties.enabled() || !regionSyncProperties.credentialsConfigured()) {
@@ -136,7 +136,7 @@ public class PolicySyncPipelineService {
                 TOTAL_STEPS, 1, 1, 0, 0, 0, 0, 0, null, 0, 0,
                 "지역 카탈로그가 비어 있어 먼저 전국 행정지역을 동기화합니다."));
         RegionSynchronizationResult result = regionSynchronizationService.synchronize(progressConsumer);
-        if (result.failedCount() > 0 || regionCodeRepository.count() <= 0) {
+        if (result.failedCount() > 0 || regionCodeRepository.countByRegionLevel("PROVINCE") <= 0) {
             throw new BusinessException(ErrorCode.POLICY_REGION_SYNC_FAILED);
         }
     }

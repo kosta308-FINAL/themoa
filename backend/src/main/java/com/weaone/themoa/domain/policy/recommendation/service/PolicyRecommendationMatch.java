@@ -6,9 +6,19 @@ public record PolicyRecommendationMatch(
         boolean matched,
         int score,
         RegionCompatibility regionCompatibility,
-        String matchReason
+        String matchReason,
+        String exclusionReason
 ) {
+    public PolicyRecommendationMatch(boolean matched, int score, RegionCompatibility regionCompatibility,
+                                     String matchReason) {
+        this(matched, score, regionCompatibility, matchReason, "");
+    }
+
     public static PolicyRecommendationMatch excluded() {
-        return new PolicyRecommendationMatch(false, 0, RegionCompatibility.NOT_MATCHED, "");
+        return excluded("NOT_ELIGIBLE");
+    }
+
+    public static PolicyRecommendationMatch excluded(String reason) {
+        return new PolicyRecommendationMatch(false, 0, RegionCompatibility.NOT_MATCHED, "", reason);
     }
 }
