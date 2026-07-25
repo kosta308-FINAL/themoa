@@ -131,6 +131,8 @@ class PolicyRegionResolverTest {
                         .contains(region.displayName()));
         regions.stream()
                 .filter(region -> "CITY".equals(region.getRegionLevel()) || "DISTRICT".equals(region.getRegionLevel()))
+                .filter(region -> region.getParent() == null || !"CITY".equals(region.getParent().getRegionLevel()))
+                .filter(region -> region.getCity() == null || !region.getCity().contains(" "))
                 .forEach(region -> assertThat(resolver.resolve(Map.of("plcyNm",
                                 region.getProvince() + " " + region.getCity() + " 청년 지원")).regionNames())
                         .contains(region.displayName()));

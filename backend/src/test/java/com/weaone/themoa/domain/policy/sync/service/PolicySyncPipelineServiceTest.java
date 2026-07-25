@@ -241,9 +241,11 @@ class PolicySyncPipelineServiceTest {
     }
 
     private RegionSyncProperties regionSyncProperties(boolean enabled, boolean credentialsConfigured) {
-        return new RegionSyncProperties(enabled, credentialsConfigured, "0 0 4 1 * *",
+        String key = credentialsConfigured ? "key" : "";
+        String secret = credentialsConfigured ? "secret" : "";
+        return new RegionSyncProperties(enabled, false, "0 0 4 1 * *",
                 Duration.ofMillis(100), Duration.ofSeconds(5), Duration.ofSeconds(20), 3,
-                new RegionSyncProperties.Sgis("https://sgisapi.mods.go.kr", "", ""));
+                new RegionSyncProperties.Sgis("https://sgisapi.mods.go.kr", key, secret));
     }
 
     private Consumer<JobProgressUpdate> anyJobProgressConsumer() {

@@ -135,7 +135,8 @@ class AdminJobServiceTest {
         when(regionRebuildService.rebuildAll(anyJobProgressConsumer())).thenReturn(regionResult(2650, 10, 0));
         when(projectionService.rebuildAll(anyProjectionProgressConsumer()))
                 .thenReturn(new PolicySearchProjectionService.ProjectionRebuildResult(2650, 2650, 0));
-        when(lexicalIndexBuilder.refresh()).thenReturn(index(2650));
+        PolicyLexicalIndex index = index(2650);
+        when(lexicalIndexBuilder.refresh()).thenReturn(index);
 
         AdminJobStatus status = service().start("POLICY_REGION_REBUILD");
 

@@ -9,6 +9,7 @@ import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
 import com.weaone.themoa.domain.policy.policy.region.RegionCompatibility;
 import com.weaone.themoa.domain.policy.policy.region.RegionEligiblePolicyCandidate;
 import com.weaone.themoa.domain.policy.policy.region.RegionMatchEvaluator;
+import com.weaone.themoa.domain.policy.policy.region.RegionMatchResult;
 import com.weaone.themoa.domain.policy.policy.region.ResolvedUserRegion;
 import com.weaone.themoa.domain.policy.policy.region.SearchRegionLevel;
 import com.weaone.themoa.domain.policy.policy.region.StrictPolicyRegionMentionExtractor;
@@ -181,6 +182,28 @@ class PolicyRecommendationServiceTest {
         given(profileRepository.findByMember_Id(7L)).willReturn(Optional.of(profile));
         given(recommendationRepository.findByMember_IdOrderByScoreDescGeneratedAtDesc(7L))
                 .willReturn(List.of(recommendation));
+        given(regionService.validate("경기도", "수원시"))
+                .willReturn(new PolicyRecommendationRegionService.ValidatedRegion(
+                        "경기도",
+                        "수원시",
+                        new ResolvedUserRegion("경기도", "수원시", null, SearchRegionLevel.SIGUNGU,
+                                region(10, "경기도", "수원시", "CITY"))
+                ));
+        given(regionMatchEvaluator.evaluate(eq(policy), any()))
+                .willReturn(new RegionMatchResult(RegionCompatibility.REGION_UNSPECIFIED, true, 0, "지역 제한이 명시되지 않은 정책입니다."));
+        givenEmploymentAudiences(policy);
+        givenTargetAudiences(policy);
+        given(regionClassificationRepository.findAllById(any())).willReturn(List.of());
+        given(matcher.match(
+                eq(policy),
+                eq(RegionCompatibility.REGION_UNSPECIFIED),
+                eq(27),
+                eq(UserEmploymentStatus.UNEMPLOYED),
+                eq(PolicyEmploymentAudience.unknown()),
+                eq(PolicyTargetAudienceClassification.unknown()),
+                any(LocalDate.class),
+                eq(false)
+        )).willReturn(new PolicyRecommendationMatch(true, 15, RegionCompatibility.REGION_UNSPECIFIED, "지역 제한이 명시되지 않은 정책"));
 
         PolicyRecommendationListResponse response = service.list(7L);
 

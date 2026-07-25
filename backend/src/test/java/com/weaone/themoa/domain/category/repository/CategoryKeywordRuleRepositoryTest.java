@@ -64,14 +64,14 @@ class CategoryKeywordRuleRepositoryTest {
     }
 
     @Test
-    @DisplayName("카테고리 마스터 12종이 시드돼 있다")
+    @DisplayName("카테고리 마스터 13종이 시드돼 있다")
     void categoriesAreSeeded() {
         List<Category> categories = categoryRepository.findAll();
 
-        assertThat(categories).hasSize(12);
+        assertThat(categories).hasSize(13);
         assertThat(categories).extracting(Category::getCode)
                 .containsExactlyInAnyOrder(
                         "FOOD", "DELIVERY", "CAFE", "CONVENIENCE", "TRANSPORT", "SHOPPING",
-                        "SUBSCRIPTION", "LEISURE", "MEDICAL", "BEAUTY", "DONATION", "ETC");
+                        "SUBSCRIPTION", "LEISURE", "MEDICAL", "BEAUTY", "DONATION", "SAVING", "ETC");
     }
 }

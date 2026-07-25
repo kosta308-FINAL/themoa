@@ -81,7 +81,8 @@ class PolicyTargetAudienceClassifierTest {
     void studentOrGeneralYouthIsNotExclusive() {
         PolicyTargetAudienceClassification result = classifier.classify(projection("지원 대상: 학생 또는 19세~39세 청년 누구나", "", ""));
 
-        assertThat(result.includedStages()).contains(EducationStage.ALL_STUDENTS, EducationStage.GENERAL_YOUTH);
+        assertThat(result.includedStages()).contains(EducationStage.GENERAL_YOUTH);
+        assertThat(result.includedStages()).doesNotContain(EducationStage.ALL_STUDENTS);
         assertThat(result.stageExclusive()).isFalse();
     }
 

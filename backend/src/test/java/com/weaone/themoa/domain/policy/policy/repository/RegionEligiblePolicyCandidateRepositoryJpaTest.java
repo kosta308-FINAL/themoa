@@ -98,7 +98,7 @@ class RegionEligiblePolicyCandidateRepositoryJpaTest {
     }
 
     @Test
-    void recommendationCandidateMatrixRejectsOtherSigunguAndUnknownForEverySpecificRegion() {
+    void recommendationCandidateMatrixRejectsOtherSigunguForEverySpecificRegion() {
         RegionCode nationwide = persistRegion(null, "KR", "전국", null, "NATIONWIDE");
         RegionCode gyeonggi = persistRegion(null, "P:41", "경기도", null, "PROVINCE");
         RegionCode yangju = persistRegion(gyeonggi, "M:41630", "경기도", "양주시", "CITY");
@@ -112,7 +112,7 @@ class RegionEligiblePolicyCandidateRepositoryJpaTest {
         Policy yangjuPolicy = persistPolicy("MATRIX-YANGJU", yangju);
         Policy pyeongtaekPolicy = persistPolicy("MATRIX-PYEONGTAEK", pyeongtaek);
         Policy wonjuPolicy = persistPolicy("MATRIX-WONJU", wonju);
-        Policy unknownPolicy = persistPolicy("MATRIX-UNKNOWN");
+        Policy unspecifiedPolicy = persistPolicy("MATRIX-UNSPECIFIED");
         entityManager.flush();
         entityManager.clear();
 
@@ -128,8 +128,7 @@ class RegionEligiblePolicyCandidateRepositoryJpaTest {
             Set<Integer> ids = candidates.stream()
                     .map(RegionEligiblePolicyCandidate::policyId)
                     .collect(java.util.stream.Collectors.toSet());
-            assertThat(ids).contains(nationwidePolicy.getId());
-            assertThat(ids).doesNotContain(unknownPolicy.getId());
+            assertThat(ids).contains(nationwidePolicy.getId(), unspecifiedPolicy.getId());
             if (userRegion.getId().equals(yangju.getId())) {
                 assertThat(ids).contains(yangjuPolicy.getId(), gyeonggiPolicy.getId());
                 assertThat(ids).doesNotContain(pyeongtaekPolicy.getId(), wonjuPolicy.getId(), gangwonPolicy.getId());
