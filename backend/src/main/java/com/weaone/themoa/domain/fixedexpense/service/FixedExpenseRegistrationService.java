@@ -137,18 +137,23 @@ public class FixedExpenseRegistrationService {
      * 경로 C: 예·적금 가입 시 자동 등록(fixedExpense.md §7). subscription 도메인이 발행한 이벤트를
      * 구독해 호출되므로, 이벤트 재전달로 두 번 불려도 같은 결과가 되도록 이미 연동된 행이 있으면
      * 조용히 건너뛴다(멱등).
+     *
+     * <p>적금 자동이체일은 통상 가입일과 같은 날짜이므로, 가입일의 일(day-of-month)을 결제일로 추정해
+     * 채운다 — 말일 가입(29~31일)처럼 매달 그대로 존재하지 않는 날짜가 있을 수 있지만, 실제 이체는
+     * 그 달의 말일에 이뤄지므로 다른 고정지출의 말일 보정 로직(paymentSchedule)과 동일하게 처리된다.
      */
     @Transactional
     public void registerFromSavingsSubscription(Long memberId, Long savingsSubscriptionId, String productName,
-                                                 Long monthlyAmount) {
+                                                 Long monthlyAmount, LocalDate startDate) {
         if (fixedExpenseRepository.findBySavingsSubscriptionId(savingsSubscriptionId).isPresent()) {
             return;
         }
         Member member = memberRepository.getReferenceById(memberId);
         Category category = categoryRepository.findByCode(CategoryCode.SAVING.name())
                 .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
+        Short expectedPayDay = startDate == null ? null : (short) startDate.getDayOfMonth();
         fixedExpenseRepository.save(FixedExpense.fromSavingsSubscription(member, savingsSubscriptionId, productName,
-                category, BigDecimal.valueOf(monthlyAmount)));
+                category, BigDecimal.valueOf(monthlyAmount), expectedPayDay));
     }
 
     /** 경로 C 연동 건의 월납입액 변경 반영. 연동된 고정지출이 없으면(이미 해지 등) 조용히 넘어간다. */

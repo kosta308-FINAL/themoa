@@ -24,7 +24,8 @@ public class SavingsSubscriptionFixedExpenseListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onCreated(SavingsSubscriptionCreatedEvent event) {
         registrationService.registerFromSavingsSubscription(
-                event.memberId(), event.subscriptionId(), event.productName(), event.monthlyAmount());
+                event.memberId(), event.subscriptionId(), event.productName(), event.monthlyAmount(),
+                event.startDate());
     }
 
     @Async

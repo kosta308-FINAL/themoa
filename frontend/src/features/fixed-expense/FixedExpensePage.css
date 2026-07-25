@@ -966,6 +966,11 @@
   font-size: 11px;
 }
 
+.fx-expense-payday-unset {
+  color: var(--fx-red);
+  font-weight: 700;
+}
+
 .fx-status-chip {
   padding: 5px 9px;
   border-radius: 999px;
@@ -1496,6 +1501,37 @@
 
 .fx-detail-row span {
   color: var(--fx-muted);
+}
+
+.fx-detail-row .fx-detail-unset {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fx-red);
+  font-weight: 700;
+}
+
+.fx-detail-unset-cta {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--fx-red);
+  background: var(--fx-red-soft);
+  color: var(--fx-red);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.fx-detail-unset-cta:hover {
+  background: var(--fx-red);
+  color: #fff;
+}
+
+.fx-detail-hint {
+  margin-top: -4px;
+  padding-bottom: 12px;
+  color: var(--fx-muted);
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .fx-missed-payment {
