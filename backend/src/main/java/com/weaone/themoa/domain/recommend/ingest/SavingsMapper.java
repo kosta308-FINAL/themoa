@@ -31,7 +31,6 @@ public final class SavingsMapper {
                 .note(b.etcNote())
                 .maxAmount(toIntOrNull(b.maxLimit()))
                 .openDate(b.dclsStrtDay())
-                .closeDate(b.dclsEndDay())
                 .build();
     }
 
