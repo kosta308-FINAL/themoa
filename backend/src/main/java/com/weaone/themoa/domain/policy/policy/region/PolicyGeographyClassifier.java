@@ -18,10 +18,6 @@ public class PolicyGeographyClassifier {
             "전국", "전국 대상", "전국 거주", "지역 제한 없음", "거주지 제한 없음",
             "전국에서 신청 가능", "국내 거주자", "국내 거주 청년"
     );
-    private static final List<String> REGION_RESTRICTION_WORDS = List.of(
-            "거주", "주민등록", "주소지", "소재", "관내", "지역 제한", "시민", "군민", "구민", "도민"
-    );
-
     private final RegionCatalog catalog;
     private final StrictPolicyRegionMentionExtractor extractor;
     private final InstitutionRegionResolver institutionResolver;
@@ -41,7 +37,6 @@ public class PolicyGeographyClassifier {
         LinkedHashSet<RegionCode> institutionRegions = new LinkedHashSet<>();
 
         boolean nationwideExpression = addNationwideEvidence(fields, evidence);
-        boolean nationalInstitution = false;
 
         // 신청 대상/추가 자격은 policy_region에 저장 가능한 가장 강한 근거다.
         // 같은 문장에 기업 소재지나 활동 장소가 함께 있어도 role이 다르면 evidence로만 남긴다.
@@ -64,9 +59,6 @@ public class PolicyGeographyClassifier {
         InstitutionRegionResult operating = institutionResolver.analyze(text(fields, "operInstCdNm"));
         InstitutionRegionResult registering = institutionResolver.analyze(join(text(fields, "rgtrInstCdNm"),
                 text(fields, "rgtrUpInstCdNm"), text(fields, "rgtrHghrkInstCdNm")));
-        nationalInstitution = supervising.type() == InstitutionRegionType.NATIONAL_INSTITUTION
-                || operating.type() == InstitutionRegionType.NATIONAL_INSTITUTION
-                || registering.type() == InstitutionRegionType.NATIONAL_INSTITUTION;
         addInstitutionEvidence(institutionRegions, evidence, RegionEvidenceSource.SUPERVISING_INSTITUTION,
                 text(fields, "sprvsnInstCdNm", "agencyName"), supervising);
         addInstitutionEvidence(institutionRegions, evidence, RegionEvidenceSource.OPERATING_INSTITUTION,
@@ -86,8 +78,7 @@ public class PolicyGeographyClassifier {
                             region.displayName(), 45, "정책 대상 지역과 기관 지역이 충돌할 수 있음")));
         }
 
-        if (selected.isEmpty() && (nationwideExpression || nationalInstitution && hasPolicyContent(fields)
-                && !hasSpecificRegionRestriction(fields))) {
+        if (selected.isEmpty() && nationwideExpression) {
             return catalog.nationwide()
                     .map(region -> result(RegionScope.NATIONWIDE, Set.of(region), 0.86, evidence, conflicts, false))
                     .orElseGet(() -> result(RegionScope.UNKNOWN, Set.of(), 0.0, evidence, conflicts, true));
@@ -164,20 +155,14 @@ public class PolicyGeographyClassifier {
         });
     }
 
-    private boolean hasSpecificRegionRestriction(Map<String, Object> fields) {
-        String conditionText = join(text(fields, "ptcpPrpTrgtCn", "conditionSummary"),
-                text(fields, "addAplyQlfcCndCn"));
-        return REGION_RESTRICTION_WORDS.stream().anyMatch(conditionText::contains)
-                && !extractor.extract(conditionText, true).isEmpty();
-    }
-
-    private boolean hasPolicyContent(Map<String, Object> fields) {
-        return StringUtils.hasText(join(text(fields, "plcyNm", "title"), text(fields, "ptcpPrpTrgtCn", "conditionSummary"),
-                text(fields, "addAplyQlfcCndCn"), text(fields, "plcyExplnCn"), text(fields, "plcySprtCn", "summary")));
-    }
-
     private LinkedHashSet<RegionCode> logicalCompact(Set<RegionCode> regions) {
+        Set<String> provincesWithSpecificRegion = regions.stream()
+                .filter(region -> StringUtils.hasText(region.getCity()))
+                .map(RegionCode::getProvince)
+                .collect(Collectors.toSet());
         return regions.stream()
+                .filter(region -> StringUtils.hasText(region.getCity())
+                        || !provincesWithSpecificRegion.contains(region.getProvince()))
                 .sorted(Comparator.comparingInt((RegionCode region) -> region.displayName().length()).reversed())
                 .collect(Collectors.toMap(this::logicalKey, region -> region, (left, right) -> left,
                         java.util.LinkedHashMap::new))

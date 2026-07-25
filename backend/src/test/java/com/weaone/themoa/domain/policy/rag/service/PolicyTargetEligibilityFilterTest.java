@@ -54,4 +54,34 @@ class PolicyTargetEligibilityFilterTest {
     private PolicyTargetAudienceClassification target(Set<EducationStage> stages, boolean exclusive) {
         return new PolicyTargetAudienceClassification(stages, Set.of(), exclusive, 0.9, List.of("test"));
     }
+
+    @Test
+    void automaticRecommendationExcludesExclusiveEducationStageWhenUserStageIsMissing() {
+        PolicyTargetAudienceClassification universityOnly = new PolicyTargetAudienceClassification(
+                Set.of(EducationStage.UNIVERSITY),
+                Set.of(),
+                true,
+                0.9,
+                List.of("대학생 전용")
+        );
+
+        TargetStageMatchResult result = filter.matchAutomaticRecommendation(universityOnly);
+
+        assertThat(result.status()).isEqualTo(ConditionMatchStatus.MISMATCH);
+    }
+
+    @Test
+    void automaticRecommendationKeepsGeneralYouthTarget() {
+        PolicyTargetAudienceClassification generalYouth = new PolicyTargetAudienceClassification(
+                Set.of(EducationStage.GENERAL_YOUTH),
+                Set.of(),
+                false,
+                0.9,
+                List.of("일반 청년")
+        );
+
+        TargetStageMatchResult result = filter.matchAutomaticRecommendation(generalYouth);
+
+        assertThat(result.status()).isEqualTo(ConditionMatchStatus.MATCH);
+    }
 }

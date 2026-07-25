@@ -92,6 +92,12 @@ export const usePolicySearch = (initialQuery) => {
     }
   }
 
+  const closeDetail = () => {
+    detailRequestIdRef.current += 1
+    setSelected(null)
+    setDetailLoading(false)
+  }
+
   useEffect(
     () => () => {
       detailRequestIdRef.current += 1
@@ -116,5 +122,6 @@ export const usePolicySearch = (initialQuery) => {
     runSearch,
     changePage,
     openDetail,
+    closeDetail,
   }
 }

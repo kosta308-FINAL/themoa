@@ -143,9 +143,19 @@ public class StrictPolicyRegionMentionExtractor {
             aliasGenerator.aliasesForSido(region).stream().map(normalizer::compact).forEach(aliases::add);
         } else if (StringUtils.hasText(region.getCity())) {
             aliases.add(normalizer.compact(region.getProvince() + " " + region.getCity()));
-            aliases.add(normalizer.compact(region.getCity()));
-            if (allowContextualShortAlias) {
-                aliases.add(normalizer.compact(aliasGenerator.shortAlias(region.getCity())));
+            RegionCode province = provinceRegion(region);
+            String shortAlias = aliasGenerator.shortAlias(region.getCity());
+            for (String sidoAlias : aliasGenerator.aliasesForSido(province)) {
+                aliases.add(normalizer.compact(sidoAlias + " " + region.getCity()));
+                if (StringUtils.hasText(shortAlias)) {
+                    aliases.add(normalizer.compact(sidoAlias + " " + shortAlias));
+                }
+            }
+            if (uniqueSigunguAliasMatches(region.getCity(), region) || uniqueOfficialSigunguNameMatches(region)) {
+                aliases.add(normalizer.compact(region.getCity()));
+            }
+            if (allowContextualShortAlias && uniqueSigunguAliasMatches(shortAlias, region)) {
+                aliases.add(normalizer.compact(shortAlias));
             }
         }
         return aliases.stream()
@@ -233,6 +243,40 @@ public class StrictPolicyRegionMentionExtractor {
                 || suffix.startsWith("문화재단")
                 || suffix.startsWith("복지재단")
                 || suffix.startsWith("상공회의소");
+    }
+
+    private RegionCode provinceRegion(RegionCode region) {
+        if (region == null) {
+            return null;
+        }
+        if ("PROVINCE".equals(region.getRegionLevel())) {
+            return region;
+        }
+        RegionCode parent = region.getParent();
+        if (parent != null && "PROVINCE".equals(parent.getRegionLevel())) {
+            return parent;
+        }
+        return new RegionCode(null, "", region.getProvince(), null, "PROVINCE");
+    }
+
+    private boolean uniqueSigunguAliasMatches(String alias, RegionCode region) {
+        if (!StringUtils.hasText(alias)) {
+            return false;
+        }
+        return catalog.uniqueSigunguByShortAlias(alias)
+                .filter(unique -> sameRegion(unique, region))
+                .isPresent();
+    }
+
+    private boolean uniqueOfficialSigunguNameMatches(RegionCode region) {
+        if (region == null || !StringUtils.hasText(region.getCity())) {
+            return false;
+        }
+        long count = catalog.allSpecificRegionsByLongestName().stream()
+                .filter(candidate -> StringUtils.hasText(candidate.getCity()))
+                .filter(candidate -> normalizer.compact(candidate.getCity()).equals(normalizer.compact(region.getCity())))
+                .count();
+        return count == 1;
     }
 
     private boolean sameRegion(RegionCode left, RegionCode right) {
