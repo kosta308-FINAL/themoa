@@ -3,6 +3,7 @@ import ServiceIcon from "./ServiceIcon";
 import FxSelect from "./FxSelect";
 import {
   formatAmount,
+  formatPayDay,
   METHOD_LABEL,
   paymentSchedule,
   paymentStatusBadge,
@@ -130,8 +131,8 @@ function FixedExpenseList({
                     <strong>{item.name}</strong>
                   </span>
                   <span className="fx-expense-meta">
-                    {item.categoryName} · {METHOD_LABEL[item.paymentMethod]} ·
-                    매월 {item.expectedPayDay}일
+                    {item.categoryName} · {METHOD_LABEL[item.paymentMethod]} ·{" "}
+                    {formatPayDay(item.expectedPayDay)}
                   </span>
                 </span>
                 {badge && (

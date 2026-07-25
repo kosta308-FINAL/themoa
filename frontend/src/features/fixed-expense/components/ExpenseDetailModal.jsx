@@ -11,6 +11,7 @@ import {
 } from "../../../api/fixedExpenseApi";
 import {
   formatAmount,
+  formatPayDay,
   formatWon,
   METHOD_LABEL,
   paymentStatusBadge,
@@ -114,7 +115,7 @@ function ExpenseDetailModal({
   const [editForm, setEditForm] = useState({
     amount: String(Number(expense.expectedAmount)),
     currency: expense.expectedCurrency,
-    payDay: String(expense.expectedPayDay),
+    payDay: String(expense.expectedPayDay || 1),
   });
   const [error, setError] = useState("");
   const [confirmError, setConfirmError] = useState("");
@@ -157,7 +158,9 @@ function ExpenseDetailModal({
       await onChanged("결제 처리했어요.");
       onClose();
     } catch (requestError) {
-      setConfirmError(getApiErrorMessage(requestError, "결제 처리에 실패했어요."));
+      setConfirmError(
+        getApiErrorMessage(requestError, "결제 처리에 실패했어요."),
+      );
     } finally {
       setIsConfirmingPayment(false);
     }
@@ -287,7 +290,7 @@ function ExpenseDetailModal({
                 </div>
                 <div className="fx-detail-row">
                   <span>결제일</span>
-                  <strong>매월 {expense.expectedPayDay}일</strong>
+                  <strong>{formatPayDay(expense.expectedPayDay)}</strong>
                 </div>
                 {expense.paymentStatus && (
                   <div className="fx-detail-row">
