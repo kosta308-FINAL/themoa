@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import DashboardIcon from "../../../components/common/DashboardIcon";
 import DashEmptyState from "./DashEmptyState";
 import DashSectionError from "./DashSectionError";
 import { formatWon } from "../dashboardUtils";
@@ -8,7 +9,12 @@ function SpendingTipCard({ coaching, loading, error }) {
 
   return (
     <div className="tip-card">
-      <h3>소비 코칭</h3>
+      <div className="tip-card-header">
+        <span className="tip-card-icon">
+          <DashboardIcon name="sparkle" size={16} />
+        </span>
+        <h3>소비 코칭</h3>
+      </div>
       {loading && !coaching && <div className="dash-loading">소비 코칭을 불러오고 있어요.</div>}
       {!loading && !tip && (
         <DashEmptyState
@@ -20,14 +26,24 @@ function SpendingTipCard({ coaching, loading, error }) {
       {tip && (
         <>
           {error && <DashSectionError message={error} />}
-          <strong className="tip-title">{tip.title}</strong>
-          <p>{tip.body}</p>
-          {tip.targetLabel && <span className="tip-target">{tip.targetLabel}</span>}
-          {tip.estimatedSaving != null && (
-            <span className="tip-saving">예상 절약액 {formatWon(tip.estimatedSaving)}</span>
+          <div className="tip-body">
+            <strong className="tip-title">{tip.title}</strong>
+            <p>{tip.body}</p>
+          </div>
+          {(tip.targetLabel || tip.estimatedSaving != null) && (
+            <div className="tip-meta-row">
+              {tip.targetLabel && <span className="tip-target-tag">{tip.targetLabel}</span>}
+              {tip.estimatedSaving != null && (
+                <span className="tip-saving-badge">
+                  <DashboardIcon name="chart" size={12} />
+                  예상 절약 {formatWon(tip.estimatedSaving)}
+                </span>
+              )}
+            </div>
           )}
           <Link to="/dashboard/spending" className="tip-cta">
             소비가이드 보기
+            <DashboardIcon name="chevron-right" size={14} />
           </Link>
         </>
       )}

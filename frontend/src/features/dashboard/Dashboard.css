@@ -1297,6 +1297,24 @@
   gap: 10px;
 }
 
+.tip-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tip-card-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: var(--dash-accent-light);
+  color: var(--dash-accent-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .tip-card h3 {
   font-size: 15px;
   font-weight: 700;
@@ -1305,34 +1323,68 @@
 .tip-card p {
   font-size: 13px;
   color: var(--dash-text-secondary);
+  line-height: 1.6;
 }
 
-.tip-title,
-.tip-target,
-.tip-saving {
-  font-size: 13px;
+.tip-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .tip-title {
+  font-size: 14.5px;
   color: var(--dash-text-primary);
 }
 
-.tip-target,
-.tip-saving {
+.tip-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tip-target-tag {
+  font-size: 12px;
+  font-weight: 600;
   color: var(--dash-text-secondary);
+  background: #f2f6f3;
+  border: 1px solid var(--dash-border);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.tip-saving-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--dash-accent-dark);
+  background: var(--dash-accent-light);
+  padding: 4px 10px;
+  border-radius: 999px;
 }
 
 .tip-cta {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   align-self: flex-start;
   margin-top: 4px;
   padding: 8px 14px;
   border-radius: 999px;
-  background: var(--dash-accent-light);
-  color: var(--dash-accent-dark);
+  background: var(--dash-accent);
+  color: #fff;
   font-size: 12px;
   font-weight: 700;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.tip-cta:hover {
+  background: var(--dash-accent-dark);
+  transform: translateY(-1px);
 }
 
 @media (max-width: 1100px) {
