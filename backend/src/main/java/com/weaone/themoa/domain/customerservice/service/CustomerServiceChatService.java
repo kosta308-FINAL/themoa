@@ -2,11 +2,15 @@ package com.weaone.themoa.domain.customerservice.service;
 
 import com.weaone.themoa.domain.customerservice.dto.request.CustomerServiceChatRequest;
 import com.weaone.themoa.domain.customerservice.dto.response.CustomerServiceChatResponse;
+import com.weaone.themoa.domain.customerservice.entity.CustomerServiceUnansweredQuestion;
+import com.weaone.themoa.domain.customerservice.entity.UnansweredQuestionReason;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeCitation;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeDocument;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeRetriever;
 import com.weaone.themoa.domain.customerservice.rag.CustomerKnowledgeSearchResult;
 import com.weaone.themoa.domain.customerservice.rag.CustomerServiceRagSettingValues;
+import com.weaone.themoa.domain.customerservice.repository.CustomerServiceUnansweredQuestionRepository;
+import com.weaone.themoa.domain.member.repository.MemberRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
@@ -16,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -56,27 +61,49 @@ public class CustomerServiceChatService {
     private final CustomerKnowledgeRetriever retriever;
     private final CustomerServiceRagSettingService ragSettingService;
     private final ObjectProvider<ChatModel> openAiChatModelProvider;
+    private final CustomerServiceUnansweredQuestionRepository unansweredQuestionRepository;
+    private final MemberRepository memberRepository;
 
     public CustomerServiceChatService(CustomerKnowledgeRetriever retriever,
                                       CustomerServiceRagSettingService ragSettingService,
-                                      @Qualifier("openAiChatModel") ObjectProvider<ChatModel> openAiChatModelProvider) {
+                                      @Qualifier("openAiChatModel") ObjectProvider<ChatModel> openAiChatModelProvider,
+                                      CustomerServiceUnansweredQuestionRepository unansweredQuestionRepository,
+                                      MemberRepository memberRepository) {
         this.retriever = retriever;
         this.ragSettingService = ragSettingService;
         this.openAiChatModelProvider = openAiChatModelProvider;
+        this.unansweredQuestionRepository = unansweredQuestionRepository;
+        this.memberRepository = memberRepository;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public CustomerServiceChatResponse chat(Long memberId, CustomerServiceChatRequest request) {
         CustomerServiceRagSettingValues settings = ragSettingService.current();
         List<CustomerKnowledgeSearchResult> results = retriever.retrieve(
                 request.message(), settings.topK(), settings.minimumSimilarity());
         List<CustomerKnowledgeCitation> citations = citations(results);
         if (results.isEmpty()) {
-            return new CustomerServiceChatResponse(request.conversationId(), noGroundingAnswer(), List.of(), true);
+            String answer = noGroundingAnswer();
+            recordUnanswered(memberId, request, UnansweredQuestionReason.NO_GROUNDING, answer);
+            return new CustomerServiceChatResponse(request.conversationId(), answer, List.of(), true);
         }
         String answer = generateGroundedAnswer(request.message(), results, settings.systemPrompt());
         boolean needsHumanSupport = answer.contains("1:1 문의") || answer.contains("확인이 필요");
+        if (needsHumanSupport) {
+            recordUnanswered(memberId, request, UnansweredQuestionReason.NEEDS_HUMAN_SUPPORT, answer);
+        }
         return new CustomerServiceChatResponse(request.conversationId(), answer, citations, needsHumanSupport);
+    }
+
+    private void recordUnanswered(Long memberId, CustomerServiceChatRequest request,
+                                  UnansweredQuestionReason reason, String answerMarkdown) {
+        unansweredQuestionRepository.save(CustomerServiceUnansweredQuestion.create(
+                memberRepository.getReferenceById(memberId),
+                request.conversationId(),
+                request.message(),
+                reason,
+                answerMarkdown,
+                LocalDateTime.now()));
     }
 
     public String generateGroundedAnswer(String message, List<CustomerKnowledgeSearchResult> results,

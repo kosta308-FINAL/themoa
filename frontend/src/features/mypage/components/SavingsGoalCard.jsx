@@ -37,8 +37,10 @@ function SavingsGoalCard({ savingsTargetAmount, onSaved }) {
     }
   };
 
+  const hasGoal = Number(savingsTargetAmount) > 0;
+
   return (
-    <section className="mp-card">
+    <section className="mp-card mp-savings-card">
       <div className="mp-card-head">
         <span className="mp-card-icon">
           <DashboardIcon name="target" size={17} />
@@ -47,13 +49,33 @@ function SavingsGoalCard({ savingsTargetAmount, onSaved }) {
       </div>
 
       {!isEditing ? (
-        <>
-          <p className="mp-savings-amount">{formatWon(savingsTargetAmount)}</p>
-          <button type="button" className="mp-ghost-button" onClick={startEdit}>
-            <DashboardIcon name="edit" size={14} />
-            목표 수정
-          </button>
-        </>
+        hasGoal ? (
+          <>
+            <p className="mp-savings-amount">
+              {formatWon(savingsTargetAmount)}
+            </p>
+            <button
+              type="button"
+              className="mp-ghost-button"
+              onClick={startEdit}
+            >
+              <DashboardIcon name="edit" size={14} />
+              목표 수정
+            </button>
+          </>
+        ) : (
+          <div className="mp-savings-empty">
+            <p className="mp-empty">저축 목표를 세워보세요</p>
+            <button
+              type="button"
+              className="mp-ghost-button"
+              onClick={startEdit}
+            >
+              <DashboardIcon name="edit" size={14} />
+              목표 설정
+            </button>
+          </div>
+        )
       ) : (
         <form className="mp-inline-form" onSubmit={handleSubmit}>
           <label>
