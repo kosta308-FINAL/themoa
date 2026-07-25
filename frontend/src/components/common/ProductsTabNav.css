@@ -1,0 +1,58 @@
+.products-tabnav {
+  display: inline-flex;
+  align-self: flex-start;
+  width: fit-content;
+  gap: 3px;
+  margin-bottom: 16px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--dash-surface-muted, #f1f5f4);
+  border: 1px solid var(--dash-border, #e5ede8);
+}
+
+.products-tab {
+  position: relative;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--dash-text-secondary, #6b7a72);
+  white-space: nowrap;
+}
+
+.products-tab:hover {
+  color: var(--dash-text, #1f2a24);
+}
+
+.products-tab.active {
+  color: #fff;
+}
+
+/* 활성 탭 뒤에 깔리는 초록 알약. 이름을 공유해 탭 전환 시 위치가 부드럽게 이동한다. */
+.products-tab-pill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: var(--dash-accent, #22c55e);
+  view-transition-name: products-tab-pill;
+}
+
+.products-tab-label {
+  position: relative;
+  z-index: 1;
+}
+
+/* 알약이 이동하는 속도·감속 곡선. 길고 부드럽게 미끄러지듯. */
+::view-transition-group(products-tab-pill) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 본문 크로스페이드도 같은 길이로 맞춰 급작스럽지 않게 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}

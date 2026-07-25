@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import Toast from "../../components/common/Toast";
+import ProductsTabNav from "../../components/common/ProductsTabNav";
 import { useBookmarks } from "../../hooks/useBookmarks";
 import FinancialSearchForm from "./components/FinancialSearchForm";
 import FinancialSearchResults from "./components/FinancialSearchResults";
@@ -31,10 +32,9 @@ function FinancialSearchPage() {
             원하는 조건을 자연어로 입력하면 예금·적금·대출을 한 번에 찾아드려요.
           </p>
         </div>
-        <Link className="fs-nav-link" to="/dashboard/products">
-          맞춤형 추천 받기 →
-        </Link>
       </div>
+
+      <ProductsTabNav />
 
       <FinancialSearchForm
         query={search.query}
