@@ -174,6 +174,29 @@ class FixedExpenseMatchingServiceTest {
     }
 
     @Test
+    @DisplayName("같은 alias의 다른 가격 상품이 뒤에서 매칭되면 앞 상품의 가격변경 알림을 만들지 않는다")
+    void matchesCorrectPriceWithoutNotifyingOtherSubscription() {
+        Member member = member();
+        MerchantAlias alias = alias("클로드 구독");
+        FixedExpense pro = cardFixedExpense(member, alias, BigDecimal.valueOf(22000), (short) 10);
+        FixedExpense max = cardFixedExpense(member, alias, BigDecimal.valueOf(100000), (short) 10);
+        ReflectionTestUtils.setField(max, "id", 101L);
+        CardTransaction tx = transaction(member, alias, null, LocalDate.of(2026, 7, 10), BigDecimal.valueOf(100000));
+        stubYearMonth(member, LocalDate.of(2026, 7, 10), "2026-07");
+        given(fixedExpenseRepository.findByMember_IdAndMerchantAlias_IdAndStatusAndPaymentMethod(
+                MEMBER_ID, 30L, FixedExpenseStatus.ACTIVE, FixedExpensePaymentMethod.CARD))
+                .willReturn(List.of(pro, max));
+        given(fixedExpensePaymentRepository.existsByFixedExpense_IdAndYearMonth(100L, "2026-07")).willReturn(false);
+        given(fixedExpensePaymentRepository.existsByFixedExpense_IdAndYearMonth(101L, "2026-07")).willReturn(false);
+
+        matchingService().match(tx);
+
+        assertThat(tx.getFixedExpense()).isEqualTo(max);
+        then(fixedExpensePaymentRepository).should().save(any());
+        then(notificationService).should(never()).createIfAbsent(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
     @DisplayName("biller(Apple 등) 경유 거래는 merchant_alias가 아니라 biller_merchant_id로 대조한다")
     void matchesViaBillerMerchant() {
         Member member = member();

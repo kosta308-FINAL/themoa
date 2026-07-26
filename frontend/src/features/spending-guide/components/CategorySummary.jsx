@@ -44,8 +44,8 @@ function CategorySummary({ data, error }) {
           <strong>
             <AnimatedNumber
               value={data.positiveNetTotal}
-              duration={800}
-              delay={950}
+              duration={500}
+              delay={100}
               format={formatWon}
             />
           </strong>

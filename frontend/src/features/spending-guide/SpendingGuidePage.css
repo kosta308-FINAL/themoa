@@ -4111,7 +4111,7 @@
   }
 }
 .spending-guide .spending-donut > span {
-  animation: spending-fade-in 0.5s ease 0.95s both;
+  animation: spending-fade-in 0.5s ease 0.1s both;
 }
 .spending-guide .spending-category-legend > div {
   opacity: 0;

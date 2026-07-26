@@ -18,6 +18,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -47,6 +48,7 @@ public class FixedExpenseMatchingService {
             return;
         }
         String yearMonth = yearMonthOf(transaction);
+        List<FixedExpense> amountChangeCandidates = new ArrayList<>();
         for (FixedExpense fixedExpense : candidates) {
             if (fixedExpensePaymentRepository.existsByFixedExpense_IdAndYearMonth(fixedExpense.getId(), yearMonth)) {
                 continue; // 조건④: 이번 주기 이미 이행
@@ -62,7 +64,12 @@ public class FixedExpenseMatchingService {
                 tagAndRecord(transaction, fixedExpense, yearMonth);
                 return; // 거래 1건은 최대 하나의 고정지출에만 붙는다
             }
-            notifyAmountChange(fixedExpense, yearMonth); // 신원·결제일은 맞는데 금액만 벗어남 = 가격 인상 의심(§7)
+            amountChangeCandidates.add(fixedExpense);
+        }
+        // 같은 alias에 여러 구독이 있으면 다른 상품과의 금액 불일치는 정상이다.
+        // 실제 매칭이 없고 결제일상 대상이 하나로 특정될 때만 가격 인상으로 본다.
+        if (amountChangeCandidates.size() == 1) {
+            notifyAmountChange(amountChangeCandidates.get(0), yearMonth);
         }
     }
 

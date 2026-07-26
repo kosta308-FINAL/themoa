@@ -9,10 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * biller 경유 그룹핑의 금액 사전 클러스터링(merchant.md §5-D-3, troubleshooting/billerProblem.md §6-항목2).
- * biller(Apple 등) 거래는 이름으로 신원 판별이 안 되므로, 반복 패턴 판정({@link RecurringPatternDetector})에
- * 넣기 전에 먼저 금액이 비슷한 것끼리 묶어야 한다 — 안 그러면 같은 merchant 안의 서로 다른 두 구독
- * (또는 구독+일회성 결제)이 섞여 전체가 통째로 탐지 실패한다.
+ * 반복결제 탐지 전 금액 사전 클러스터링(merchant.md §5-D-3, troubleshooting/billerProblem.md §6-항목2).
+ * 같은 alias 또는 biller merchant 안의 서로 다른 두 구독(또는 구독+일회성 결제)이 섞여 전체가 통째로
+ * 탐지 실패하지 않도록, {@link RecurringPatternDetector}에 넣기 전에 금액이 비슷한 것끼리 묶는다.
  */
 @Component
 public class AmountClusterer {

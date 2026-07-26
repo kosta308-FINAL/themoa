@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -130,15 +131,14 @@ public class FixedExpenseDetectionService {
     }
 
     /**
-     * alias 하나에 서로 다른 구독이 공존할 수 있어(예: 같은 서비스를 계정 두 개로 구독) {@link RecurringPatternDetector#detectAll}로
-     * 여러 패턴을 한 번에 뽑는다. 금액이 아니라 이미 링크된 증거 거래와의 겹침으로 기존 그룹을 찾으므로
-     * 값이 비슷한 별개 구독끼리도 안 섞인다(아래 {@link #findMatchingGroup}).
+     * alias 하나에 서로 다른 금액대의 구독이 공존할 수 있어(예: Claude Pro·Max) 금액으로 먼저 나눈 뒤
+     * 각 버킷에서 {@link RecurringPatternDetector#detectAll}로 여러 패턴을 뽑는다.
      */
     private void processAliasGroup(Long memberId, Long merchantAliasId, String currentYearMonth) {
         List<CardTransaction> transactions = cardTransactionRepository
                 .findByMember_IdAndMerchantAlias_IdAndStatusNotOrderByUsedDateAsc(
                         memberId, merchantAliasId, TransactionStatus.CANCELED);
-        List<DetectedPattern> patterns = recurringPatternDetector.detectAll(transactions);
+        List<DetectedPattern> patterns = detectPatternsByAmount(transactions);
         if (patterns.isEmpty()) {
             return;
         }
@@ -201,17 +201,27 @@ public class FixedExpenseDetectionService {
                         memberId, merchantId, TransactionStatus.CANCELED);
         List<RecurringPaymentGroup> existingGroups = recurringPaymentGroupRepository
                 .findByMember_IdAndBillerMerchant_Id(memberId, merchantId);
-        for (List<CardTransaction> bucket : amountClusterer.cluster(transactions)) {
-            bucket.sort(Comparator.comparing(CardTransaction::getUsedDate));
-            for (DetectedPattern pattern : recurringPatternDetector.detectAll(bucket)) {
-                try {
-                    processBillerPattern(memberId, merchantId, existingGroups, pattern, currentYearMonth);
-                } catch (RuntimeException e) {
-                    log.warn("biller 고정지출 탐지 패턴 처리 실패, 다음 패턴으로 계속 진행합니다. memberId={}, merchantId={}",
-                            memberId, merchantId, e);
-                }
+        for (DetectedPattern pattern : detectPatternsByAmount(transactions)) {
+            try {
+                processBillerPattern(memberId, merchantId, existingGroups, pattern, currentYearMonth);
+            } catch (RuntimeException e) {
+                log.warn("biller 고정지출 탐지 패턴 처리 실패, 다음 패턴으로 계속 진행합니다. memberId={}, merchantId={}",
+                        memberId, merchantId, e);
             }
         }
+    }
+
+    /** 같은 신원 아래 금액대가 다른 구독을 먼저 분리한 뒤 각 버킷의 월간 반복 패턴을 모두 찾는다. */
+    List<DetectedPattern> detectPatternsByAmount(List<CardTransaction> transactions) {
+        List<CardTransaction> sortedByAmount = new ArrayList<>(transactions);
+        sortedByAmount.sort(Comparator.comparing(CardTransaction::getAmount));
+
+        List<DetectedPattern> patterns = new ArrayList<>();
+        for (List<CardTransaction> bucket : amountClusterer.cluster(sortedByAmount)) {
+            bucket.sort(Comparator.comparing(CardTransaction::getUsedDate));
+            patterns.addAll(recurringPatternDetector.detectAll(bucket));
+        }
+        return patterns;
     }
 
     private void processBillerPattern(Long memberId, Long merchantId, List<RecurringPaymentGroup> existingGroups,
