@@ -5,42 +5,60 @@ import { getAdminInquiries } from "../../api/customerServiceApi";
 import BrandLogo from "../common/BrandLogo";
 import "./AdminLayout.css";
 
-const NAV_ITEMS = [
+const NAV_GROUPS = [
   {
-    key: "customer-service",
-    label: "1:1 문의 / 고객센터",
-    to: "/admin/customer-service",
-    icon: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
+    key: "customer-support",
+    title: "고객 지원",
+    items: [
+      {
+        key: "customer-service",
+        label: "1:1 문의 / 고객센터",
+        to: "/admin/customer-service",
+        icon: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
+      },
+      {
+        key: "customer-ai-quality",
+        label: "FAQ AI 품질관리",
+        to: "/admin/customer-service/ai-quality",
+        icon: "M12 3a4 4 0 0 0-4 4v1H7a3 3 0 0 0-3 3v5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5a3 3 0 0 0-3-3h-1V7a4 4 0 0 0-4-4zm-2 5V7a2 2 0 1 1 4 0v1",
+      },
+    ],
   },
   {
-    key: "customer-ai-quality",
-    label: "FAQ AI 품질관리",
-    to: "/admin/customer-service/ai-quality",
-    icon: "M12 3a4 4 0 0 0-4 4v1H7a3 3 0 0 0-3 3v5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5a3 3 0 0 0-3-3h-1V7a4 4 0 0 0-4-4zm-2 5V7a2 2 0 1 1 4 0v1",
+    key: "service-operations",
+    title: "서비스 운영",
+    items: [
+      {
+        key: "merchant-master",
+        label: "가맹점 & 서비스 마스터",
+        to: "/admin/merchants",
+        icon: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+      },
+      {
+        key: "policy-management",
+        label: "정책 데이터 관리",
+        to: "/admin/policies",
+        icon: "M4 6c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2zm0 0v6c0 1.1 3.6 2 8 2s8-.9 8-2V6m-16 6v6c0 1.1 3.6 2 8 2s8-.9 8-2v-6",
+      },
+      {
+        key: "financial-products",
+        label: "금융상품 관리",
+        to: "/admin/financial-products",
+        icon: "M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
+      },
+    ],
   },
   {
-    key: "merchant-master",
-    label: "가맹점 & 서비스 마스터",
-    to: "/admin/merchants",
-    icon: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
-  },
-  {
-    key: "policy-management",
-    label: "정책 데이터 관리",
-    to: "/admin/policies",
-    icon: "M4 6c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2zm0 0v6c0 1.1 3.6 2 8 2s8-.9 8-2V6m-16 6v6c0 1.1 3.6 2 8 2s8-.9 8-2v-6",
-  },
-  {
-    key: "financial-products",
-    label: "금융상품 관리",
-    to: "/admin/financial-products",
-    icon: "M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
-  },
-  {
-    key: "error-logs",
-    label: "오류 로그 관리",
-    to: "/admin/logs/errors",
-    icon: "M12 9v4m0 4h.01M10.29 3.86l-8.18 14.18A2 2 0 0 0 4 21h16a2 2 0 0 0 1.89-2.96L13.71 3.86a2 2 0 0 0-3.42 0z",
+    key: "system-management",
+    title: "시스템 관리",
+    items: [
+      {
+        key: "error-logs",
+        label: "오류 로그 관리",
+        to: "/admin/logs/errors",
+        icon: "M12 9v4m0 4h.01M10.29 3.86l-8.18 14.18A2 2 0 0 0 4 21h16a2 2 0 0 0 1.89-2.96L13.71 3.86a2 2 0 0 0-3.42 0z",
+      },
+    ],
   },
 ];
 
@@ -78,25 +96,31 @@ function AdminLayout({ title, subtitle, children }) {
         </div>
 
         <nav className="admin-sidebar-nav">
-          <div className="admin-nav-group-title">운영 &amp; 지원</div>
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.key}
-              to={item.to}
-              end
-              className={({ isActive }) =>
-                `admin-nav-btn${isActive ? " active" : ""}`
-              }
-            >
-              <svg className="admin-icon" viewBox="0 0 24 24">
-                <path d={item.icon} />
-              </svg>
-              {item.label}
-              {item.key === "customer-service" &&
-                Boolean(pendingInquiryCount) && (
-                  <span className="admin-nav-badge">{pendingInquiryCount}</span>
-                )}
-            </NavLink>
+          {NAV_GROUPS.map((group) => (
+            <div className="admin-nav-group" key={group.key}>
+              <div className="admin-nav-group-title">{group.title}</div>
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.key}
+                  to={item.to}
+                  end
+                  className={({ isActive }) =>
+                    `admin-nav-btn${isActive ? " active" : ""}`
+                  }
+                >
+                  <svg className="admin-icon" viewBox="0 0 24 24">
+                    <path d={item.icon} />
+                  </svg>
+                  {item.label}
+                  {item.key === "customer-service" &&
+                    Boolean(pendingInquiryCount) && (
+                      <span className="admin-nav-badge">
+                        {pendingInquiryCount}
+                      </span>
+                    )}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
 

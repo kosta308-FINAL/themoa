@@ -1321,3 +1321,12 @@
     flex-direction: column;
   }
 }
+
+.mp-modal .policy-recommendation-form {
+  grid-template-columns: 1fr;
+  margin-top: 0;
+}
+
+.mp-modal .policy-recommendation-form-actions {
+  justify-content: flex-end;
+}

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import RecommendResultCard from "./RecommendResultCard";
 
 /**
@@ -45,6 +46,60 @@ function FeasibilityNotice({ feasibility }) {
   );
 }
 
+function RecommendIntroState() {
+  return (
+    <div className="rec-empty">
+      <div className="rec-empty-content">
+        <span className="rec-empty-kicker">추천 준비</span>
+        <h2>가입 가능한 적금을 조건에 맞춰 골라드려요.</h2>
+        <p>
+          월 납입금액, 선호 기간, 우대조건 수용 여부를 반영해 예상 만기금액과
+          추천 이유를 함께 보여드릴게요.
+        </p>
+        <ul className="rec-empty-points">
+          <li>가입 가능 조건 확인</li>
+          <li>예상 만기금액 비교</li>
+          <li>AI 추천 이유 정리</li>
+        </ul>
+        <Link to="/dashboard/products/search" className="rec-empty-link">
+          상품명으로 먼저 찾아보기
+        </Link>
+      </div>
+
+      <div className="rec-empty-preview" aria-hidden="true">
+        <div className="rec-empty-preview-head">
+          <span>추천 결과 미리보기</span>
+          <strong>TOP 3</strong>
+        </div>
+        <div className="rec-empty-preview-row">
+          <span className="rec-empty-rank">1</span>
+          <span className="rec-empty-product">
+            <strong>우대금리 높은 적금</strong>
+            <small>조건 충족 가능성이 높아요</small>
+          </span>
+          <span className="rec-empty-rate">4.2%</span>
+        </div>
+        <div className="rec-empty-preview-row">
+          <span className="rec-empty-rank">2</span>
+          <span className="rec-empty-product">
+            <strong>단기 목표형 적금</strong>
+            <small>선호 기간에 잘 맞아요</small>
+          </span>
+          <span className="rec-empty-rate">3.8%</span>
+        </div>
+        <div className="rec-empty-preview-row muted">
+          <span className="rec-empty-rank">3</span>
+          <span className="rec-empty-product">
+            <strong>중도해지 부담 낮은 상품</strong>
+            <small>유동성을 고려해요</small>
+          </span>
+          <span className="rec-empty-rate">3.5%</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * 추천 결과 영역. 로딩·오류·검색 전·빈 결과·정상 목록을 분기해서 보여준다.
  */
@@ -56,11 +111,7 @@ function RecommendResults({ loading, error, data, searched, bookmarks }) {
     return <div className="rec-alert rec-alert-danger">{error}</div>;
   }
   if (!searched) {
-    return (
-      <div className="rec-state">
-        왼쪽에서 내 정보를 입력하고 추천받기를 눌러 주세요.
-      </div>
-    );
+    return <RecommendIntroState />;
   }
 
   const recommendations = data?.recommendations || [];

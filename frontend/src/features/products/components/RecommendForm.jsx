@@ -29,6 +29,17 @@ const toIntOrNull = (value) => {
 };
 
 const FALLBACK_DEPOSIT_WON = "300000";
+const DEPOSIT_ROUND_UNIT_WON = 10000;
+
+const roundToDepositUnit = (value) => {
+  const parsed = toIntOrNull(value);
+  if (parsed === null) {
+    return "";
+  }
+  return String(
+    Math.round(parsed / DEPOSIT_ROUND_UNIT_WON) * DEPOSIT_ROUND_UNIT_WON,
+  );
+};
 
 /**
  * 추천 입력 폼. 값은 내부 상태로만 관리하고, 제출 시 백엔드 RecommendRequest 형태의
@@ -50,7 +61,7 @@ function RecommendForm({ loading, defaults, onSubmit }) {
   const [risk, setRisk] = useState("STABLE");
   const [deposit, setDeposit] = useState(
     defaults?.monthlyDepositWon != null
-      ? String(defaults.monthlyDepositWon)
+      ? roundToDepositUnit(defaults.monthlyDepositWon)
       : FALLBACK_DEPOSIT_WON,
   );
   const [period, setPeriod] = useState("SHORT");
@@ -64,14 +75,16 @@ function RecommendForm({ loading, defaults, onSubmit }) {
   const [collapsed, setCollapsed] = useState(false);
 
   const hasGoal = goalMode === "set";
+  const roundedDeposit = roundToDepositUnit(deposit);
   // 백엔드가 @Min(10000)으로 검증하므로 화면에서도 미달이면 추천을 막는다.
-  const depositValid = Number(deposit) >= 10000;
+  const depositValid = Number(roundedDeposit) >= 10000;
 
   const handleSubmit = (event) => {
     event.preventDefault();
     if (loading || !depositValid) {
       return;
     }
+    setDeposit(roundedDeposit);
     onSubmit({
       age: toIntOrNull(age) ?? 0,
       monthlyIncomeManwon: toIntOrNull(income),
@@ -79,7 +92,7 @@ function RecommendForm({ loading, defaults, onSubmit }) {
       lowIncome,
       riskType: risk,
       preferredPeriod: period,
-      monthlyDepositWon: toIntOrNull(deposit) ?? 0,
+      monthlyDepositWon: toIntOrNull(roundedDeposit) ?? 0,
       acceptCondition,
       needLiquidity,
       goalAmountWon: hasGoal ? toIntOrNull(goalAmount) : null,
@@ -164,6 +177,7 @@ function RecommendForm({ loading, defaults, onSubmit }) {
               inputMode="numeric"
               value={withCommas(deposit)}
               onChange={(event) => setDeposit(stripCommas(event.target.value))}
+              onBlur={() => setDeposit(roundedDeposit)}
             />
             {!depositValid && (
               <small className="rec-field-error">
