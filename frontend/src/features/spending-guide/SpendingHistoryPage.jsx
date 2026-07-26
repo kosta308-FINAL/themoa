@@ -24,6 +24,7 @@ import {
 } from "./spendingGuideUtils";
 import DateTimeFieldModal from "./components/DateTimeFieldModal";
 import SelectFieldModal from "./components/SelectFieldModal";
+import DashboardIcon from "../../components/common/DashboardIcon";
 import "./SpendingHistoryPage.css";
 import "./SpendingGuidePage.css";
 
@@ -1112,18 +1113,42 @@ function SpendingHistoryPage() {
                       />
                     </div>
                     <div className="field">
-                      <SelectFieldModal
-                        label="결제수단 *"
-                        value={paymentMethod}
-                        onChange={setPaymentMethod}
-                        options={[
-                          { value: "CASH", label: "현금" },
-                          { value: "TRANSFER", label: "계좌이체" },
-                          ...(allowCard
-                            ? [{ value: "CARD", label: "카드" }]
-                            : []),
-                        ]}
-                      />
+                      <label htmlFor="entryMethod">결제수단 *</label>
+                      <div
+                        id="entryMethod"
+                        className="spending-segmented-toggle"
+                      >
+                        <button
+                          type="button"
+                          className={paymentMethod === "CASH" ? "selected" : ""}
+                          onClick={() => setPaymentMethod("CASH")}
+                        >
+                          <DashboardIcon name="wallet" size={15} />
+                          현금
+                        </button>
+                        <button
+                          type="button"
+                          className={
+                            paymentMethod === "TRANSFER" ? "selected" : ""
+                          }
+                          onClick={() => setPaymentMethod("TRANSFER")}
+                        >
+                          <DashboardIcon name="building" size={15} />
+                          계좌이체
+                        </button>
+                        {allowCard && (
+                          <button
+                            type="button"
+                            className={
+                              paymentMethod === "CARD" ? "selected" : ""
+                            }
+                            onClick={() => setPaymentMethod("CARD")}
+                          >
+                            <DashboardIcon name="card" size={15} />
+                            카드
+                          </button>
+                        )}
+                      </div>
                       <input
                         type="hidden"
                         name="paymentMethod"

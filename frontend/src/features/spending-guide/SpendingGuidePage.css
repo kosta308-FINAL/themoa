@@ -4292,3 +4292,10 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* 금액 숫자는 애니메이션 카운트업 중에도 자릿수가 흔들리지 않도록 등폭 숫자로 */
+.spending-guide .spending-number-main > strong,
+.spending-guide .spending-mini-stat strong,
+.spending-guide .spending-cycle-amount {
+  font-variant-numeric: tabular-nums;
+}
