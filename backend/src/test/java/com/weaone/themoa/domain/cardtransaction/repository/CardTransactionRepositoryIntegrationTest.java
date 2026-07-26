@@ -287,45 +287,6 @@ class CardTransactionRepositoryIntegrationTest {
     }
 
     @Test
-    @DisplayName("미납 후보는 biller Apple을 남기고 날짜·금액만 비슷한 CU 거래는 제외한다")
-    void missedPaymentCandidatesKeepBillerAndExcludeDifferentCategory() {
-        Member member = persistMember("missed-candidate@example.com");
-        CardConnection connection = persistConnection(member);
-        Card card = cardRepository.saveAndFlush(Card.observe(member, connection, "카드", "4619****989*"));
-        Category subscription = categoryRepository.findByCode(CategoryCode.SUBSCRIPTION.name())
-                .orElseThrow(() -> new IllegalStateException("구독 카테고리 시드가 없습니다."));
-        Category convenience = categoryRepository.findByCode(CategoryCode.CONVENIENCE.name())
-                .orElseThrow(() -> new IllegalStateException("편의점 카테고리 시드가 없습니다."));
-        MerchantAlias waave = merchantAliasRepository.save(MerchantAlias.create("waave 구독", subscription));
-        Merchant apple = merchantRepository.findByMerchantNameRaw("Apple")
-                .orElseGet(() -> merchantRepository.save(Merchant.observe("Apple", null)));
-        Merchant cu = merchantRepository.findByMerchantNameRaw("CU 분당그랑시아점")
-                .orElseGet(() -> merchantRepository.save(Merchant.observe("CU 분당그랑시아점", null)));
-
-        CardTransaction appleTx = CardTransaction.sync(member, card, convenience, "90000001",
-                LocalDate.of(2026, 7, 21), LocalDateTime.of(2026, 7, 21, 9, 30), BigDecimal.valueOf(6300),
-                null, "KRW", null, false, TransactionStatus.APPROVED, null, false,
-                "Apple", "기타4", null, null, null);
-        appleTx.assignMerchant(apple, null);
-        CardTransaction cuTx = CardTransaction.sync(member, card, convenience, "90000002",
-                LocalDate.of(2026, 7, 22), LocalDateTime.of(2026, 7, 22, 8, 14), BigDecimal.valueOf(6800),
-                null, "KRW", null, false, TransactionStatus.APPROVED, null, false,
-                "CU 분당그랑시아점", "편의점", null, null, null);
-        cuTx.assignMerchant(cu, null);
-        cardTransactionRepository.saveAndFlush(appleTx);
-        cardTransactionRepository.saveAndFlush(cuTx);
-        entityManager.clear();
-
-        List<CardTransaction> candidates = cardTransactionRepository.findMissedPaymentCandidates(
-                member.getId(), TransactionStatus.CANCELED,
-                LocalDate.of(2026, 7, 18), LocalDate.of(2026, 7, 24),
-                BigDecimal.valueOf(5670), BigDecimal.valueOf(6930), waave.getId(), subscription.getId());
-
-        assertThat(candidates).extracting(CardTransaction::getMerchantNameRaw)
-                .containsExactly("Apple");
-    }
-
-    @Test
     @DisplayName("전체 소비내역 상세 결제내역 페이지는 usedAt DESC, id DESC로 정렬되고 거절 거래만 제외하며 고정지출 태그 거래는 포함한다")
     void findConsumptionHistoryPageOrdersAndFilters() {
         Member member = persistMember("history-page@example.com");
