@@ -1,115 +1,118 @@
-/* ===================== Slide 91 (LLM 활용 구조 · 도메인별 전문 Agent + 독립 Qdrant Collection) ===================== */
+/* ===================== Slide 91 (고정지출 · 화면 주석 설명) ===================== */
 document.head.insertAdjacentHTML('beforeend', `
 <style>
 #s91{ background:transparent; }   /* 배경은 #deck에 고정된 공통 그라데이션을 그대로 사용 */
-#s91 .ptitle{ left:52px; top:40px; width:1100px; color:#6B7C8A; font-size:45px; font-weight:800; }
-#s91 .psub{ left:52px; top:112px; width:1500px; color:#111; font-size:24px; font-weight:500; }
+#s91 .htitle{ left:70px; top:50px; width:900px; color:#171717; font-size:40px; font-weight:800; }
+#s91 .hsub{ left:70px; top:112px; width:900px; color:#333; font-size:20px; font-weight:600; line-height:1.5; }
 
-/* 사용자 질문 pill */
-#s91 .query{
-  left:830px; top:172px; width:260px; height:58px; border-radius:999px;
-  background:#111; color:#fff; display:flex; align-items:center; justify-content:center;
-  font-size:20px; font-weight:700; z-index:3; box-shadow:0 10px 22px rgba(0,0,0,.25);
+/* 스크린샷 카드 */
+#s91 .shotcard{
+  left:70px; top:230px; width:1150px; height:820px; border-radius:18px;
+  overflow:hidden; background:#fff; border:1px solid #E7ECE8;
+  box-shadow:0 24px 55px rgba(0,0,0,.14);
+}
+#s91 .shotcard .img{
+  width:100%; height:100%;
+  background-repeat:no-repeat; background-size:100% auto; background-position:top;
+}
+
+/* 스크린샷 위 강조 박스 */
+#s91 .hl{
+  position:absolute; border:3px solid #007613; border-radius:12px;
+  box-shadow:0 0 0 4px rgba(0,118,19,.12); pointer-events:none;
+}
+
+/* 스크린샷 위 번호 배지 */
+#s91 .badge{
+  position:absolute; width:40px; height:40px; border-radius:50%;
+  background:#007613; color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:17px; font-weight:800; box-shadow:0 8px 18px rgba(0,118,19,.35); z-index:4;
 }
 
 /* 연결선 */
 #s91 .wires{ z-index:1; pointer-events:none; }
 
-/* 도메인 Agent 카드 */
-#s91 .agent{
-  position:absolute; top:300px; width:520px; height:280px; border-radius:20px;
-  background:#fff; box-shadow:0 20px 46px rgba(0,0,0,.14); z-index:2;
-  padding:26px 30px; overflow:hidden;
+/* 우측 설명 리스트 */
+#s91 .citem{
+  position:absolute; left:1300px; width:560px; display:flex; align-items:flex-start; gap:18px;
 }
-#s91 .agent.a1{ left:90px; }
-#s91 .agent.a2{ left:700px; }
-#s91 .agent.a3{ left:1310px; }
-#s91 .agent .bar{ position:absolute; left:0; top:0; width:100%; height:8px; }
-#s91 .agent.a1 .bar{ background:#2F6FED; }
-#s91 .agent.a2 .bar{ background:#007613; }
-#s91 .agent.a3 .bar{ background:#7C3AED; }
-
-#s91 .agent .icon{
-  width:56px; height:56px; border-radius:14px; display:flex; align-items:center;
-  justify-content:center; font-size:28px; margin-bottom:14px;
+#s91 .cnum{
+  width:44px; height:44px; border-radius:50%; flex:none;
+  background:#007613; color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:18px; font-weight:800; box-shadow:0 8px 18px rgba(0,118,19,.3);
 }
-#s91 .agent.a1 .icon{ background:#EAF1FF; }
-#s91 .agent.a2 .icon{ background:#E8F5EE; }
-#s91 .agent.a3 .icon{ background:#F1EBFC; }
-
-#s91 .agent .aname{ color:#111; font-size:28px; font-weight:800; margin-bottom:8px; }
-#s91 .agent .adesc{ color:#555; font-size:17px; font-weight:500; line-height:1.5; margin-bottom:18px; }
-
-#s91 .agent .respond{ font-size:16px; font-weight:700; }
-#s91 .agent.a1 .respond{ color:#2F6FED; }
-#s91 .agent.a2 .respond{ color:#007613; }
-#s91 .agent.a3 .respond{ color:#7C3AED; }
-
-/* 장점 칩 */
-#s91 .benefits{ left:70px; top:760px; width:1780px; display:flex; gap:22px; z-index:2; }
-#s91 .benefit{
-  flex:1; background:#fff; border-radius:16px; padding:20px 22px;
-  box-shadow:0 12px 26px rgba(0,0,0,.10);
-}
-#s91 .benefit .btitle{ color:#007613; font-size:19px; font-weight:800; margin-bottom:8px;
-  display:flex; align-items:center; gap:8px; }
-#s91 .benefit .bdesc{ color:#333; font-size:15px; font-weight:500; line-height:1.5; }
+#s91 .ctitle{ color:#171717; font-size:21px; font-weight:800; margin-bottom:6px; }
+#s91 .cdesc{ color:#666; font-size:15px; font-weight:500; line-height:1.5; }
 </style>
 `);
 
 document.getElementById('deck').insertAdjacentHTML('beforeend', `
 <section class="slide" id="s91">
-  <div class="abs ptitle">LLM 활용 구조</div>
-  <div class="abs psub">하나의 Agent가 정책·금융상품·문의를 다 처리하지 않고, 도메인별 전문 Agent 3개 + 독립된 Qdrant Collection 3개로 분리</div>
+  <div class="abs htitle">매달 반복되는 지출을 한곳에서</div>
+  <div class="abs hsub">카드내역에서 반복 결제를 자동으로 찾아내고<br>결제일이 가까운 순서로 정리해 보여줍니다.</div>
 
-  <div class="abs query">사용자 질문</div>
+  <div class="abs shotcard">
+    <div class="img" style="background-image:url('assets/s90_fixed_expense.png')"></div>
+  </div>
 
+  <div class="abs hl" style="left:167px; top:367px; width:967px; height:165px;"></div>
+  <div class="abs hl" style="left:167px; top:562px; width:661px; height:135px;"></div>
+  <div class="abs hl" style="left:846px; top:562px; width:288px; height:193px;"></div>
+  <div class="abs hl" style="left:167px; top:722px; width:661px; height:255px;"></div>
+  <div class="abs hl" style="left:846px; top:845px; width:288px; height:201px;"></div>
+
+  <div class="abs badge" style="left:151px; top:351px;">01</div>
+  <div class="abs badge" style="left:151px; top:546px;">02</div>
+  <div class="abs badge" style="left:818px; top:530px;">03</div>
+  <div class="abs badge" style="left:151px; top:706px;">04</div>
+  <div class="abs badge" style="left:818px; top:813px;">05</div>
+
+  <!-- 선은 번호 배지가 아니라, 화면과 가장 가까운 카드 가장자리(오른쪽 중앙)에서 바로 출발 -->
   <svg class="abs wires" viewBox="0 0 1920 1080" width="1920" height="1080" style="left:0;top:0">
-    <path d="M960,230 C960,260 350,260 350,300" fill="none" stroke="#BEC8DA" stroke-width="5"/>
-    <path d="M960,230 C960,260 960,260 960,300" fill="none" stroke="#BEC8DA" stroke-width="5"/>
-    <path d="M960,230 C960,260 1570,260 1570,300" fill="none" stroke="#BEC8DA" stroke-width="5"/>
+    <path d="M1134,450 Q1230,390 1300,322" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
+    <path d="M828,630  Q1080,540 1300,452" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
+    <path d="M1134,659 Q1230,620 1300,582" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
+    <path d="M828,850  Q1080,780 1300,712" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
+    <path d="M1134,946 Q1230,894 1300,842" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
   </svg>
 
-  <div class="agent a1">
-    <div class="bar"></div>
-    <div class="icon">🏛️</div>
-    <div class="aname">정책 Agent</div>
-    <div class="adesc">청년정책 검색 · 조건별 추천</div>
-    <div class="respond">→ 사용자에게 바로 응답</div>
+  <div class="citem" style="top:300px;">
+    <div class="cnum">01</div>
+    <div>
+      <div class="ctitle">고정지출 자동 합산</div>
+      <div class="cdesc">등록된 항목을 합산해 급여 대비<br>비중까지 계산합니다.</div>
+    </div>
   </div>
 
-  <div class="agent a2">
-    <div class="bar"></div>
-    <div class="icon">💳</div>
-    <div class="aname">금융상품 Agent</div>
-    <div class="adesc">예금 · 적금 · 대출 상품 매칭</div>
-    <div class="respond">→ 사용자에게 바로 응답</div>
+  <div class="citem" style="top:430px;">
+    <div class="cnum">02</div>
+    <div>
+      <div class="ctitle">반복 결제 자동 감지</div>
+      <div class="cdesc">카드내역에서 매달 반복되는 결제를<br>찾아 등록을 제안합니다.</div>
+    </div>
   </div>
 
-  <div class="agent a3">
-    <div class="bar"></div>
-    <div class="icon">💬</div>
-    <div class="aname">고객문의 Agent</div>
-    <div class="adesc">FAQ · 이용문의 응답</div>
-    <div class="respond">→ 사용자에게 바로 응답</div>
+  <div class="citem" style="top:560px;">
+    <div class="cnum">03</div>
+    <div>
+      <div class="ctitle">다가오는 결제 미리 확인</div>
+      <div class="cdesc">다음 결제 예정일을 리스트로<br>미리 보여줍니다.</div>
+    </div>
   </div>
 
-  <div class="abs benefits">
-    <div class="benefit">
-      <div class="btitle">도메인 간 간섭 없음</div>
-      <div class="bdesc">컬렉션이 분리돼 있어 정책 임베딩이 금융상품 검색에<br>노이즈로 섞이지 않습니다.</div>
+  <div class="citem" style="top:690px;">
+    <div class="cnum">04</div>
+    <div>
+      <div class="ctitle">결제일 가까운 순 정렬</div>
+      <div class="cdesc">카드 결제·계좌이체를 구분해<br>결제 상태를 표시합니다.</div>
     </div>
-    <div class="benefit">
-      <div class="btitle">독립적인 확장</div>
-      <div class="bdesc">한 도메인의 임베딩 모델·스키마를 바꿔도 다른 도메인 코드에는<br>영향이 없습니다.</div>
-    </div>
-    <div class="benefit">
-      <div class="btitle">명확한 유지보수</div>
-      <div class="bdesc">Agent 하나가 모든 걸 처리하지 않아, 도메인별로 로직과 책임이<br>분리돼 있습니다.</div>
-    </div>
-    <div class="benefit">
-      <div class="btitle">손쉬운 도메인 추가</div>
-      <div class="bdesc">새 컬렉션과 서비스만 추가하면 기존 도메인 로직은<br>그대로 유지됩니다.</div>
+  </div>
+
+  <div class="citem" style="top:820px;">
+    <div class="cnum">05</div>
+    <div>
+      <div class="ctitle">연간으로 환산해 보기</div>
+      <div class="cdesc">한 달 금액이 1년으로 보면<br>얼마인지 바로 알려줍니다.</div>
     </div>
   </div>
 </section>
