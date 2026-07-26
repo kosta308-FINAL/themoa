@@ -22,7 +22,10 @@ import {
   shiftDateBy,
   todayDate,
 } from "./spendingGuideUtils";
+import DateTimeFieldModal from "./components/DateTimeFieldModal";
+import SelectFieldModal from "./components/SelectFieldModal";
 import "./SpendingHistoryPage.css";
+import "./SpendingGuidePage.css";
 
 const ICONS = {
   receipt: (
@@ -380,6 +383,9 @@ function SpendingHistoryPage() {
   const groupRefs = useRef(new Map());
   const [highlightDate, setHighlightDate] = useState("");
   const initialDateTime = useMemo(() => nowLocalInputValue(), []);
+  const [usedDateTime, setUsedDateTime] = useState(initialDateTime);
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedDate = searchParams.get("date");
   const [initialBudgetId] = useState(() => searchParams.get("budgetId"));
@@ -535,6 +541,14 @@ function SpendingHistoryPage() {
     const data = new FormData(form);
     const usedDateTime = data.get("usedDateTime");
     const [usedDate, usedTime] = usedDateTime.split("T");
+    if (!paymentMethod) {
+      setFormError("결제수단을 선택해주세요.");
+      return;
+    }
+    if (!categoryId) {
+      setFormError("카테고리를 선택해주세요.");
+      return;
+    }
     const payload = {
       paymentMethod: data.get("paymentMethod"),
       usedDate,
@@ -549,6 +563,9 @@ function SpendingHistoryPage() {
     try {
       await createManualTransaction(payload);
       form.reset();
+      setUsedDateTime(initialDateTime);
+      setPaymentMethod("");
+      setCategoryId("");
       setToast("결제내역을 저장했어요.");
       if (cycleBudgetId) await loadCycle(cycleBudgetId);
     } catch (error) {
@@ -1095,18 +1112,24 @@ function SpendingHistoryPage() {
                       />
                     </div>
                     <div className="field">
-                      <label htmlFor="entryMethod">결제수단 *</label>
-                      <select
-                        id="entryMethod"
+                      <SelectFieldModal
+                        label="결제수단 *"
+                        value={paymentMethod}
+                        onChange={setPaymentMethod}
+                        options={[
+                          { value: "CASH", label: "현금" },
+                          { value: "TRANSFER", label: "계좌이체" },
+                          ...(allowCard
+                            ? [{ value: "CARD", label: "카드" }]
+                            : []),
+                        ]}
+                      />
+                      <input
+                        type="hidden"
                         name="paymentMethod"
-                        defaultValue=""
-                        required
-                      >
-                        <option value="">선택</option>
-                        <option value="CASH">현금</option>
-                        <option value="TRANSFER">계좌이체</option>
-                        {allowCard && <option value="CARD">카드</option>}
-                      </select>
+                        value={paymentMethod}
+                        readOnly
+                      />
                     </div>
                     <div className="field">
                       <label htmlFor="entryName">사용처/내용 *</label>
@@ -1118,32 +1141,36 @@ function SpendingHistoryPage() {
                       />
                     </div>
                     <div className="field">
-                      <label htmlFor="entryDate">사용일시 *</label>
-                      <input
-                        id="entryDate"
-                        name="usedDateTime"
-                        type="datetime-local"
-                        defaultValue={initialDateTime}
+                      <DateTimeFieldModal
+                        label="사용일시 *"
+                        value={usedDateTime}
+                        onChange={setUsedDateTime}
                         max={initialDateTime}
-                        required
+                      />
+                      <input
+                        type="hidden"
+                        name="usedDateTime"
+                        value={usedDateTime}
+                        readOnly
                       />
                     </div>
                     <div className="field">
-                      <label htmlFor="entryCategory">카테고리 *</label>
-                      <select
-                        id="entryCategory"
-                        name="categoryId"
-                        defaultValue=""
-                        required
+                      <SelectFieldModal
+                        label="카테고리 *"
+                        value={categoryId}
+                        onChange={setCategoryId}
                         disabled={!categories.length}
-                      >
-                        <option value="">선택</option>
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
+                        options={categories.map((category) => ({
+                          value: String(category.id),
+                          label: category.name,
+                        }))}
+                      />
+                      <input
+                        type="hidden"
+                        name="categoryId"
+                        value={categoryId}
+                        readOnly
+                      />
                       {categoriesError && (
                         <span className="form-error">{categoriesError}</span>
                       )}
