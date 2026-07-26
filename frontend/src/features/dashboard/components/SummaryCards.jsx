@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import DashboardIcon from "../../../components/common/DashboardIcon";
 import AiSummaryBanner from "./AiSummaryBanner";
-import { formatWon } from "../dashboardUtils";
+import { formatWon, toNumber } from "../dashboardUtils";
 
 function SummarySkeleton() {
   return (
@@ -82,6 +82,12 @@ function SummaryCards({
   const cycleText = [summary.cycleStartDate, summary.cycleEndDate]
     .filter(Boolean)
     .join(" ~ ");
+  const availableAmount = toNumber(summary.availableAmount);
+  const remainingAmount = toNumber(summary.remainingAmount);
+  const cycleNetSpend =
+    availableAmount == null || remainingAmount == null
+      ? null
+      : availableAmount - remainingAmount;
 
   return (
     <div className="summary-cards">
@@ -100,8 +106,8 @@ function SummaryCards({
         <span className="summary-card-icon">
           <DashboardIcon name="chart" />
         </span>
-        <span className="summary-card-label">이번 달 소비</span>
-        <strong>{formatWon(summary.todayNetSpend)}</strong>
+        <span className="summary-card-label">이번 주기 소비</span>
+        <strong>{formatWon(cycleNetSpend)}</strong>
         <span className="summary-card-sub">
           하루 권장 소비액 {formatWon(summary.dailyRecommendedAmount)}
         </span>

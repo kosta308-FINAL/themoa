@@ -7,14 +7,20 @@ import com.weaone.themoa.domain.cardtransaction.entity.CardTransaction;
 import com.weaone.themoa.domain.cardtransaction.entity.PaymentMethod;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
+import com.weaone.themoa.domain.fixedexpense.dto.response.FixedExpensePaymentConfirmationResponse;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpensePaymentMethod;
+import com.weaone.themoa.domain.fixedexpense.entity.FixedExpensePayment;
+import com.weaone.themoa.domain.fixedexpense.repository.FixedExpensePaymentRepository;
 import com.weaone.themoa.domain.fixedexpense.repository.FixedExpenseRepository;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
 import com.weaone.themoa.domain.merchant.entity.Merchant;
 import com.weaone.themoa.domain.merchant.entity.MerchantAlias;
+import com.weaone.themoa.domain.merchant.entity.MerchantAliasTerms;
 import com.weaone.themoa.domain.merchant.repository.BillerRepository;
+import com.weaone.themoa.domain.merchant.repository.MerchantAliasRepository;
+import com.weaone.themoa.domain.merchant.service.MerchantIdentityResult;
 import com.weaone.themoa.domain.merchant.service.MerchantIdentityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,8 +45,10 @@ public class FixedExpenseConfirmationService {
     private static final int CANDIDATE_WINDOW_DAYS = 3;
 
     private final FixedExpenseRepository fixedExpenseRepository;
+    private final FixedExpensePaymentRepository fixedExpensePaymentRepository;
     private final CardTransactionRepository cardTransactionRepository;
     private final BillerRepository billerRepository;
+    private final MerchantAliasRepository merchantAliasRepository;
     private final MerchantIdentityService merchantIdentityService;
     private final FixedExpenseMatchingService fixedExpenseMatchingService;
     private final MemberRepository memberRepository;
@@ -64,24 +72,71 @@ public class FixedExpenseConfirmationService {
         Long merchantAliasId = fixedExpense.getMerchantAlias() != null
                 ? fixedExpense.getMerchantAlias().getId() : null;
         return cardTransactionRepository.findMissedPaymentCandidates(memberId, TransactionStatus.CANCELED,
-                start, end, min, max, merchantAliasId);
+                start, end, min, max, merchantAliasId, fixedExpense.getCategory().getId());
     }
 
     /** "이 거래예요" 확정. */
     @Transactional
     public void confirm(Long memberId, Long fixedExpenseId, Long transactionId) {
         FixedExpense fixedExpense = getOwned(memberId, fixedExpenseId);
-        CardTransaction transaction = cardTransactionRepository.findByIdAndMember_Id(transactionId, memberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CARD_TRANSACTION_NOT_FOUND));
+        CardTransaction transaction = listCandidates(memberId, fixedExpenseId).stream()
+                .filter(candidate -> candidate.getId().equals(transactionId))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.FIXED_EXPENSE_PAYMENT_CANDIDATE_INVALID));
 
         Merchant merchant = transaction.getMerchant();
         boolean billerRouted = merchant != null && billerRepository.existsByNameNormalized(transaction.getMerchantNameRaw());
+        boolean billerAssigned = false;
+        MerchantAliasTerms learnedTerm = null;
         if (billerRouted) {
-            fixedExpense.assignBillerMerchant(merchant);
+            billerAssigned = fixedExpense.assignBillerMerchant(merchant);
         } else {
-            learnTermAndRetag(memberId, fixedExpense, merchant, transaction.getMerchantNameRaw());
+            learnedTerm = learnTermAndRetag(memberId, fixedExpense, merchant, transaction.getMerchantNameRaw());
         }
-        fixedExpenseMatchingService.confirmMatch(transaction, fixedExpense);
+        fixedExpenseMatchingService.confirmMatch(transaction, fixedExpense, learnedTerm, billerAssigned);
+    }
+
+    /** 이번 주기에 사용자가 "이 거래예요"로 직접 연결한 거래. 자동 매칭·수기 결제는 반환하지 않는다. */
+    @Transactional(readOnly = true)
+    public FixedExpensePaymentConfirmationResponse getCurrentConfirmation(Long memberId, Long fixedExpenseId) {
+        FixedExpense fixedExpense = getOwned(memberId, fixedExpenseId);
+        String yearMonth = currentYearMonth(memberId, LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL));
+        return fixedExpensePaymentRepository.findByFixedExpense_IdAndYearMonth(fixedExpense.getId(), yearMonth)
+                .filter(payment -> Boolean.TRUE.equals(payment.getUserConfirmedMatch()))
+                .filter(payment -> payment.getCardTransaction() != null)
+                .map(FixedExpensePaymentConfirmationResponse::from)
+                .orElse(null);
+    }
+
+    /**
+     * 사용자가 잘못 고른 F-05 연결을 되돌린다. 이 확정에서 새로 만든 학습어와 biller만 복구하고,
+     * 확정 전부터 존재하던 사용자 학습어·biller는 보존한다.
+     */
+    @Transactional
+    public void undoConfirmation(Long memberId, Long fixedExpenseId, Long transactionId) {
+        FixedExpense fixedExpense = getOwned(memberId, fixedExpenseId);
+        FixedExpensePayment payment = fixedExpensePaymentRepository.findByCardTransaction_Id(transactionId)
+                .filter(found -> found.getFixedExpense().getId().equals(fixedExpense.getId()))
+                .filter(found -> Boolean.TRUE.equals(found.getUserConfirmedMatch()))
+                .orElseThrow(() -> new BusinessException(ErrorCode.FIXED_EXPENSE_PAYMENT_CONFIRMATION_NOT_FOUND));
+        CardTransaction transaction = payment.getCardTransaction();
+        Merchant merchant = transaction.getMerchant();
+        MerchantAlias fixedExpenseAlias = fixedExpense.getMerchantAlias();
+        Long learnedTermId = payment.getLearnedMerchantAliasTerm() == null
+                ? null : payment.getLearnedMerchantAliasTerm().getId();
+        boolean clearBiller = Boolean.TRUE.equals(payment.getBillerAssignedByConfirmation());
+
+        fixedExpensePaymentRepository.delete(payment);
+        fixedExpensePaymentRepository.flush();
+        transaction.assignFixedExpense(null);
+
+        if (learnedTermId != null && fixedExpenseAlias != null) {
+            merchantIdentityService.unlearnTerm(memberId, fixedExpenseAlias.getId(), learnedTermId);
+            retagAfterUnlearning(memberId, merchant, transaction.getMerchantNameRaw(), fixedExpenseAlias.getId());
+        }
+        if (clearBiller) {
+            fixedExpense.clearBillerMerchant();
+        }
     }
 
     /**
@@ -112,18 +167,44 @@ public class FixedExpenseConfirmationService {
     }
 
     /** merchant.md §3 4단계 ①②: terms 학습 + 이 회원의 같은 원본가맹점 거래 전체 재태깅. */
-    private void learnTermAndRetag(Long memberId, FixedExpense fixedExpense, Merchant merchant, String merchantNameRaw) {
+    private MerchantAliasTerms learnTermAndRetag(Long memberId, FixedExpense fixedExpense, Merchant merchant,
+                                                  String merchantNameRaw) {
         MerchantAlias alias = fixedExpense.getMerchantAlias();
         if (alias == null) {
             throw new BusinessException(ErrorCode.FIXED_EXPENSE_MERCHANT_ALIAS_REQUIRED);
         }
-        merchantIdentityService.learnTerm(memberId, alias.getId(), merchantNameRaw);
+        MerchantAliasTerms learnedTerm = merchantIdentityService
+                .learnTermIfAbsent(memberId, alias.getId(), merchantNameRaw)
+                .orElse(null);
         if (merchant == null) {
-            return;
+            return learnedTerm;
         }
         for (CardTransaction tx : cardTransactionRepository.findByMember_IdAndMerchant_Id(memberId, merchant.getId())) {
             tx.assignMerchant(merchant, alias);
         }
+        return learnedTerm;
+    }
+
+    /** 새 학습어 삭제 후 내 학습 → 전역 학습 → merchant 전역 alias 순으로 다시 판별해 소급 태깅을 복구한다. */
+    private void retagAfterUnlearning(Long memberId, Merchant merchant, String merchantNameRaw, Long removedAliasId) {
+        if (merchant == null) {
+            return;
+        }
+        MerchantIdentityResult fallback = merchantIdentityService.resolve(memberId, merchantNameRaw);
+        MerchantAlias fallbackAlias = fallback.merchantAliasId() == null
+                ? null : merchantAliasRepository.getReferenceById(fallback.merchantAliasId());
+        for (CardTransaction tx : cardTransactionRepository.findByMember_IdAndMerchant_Id(memberId, merchant.getId())) {
+            if (tx.getMerchantAlias() != null && tx.getMerchantAlias().getId().equals(removedAliasId)) {
+                tx.assignMerchant(merchant, fallbackAlias);
+            }
+        }
+    }
+
+    private String currentYearMonth(Long memberId, LocalDate today) {
+        Member member = memberRepository.getReferenceById(memberId);
+        return member.getPayday() == null
+                ? FixedExpenseCyclePolicy.currentYearMonth(null)
+                : budgetCycleService.resolveCycleForDate(member, today).yearMonth();
     }
 
     /** 없는 날짜(31일 등)는 그 달 말일로 당긴다. */

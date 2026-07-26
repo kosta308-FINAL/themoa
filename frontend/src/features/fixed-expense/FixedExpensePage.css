@@ -997,7 +997,13 @@
   background: var(--fx-green-soft);
 }
 
+.fx-expense-row .fx-status-chip {
+  grid-column: 3;
+  justify-self: start;
+}
+
 .fx-expense-amount {
+  grid-column: 4;
   min-width: 100px;
   text-align: right;
 }
@@ -1015,6 +1021,7 @@
 }
 
 .fx-chevron {
+  grid-column: 5;
   display: grid;
   place-items: center;
   color: var(--fx-muted-2);

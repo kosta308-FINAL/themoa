@@ -67,12 +67,14 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
     /** 데모 시드 재기동 시 중복 생성 방지용. */
     boolean existsByApprovalNo(String approvalNo);
 
+    /** 데모 카드거래 시드 재기동 가드({@code CardTransactionDemoSeeder}): 이미 시드됐으면 다시 돌지 않는다. */
+    boolean existsByMember_Id(Long memberId);
+
     /**
      * F-05 미납 확인 후보(troubleshooting/billerProblem.md §6): 미태깅 + 금액오차 + 결제일 윈도우.
-     * 가맹점은 미식별(merchantAlias null, biller 경유 포함) 거래이거나 이 고정지출과 같은 alias로
-     * 이미 식별된 거래만 후보로 남긴다 — 이미 다른 alias로 확실히 식별된 거래(예: 편의점)는 배제해
-     * 오탐을 줄인다. biller 경유 구독(Apple 등)은 신원 판별을 건너뛰어 항상 merchantAlias가 null이라
-     * (merchant.md §3 2단계) 이 필터로도 그대로 후보에 남는다.
+     * 같은 alias 거래는 그대로 남기고, alias가 없는 거래는 biller(Apple 등)이거나 고정지출과 같은
+     * 카테고리/기타일 때만 남긴다. 단순히 alias가 없다는 이유로 CU 같은 명확한 타 카테고리 거래가
+     * 후보에 섞이지 않도록 한다.
      * 컨트롤러에서 세션 밖에 {@code CardTransactionResponse.from}으로 변환하므로 category·card 체인·
      * merchantAlias·merchant를 미리 fetch join 한다.
      */
@@ -86,7 +88,9 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
             + "where t.member.id = :memberId and t.fixedExpense is null "
             + "and t.status <> :canceled and t.usedDate between :startDate and :endDate "
             + "and t.amount between :minAmount and :maxAmount "
-            + "and (t.merchantAlias is null or t.merchantAlias.id = :merchantAliasId) "
+            + "and (t.merchantAlias.id = :merchantAliasId or (t.merchantAlias is null and ("
+            + "exists (select b.id from Biller b where upper(trim(b.name)) = upper(trim(t.merchantNameRaw))) "
+            + "or t.category.id = :categoryId or t.category.code = 'ETC'))) "
             + "order by t.usedDate desc")
     List<CardTransaction> findMissedPaymentCandidates(@Param("memberId") Long memberId,
                                                         @Param("canceled") TransactionStatus canceled,
@@ -94,7 +98,8 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
                                                         @Param("endDate") LocalDate endDate,
                                                         @Param("minAmount") BigDecimal minAmount,
                                                         @Param("maxAmount") BigDecimal maxAmount,
-                                                        @Param("merchantAliasId") Long merchantAliasId);
+                                                        @Param("merchantAliasId") Long merchantAliasId,
+                                                        @Param("categoryId") Long categoryId);
 
     /**
      * 카테고리별 소비 비중/내역(category.md §6·§7): 거절 제외, 고정지출 태그 거래 제외. 도넛에는

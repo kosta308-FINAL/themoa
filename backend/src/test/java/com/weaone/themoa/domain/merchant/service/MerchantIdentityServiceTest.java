@@ -248,10 +248,34 @@ class MerchantIdentityServiceTest {
         given(merchantAliasRepository.findById(1L)).willReturn(Optional.of(alias));
         given(merchantAliasTermsRepository.findByMember_IdAndAliasText(MEMBER_ID, RAW_NAME)).willReturn(Optional.empty());
         given(memberRepository.getReferenceById(MEMBER_ID)).willReturn(member);
+        given(merchantAliasTermsRepository.save(any(MerchantAliasTerms.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
 
         merchantIdentityService.learnTerm(MEMBER_ID, 1L, RAW_NAME);
 
         then(merchantAliasTermsRepository).should().save(any(MerchantAliasTerms.class));
+    }
+
+    @Test
+    @DisplayName("이번 호출에서 새로 만든 학습어만 provenance로 반환한다")
+    void learnTermIfAbsentReturnsOnlyNewTerm() {
+        MerchantAlias alias = aliasWithId(1L, "Claude 구독");
+        Member member = Member.signUp("user@example.com", "hash", "닉네임", Gender.MALE,
+                LocalDate.of(2000, 1, 1), LocalDateTime.now());
+        given(billerRepository.existsByNameNormalized(RAW_NAME)).willReturn(false);
+        given(merchantAliasRepository.findById(1L)).willReturn(Optional.of(alias));
+        given(merchantAliasTermsRepository.findByMember_IdAndAliasText(MEMBER_ID, RAW_NAME))
+                .willReturn(Optional.empty());
+        given(memberRepository.getReferenceById(MEMBER_ID)).willReturn(member);
+        given(merchantAliasTermsRepository.save(any(MerchantAliasTerms.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        Optional<MerchantAliasTerms> result =
+                merchantIdentityService.learnTermIfAbsent(MEMBER_ID, 1L, RAW_NAME);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getMerchantAlias()).isEqualTo(alias);
+        assertThat(result.get().getAliasText()).isEqualTo(RAW_NAME);
     }
 
     @Test

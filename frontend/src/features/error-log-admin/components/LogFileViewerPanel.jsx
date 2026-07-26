@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
-import { getAdminLogFiles } from "../../../api/errorLogApi";
+import {
+  getAdminLogFileDates,
+  getAdminLogFiles,
+} from "../../../api/errorLogApi";
 import { getApiErrorMessage } from "../../../utils/apiError";
 
 const LEVEL_OPTIONS = ["ERROR", "WARN", "INFO"];
+const TODAY_VALUE = "";
 
 function levelBadgeClass(level) {
   if (level === "ERROR") return "red";
@@ -12,6 +16,8 @@ function levelBadgeClass(level) {
 
 function LogFileViewerPanel() {
   const [level, setLevel] = useState("WARN");
+  const [date, setDate] = useState(TODAY_VALUE);
+  const [availableDates, setAvailableDates] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [entries, setEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,6 +30,7 @@ function LogFileViewerPanel() {
     try {
       const data = await getAdminLogFiles({
         level,
+        date: date || undefined,
         keyword: keyword || undefined,
         limit: 200,
       });
@@ -38,10 +45,25 @@ function LogFileViewerPanel() {
   };
 
   useEffect(() => {
+    // 레벨이 바뀌면 그 레벨 기준으로 조회 가능한 날짜 목록(오늘 + 압축된 과거분)을 다시 받아온다.
+    let cancelled = false;
+    getAdminLogFileDates({ level })
+      .then((dates) => {
+        if (!cancelled) setAvailableDates(dates || []);
+      })
+      .catch(() => {
+        if (!cancelled) setAvailableDates([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [level]);
+
+  useEffect(() => {
     const timer = window.setTimeout(load, 250);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [level, keyword]);
+  }, [level, date, keyword]);
 
   return (
     <div className="ela-filelog">
@@ -61,6 +83,21 @@ function LogFileViewerPanel() {
             </button>
           ))}
         </div>
+        <select
+          className="ela-input ela-input-narrow"
+          value={date}
+          onChange={(e) => {
+            setExpandedIndex(null);
+            setDate(e.target.value);
+          }}
+        >
+          <option value={TODAY_VALUE}>오늘(실시간)</option>
+          {availableDates.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </select>
         <input
           type="text"
           className="ela-input"
@@ -82,8 +119,9 @@ function LogFileViewerPanel() {
           <div>
             <div className="ela-panel-title">파일 로그 ({level})</div>
             <div className="ela-panel-sub">
-              서버의 info.log / error.log를 직접 읽어온 최신 로그입니다. 최신순
-              최대 200건.
+              {date
+                ? `${date}에 압축 롤오버된 로그를 읽어온 결과입니다. 최신순 최대 200건.`
+                : "서버의 info.log / error.log를 직접 읽어온 최신 로그입니다. 최신순 최대 200건."}
             </div>
           </div>
         </div>

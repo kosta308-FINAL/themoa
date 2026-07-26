@@ -12,6 +12,11 @@ export const getAdminErrorLogDetail = (errorLogId) =>
 export const getAdminLogFiles = (params) =>
   axiosInstance.get("/api/admin/logs/files", { params }).then(responseData);
 
+export const getAdminLogFileDates = (params) =>
+  axiosInstance
+    .get("/api/admin/logs/files/dates", { params })
+    .then(responseData);
+
 export const getAdminApiPerformance = (params) =>
   axiosInstance
     .get("/api/admin/logs/api-performance", { params })
