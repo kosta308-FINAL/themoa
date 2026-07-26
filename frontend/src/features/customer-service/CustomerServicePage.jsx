@@ -378,15 +378,24 @@ function CustomerServicePage() {
               to="/dashboard/spending/transactions"
               className="quick-link-btn"
             >
-              <span>💳 카드 연동 관리 설정</span>
+              <span>
+                <DashboardIcon name="card" size={15} />
+                카드 연동 관리 설정
+              </span>
               <DashboardIcon name="chevron-right" size={15} />
             </Link>
             <Link to="/dashboard/spending" className="quick-link-btn">
-              <span>🎯 월급 및 저축 목표 재설정</span>
+              <span>
+                <DashboardIcon name="target" size={15} />
+                월급 및 저축 목표 재설정
+              </span>
               <DashboardIcon name="chevron-right" size={15} />
             </Link>
             <Link to="/dashboard/fixed-expenses" className="quick-link-btn">
-              <span>🔄 고정지출 등록 및 수정</span>
+              <span>
+                <DashboardIcon name="repeat" size={15} />
+                고정지출 등록 및 수정
+              </span>
               <DashboardIcon name="chevron-right" size={15} />
             </Link>
           </div>
@@ -396,7 +405,8 @@ function CustomerServicePage() {
             style={{ background: "var(--green-soft)", borderColor: "#bce6ca" }}
           >
             <h3 style={{ color: "var(--green-deep)", marginBottom: "8px" }}>
-              💡 서비스 보안 팁
+              <DashboardIcon name="lock" size={16} />
+              서비스 보안 팁
             </h3>
             <p
               style={{

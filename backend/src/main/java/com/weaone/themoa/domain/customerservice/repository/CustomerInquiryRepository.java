@@ -15,6 +15,8 @@ public interface CustomerInquiryRepository extends JpaRepository<CustomerInquiry
     /** 본인 소유가 아니거나 없으면 빈 값 — 다른 회원 문의와 같은 404로 응답하기 위해서다(customerservice.md §3-1). */
     Optional<CustomerInquiry> findByIdAndMember_Id(Long id, Long memberId);
 
+    boolean existsByMember_Id(Long memberId);
+
     Page<CustomerInquiry> findByMember_IdOrderByCreatedAtDescIdDesc(Long memberId, Pageable pageable);
 
     /** 관리자 목록(customerservice.md §4-3): PENDING 우선, 그 안에서 created_at ASC, id ASC. */
