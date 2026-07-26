@@ -8,13 +8,19 @@ import com.weaone.themoa.domain.policy.policy.entity.PolicyCategory;
 import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
 import com.weaone.themoa.domain.policy.policy.region.RegionCompatibility;
 import com.weaone.themoa.domain.policy.policy.region.RegionEligiblePolicyCandidate;
+import com.weaone.themoa.domain.policy.policy.region.RegionMatchEvaluator;
+import com.weaone.themoa.domain.policy.policy.region.RegionMatchResult;
 import com.weaone.themoa.domain.policy.policy.region.ResolvedUserRegion;
 import com.weaone.themoa.domain.policy.policy.region.SearchRegionLevel;
+import com.weaone.themoa.domain.policy.policy.region.StrictPolicyRegionMentionExtractor;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
+import com.weaone.themoa.domain.policy.policy.repository.PolicyRegionClassificationRepository;
 import com.weaone.themoa.domain.policy.policy.service.RegionEligiblePolicyCandidateService;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyEmploymentAudience;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyTargetAudienceClassification;
 import com.weaone.themoa.domain.policy.rag.dto.UserEmploymentStatus;
 import com.weaone.themoa.domain.policy.rag.service.PolicyEmploymentAudienceClassifier;
+import com.weaone.themoa.domain.policy.rag.service.PolicyTargetAudienceClassifier;
 import com.weaone.themoa.domain.policy.recommendation.dto.response.PolicyRecommendationListResponse;
 import com.weaone.themoa.domain.policy.recommendation.entity.MemberPolicyRecommendation;
 import com.weaone.themoa.domain.policy.recommendation.entity.PolicyRecommendationProfile;
@@ -22,6 +28,7 @@ import com.weaone.themoa.domain.policy.recommendation.repository.MemberPolicyRec
 import com.weaone.themoa.domain.policy.recommendation.repository.PolicyRecommendationProfileRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
@@ -37,6 +44,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 
 class PolicyRecommendationServiceTest {
@@ -48,7 +56,11 @@ class PolicyRecommendationServiceTest {
     private final PolicyRecommendationRegionService regionService = mock(PolicyRecommendationRegionService.class);
     private final RegionEligiblePolicyCandidateService regionCandidateService = mock(RegionEligiblePolicyCandidateService.class);
     private final PolicyEmploymentAudienceClassifier employmentAudienceClassifier = mock(PolicyEmploymentAudienceClassifier.class);
+    private final PolicyTargetAudienceClassifier targetAudienceClassifier = mock(PolicyTargetAudienceClassifier.class);
     private final PolicyRecommendationMatcher matcher = mock(PolicyRecommendationMatcher.class);
+    private final PolicyRegionClassificationRepository regionClassificationRepository = mock(PolicyRegionClassificationRepository.class);
+    private final StrictPolicyRegionMentionExtractor regionMentionExtractor = mock(StrictPolicyRegionMentionExtractor.class);
+    private final RegionMatchEvaluator regionMatchEvaluator = mock(RegionMatchEvaluator.class);
     private final PolicyRecommendationService service = new PolicyRecommendationService(
             memberRepository,
             profileRepository,
@@ -58,7 +70,11 @@ class PolicyRecommendationServiceTest {
             regionService,
             regionCandidateService,
             employmentAudienceClassifier,
-            matcher
+            targetAudienceClassifier,
+            matcher,
+            regionClassificationRepository,
+            regionMentionExtractor,
+            regionMatchEvaluator
     );
 
     @Test
@@ -96,6 +112,7 @@ class PolicyRecommendationServiceTest {
         given(policyRepository.findWithRelationsByIdIn(any()))
                 .willReturn(List.of(nationwide, suwonOnly, gyeonggi, multiSigungu));
         givenEmploymentAudiences(nationwide, suwonOnly, gyeonggi, multiSigungu);
+        givenTargetAudiences(nationwide, suwonOnly, gyeonggi, multiSigungu);
         givenMatch(nationwide, RegionCompatibility.NATIONWIDE, 90);
         givenMatch(suwonOnly, RegionCompatibility.EXACT_SIGUNGU, 55);
         givenMatch(gyeonggi, RegionCompatibility.PARENT_SIDO, 70);
@@ -103,7 +120,11 @@ class PolicyRecommendationServiceTest {
 
         service.refreshForMember(7L);
 
-        List<MemberPolicyRecommendation> saved = savedRecommendations();
+        InOrder order = inOrder(recommendationRepository);
+        order.verify(recommendationRepository).deleteAllByMemberId(7L);
+        ArgumentCaptor<List<MemberPolicyRecommendation>> captor = ArgumentCaptor.forClass(List.class);
+        order.verify(recommendationRepository).saveAll(captor.capture());
+        List<MemberPolicyRecommendation> saved = captor.getValue();
         assertThat(saved).extracting(recommendation -> recommendation.getPolicy().getId())
                 .containsExactly(
                         suwonOnly.getId(),
@@ -133,6 +154,7 @@ class PolicyRecommendationServiceTest {
         policies.add(nationwide);
         given(policyRepository.findWithRelationsByIdIn(any())).willReturn(policies);
         givenEmploymentAudiences(policies.toArray(new Policy[0]));
+        givenTargetAudiences(policies.toArray(new Policy[0]));
         exactPolicies.forEach(policy -> givenMatch(policy, RegionCompatibility.EXACT_SIGUNGU, 50));
         givenMatch(nationwide, RegionCompatibility.NATIONWIDE, 100);
 
@@ -141,6 +163,52 @@ class PolicyRecommendationServiceTest {
         List<MemberPolicyRecommendation> saved = savedRecommendations();
         assertThat(saved).hasSize(20);
         assertThat(saved).allMatch(recommendation -> recommendation.getPolicy().getId() <= 25);
+    }
+
+    @Test
+    void listDoesNotDisplayEmptyPolicyRegionAsNationwide() {
+        Member member = member(7L);
+        PolicyRecommendationProfile profile = profile(member);
+        Policy policy = policy(30, "지역 확인 필요 정책");
+        MemberPolicyRecommendation recommendation = MemberPolicyRecommendation.create(
+                member,
+                policy,
+                80,
+                "지역 확인 필요",
+                LocalDateTime.of(2026, 7, 24, 10, 0)
+        );
+        given(memberRepository.findById(7L)).willReturn(Optional.of(member));
+        given(ageCalculator.currentAge(member)).willReturn(27);
+        given(profileRepository.findByMember_Id(7L)).willReturn(Optional.of(profile));
+        given(recommendationRepository.findByMember_IdOrderByScoreDescGeneratedAtDesc(7L))
+                .willReturn(List.of(recommendation));
+        given(regionService.validate("경기도", "수원시"))
+                .willReturn(new PolicyRecommendationRegionService.ValidatedRegion(
+                        "경기도",
+                        "수원시",
+                        new ResolvedUserRegion("경기도", "수원시", null, SearchRegionLevel.SIGUNGU,
+                                region(10, "경기도", "수원시", "CITY"))
+                ));
+        given(regionMatchEvaluator.evaluate(eq(policy), any()))
+                .willReturn(new RegionMatchResult(RegionCompatibility.REGION_UNSPECIFIED, true, 0, "지역 제한이 명시되지 않은 정책입니다."));
+        givenEmploymentAudiences(policy);
+        givenTargetAudiences(policy);
+        given(regionClassificationRepository.findAllById(any())).willReturn(List.of());
+        given(matcher.match(
+                eq(policy),
+                eq(RegionCompatibility.REGION_UNSPECIFIED),
+                eq(27),
+                eq(UserEmploymentStatus.UNEMPLOYED),
+                eq(PolicyEmploymentAudience.unknown()),
+                eq(PolicyTargetAudienceClassification.unknown()),
+                any(LocalDate.class),
+                eq(false)
+        )).willReturn(new PolicyRecommendationMatch(true, 15, RegionCompatibility.REGION_UNSPECIFIED, "지역 제한이 명시되지 않은 정책"));
+
+        PolicyRecommendationListResponse response = service.list(7L);
+
+        assertThat(response.items()).hasSize(1);
+        assertThat(response.items().get(0).region()).isEqualTo("지역 확인 필요");
     }
 
     private Member member(Long id) {
@@ -200,6 +268,7 @@ class PolicyRecommendationServiceTest {
                         "수원시",
                         new ResolvedUserRegion("경기도", "수원시", null, SearchRegionLevel.SIGUNGU, userRegion)
                 ));
+        given(regionClassificationRepository.findAllById(any())).willReturn(List.of());
     }
 
     private void givenEmploymentAudiences(Policy... policies) {
@@ -211,6 +280,15 @@ class PolicyRecommendationServiceTest {
                 .willReturn(audiences);
     }
 
+    private void givenTargetAudiences(Policy... policies) {
+        Map<Integer, PolicyTargetAudienceClassification> audiences = new LinkedHashMap<>();
+        for (Policy policy : policies) {
+            audiences.put(policy.getId(), PolicyTargetAudienceClassification.unknown());
+        }
+        given(targetAudienceClassifier.classify(org.mockito.ArgumentMatchers.<Collection<Integer>>any()))
+                .willReturn(audiences);
+    }
+
     private void givenMatch(Policy policy, RegionCompatibility compatibility, int score) {
         given(matcher.match(
                 eq(policy),
@@ -218,7 +296,9 @@ class PolicyRecommendationServiceTest {
                 eq(27),
                 eq(UserEmploymentStatus.UNEMPLOYED),
                 eq(PolicyEmploymentAudience.unknown()),
-                any(LocalDate.class)
+                eq(PolicyTargetAudienceClassification.unknown()),
+                any(LocalDate.class),
+                eq(false)
         )).willReturn(new PolicyRecommendationMatch(true, score, compatibility, compatibility.label()));
     }
 

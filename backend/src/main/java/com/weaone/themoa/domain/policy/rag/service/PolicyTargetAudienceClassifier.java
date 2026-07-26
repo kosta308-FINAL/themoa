@@ -20,12 +20,13 @@ import java.util.regex.Pattern;
  */
 @Component
 public class PolicyTargetAudienceClassifier {
-    private static final Pattern HIGH = Pattern.compile("고교생|고등학생|고\\s*3|고3|특성화고\\s*(?:재학생|학생|생)|마이스터고\\s*(?:재학생|학생|생)|직업계고\\s*(?:재학생|학생|생)|고등학교\\s*재학생");
-    private static final Pattern UNIVERSITY = Pattern.compile("대학생|전문대생|대학교\\s*(?:재학생|휴학생)|대학\\s*(?:재학생|휴학생)|전문대학\\s*재학생");
+    private static final Pattern HIGH = Pattern.compile("고교생|고등학생|고\\s*3|고3|특성화고\\s*(?:재학생|학생|생)|마이스터고\\s*(?:재학생|학생|생)|직업계고\\s*(?:재학생|학생|생)|고등학교\\s*(?:재학생|휴학생)");
+    private static final Pattern UNIVERSITY = Pattern.compile("대학생|전문대생|학부생|대학교\\s*(?:재학생|휴학생|재학)|대학\\s*(?:재학생|휴학생|재학)|전문대학\\s*(?:재학생|휴학생)");
+    private static final Pattern UNIVERSITY_CONTEXT = Pattern.compile("대학\\s*기숙사|대학교\\s*기숙사|학자금\\s*대출|학자금대출");
     private static final Pattern GRADUATE = Pattern.compile("대학원생|대학원\\s*(?:재학생|휴학생)");
     private static final Pattern MIDDLE = Pattern.compile("중학생|중학교\\s*재학생");
     private static final Pattern ELEMENTARY = Pattern.compile("초등학생|초등학교\\s*재학생");
-    private static final Pattern ALL_STUDENTS = Pattern.compile("학생\\s*대상|재학생\\s*대상|학생이면|초·?중·?고|초중고|모든\\s*학생|전체\\s*학생");
+    private static final Pattern ALL_STUDENTS = Pattern.compile("학생\\s*대상|재학생\\s*대상|휴학생\\s*대상|학생이면|재학생이면|휴학생이면|초·?중·?고|초중고|모든\\s*학생|전체\\s*학생");
     private static final Pattern GENERAL_YOUTH = Pattern.compile("\\d{1,2}\\s*세\\s*[~～-]\\s*\\d{1,2}\\s*세\\s*청년|청년\\s*(?:누구나|구직자|대상)|만\\s*\\d{1,2}\\s*세.*청년");
     private static final Pattern EXCLUDE_UNIVERSITY = Pattern.compile("대학생\\s*제외|대학교\\s*재학생\\s*제외|대학\\s*재학생\\s*제외");
 
@@ -61,6 +62,9 @@ public class PolicyTargetAudienceClassifier {
             collectStages(title, included, evidence, "정책명");
         }
         if (included.isEmpty()) {
+            collectUniversityContext(strong + " " + title + " " + weak, included, evidence);
+        }
+        if (included.isEmpty()) {
             collectBroadStages(strong + " " + title + " " + weak, included, evidence);
         }
         if (EXCLUDE_UNIVERSITY.matcher(strong + " " + title).find()) {
@@ -70,9 +74,9 @@ public class PolicyTargetAudienceClassifier {
         if (included.isEmpty()) {
             return PolicyTargetAudienceClassification.unknown();
         }
-        boolean exclusive = included.stream().anyMatch(this::isSpecificStage)
-                && !included.contains(EducationStage.GENERAL_YOUTH)
-                && !included.contains(EducationStage.ALL_STUDENTS);
+        boolean exclusive = !included.contains(EducationStage.GENERAL_YOUTH)
+                && (included.stream().anyMatch(this::isSpecificStage)
+                || included.contains(EducationStage.ALL_STUDENTS));
         double confidence = StringUtils.hasText(strong) ? 0.9 : 0.65;
         return new PolicyTargetAudienceClassification(included, excluded, exclusive, confidence, evidence);
     }
@@ -83,6 +87,13 @@ public class PolicyTargetAudienceClassifier {
         add(text, stages, evidence, GRADUATE, EducationStage.GRADUATE_SCHOOL, field + "에 대학원생 표현");
         add(text, stages, evidence, MIDDLE, EducationStage.MIDDLE_SCHOOL, field + "에 중학생 표현");
         add(text, stages, evidence, ELEMENTARY, EducationStage.ELEMENTARY, field + "에 초등학생 표현");
+    }
+
+    private void collectUniversityContext(String text, EnumSet<EducationStage> stages, List<String> evidence) {
+        if (UNIVERSITY_CONTEXT.matcher(text).find()) {
+            stages.add(EducationStage.UNIVERSITY);
+            evidence.add("대학 기숙사 또는 학자금대출 표현");
+        }
     }
 
     private void collectBroadStages(String text, EnumSet<EducationStage> stages, List<String> evidence) {

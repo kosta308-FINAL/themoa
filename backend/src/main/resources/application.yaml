@@ -198,9 +198,13 @@ app:
     call-timeout: 5s
 
   policy:
-    # local profile + true일 때만 정책 관리자 도구 활성화
+    # local profile에서만 적용되는 보안 완화(비로그인 검색 허용 등). SecurityConfig.isPolicyLocalToolsEnabled() 참고.
     local-tools:
       enabled: ${POLICY_LOCAL_TOOLS_ENABLED:false}
+    # PolicyAdmin*Controller(잡 트리거, 임베딩/리전/서치 관리 도구) 등록 여부.
+    # profile 상관없이 이 값 + ROLE_ADMIN(SecurityConfig)로만 통제한다. true일 때만 prod에서도 사용 가능.
+    admin-tools:
+      enabled: ${POLICY_ADMIN_TOOLS_ENABLED:false}
     sync:
       enabled: ${POLICY_DAILY_SYNC_ENABLED:false}
       cron: ${POLICY_DAILY_SYNC_CRON:0 0 4 * * *}

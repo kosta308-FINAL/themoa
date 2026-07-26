@@ -70,7 +70,11 @@ function PolicyPage() {
           onPageChange={search.changePage}
           onOpenDetail={search.openDetail}
         />
-        <PolicyDetailPanel selected={search.selected} detailLoading={search.detailLoading} />
+        <PolicyDetailPanel
+          selected={search.selected}
+          detailLoading={search.detailLoading}
+          onClose={search.closeDetail}
+        />
       </section>
     </main>
   )

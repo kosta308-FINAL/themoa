@@ -10,9 +10,21 @@ import java.util.Set;
 public record PolicyEmploymentAudience(
         Set<UserEmploymentStatus> allowedStatuses,
         boolean exclusive,
+        boolean conflict,
+        boolean employmentTransitionProgram,
         double confidence,
         List<String> evidence
 ) {
+    public PolicyEmploymentAudience(Set<UserEmploymentStatus> allowedStatuses, boolean exclusive,
+                                    double confidence, List<String> evidence) {
+        this(allowedStatuses, exclusive, false, false, confidence, evidence);
+    }
+
+    public PolicyEmploymentAudience(Set<UserEmploymentStatus> allowedStatuses, boolean exclusive,
+                                    boolean conflict, double confidence, List<String> evidence) {
+        this(allowedStatuses, exclusive, conflict, false, confidence, evidence);
+    }
+
     public PolicyEmploymentAudience {
         allowedStatuses = allowedStatuses == null || allowedStatuses.isEmpty()
                 ? Set.of(UserEmploymentStatus.UNKNOWN)
@@ -21,6 +33,6 @@ public record PolicyEmploymentAudience(
     }
 
     public static PolicyEmploymentAudience unknown() {
-        return new PolicyEmploymentAudience(Set.of(UserEmploymentStatus.UNKNOWN), false, 0.0, List.of("취업 상태 대상 근거 없음"));
+        return new PolicyEmploymentAudience(Set.of(UserEmploymentStatus.UNKNOWN), false, false, false, 0.0, List.of("취업 상태 대상 근거 없음"));
     }
 }
