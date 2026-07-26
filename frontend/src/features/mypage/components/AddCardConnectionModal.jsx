@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import DashboardIcon from "../../../components/common/DashboardIcon";
 import {
   createCardConnection,
@@ -9,6 +9,7 @@ import { getApiErrorMessage } from "../../../utils/apiError";
 function AddCardConnectionModal({ onClose, onConnected }) {
   const [issuers, setIssuers] = useState([]);
   const [isLoadingIssuers, setIsLoadingIssuers] = useState(true);
+  const [isIssuerPickerOpen, setIsIssuerPickerOpen] = useState(false);
   const [form, setForm] = useState({
     organization: "",
     loginId: "",
@@ -19,6 +20,7 @@ function AddCardConnectionModal({ onClose, onConnected }) {
   });
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const issuerPickerRef = useRef(null);
 
   useEffect(() => {
     const run = async () => {
@@ -35,6 +37,18 @@ function AddCardConnectionModal({ onClose, onConnected }) {
     run();
   }, []);
 
+  useEffect(() => {
+    if (!isIssuerPickerOpen) return undefined;
+    const handleOutsideClick = (event) => {
+      if (!issuerPickerRef.current?.contains(event.target)) {
+        setIsIssuerPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () =>
+      document.removeEventListener("mousedown", handleOutsideClick);
+  }, [isIssuerPickerOpen]);
+
   const selectedIssuer = useMemo(
     () => issuers.find((issuer) => issuer.organization === form.organization),
     [form.organization, issuers],
@@ -42,8 +56,17 @@ function AddCardConnectionModal({ onClose, onConnected }) {
   const update = (key) => (event) =>
     setForm((current) => ({ ...current, [key]: event.target.value }));
 
+  const handleSelectIssuer = (organization) => {
+    setForm((current) => ({ ...current, organization }));
+    setIsIssuerPickerOpen(false);
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!form.organization) {
+      setError("카드사를 선택해주세요.");
+      return;
+    }
     setError("");
     setIsSubmitting(true);
     try {
@@ -97,21 +120,51 @@ function AddCardConnectionModal({ onClose, onConnected }) {
         <form className="mp-inline-form" onSubmit={handleSubmit}>
           <label>
             <span>카드사</span>
-            <select
-              value={form.organization}
-              onChange={update("organization")}
-              required
-              disabled={isLoadingIssuers}
-            >
-              <option value="" disabled>
-                {isLoadingIssuers ? "불러오는 중..." : "카드사 선택"}
-              </option>
-              {issuers.map((issuer) => (
-                <option key={issuer.organization} value={issuer.organization}>
-                  {issuer.name}
-                </option>
-              ))}
-            </select>
+            <div className="mp-issuer-select" ref={issuerPickerRef}>
+              <button
+                type="button"
+                className="mp-issuer-trigger"
+                disabled={isLoadingIssuers}
+                onClick={() => setIsIssuerPickerOpen((open) => !open)}
+              >
+                <span
+                  className={
+                    selectedIssuer ? "" : "mp-issuer-trigger-placeholder"
+                  }
+                >
+                  {isLoadingIssuers
+                    ? "불러오는 중..."
+                    : selectedIssuer?.name || "카드사 선택"}
+                </span>
+                <DashboardIcon
+                  name="chevron-down"
+                  size={16}
+                  className={isIssuerPickerOpen ? "mp-issuer-chevron-open" : ""}
+                />
+              </button>
+              {isIssuerPickerOpen && (
+                <ul className="mp-issuer-picker-list" role="listbox">
+                  {issuers.map((issuer) => (
+                    <li key={issuer.organization}>
+                      <button
+                        type="button"
+                        className="mp-issuer-picker-item"
+                        role="option"
+                        aria-selected={
+                          form.organization === issuer.organization
+                        }
+                        onClick={() => handleSelectIssuer(issuer.organization)}
+                      >
+                        <span>{issuer.name}</span>
+                        {form.organization === issuer.organization && (
+                          <DashboardIcon name="check" size={16} />
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </label>
           <label>
             <span>카드사 로그인 아이디</span>

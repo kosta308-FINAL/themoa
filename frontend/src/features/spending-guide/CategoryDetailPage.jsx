@@ -36,6 +36,47 @@ const formatShortDate = (value) => {
   const [, month, day] = value.split("-").map(Number);
   return `${month}.${day}`;
 };
+const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+const UNKNOWN_TRANSACTION_DATE = "unknown";
+const formatTransactionDate = (value) => {
+  const datePart = value?.slice(0, 10);
+  if (!datePart) return "날짜 없음";
+
+  const [year, month, day] = datePart.split("-").map(Number);
+  if (!year || !month || !day) return "날짜 없음";
+
+  const date = new Date(year, month - 1, day);
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return "날짜 없음";
+  }
+
+  return `${month}월 ${day}일 ${WEEKDAY_LABELS[date.getDay()]}요일`;
+};
+const groupTransactionsByDate = (transactions) => {
+  const groupsByDate = new Map();
+
+  transactions.forEach((transaction) => {
+    const dateKey = transaction.usedAt?.slice(0, 10) || UNKNOWN_TRANSACTION_DATE;
+    const group = groupsByDate.get(dateKey);
+
+    if (group) {
+      group.items.push(transaction);
+      return;
+    }
+
+    groupsByDate.set(dateKey, {
+      dateKey,
+      label: formatTransactionDate(transaction.usedAt),
+      items: [transaction],
+    });
+  });
+
+  return Array.from(groupsByDate.values());
+};
 const formatManOrCheon = (value) => {
   const amount = toNumber(value);
   if (amount === 0) return "0";
@@ -347,6 +388,10 @@ function CategoryDetailPage() {
       .map((insight) => describeInsight(insight, selectedCategory.categoryName))
       .filter(Boolean);
   }, [selectedCategory]);
+  const transactionGroups = useMemo(
+    () => groupTransactionsByDate(categoryTx.items),
+    [categoryTx.items],
+  );
 
   const noCategorySpend = analysis?.emptyReason === "NO_CATEGORY_SPEND";
 
@@ -559,26 +604,39 @@ function CategoryDetailPage() {
                   )}
                 {categoryTx.items.length > 0 && (
                   <div className="tx-list">
-                    {categoryTx.items.map((tx) => {
-                      const isRefund = toNumber(tx.netAmount) < 0;
-                      return (
-                        <div className="transaction-row" key={tx.id}>
-                          <span className="tx-info">
-                            <span className="tx-name">
-                              {tx.merchantDisplayName || tx.merchantNameRaw}
-                            </span>
-                            <span className="tx-meta">
-                              {formatTime(tx.usedAt)} · {paymentLabel(tx)}
-                            </span>
-                          </span>
-                          <span
-                            className={`tx-amount${isRefund ? " refund" : ""}`}
-                          >
-                            {transactionAmount(tx.netAmount)}
-                          </span>
+                    {transactionGroups.map((group) => (
+                      <section
+                        className="tx-date-group"
+                        key={group.dateKey}
+                        aria-label={`${group.label} 결제내역`}
+                      >
+                        <h3 className="tx-date-heading">{group.label}</h3>
+                        <div className="tx-date-items">
+                          {group.items.map((tx) => {
+                            const isRefund = toNumber(tx.netAmount) < 0;
+                            return (
+                              <div className="transaction-row" key={tx.id}>
+                                <span className="tx-info">
+                                  <span className="tx-name">
+                                    {tx.merchantDisplayName ||
+                                      tx.merchantNameRaw}
+                                  </span>
+                                  <span className="tx-meta">
+                                    {formatTime(tx.usedAt)} ·{" "}
+                                    {paymentLabel(tx)}
+                                  </span>
+                                </span>
+                                <span
+                                  className={`tx-amount${isRefund ? " refund" : ""}`}
+                                >
+                                  {transactionAmount(tx.netAmount)}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
+                      </section>
+                    ))}
                   </div>
                 )}
               </section>

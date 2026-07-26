@@ -96,6 +96,8 @@ function NotificationBell() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
+  const unreadItems = items.filter((item) => !item.read);
+
   const toggleOpen = () => {
     const next = !open;
     setOpen(next);
@@ -188,15 +190,15 @@ function NotificationBell() {
             </div>
           </div>
           {error && <div className="dash-notif-error">{error}</div>}
-          {!error && !isLoading && items.length === 0 && (
+          {!error && !isLoading && unreadItems.length === 0 && (
             <div className="dash-notif-empty">새 알림이 없어요.</div>
           )}
           <ul className="dash-notif-list">
-            {items.map((item) => (
+            {unreadItems.map((item) => (
               <li key={item.id}>
                 <button
                   type="button"
-                  className={`dash-notif-item${item.read ? "" : " unread"}`}
+                  className="dash-notif-item unread"
                   onClick={() => handleItemClick(item)}
                 >
                   <span className="dash-notif-item-icon">
@@ -213,7 +215,7 @@ function NotificationBell() {
                       {formatRelativeTime(item.createdAt)}
                     </span>
                   </span>
-                  {!item.read && <span className="dash-notif-item-dot" />}
+                  <span className="dash-notif-item-dot" />
                 </button>
               </li>
             ))}

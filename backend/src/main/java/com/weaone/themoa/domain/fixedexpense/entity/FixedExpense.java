@@ -171,6 +171,11 @@ public class FixedExpense {
         this.expectedPayDay = expectedPayDay;
     }
 
+    /** 고정지출 이름 수정(F-04 확장). 회원 본인 화면에만 보이는 이름이라 다른 회원에게는 영향이 없다. */
+    public void rename(String name) {
+        this.name = name;
+    }
+
     /**
      * 주기 시작(budget 생성) 시 해외 구독의 원화 스냅샷만 최신 환율로 갱신한다(dailyBudget.md §1, erd.md §5 환산 시점 ②).
      * 매칭 기준인 {@code expectedAmount}·{@code expectedCurrency}는 건드리지 않는다 — 예산 차감값만 바뀐다.

@@ -47,15 +47,17 @@ function PolicyRecommendationProfileCard({ onSaved }) {
           <h2>정책 추천 기본정보</h2>
           <p className="mp-card-sub">생년월일 기준 나이는 자동 계산돼요.</p>
         </div>
-        {configured && !isEditing && (
-          <button
-            type="button"
-            className="mp-primary-button mp-card-head-action"
-            onClick={() => setIsEditing(true)}
-          >
-            수정
-          </button>
-        )}
+        {!recommendation.isLoading &&
+          !recommendation.profileError &&
+          !recommendation.regionError && (
+            <button
+              type="button"
+              className="mp-primary-button mp-card-head-action"
+              onClick={() => setIsEditing(true)}
+            >
+              {configured ? "수정" : "설정하기"}
+            </button>
+          )}
       </div>
 
       {recommendation.isLoading && (
@@ -106,20 +108,53 @@ function PolicyRecommendationProfileCard({ onSaved }) {
               </button>
             </div>
           )}
-          {!recommendation.regionError && (!configured || isEditing) && (
-            <PolicyRecommendationProfileForm
-              profile={profile}
-              regions={recommendation.regions}
-              isSaving={recommendation.isSaving}
-              submitLabel={configured ? "수정" : "기본정보 설정"}
-              onCancel={configured ? () => setIsEditing(false) : undefined}
-              onSubmit={handleSubmit}
-            />
-          )}
-          {recommendation.mutationError && (
-            <p className="mp-form-error">{recommendation.mutationError}</p>
-          )}
         </>
+      )}
+
+      {isEditing && (
+        <div
+          className="mp-modal-backdrop"
+          role="presentation"
+          onMouseDown={() => setIsEditing(false)}
+        >
+          <section
+            className="mp-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mp-policy-recommendation-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="mp-modal-head">
+              <div>
+                <h2 id="mp-policy-recommendation-title">
+                  정책 추천 기본정보 {configured ? "수정" : "설정"}
+                </h2>
+                <p>거주지와 취업 상태를 설정하면 맞춤 정책을 추천해드려요.</p>
+              </div>
+              <button
+                type="button"
+                className="mp-modal-close"
+                onClick={() => setIsEditing(false)}
+                aria-label="닫기"
+              >
+                ×
+              </button>
+            </div>
+            <div className="mp-modal-body">
+              <PolicyRecommendationProfileForm
+                profile={profile}
+                regions={recommendation.regions}
+                isSaving={recommendation.isSaving}
+                submitLabel={configured ? "수정" : "기본정보 설정"}
+                onCancel={() => setIsEditing(false)}
+                onSubmit={handleSubmit}
+              />
+              {recommendation.mutationError && (
+                <p className="mp-form-error">{recommendation.mutationError}</p>
+              )}
+            </div>
+          </section>
+        </div>
       )}
     </section>
   );

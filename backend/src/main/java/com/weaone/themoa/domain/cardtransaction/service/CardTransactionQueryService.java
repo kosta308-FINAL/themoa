@@ -16,11 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class CardTransactionQueryService {
 
     private final CardTransactionRepository cardTransactionRepository;
+    private final CardTransactionResponseMapper cardTransactionResponseMapper;
 
     @Transactional(readOnly = true)
     public Page<CardTransactionResponse> list(Long memberId, Pageable pageable) {
-        return cardTransactionRepository.findByMember_IdOrderByUsedAtDesc(memberId, pageable)
-                .map(CardTransactionResponse::from);
+        return cardTransactionResponseMapper.mapPage(memberId,
+                cardTransactionRepository.findByMember_IdOrderByUsedAtDesc(memberId, pageable));
     }
 
     /** S-02 거래 상세(dayguide.md §8.1). 본인 소유가 아니면 존재를 숨기고 404. */
@@ -28,6 +29,6 @@ public class CardTransactionQueryService {
     public CardTransactionResponse getDetail(Long memberId, Long transactionId) {
         CardTransaction transaction = cardTransactionRepository.findByIdAndMember_Id(transactionId, memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CARD_TRANSACTION_NOT_FOUND));
-        return CardTransactionResponse.from(transaction);
+        return cardTransactionResponseMapper.map(memberId, transaction);
     }
 }

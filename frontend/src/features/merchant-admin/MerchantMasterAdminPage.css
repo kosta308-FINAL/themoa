@@ -1,182 +1,208 @@
 .mma-page {
-  --green-dark: #15803d;
-  --surface: var(--bg-card);
-  --text: var(--text-primary);
-  --text-2: var(--text-secondary);
-  --text-3: var(--text-muted);
-  --amber-soft: var(--orange-light);
-  --purple-soft: var(--violet-light);
-  --radius: var(--radius-lg);
-  --shadow: var(--shadow-md);
-
-  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .mma-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
-  margin-bottom: 24px;
+}
+
+.mma-kpi-card,
+.mma-panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
 }
 
 .mma-kpi-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px 20px;
-  box-shadow: var(--shadow);
-}
-
-.mma-kpi-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-  flex-shrink: 0;
-}
-
-.mma-kpi-icon.purple {
-  background: var(--purple-soft);
-  color: var(--violet);
-}
-
-.mma-kpi-icon.amber {
-  background: var(--amber-soft);
-  color: var(--orange);
-}
-
-.mma-kpi-icon.red {
-  background: var(--red-light);
-  color: var(--red);
-}
-
-.mma-kpi-body {
+  min-height: 96px;
+  padding: 22px 24px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  justify-content: center;
+  gap: 8px;
 }
 
-.mma-kpi-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-2);
-}
-
-.mma-kpi-value {
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -0.6px;
-}
-
-.mma-kpi-value.warn {
-  color: var(--orange);
-}
-
-.mma-kpi-hint {
-  font-size: 11.5px;
-  color: var(--text-3);
-}
-
-.mma-alert {
-  margin: 0 0 18px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: #fef2f2;
-  color: #b91c1c;
+.mma-kpi-card span {
+  color: #64748b;
   font-size: 13px;
+  font-weight: 700;
+}
+
+.mma-kpi-card strong {
+  color: #0f172a;
+  font-size: 28px;
+  font-weight: 900;
 }
 
 .mma-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-  margin-bottom: 24px;
-}
-
-.mma-panel-header {
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--border);
+  padding: 24px;
+  overflow-x: auto;
 }
 
 .mma-panel-heading {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
 }
 
-.mma-panel-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  flex-shrink: 0;
-  margin-top: 1px;
+.mma-panel-heading h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 900;
 }
 
-.mma-panel-icon.purple {
-  background: var(--purple-soft);
-  color: var(--violet);
+.mma-panel-heading p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 13px;
 }
 
-.mma-panel-icon.amber {
-  background: var(--amber-soft);
-  color: var(--orange);
-}
-
-.mma-panel-icon.red {
-  background: var(--red-light);
-  color: var(--red);
-}
-
-.mma-panel-title {
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-}
-
-.mma-panel-sub {
-  font-size: 12px;
-  color: var(--text-2);
-  margin-top: 4px;
-  line-height: 1.5;
+.mma-alert {
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fff1f2;
+  color: #be123c;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .mma-empty {
-  padding: 48px 20px;
-  text-align: center;
-  color: var(--text-3);
-  font-size: 13.5px;
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+  font-size: 14px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+}
+
+.mma-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mma-group-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fbfdff;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mma-group-header,
+.mma-group-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mma-group-header {
+  justify-content: space-between;
+}
+
+.mma-group-meta {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mma-rawtext-badge,
+.mma-table code {
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #0f172a;
+  font-size: 12px;
+}
+
+.mma-rawtext-badge {
+  padding: 4px 8px;
+  font-weight: 800;
+}
+
+.mma-badge,
+.mma-variant-category {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.mma-badge {
+  padding: 4px 9px;
+}
+
+.mma-badge.purple {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.mma-variant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mma-variant-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.mma-variant-category {
+  border: 1px solid #dbe4ee;
+  color: #64748b;
+  padding: 4px 8px;
+}
+
+.mma-variant-learners {
+  margin-left: auto;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .mma-table {
   width: 100%;
+  min-width: 860px;
   border-collapse: collapse;
   font-size: 13.5px;
 }
 
 .mma-table th {
   text-align: left;
-  padding: 12px 18px;
+  padding: 12px 14px;
   background: #f8fafc;
-  color: var(--text-2);
+  color: #64748b;
   font-size: 12px;
-  font-weight: 700;
-  border-bottom: 1px solid var(--border);
+  font-weight: 800;
+  border-bottom: 1px solid #e2e8f0;
   white-space: nowrap;
 }
 
 .mma-table td {
-  padding: 13px 18px;
-  border-bottom: 1px solid var(--border);
+  padding: 13px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
   vertical-align: middle;
 }
 
@@ -189,123 +215,27 @@
 }
 
 .mma-table code {
-  background: #f1f5f4;
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-size: 12px;
-}
-
-.mma-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.mma-badge.purple {
-  background: var(--purple-soft);
-  color: var(--violet);
-}
-
-.mma-group-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  background: var(--border);
-}
-
-.mma-group-card {
-  background: var(--surface);
-  padding: 16px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.mma-group-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.mma-group-heading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.mma-group-meta {
-  font-size: 12px;
-  color: var(--text-2);
-  font-weight: 600;
-}
-
-.mma-rawtext-badge {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.mma-variant-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.mma-variant-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  background: var(--bg-subtle);
-  border-radius: 10px;
-}
-
-.mma-variant-category {
-  font-size: 11.5px;
-  color: var(--text-3);
-  padding: 2px 8px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  white-space: nowrap;
-}
-
-.mma-variant-learners {
-  margin-left: auto;
-  font-size: 12px;
-  color: var(--text-2);
-  white-space: nowrap;
+  padding: 3px 7px;
 }
 
 .mma-btn {
-  height: 32px;
+  min-height: 38px;
   padding: 0 14px;
-  border-radius: 9px;
   border: none;
-  font-size: 12px;
-  font-weight: 700;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
   cursor: pointer;
-  transition: background 0.15s ease;
   white-space: nowrap;
 }
 
 .mma-btn-sm {
-  height: 30px;
+  min-height: 34px;
   padding: 0 12px;
 }
 
 .mma-btn-primary {
-  background: var(--green-dark);
+  background: #15803d;
   color: #fff;
 }
 
@@ -314,47 +244,65 @@
 }
 
 .mma-btn-ghost-red {
-  background: transparent;
-  color: var(--red);
-  border: 1px solid var(--red-light);
+  border: 1px solid #fecaca;
+  background: #fff1f2;
+  color: #be123c;
 }
 
 .mma-btn-ghost-red:hover {
-  background: var(--red-light);
+  background: #fee2e2;
 }
 
 .mma-btn:disabled {
-  opacity: 0.6;
   cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .mma-quick-form {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .mma-input,
 .mma-select {
-  height: 32px;
-  padding: 0 10px;
+  height: 38px;
+  border: 1px solid #dbe4ee;
   border-radius: 8px;
-  border: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--text);
+  background: #fff;
+  color: #0f172a;
+  font-size: 13px;
+  outline: none;
 }
 
 .mma-input {
-  width: 150px;
+  width: min(240px, 100%);
+  padding: 0 12px;
 }
 
 .mma-select {
-  width: 120px;
+  width: 140px;
+  padding: 0 10px;
 }
 
 .mma-input:focus,
 .mma-select:focus {
-  outline: none;
-  border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+  border-color: #15803d;
+  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.15);
+}
+
+@media (max-width: 900px) {
+  .mma-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mma-variant-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mma-variant-learners {
+    margin-left: 0;
+  }
 }

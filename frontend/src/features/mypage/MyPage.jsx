@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { getMyPage } from "../../api/mypageApi";
 import { getCardConnections } from "../../api/spendingGuideApi";
@@ -128,6 +128,10 @@ function MyPage() {
               회원 정보, 저축목표, 카드 연동, 계정 관리를 한곳에서 확인해요.
             </p>
           </div>
+          <Link to="/dashboard/customer-service" className="mp-cs-link">
+            <DashboardIcon name="info" size={16} />
+            고객센터 바로가기
+          </Link>
         </div>
 
         {pageError && (

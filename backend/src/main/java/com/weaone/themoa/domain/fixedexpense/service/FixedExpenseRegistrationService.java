@@ -118,6 +118,7 @@ public class FixedExpenseRegistrationService {
         FixedExpense fixedExpense = getOwned(memberId, fixedExpenseId);
         String currency = resolveCurrency(request.expectedCurrency());
         ConvertedKrwAmount converted = convertToKrw(request.expectedAmount(), currency);
+        fixedExpense.rename(request.name().trim());
         fixedExpense.updateExpected(request.expectedAmount(), currency, converted.krwAmount(),
                 converted.convertedDate(), converted.exchangeRate(), request.expectedPayDay());
     }

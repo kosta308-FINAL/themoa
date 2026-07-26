@@ -2,6 +2,7 @@ package com.weaone.themoa.domain.fixedexpense.controller;
 
 import com.weaone.themoa.common.response.ApiResponse;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionResponse;
+import com.weaone.themoa.domain.cardtransaction.service.CardTransactionResponseMapper;
 import com.weaone.themoa.domain.fixedexpense.dto.request.FixedExpenseCandidateRegisterRequest;
 import com.weaone.themoa.domain.fixedexpense.dto.request.FixedExpenseDirectRegisterRequest;
 import com.weaone.themoa.domain.fixedexpense.dto.request.FixedExpenseUpdateRequest;
@@ -41,6 +42,7 @@ public class FixedExpenseController {
     private final FixedExpenseConfirmationService fixedExpenseConfirmationService;
     private final FixedExpenseDetectionService fixedExpenseDetectionService;
     private final FixedExpensePaymentStatusService fixedExpensePaymentStatusService;
+    private final CardTransactionResponseMapper cardTransactionResponseMapper;
 
     @Operation(summary = "고정지출 목록", description = "등록된(ACTIVE) 고정지출과 이번 달 합계를 조회합니다. 카드 연동 항목은 이번 주기 이행 상태 배지(paymentStatus)도 함께 내려줍니다.")
     @GetMapping
@@ -126,10 +128,8 @@ public class FixedExpenseController {
     public ResponseEntity<ApiResponse<List<CardTransactionResponse>>> listMissedPaymentCandidates(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
             @PathVariable Long fixedExpenseId) {
-        List<CardTransactionResponse> response = fixedExpenseConfirmationService.listCandidates(memberId, fixedExpenseId)
-                .stream()
-                .map(CardTransactionResponse::from)
-                .toList();
+        List<CardTransactionResponse> response = cardTransactionResponseMapper.mapList(memberId,
+                fixedExpenseConfirmationService.listCandidates(memberId, fixedExpenseId));
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

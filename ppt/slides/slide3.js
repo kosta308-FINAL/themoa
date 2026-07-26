@@ -58,17 +58,19 @@ document.head.insertAdjacentHTML('beforeend', `
 /* 허브: 모프되면 사라짐 */
 #s3 .hub{ transition:opacity .45s ease, transform .45s ease, box-shadow .3s; }
 #s3.morphed .hub{ opacity:0; transform:scale(.6); pointer-events:none; }
-/* 현재 소카테고리(주제선정) 강조 */
+/* 현재 선택된 소카테고리 강조 (클릭으로 이동) */
 #s3 .flow [data-node]{ transition:opacity .5s; }
-#s3.morphed .flow [data-node]:not([data-node="1"]){ opacity:.42; }
-#s3.morphed .flow .steptxt[data-node="1"] .stitle{ color:#007613; }
-#s3.morphed .flow .num[data-node="1"]{ color:#007613; }
-#s3.morphed .flow .node.n1{ box-shadow:0 12px 26px rgba(0,118,19,.5); }
+#s3.morphed .flow [data-node]{ cursor:pointer; }
+#s3.morphed .flow [data-node]:not(.sel){ opacity:.42; }
+#s3.morphed .flow .steptxt.sel .stitle{ color:#007613; }
+#s3.morphed .flow .num.sel{ color:#007613; }
+#s3.morphed .flow .node.sel{ box-shadow:0 12px 26px rgba(0,118,19,.5); }
 
 /* 서비스 카드: 모프 후 등장 */
 #s3 .svccard{ position:absolute; inset:0; opacity:0; transform:translateX(48px);
   pointer-events:none; transition:opacity .55s .12s ease, transform .55s .12s ease; }
-#s3.morphed .svccard{ opacity:1; transform:translateX(0); pointer-events:auto; }
+#s3.morphed .svccard{ opacity:1; transform:translateX(0); }
+#s3 .svccard .chip{ pointer-events:auto; }   /* 컨테이너는 통과, 칩만 클릭 */
 #s3 .cardframe{ left:940px; top:311px; width:773px; height:518px; z-index:1;
   border:3px solid #000; border-radius:16px; overflow:hidden; background:#fff;
   box-shadow:0 18px 40px rgba(0,0,0,.16); }
@@ -93,6 +95,66 @@ document.head.insertAdjacentHTML('beforeend', `
 #s3 .chip:active{ transform:translateY(0); box-shadow:0 2px 5px rgba(0,0,0,.12); }
 #s3 .cursor{ left:1375px; top:751px; width:45px; height:65px; z-index:4;
   filter:drop-shadow(0 2px 3px rgba(0,0,0,.25)); pointer-events:none; }
+/* 소카테고리 클릭 시 오른쪽: 주제선정=카드, 나머지=준비중 자리표시 */
+#s3 .svccard.off{ opacity:0 !important; pointer-events:none !important;
+  transition:opacity .12s ease !important; }   /* 전환 시 빠르게 사라짐 */
+#s3 .placeholder{ position:absolute; left:940px; top:311px; width:773px; height:518px;
+  border:2px dashed #b8c4be; border-radius:16px; background:#fafcfb;
+  display:none; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:0 40px; z-index:2; }
+#s3.morphed .placeholder.show{ display:flex; }
+#s3 .placeholder .pht{ color:#2D8A5E; font-size:54px; font-weight:800; margin-bottom:14px; }
+#s3 .placeholder .phs{ color:#8a97a0; font-size:26px; }
+/* 기능설계 클릭 시: 기능서 gif */
+#s3 .featgif{ position:absolute; left:985px; top:360px; width:790px; display:none;
+  border-radius:16px; overflow:hidden; background:#fff;
+  border:3px solid #000; box-shadow:0 18px 40px rgba(0,0,0,.16); z-index:2; }
+#s3.morphed .featgif.show{ display:block; }
+#s3 .featgif img{ width:100%; display:block; }
+/* 기능설계: "총 202개의 기능" 라벨 (gif 우상단) */
+#s3 .feattag{ position:absolute; left:1452px; top:334px; width:305px; height:56px;
+  background:#fff; border:2px solid #000; border-radius:4px;
+  display:none; align-items:center; justify-content:center;
+  color:#333; font-size:27px; font-weight:700; z-index:3; }
+#s3.morphed .feattag.show{ display:flex; }
+/* 흐름설계서: 유즈케이스 다이어그램 (클릭 시 확대) */
+#s3 .flowimg{ position:absolute; left:950px; top:343px; width:920px; display:none;
+  border-radius:16px; overflow:hidden; background:#fff; cursor:zoom-in;
+  border:3px solid #000; box-shadow:0 18px 40px rgba(0,0,0,.16); z-index:2; }
+#s3.morphed .flowimg.show{ display:block; }
+#s3 .flowimg img{ width:100%; display:block; }
+/* 확대 라이트박스 — 현재 페이지를 살짝 블러 처리한 배경 */
+#s3 .lightbox{ position:absolute; inset:0; z-index:50; display:none;
+  background:rgba(245,255,248,.35);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  align-items:center; justify-content:center; cursor:zoom-out; }
+#s3 .lightbox.show{ display:flex; }
+#s3 .lightbox .lb-content img, #s3 .lightbox .lb-content video{
+  max-width:1800px; max-height:1000px; object-fit:contain;
+  border-radius:10px; border:1px solid rgba(0,0,0,.1);
+  box-shadow:0 24px 70px rgba(0,0,0,.35); }
+/* agent규칙/팀규칙: 프론트/백 탭 박스 */
+#s3 .agentbox{ position:absolute; left:915px; top:300px; width:905px; display:none; z-index:2; }
+#s3.morphed .agentbox.show{ display:block; }
+#s3 .agentbox .a-head{ color:#112F8D; font-size:30px; font-weight:800; margin-bottom:10px; }
+#s3 .agentbox .a-tree{ background:#1e2430; color:#d6e2ff; font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:16px; line-height:1.5; padding:12px 18px; border-radius:9px; white-space:pre; margin-bottom:16px; }
+#s3 .agentbox .a-tabs{ display:flex; gap:8px; }
+#s3 .agentbox .a-tab{ padding:9px 26px; font-size:19px; font-weight:700; cursor:pointer;
+  background:#e8eef7; color:#6B7C8A; border-radius:11px 11px 0 0; border:2px solid transparent; border-bottom:none; }
+#s3 .agentbox .a-tab.on{ background:#fff; color:#112F8D; border-color:#d0d8e4; }
+#s3 .agentbox .a-detail{ background:#fff; border:2px solid #d0d8e4; border-radius:0 11px 11px 11px;
+  padding:18px 22px; box-shadow:0 12px 30px rgba(0,0,0,.08); }
+#s3 .agentbox .row{ margin-bottom:11px; font-size:25px; line-height:1.45; }
+#s3 .agentbox .fname{ color:#2D8A5E; font-weight:800; }
+#s3 .agentbox .fdesc{ color:#444; }
+#s3 .agentbox .a-thumbs{ display:flex; gap:12px; margin-top:14px; }
+#s3 .agentbox .a-thumbs img, #s3 .agentbox .a-thumbs video{
+  height:150px; width:auto; max-width:275px; object-fit:cover; object-position:top left;
+  border:2px solid #d0d8e4; border-radius:8px; cursor:zoom-in; background:#fff; }
+#s3 .agentbox .a-back{ display:none; }
+#s3 .agentbox.showback .a-front{ display:none; }
+#s3 .agentbox.showback .a-back{ display:block; }
 </style>
 `);
 
@@ -160,6 +222,54 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="abs chip" style="left:1427px;top:743px">금융상품 추천</div>
     <img class="abs cursor" src="assets/s4_icon.png" alt="">
   </div>
+
+  <!-- 기능설계 클릭 시: 기능서 gif + "총 202개의 기능" 라벨 -->
+  <div class="featgif"><img src="assets/feat_spec.gif" alt="기능설계 기능서"></div>
+  <div class="feattag">총 202개의 기능</div>
+
+  <!-- 흐름설계서 클릭 시: 유즈케이스 다이어그램 -->
+  <div class="flowimg"><img src="assets/flow_usecase.png" alt="흐름설계서 유즈케이스"></div>
+
+  <!-- 확대 보기(다이어그램·스크린샷·영상 공용) -->
+  <div class="lightbox"><div class="lb-content"></div></div>
+
+  <!-- agent규칙/팀규칙: 프론트/백 탭 박스 -->
+  <div class="agentbox">
+    <div class="a-head">agent규칙/팀규칙 명시</div>
+    <div class="a-tree">ROOT
+├─ backend  → backendrule.md, 작업지시서.md, erd.md
+└─ frontend → 화면흐름서.md, frontmustrule.md</div>
+    <div class="a-tabs">
+      <div class="a-tab on" data-side="front">프론트엔드</div>
+      <div class="a-tab" data-side="back">백엔드</div>
+    </div>
+    <div class="a-detail">
+      <div class="a-front">
+        <div class="row"><span class="fname">frontmustrule.md</span> — <span class="fdesc">컴포넌트·Hook 분리 등 프론트엔드 구조·개발 규칙 정의</span></div>
+        <div class="row"><span class="fname">화면흐름서.md</span> — <span class="fdesc">화면 이동 및 UI 흐름 정의 → 화면 구현 기준</span></div>
+        <div class="a-thumbs">
+          <img class="zoom" src="assets/agent_f_naming.png" alt="네이밍·화면추가 규칙">
+          <img class="zoom" src="assets/agent_front.gif" alt="프론트 화면 흐름">
+        </div>
+      </div>
+      <div class="a-back">
+        <div class="row"><span class="fname">backendrule.md</span> — <span class="fdesc">네이밍·구조·record 등 백엔드 규칙 (AI Agent 필수 준수)</span></div>
+        <div class="row"><span class="fname">작업지시서.md</span> — <span class="fdesc">섹션별 기능 구현 체크리스트·구현 방법</span></div>
+        <div class="row"><span class="fname">erd.md</span> — <span class="fdesc">작업지시서 기반 Entity 구조 정의</span></div>
+        <div class="a-thumbs">
+          <img class="zoom" src="assets/agent_b_checklist.png" alt="Coding Agent 체크리스트">
+          <img class="zoom" src="assets/agent_b_rule.png" alt="backendrule.md">
+          <img class="zoom" src="assets/agent_b_erd.png" alt="ERD 스키마 정의">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 그 외 소카테고리 클릭 시 자리표시 (내용은 나중에 채움) -->
+  <div class="placeholder">
+    <div class="pht"></div>
+    <div class="phs">상세 내용 준비중</div>
+  </div>
 </section>
 `);
 
@@ -199,4 +309,86 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
   });
   const hv = new URLSearchParams(location.search).get('hover');
   if(hv && groups[hv]) activate(hv);
+})();
+
+// ---- 슬라이드3(모프 상태): 소카테고리 클릭 → 선택 이동 + 오른쪽 내용 전환 ----
+(function(){
+  const sec = document.getElementById('s3');
+  const svccard = sec.querySelector('.svccard');
+  const gif = sec.querySelector('.featgif');
+  const tag = sec.querySelector('.feattag');
+  const flowimg = sec.querySelector('.flowimg');
+  const agentbox = sec.querySelector('.agentbox');
+  const ph = sec.querySelector('.placeholder');
+  const phName = ph.querySelector('.pht');
+  const names = {1:'주제선정',2:'기능설계',3:'테이블 설계',4:'흐름설계서',5:'agent규칙/팀규칙 명시'};
+  const groups = {};
+  sec.querySelectorAll('.flow [data-node]').forEach(el=>{
+    (groups[el.dataset.node] = groups[el.dataset.node] || []).push(el);
+  });
+  const allEls = Object.values(groups).flat();
+  function selectItem(n){
+    n = String(n);
+    allEls.forEach(e=> e.classList.remove('sel'));
+    (groups[n]||[]).forEach(e=> e.classList.add('sel'));
+    // 오른쪽 내용: 1=서비스카드, 2=기능서 gif, 나머지=준비중 자리표시
+    svccard.classList.toggle('off', n !== '1');
+    gif.classList.toggle('show', n === '2');
+    tag.classList.toggle('show', n === '2');
+    flowimg.classList.toggle('show', n === '4');
+    agentbox.classList.toggle('show', n === '5');
+    const isPh = (n !== '1' && n !== '2' && n !== '4' && n !== '5');
+    ph.classList.toggle('show', isPh);
+    if(isPh) phName.textContent = names[n];
+  }
+  // 클릭: 모프 상태면 선택 이동(슬라이드 안 넘어가게), 아니면 그대로(=모프 진행)
+  let pendingSel = null;
+  allEls.forEach(el=>{
+    el.addEventListener('click', function(e){
+      if(sec.classList.contains('morphed')){
+        e.stopPropagation();
+        selectItem(el.dataset.node);
+      } else {
+        // 첫 화면(모프 전)에서 클릭한 항목으로 바로 이동하도록 예약
+        pendingSel = el.dataset.node;
+      }
+    });
+  });
+  // 모프되면 예약된 항목(없으면 주제선정)으로
+  new MutationObserver(function(){
+    if(sec.classList.contains('morphed')){
+      selectItem(pendingSel || '1');
+      pendingSel = null;
+    }
+  }).observe(sec, { attributes:true, attributeFilter:['class'] });
+
+  // 유즈케이스 다이어그램 클릭 → 확대 / 라이트박스 클릭 → 닫기
+  const lightbox = sec.querySelector('.lightbox');
+  const lbContent = lightbox.querySelector('.lb-content');
+  function openLB(node){
+    const clone = node.cloneNode(true);
+    clone.removeAttribute('class');
+    if(clone.tagName === 'VIDEO'){ clone.controls = true; clone.muted = false; clone.loop = true;
+      setTimeout(function(){ clone.play().catch(function(){}); }, 60); }
+    lbContent.innerHTML = '';
+    lbContent.appendChild(clone);
+    lightbox.classList.add('show');
+  }
+  lightbox.addEventListener('click', function(e){ e.stopPropagation(); lightbox.classList.remove('show'); lbContent.innerHTML = ''; });
+  // 흐름설계서 다이어그램 확대
+  flowimg.addEventListener('click', function(e){ e.stopPropagation(); openLB(flowimg.querySelector('img')); });
+  // agent규칙 썸네일(스크린샷·영상) 확대
+  sec.querySelectorAll('.agentbox .zoom, .agentbox .zoom-v').forEach(function(node){
+    node.addEventListener('click', function(e){ e.stopPropagation(); openLB(node); });
+  });
+
+  // agent규칙: 프론트/백 탭 클릭
+  sec.querySelectorAll('.agentbox .a-tab').forEach(function(t){
+    t.addEventListener('click', function(e){
+      e.stopPropagation();
+      sec.querySelectorAll('.agentbox .a-tab').forEach(x=> x.classList.remove('on'));
+      t.classList.add('on');
+      agentbox.classList.toggle('showback', t.dataset.side === 'back');
+    });
+  });
 })();

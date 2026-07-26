@@ -7,6 +7,10 @@ import {
   updateTransactionCategory,
   updateTransactionMemo,
 } from "../../api/spendingGuideApi";
+import {
+  clearMerchantAliasLabel,
+  setMerchantAliasLabel,
+} from "../../api/merchantAliasApi";
 import DashboardIcon from "../../components/common/DashboardIcon";
 
 const WON = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
@@ -68,6 +72,8 @@ function TransactionDetailModal({
   const [memo, setMemo] = useState("");
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [memoOpen, setMemoOpen] = useState(false);
+  const [labelOpen, setLabelOpen] = useState(false);
+  const [labelInput, setLabelInput] = useState("");
   const [canceledAmountOpen, setCanceledAmountOpen] = useState(false);
   const [canceledAmountInput, setCanceledAmountInput] = useState("");
   const [amountOpen, setAmountOpen] = useState(false);
@@ -79,6 +85,7 @@ function TransactionDetailModal({
     setTransaction(response);
     setCategoryId(String(response.categoryId || ""));
     setMemo(response.memo || "");
+    setLabelInput(response.merchantDisplayName || "");
     setCanceledAmountInput(
       response.canceledAmount != null
         ? String(Number(response.canceledAmount))
@@ -144,6 +151,23 @@ function TransactionDetailModal({
       updateTransactionMemo(transactionId, memo.trim() || null),
     );
     if (saved) setMemoOpen(false);
+  };
+
+  const handleLabelSave = async () => {
+    const trimmed = labelInput.trim();
+    if (!trimmed || !transaction?.merchantAliasId) return;
+    const saved = await save("label", () =>
+      setMerchantAliasLabel(transaction.merchantAliasId, trimmed),
+    );
+    if (saved) setLabelOpen(false);
+  };
+
+  const handleLabelReset = async () => {
+    if (!transaction?.merchantAliasId) return;
+    const saved = await save("label", () =>
+      clearMerchantAliasLabel(transaction.merchantAliasId),
+    );
+    if (saved) setLabelOpen(false);
   };
 
   const handleCanceledAmountSave = async () => {
@@ -251,6 +275,50 @@ function TransactionDetailModal({
               </span>
             </div>
             <div className="spending-detail-list">
+              {transaction.merchantAliasId && (
+                <>
+                  <div className="spending-detail-row">
+                    <span>표시 이름</span>
+                    <strong>{transaction.merchantDisplayName}</strong>
+                    <button
+                      type="button"
+                      onClick={() => setLabelOpen((open) => !open)}
+                    >
+                      수정
+                    </button>
+                  </div>
+                  <div
+                    className={`spending-detail-inline-edit${labelOpen ? " open" : ""}`}
+                  >
+                    <input
+                      value={labelInput}
+                      maxLength={255}
+                      onChange={(event) => setLabelInput(event.target.value)}
+                      placeholder="나에게만 보일 이름을 입력하세요"
+                    />
+                    <div className="spending-detail-inline-edit-actions">
+                      <button
+                        type="button"
+                        className="spending-secondary"
+                        disabled={Boolean(pending) || !labelInput.trim()}
+                        onClick={handleLabelSave}
+                      >
+                        저장
+                      </button>
+                      {transaction.hasPersonalMerchantLabel && (
+                        <button
+                          type="button"
+                          className="spending-secondary"
+                          disabled={Boolean(pending)}
+                          onClick={handleLabelReset}
+                        >
+                          기본 이름으로
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
               <div className="spending-detail-row">
                 <span>사용 일시</span>
                 <strong>{formatDateTime(transaction.usedAt)}</strong>
