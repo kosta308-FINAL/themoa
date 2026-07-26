@@ -376,18 +376,15 @@
 /* FAQ SECTION */
 .faq-categories {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  overflow-x: auto;
   margin-bottom: 20px;
-  padding-bottom: 4px;
-  scrollbar-width: none;
-}
-
-.faq-categories::-webkit-scrollbar {
-  display: none;
 }
 
 .cat-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 16px;
   border-radius: 999px;
   font-size: 13px;
@@ -398,6 +395,17 @@
   white-space: nowrap;
   transition: all 0.2s ease;
   cursor: pointer;
+}
+
+.cat-btn svg {
+  flex: 0 0 auto;
+  color: var(--text-3);
+  transition: color 0.2s ease;
+}
+
+.cat-btn:hover svg,
+.cat-btn.active svg {
+  color: var(--green-dark);
 }
 
 .cat-btn:hover,
@@ -781,6 +789,17 @@ textarea.form-control {
   transition: all 0.2s ease;
 }
 
+.quick-link-btn span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quick-link-btn svg {
+  flex: 0 0 auto;
+  color: var(--green-dark);
+}
+
 .quick-link-btn:hover {
   background: var(--green-soft);
   color: var(--green-dark);
@@ -889,6 +908,53 @@ textarea.form-control {
   border: 1px dashed var(--border);
   border-radius: var(--radius-sm);
   background: #fff;
+}
+
+.faq-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 20px;
+}
+
+.faq-page-nav,
+.faq-page-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 4px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.faq-page-nav:hover,
+.faq-page-num:hover {
+  border-color: var(--green);
+  color: var(--green-dark);
+  background: var(--green-soft);
+}
+
+.faq-page-nav:disabled {
+  cursor: default;
+  opacity: 0.4;
+  color: var(--text-2);
+  background: #fff;
+  border-color: var(--border);
+}
+
+.faq-page-num.active {
+  color: #fff;
+  background: var(--green-dark);
+  border-color: var(--green-dark);
 }
 
 @media (max-width: 960px) {
