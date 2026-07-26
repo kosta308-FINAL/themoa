@@ -58,17 +58,19 @@ document.head.insertAdjacentHTML('beforeend', `
 /* 허브: 모프되면 사라짐 */
 #s3 .hub{ transition:opacity .45s ease, transform .45s ease, box-shadow .3s; }
 #s3.morphed .hub{ opacity:0; transform:scale(.6); pointer-events:none; }
-/* 현재 소카테고리(주제선정) 강조 */
+/* 현재 선택된 소카테고리 강조 (클릭으로 이동) */
 #s3 .flow [data-node]{ transition:opacity .5s; }
-#s3.morphed .flow [data-node]:not([data-node="1"]){ opacity:.42; }
-#s3.morphed .flow .steptxt[data-node="1"] .stitle{ color:#007613; }
-#s3.morphed .flow .num[data-node="1"]{ color:#007613; }
-#s3.morphed .flow .node.n1{ box-shadow:0 12px 26px rgba(0,118,19,.5); }
+#s3.morphed .flow [data-node]{ cursor:pointer; }
+#s3.morphed .flow [data-node]:not(.sel){ opacity:.42; }
+#s3.morphed .flow .steptxt.sel .stitle{ color:#007613; }
+#s3.morphed .flow .num.sel{ color:#007613; }
+#s3.morphed .flow .node.sel{ box-shadow:0 12px 26px rgba(0,118,19,.5); }
 
 /* 서비스 카드: 모프 후 등장 */
 #s3 .svccard{ position:absolute; inset:0; opacity:0; transform:translateX(48px);
   pointer-events:none; transition:opacity .55s .12s ease, transform .55s .12s ease; }
-#s3.morphed .svccard{ opacity:1; transform:translateX(0); pointer-events:auto; }
+#s3.morphed .svccard{ opacity:1; transform:translateX(0); }
+#s3 .svccard .chip{ pointer-events:auto; }   /* 컨테이너는 통과, 칩만 클릭 */
 #s3 .cardframe{ left:940px; top:311px; width:773px; height:518px; z-index:1;
   border:3px solid #000; border-radius:16px; overflow:hidden; background:#fff;
   box-shadow:0 18px 40px rgba(0,0,0,.16); }
@@ -93,6 +95,22 @@ document.head.insertAdjacentHTML('beforeend', `
 #s3 .chip:active{ transform:translateY(0); box-shadow:0 2px 5px rgba(0,0,0,.12); }
 #s3 .cursor{ left:1375px; top:751px; width:45px; height:65px; z-index:4;
   filter:drop-shadow(0 2px 3px rgba(0,0,0,.25)); pointer-events:none; }
+/* 소카테고리 클릭 시 오른쪽: 주제선정=카드, 나머지=준비중 자리표시 */
+#s3 .svccard.off{ opacity:0 !important; pointer-events:none !important;
+  transition:opacity .12s ease !important; }   /* 전환 시 빠르게 사라짐 */
+#s3 .placeholder{ position:absolute; left:940px; top:311px; width:773px; height:518px;
+  border:2px dashed #b8c4be; border-radius:16px; background:#fafcfb;
+  display:none; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:0 40px; z-index:2; }
+#s3.morphed .placeholder.show{ display:flex; }
+#s3 .placeholder .pht{ color:#2D8A5E; font-size:54px; font-weight:800; margin-bottom:14px; }
+#s3 .placeholder .phs{ color:#8a97a0; font-size:26px; }
+/* 기능설계 클릭 시: 기능서 gif */
+#s3 .featgif{ position:absolute; left:985px; top:360px; width:790px; display:none;
+  border-radius:16px; overflow:hidden; background:#fff;
+  border:3px solid #000; box-shadow:0 18px 40px rgba(0,0,0,.16); z-index:2; }
+#s3.morphed .featgif.show{ display:block; }
+#s3 .featgif img{ width:100%; display:block; }
 </style>
 `);
 
@@ -160,6 +178,15 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="abs chip" style="left:1427px;top:743px">금융상품 추천</div>
     <img class="abs cursor" src="assets/s4_icon.png" alt="">
   </div>
+
+  <!-- 기능설계 클릭 시: 기능서 gif -->
+  <div class="featgif"><img src="assets/feat_spec.gif" alt="기능설계 기능서"></div>
+
+  <!-- 그 외 소카테고리 클릭 시 자리표시 (내용은 나중에 채움) -->
+  <div class="placeholder">
+    <div class="pht"></div>
+    <div class="phs">상세 내용 준비중</div>
+  </div>
 </section>
 `);
 
@@ -199,4 +226,50 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
   });
   const hv = new URLSearchParams(location.search).get('hover');
   if(hv && groups[hv]) activate(hv);
+})();
+
+// ---- 슬라이드3(모프 상태): 소카테고리 클릭 → 선택 이동 + 오른쪽 내용 전환 ----
+(function(){
+  const sec = document.getElementById('s3');
+  const svccard = sec.querySelector('.svccard');
+  const gif = sec.querySelector('.featgif');
+  const ph = sec.querySelector('.placeholder');
+  const phName = ph.querySelector('.pht');
+  const names = {1:'주제선정',2:'기능설계',3:'테이블 설계',4:'흐름설계서',5:'agent규칙/팀규칙 명시'};
+  const groups = {};
+  sec.querySelectorAll('.flow [data-node]').forEach(el=>{
+    (groups[el.dataset.node] = groups[el.dataset.node] || []).push(el);
+  });
+  const allEls = Object.values(groups).flat();
+  function selectItem(n){
+    n = String(n);
+    allEls.forEach(e=> e.classList.remove('sel'));
+    (groups[n]||[]).forEach(e=> e.classList.add('sel'));
+    // 오른쪽 내용: 1=서비스카드, 2=기능서 gif, 나머지=준비중 자리표시
+    svccard.classList.toggle('off', n !== '1');
+    gif.classList.toggle('show', n === '2');
+    const isPh = (n !== '1' && n !== '2');
+    ph.classList.toggle('show', isPh);
+    if(isPh) phName.textContent = names[n];
+  }
+  // 클릭: 모프 상태면 선택 이동(슬라이드 안 넘어가게), 아니면 그대로(=모프 진행)
+  let pendingSel = null;
+  allEls.forEach(el=>{
+    el.addEventListener('click', function(e){
+      if(sec.classList.contains('morphed')){
+        e.stopPropagation();
+        selectItem(el.dataset.node);
+      } else {
+        // 첫 화면(모프 전)에서 클릭한 항목으로 바로 이동하도록 예약
+        pendingSel = el.dataset.node;
+      }
+    });
+  });
+  // 모프되면 예약된 항목(없으면 주제선정)으로
+  new MutationObserver(function(){
+    if(sec.classList.contains('morphed')){
+      selectItem(pendingSel || '1');
+      pendingSel = null;
+    }
+  }).observe(sec, { attributes:true, attributeFilter:['class'] });
 })();
