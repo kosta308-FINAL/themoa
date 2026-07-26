@@ -59,27 +59,29 @@ function CardConnectionCard({ cardConnections, onChanged }) {
         <p className="mp-empty">카드 연동 정보를 불러오지 못했어요.</p>
       ) : (
         <>
-          <div className="mp-sync-toggle-row">
-            <div>
-              <strong>카드 자동수집</strong>
-              <p>연결과 기존 거래는 설정을 꺼도 그대로 유지돼요.</p>
+          {connections.length > 0 && (
+            <div className="mp-sync-toggle-row">
+              <div>
+                <strong>카드 자동수집</strong>
+                <p>연결과 기존 거래는 설정을 꺼도 그대로 유지돼요.</p>
+              </div>
+              <button
+                type="button"
+                className={
+                  cardConnections.cardSyncEnabled ? "mp-switch on" : "mp-switch"
+                }
+                onClick={handleToggleSync}
+                disabled={isTogglingSync}
+                aria-label={
+                  cardConnections.cardSyncEnabled
+                    ? "자동수집 끄기"
+                    : "자동수집 켜기"
+                }
+              >
+                <i />
+              </button>
             </div>
-            <button
-              type="button"
-              className={
-                cardConnections.cardSyncEnabled ? "mp-switch on" : "mp-switch"
-              }
-              onClick={handleToggleSync}
-              disabled={isTogglingSync}
-              aria-label={
-                cardConnections.cardSyncEnabled
-                  ? "자동수집 끄기"
-                  : "자동수집 켜기"
-              }
-            >
-              <i />
-            </button>
-          </div>
+          )}
           {toggleError && (
             <div className="mp-form-error">
               <DashboardIcon name="info" size={16} />
@@ -87,7 +89,12 @@ function CardConnectionCard({ cardConnections, onChanged }) {
             </div>
           )}
           {connections.length === 0 ? (
-            <p className="mp-empty">아직 연결된 카드사가 없어요.</p>
+            <div className="mp-empty mp-card-empty">
+              <p>아직 연결된 카드사가 없어요.</p>
+              <p className="mp-card-empty-hint">
+                카드사를 연동하면 거래내역을 자동으로 불러와요.
+              </p>
+            </div>
           ) : (
             <ul className="mp-connection-list">
               {connections.map((connection) => (

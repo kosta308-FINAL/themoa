@@ -4015,3 +4015,280 @@
     flex-direction: column;
   }
 }
+
+/* ===================================================================
+   소비가이드 대시보드 진입 애니메이션
+   =================================================================== */
+
+@keyframes spending-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.spending-guide .spending-today-card,
+.spending-guide .spending-cycle-card,
+.spending-guide .spending-panel {
+  animation: spending-panel-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.spending-guide .spending-today-card {
+  animation-delay: 0.02s;
+}
+.spending-guide .spending-cycle-card {
+  animation-delay: 0.08s;
+}
+.spending-guide .spending-column:nth-of-type(1) .spending-panel:nth-of-type(1) {
+  animation-delay: 0.14s;
+}
+.spending-guide .spending-column:nth-of-type(1) .spending-panel:nth-of-type(2) {
+  animation-delay: 0.2s;
+}
+.spending-guide .spending-column:nth-of-type(2) .spending-panel:nth-of-type(1) {
+  animation-delay: 0.14s;
+}
+.spending-guide .spending-column:nth-of-type(2) .spending-panel:nth-of-type(2) {
+  animation-delay: 0.2s;
+}
+.spending-guide .spending-column:nth-of-type(2) .spending-panel:nth-of-type(3) {
+  animation-delay: 0.26s;
+}
+
+/* 오늘의 소비 기준 카드 — 사용률 진행바가 왼쪽에서부터 차오르는 연출 */
+.spending-guide .spending-progress i {
+  transform-origin: left center;
+  animation: spending-progress-fill 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.15s
+    both;
+}
+@keyframes spending-progress-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* 카테고리 도넛 — 각도를 0deg에서 360deg까지 쓸어 그리는 리빌 연출 (미지원 브라우저는 즉시 표시로 안전하게 대체) */
+@property --spending-donut-reveal {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+.spending-guide .spending-donut {
+  --spending-donut-reveal: 0%;
+  -webkit-mask-image: conic-gradient(
+    from -90deg,
+    #000 var(--spending-donut-reveal),
+    transparent var(--spending-donut-reveal)
+  );
+  mask-image: conic-gradient(
+    from -90deg,
+    #000 var(--spending-donut-reveal),
+    transparent var(--spending-donut-reveal)
+  );
+  animation:
+    spending-donut-reveal 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both,
+    spending-donut-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+@keyframes spending-donut-reveal {
+  to {
+    --spending-donut-reveal: 100%;
+  }
+}
+@keyframes spending-donut-pop {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.spending-guide .spending-donut > span {
+  animation: spending-fade-in 0.5s ease 0.95s both;
+}
+.spending-guide .spending-category-legend > div {
+  opacity: 0;
+  animation: spending-row-in 0.45s ease forwards;
+}
+.spending-guide .spending-category-legend > div:nth-child(1) {
+  animation-delay: 0.5s;
+}
+.spending-guide .spending-category-legend > div:nth-child(2) {
+  animation-delay: 0.56s;
+}
+.spending-guide .spending-category-legend > div:nth-child(3) {
+  animation-delay: 0.62s;
+}
+.spending-guide .spending-category-legend > div:nth-child(4) {
+  animation-delay: 0.68s;
+}
+.spending-guide .spending-category-legend > div:nth-child(5) {
+  animation-delay: 0.74s;
+}
+.spending-guide .spending-category-legend > div:nth-child(n + 6) {
+  animation-delay: 0.8s;
+}
+@keyframes spending-row-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 최근 7일 소비 흐름 — 막대가 아래(또는 위)에서부터 순차적으로 자라나는 연출 */
+.spending-guide .spending-bar-space i {
+  transform-origin: bottom;
+  animation: spending-bar-grow 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--bar-delay, 0s);
+}
+.spending-guide .spending-bar-space.negative-space i {
+  transform-origin: top;
+}
+@keyframes spending-bar-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+.spending-guide .spending-guide-line {
+  transform-origin: left center;
+  animation: spending-guideline-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+}
+@keyframes spending-guideline-in {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+.spending-guide .spending-guide-line span {
+  animation: spending-fade-in 0.4s ease 1s both;
+}
+
+/* 오늘 거래 / 고정지출 후보 리스트 — 한 줄씩 옆에서 밀려오며 등장 */
+.spending-guide .spending-transaction {
+  animation: spending-row-in 0.4s ease both;
+}
+.spending-guide .spending-transaction:nth-child(1) {
+  animation-delay: 0.02s;
+}
+.spending-guide .spending-transaction:nth-child(2) {
+  animation-delay: 0.06s;
+}
+.spending-guide .spending-transaction:nth-child(3) {
+  animation-delay: 0.1s;
+}
+.spending-guide .spending-transaction:nth-child(4) {
+  animation-delay: 0.14s;
+}
+.spending-guide .spending-transaction:nth-child(5) {
+  animation-delay: 0.18s;
+}
+.spending-guide .spending-transaction:hover {
+  transform: translateX(2px);
+}
+.spending-guide .spending-candidate-list > div {
+  animation: spending-row-in 0.4s ease both;
+}
+.spending-guide .spending-candidate-list > div:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.spending-guide .spending-candidate-list > div:nth-child(2) {
+  animation-delay: 0.11s;
+}
+.spending-guide .spending-candidate-list > div:nth-child(3) {
+  animation-delay: 0.17s;
+}
+
+/* 소비 코칭 카드 — 하나씩 팝인 + 호버 시 살짝 떠오름 */
+.spending-guide .spending-coaching-list article {
+  animation: spending-panel-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.spending-guide .spending-coaching-list article:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.spending-guide .spending-coaching-list article:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.spending-guide .spending-coaching-list article:nth-child(3) {
+  animation-delay: 0.19s;
+}
+.spending-guide .spending-coaching-list article:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(22, 101, 52, 0.12);
+}
+.spending-guide .spending-coach-icon {
+  transition: transform 0.2s ease;
+}
+.spending-guide .spending-coaching-list article:hover .spending-coach-icon {
+  transform: scale(1.08) rotate(-4deg);
+}
+
+/* 잉여금 / 소비 기준 수치가 바뀔 때 살짝 튀어오르는 느낌 */
+.spending-guide .spending-number-main > strong,
+.spending-guide .spending-mini-stat strong,
+.spending-guide .spending-cycle-amount,
+.spending-guide .spending-surplus-main strong,
+.spending-guide .spending-surplus-recent strong,
+.spending-guide .spending-donut strong {
+  display: inline-block;
+  animation: spending-number-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes spending-number-pop {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 패널 전체에 은은한 호버 리프트 — 인터랙션 피드백 */
+.spending-guide .spending-panel,
+.spending-guide .spending-today-card,
+.spending-guide .spending-cycle-card {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.spending-guide .spending-panel:hover,
+.spending-guide .spending-today-card:hover,
+.spending-guide .spending-cycle-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 14px 34px rgba(22, 101, 52, 0.1),
+    0 3px 10px rgba(0, 0, 0, 0.035);
+}
+
+/* 모션을 줄이고 싶은 사용자를 위한 배려 */
+@media (prefers-reduced-motion: reduce) {
+  .spending-guide *,
+  .spending-guide *::before,
+  .spending-guide *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

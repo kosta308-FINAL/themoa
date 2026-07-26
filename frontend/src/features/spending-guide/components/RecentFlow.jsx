@@ -49,7 +49,7 @@ function RecentFlow({ data, error }) {
           <span>오늘 권장 {formatWon(data.guideLineAmount)}</span>
         </div>
         <div className="spending-bars">
-          {data.days.map((day) => {
+          {data.days.map((day, index) => {
             const amount = toNumber(day.netAmount);
             const isToday = day.date === todayDate();
             const guideLine = toNumber(data.guideLineAmount);
@@ -67,6 +67,7 @@ function RecentFlow({ data, error }) {
                     className={`${amount < 0 ? "negative" : amount > guideLine ? "over" : ""}${isToday ? " today" : ""}`}
                     style={{
                       height: `${Math.max(5, (Math.abs(amount) / axisMax) * 100)}%`,
+                      "--bar-delay": `${index * 0.06}s`,
                     }}
                   >
                     <span className="spending-bar-tooltip">

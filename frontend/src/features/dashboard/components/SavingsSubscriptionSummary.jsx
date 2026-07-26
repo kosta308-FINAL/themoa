@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getSubscriptions } from "../../../api/savingsSubscriptionApi";
+import DashEmptyState from "./DashEmptyState";
+import DashSectionError from "./DashSectionError";
 import "./SavingsSubscriptionSummary.css";
 
 const won = (value) =>
@@ -75,14 +77,16 @@ function SavingsSubscriptionSummary() {
       )}
 
       {!loading && error && (
-        <div className="dash-section-error">가입 상품을 불러오지 못했어요.</div>
+        <DashSectionError message="가입 상품을 불러오지 못했어요." />
       )}
 
       {!loading && !error && items.length === 0 && (
-        <div className="dash-empty-state">
-          <strong>아직 등록한 가입 상품이 없어요.</strong>
-          <Link to="/dashboard/products/search">금융상품 찾기</Link>
-        </div>
+        <DashEmptyState
+          icon="wallet"
+          title="아직 등록한 가입 상품이 없어요"
+          description="예·적금을 등록하면 만기 예상 금액을 한눈에 확인할 수 있어요."
+          action={{ label: "금융상품 찾기", to: "/dashboard/products/search" }}
+        />
       )}
 
       {!loading && !error && items.length > 0 && (

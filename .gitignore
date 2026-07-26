@@ -5,6 +5,7 @@ front-design/
 plan/
 troubleshooting/
 docker-compose.yml
+docker/mysql-init/
 frontendrule.md
 mustrule.md
 AGENTS.md

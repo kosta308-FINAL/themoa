@@ -24,7 +24,7 @@ function CollectResultTable({ result }) {
           <th>조회</th>
           <th>신규</th>
           <th>갱신</th>
-          <th>판매종료 제외</th>
+          <th>이번에 판매종료</th>
         </tr>
       </thead>
       <tbody>
@@ -45,7 +45,7 @@ function CollectResultTable({ result }) {
                 {number(part.inserted)}
               </td>
               <td>{number(part.updated)}</td>
-              <td>{number(part.skippedClosed)}</td>
+              <td>{number(part.closedMissing)}</td>
             </tr>
           );
         })}

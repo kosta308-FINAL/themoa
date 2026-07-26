@@ -35,7 +35,6 @@ public final class LoanMapper {
                 .delayRate(b.dlyRate())
                 .note(b.loanInciExpn())
                 .openDate(b.dclsStrtDay())
-                .closeDate(b.dclsEndDay())
                 .build();
     }
 
@@ -52,7 +51,6 @@ public final class LoanMapper {
                 .joinMethod(b.joinWay())
                 .note(note)
                 .openDate(b.dclsStrtDay())
-                .closeDate(b.dclsEndDay())
                 .build();
     }
 
