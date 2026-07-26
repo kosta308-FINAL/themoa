@@ -53,7 +53,7 @@ public class CardConnectionService {
 
     private final MemberRepository memberRepository;
     private final CardIssuerRepository cardIssuerRepository;
-    private final CardConnectionRepository cardConnectionRepository;
+    private final CardConnectionRepository cardConnectionRepository; 
     private final ConnectionAttemptRepository connectionAttemptRepository;
     private final ConnectionAttemptService connectionAttemptService;
     private final CardConnectionLockService cardConnectionLockService;
