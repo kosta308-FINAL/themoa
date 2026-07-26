@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import AnimatedNumber from "../../../components/common/AnimatedNumber";
 import { formatWon, toNumber } from "../spendingGuideUtils";
 import { EmptyState, LoadingState, SectionError } from "./SpendingGuideCommon";
 
@@ -40,7 +41,14 @@ function CategorySummary({ data, error }) {
     <div className="spending-category-layout">
       <div className="spending-donut" style={{ background: gradient }}>
         <span>
-          <strong>{formatWon(data.positiveNetTotal)}</strong>
+          <strong>
+            <AnimatedNumber
+              value={data.positiveNetTotal}
+              duration={500}
+              delay={100}
+              format={formatWon}
+            />
+          </strong>
           <small>양수 순사용액</small>
         </span>
       </div>

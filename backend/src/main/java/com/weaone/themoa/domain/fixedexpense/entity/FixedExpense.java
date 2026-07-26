@@ -149,13 +149,15 @@ public class FixedExpense {
     /**
      * 경로 C: 예·적금 가입 연동(fixedExpense.md §7 "저축성 자동이체도 확정 유출로 보아 고정지출에 포함").
      * 계좌이체형이라 merchantAlias·billerMerchant가 없고, 국내 원화 상품만 대상이라 환전이 없어
-     * expectedAmountKrw가 expectedAmount와 항상 같다. 결제일은 가입 시점엔 알 수 없어 사용자가
-     * 나중에 고정지출 화면에서 직접 입력할 때까지 NULL로 둔다.
+     * expectedAmountKrw가 expectedAmount와 항상 같다. 결제일은 가입일의 일(day-of-month)로 추정해
+     * 채운다({@link com.weaone.themoa.domain.fixedexpense.service.FixedExpenseRegistrationService}) —
+     * 가입일을 알 수 없는 예외적인 경우에만 NULL이며, 사용자가 고정지출 화면에서 직접 입력할 수 있다.
      */
     public static FixedExpense fromSavingsSubscription(Member member, Long savingsSubscriptionId, String name,
-                                                        Category category, BigDecimal monthlyAmount) {
+                                                        Category category, BigDecimal monthlyAmount,
+                                                        Short expectedPayDay) {
         return new FixedExpense(member, null, savingsSubscriptionId, name, category, null, null,
-                FixedExpensePaymentMethod.TRANSFER, null, monthlyAmount, "KRW", monthlyAmount, null, null);
+                FixedExpensePaymentMethod.TRANSFER, expectedPayDay, monthlyAmount, "KRW", monthlyAmount, null, null);
     }
 
     /** 금액·결제일 수정(F-04). */
@@ -194,10 +196,17 @@ public class FixedExpense {
      * 직접 등록(경로 B) 당시엔 결제내역이 없어 알 수 없었던 biller를 F-05 미납 확인 시점에 소급 채운다
      * (troubleshooting/billerProblem.md). 이미 채워진 값은 덮어쓰지 않는다 — 최초 확인이 정본이다.
      */
-    public void assignBillerMerchant(Merchant billerMerchant) {
+    public boolean assignBillerMerchant(Merchant billerMerchant) {
         if (this.billerMerchant == null) {
             this.billerMerchant = billerMerchant;
+            return true;
         }
+        return false;
+    }
+
+    /** 사용자 결제 연결에서 처음 채운 biller를 그 연결 해제 시 되돌린다. */
+    public void clearBillerMerchant() {
+        this.billerMerchant = null;
     }
 
     public boolean isActive() {

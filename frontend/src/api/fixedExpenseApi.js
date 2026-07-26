@@ -5,6 +5,11 @@ const responseData = (response) => response.data?.data;
 export const getFixedExpenses = () =>
   axiosInstance.get("/api/fixed-expenses").then(responseData);
 
+export const getFixedExpense = (fixedExpenseId) =>
+  axiosInstance
+    .get(`/api/fixed-expenses/${fixedExpenseId}`)
+    .then(responseData);
+
 export const registerFixedExpenseDirect = (payload) =>
   axiosInstance.post("/api/fixed-expenses", payload).then(responseData);
 
@@ -27,6 +32,19 @@ export const getMissedPaymentCandidates = (fixedExpenseId) =>
 export const confirmMissedPayment = (fixedExpenseId, transactionId) =>
   axiosInstance.post(
     `/api/fixed-expenses/${fixedExpenseId}/missed-payment-candidates/${transactionId}/confirm`,
+  );
+
+export const getFixedExpensePaymentConfirmation = (fixedExpenseId) =>
+  axiosInstance
+    .get(`/api/fixed-expenses/${fixedExpenseId}/payment-confirmation`)
+    .then(responseData);
+
+export const undoFixedExpensePaymentConfirmation = (
+  fixedExpenseId,
+  transactionId,
+) =>
+  axiosInstance.delete(
+    `/api/fixed-expenses/${fixedExpenseId}/payment-confirmation/${transactionId}`,
   );
 
 export const confirmManualPayment = (fixedExpenseId) =>

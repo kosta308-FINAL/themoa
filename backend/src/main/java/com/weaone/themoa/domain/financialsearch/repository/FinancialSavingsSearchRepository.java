@@ -35,6 +35,9 @@ public interface FinancialSavingsSearchRepository extends JpaRepository<SavingsP
     /** 판매중(공시종료일 없음) 상품 수. */
     long countByCloseDateIsNull();
 
+    /** 임베딩 배치용 - 판매중인 상품만 Qdrant에 색인한다(판매종료 상품이 검색에 잡히지 않도록). */
+    List<SavingsProduct> findAllByCloseDateIsNull();
+
     /**
      * 가장 최근에 갱신된 상품의 시각. 수집 배치가 upsert하며 updated_at을 갱신하므로
      * 별도 실행 이력 테이블 없이 "마지막 수집 시각"의 근사치로 쓴다.

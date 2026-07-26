@@ -71,13 +71,22 @@ function SavingsGoalModal({ currentAmount, onClose, onSaved }) {
           </label>
           <label className="wide">
             <span>적용 시점 *</span>
-            <select
-              value={applyFrom}
-              onChange={(event) => setApplyFrom(event.target.value)}
-            >
-              <option value="CURRENT_CYCLE">이번 급여 주기부터</option>
-              <option value="NEXT_CYCLE">다음 급여 주기부터</option>
-            </select>
+            <div className="spending-segmented-toggle">
+              <button
+                type="button"
+                className={applyFrom === "CURRENT_CYCLE" ? "selected" : ""}
+                onClick={() => setApplyFrom("CURRENT_CYCLE")}
+              >
+                이번 급여 주기부터
+              </button>
+              <button
+                type="button"
+                className={applyFrom === "NEXT_CYCLE" ? "selected" : ""}
+                onClick={() => setApplyFrom("NEXT_CYCLE")}
+              >
+                다음 급여 주기부터
+              </button>
+            </div>
           </label>
           <div className="spending-form-notice wide">
             <DashboardIcon name="info" size={17} />

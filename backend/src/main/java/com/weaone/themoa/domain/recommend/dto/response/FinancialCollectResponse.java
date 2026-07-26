@@ -23,16 +23,16 @@ public record FinancialCollectResponse(
     /**
      * 파트별 집계.
      *
-     * @param success       최종 성공 여부(3회 재시도 후에도 실패하면 false, 나머지 값은 0)
-     * @param fetched       finlife에서 받은 상품 수
-     * @param skippedClosed 판매종료로 제외한 수
-     * @param inserted      신규 저장 수
-     * @param updated       기존 갱신 수
+     * @param success      최종 성공 여부(3회 재시도 후에도 실패하면 false, 나머지 값은 0)
+     * @param fetched      finlife에서 받은 상품 수
+     * @param closedMissing 이번 응답에 없어서 새로 판매종료 마킹한 기존 상품 수
+     * @param inserted     신규 저장 수
+     * @param updated      기존 갱신 수
      */
     public record Part(
             boolean success,
             int fetched,
-            int skippedClosed,
+            int closedMissing,
             int inserted,
             int updated
     ) {
@@ -48,13 +48,13 @@ public record FinancialCollectResponse(
         if (summary == null) {
             return Part.FAILED;
         }
-        return new Part(true, summary.fetched, summary.skippedClosed, summary.inserted, summary.updated);
+        return new Part(true, summary.fetched, summary.closedMissing, summary.inserted, summary.updated);
     }
 
     private static Part fromLoans(LoanIngestService.IngestSummary summary) {
         if (summary == null) {
             return Part.FAILED;
         }
-        return new Part(true, summary.fetched, summary.skippedClosed, summary.inserted, summary.updated);
+        return new Part(true, summary.fetched, summary.closedMissing, summary.inserted, summary.updated);
     }
 }

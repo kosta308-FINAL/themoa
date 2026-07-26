@@ -10,6 +10,7 @@ import com.weaone.themoa.domain.fixedexpense.entity.FixedExpensePaymentMethod;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpenseStatus;
 import com.weaone.themoa.domain.fixedexpense.repository.FixedExpensePaymentRepository;
 import com.weaone.themoa.domain.fixedexpense.repository.FixedExpenseRepository;
+import com.weaone.themoa.domain.merchant.entity.MerchantAliasTerms;
 import com.weaone.themoa.domain.merchant.repository.BillerRepository;
 import com.weaone.themoa.domain.notification.entity.NotificationTypeCode;
 import com.weaone.themoa.domain.notification.service.NotificationService;
@@ -18,6 +19,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -47,6 +49,7 @@ public class FixedExpenseMatchingService {
             return;
         }
         String yearMonth = yearMonthOf(transaction);
+        List<FixedExpense> amountChangeCandidates = new ArrayList<>();
         for (FixedExpense fixedExpense : candidates) {
             if (fixedExpensePaymentRepository.existsByFixedExpense_IdAndYearMonth(fixedExpense.getId(), yearMonth)) {
                 continue; // 조건④: 이번 주기 이미 이행
@@ -59,10 +62,15 @@ public class FixedExpenseMatchingService {
             if (FixedExpenseMatchRules.isAmountMatch(fixedExpense.getExpectedCurrency(), fixedExpense.getExpectedAmount(),
                     fixedExpense.getExpectedAmountKrw(), transaction.getCurrencyCode(), transaction.getAmount(),
                     transaction.getOriginalAmount())) {
-                tagAndRecord(transaction, fixedExpense, yearMonth);
+                tagAndRecord(transaction, fixedExpense, yearMonth, false, null, false);
                 return; // 거래 1건은 최대 하나의 고정지출에만 붙는다
             }
-            notifyAmountChange(fixedExpense, yearMonth); // 신원·결제일은 맞는데 금액만 벗어남 = 가격 인상 의심(§7)
+            amountChangeCandidates.add(fixedExpense);
+        }
+        // 같은 alias에 여러 구독이 있으면 다른 상품과의 금액 불일치는 정상이다.
+        // 실제 매칭이 없고 결제일상 대상이 하나로 특정될 때만 가격 인상으로 본다.
+        if (amountChangeCandidates.size() == 1) {
+            notifyAmountChange(amountChangeCandidates.get(0), yearMonth);
         }
     }
 
@@ -91,12 +99,20 @@ public class FixedExpenseMatchingService {
         return List.of();
     }
 
-    private void tagAndRecord(CardTransaction transaction, FixedExpense fixedExpense, String yearMonth) {
+    private void tagAndRecord(CardTransaction transaction, FixedExpense fixedExpense, String yearMonth,
+                              boolean userConfirmedMatch, MerchantAliasTerms learnedMerchantAliasTerm,
+                              boolean billerAssignedByConfirmation) {
         transaction.assignFixedExpense(fixedExpense);
         try {
-            fixedExpensePaymentRepository.save(FixedExpensePayment.paid(fixedExpense, yearMonth, transaction,
-                    transaction.getAmount()));
+            FixedExpensePayment payment = userConfirmedMatch
+                    ? FixedExpensePayment.userConfirmed(fixedExpense, yearMonth, transaction, transaction.getAmount(),
+                    learnedMerchantAliasTerm, billerAssignedByConfirmation)
+                    : FixedExpensePayment.paid(fixedExpense, yearMonth, transaction, transaction.getAmount());
+            fixedExpensePaymentRepository.save(payment);
         } catch (DataIntegrityViolationException e) {
+            if (userConfirmedMatch) {
+                throw e;
+            }
             // 동시 경합으로 같은 주기가 이미 이행 처리됨 — 태깅은 유지하고 이행 기록만 스킵한다.
         }
     }
@@ -104,7 +120,14 @@ public class FixedExpenseMatchingService {
     /** F-05 "이 거래예요" 확인(사용자 수동 매칭). 자동 매칭과 동일한 태깅·이행기록 경로를 재사용한다. */
     @Transactional
     public void confirmMatch(CardTransaction transaction, FixedExpense fixedExpense) {
-        tagAndRecord(transaction, fixedExpense, yearMonthOf(transaction));
+        confirmMatch(transaction, fixedExpense, null, false);
+    }
+
+    @Transactional
+    public void confirmMatch(CardTransaction transaction, FixedExpense fixedExpense,
+                             MerchantAliasTerms learnedMerchantAliasTerm, boolean billerAssignedByConfirmation) {
+        tagAndRecord(transaction, fixedExpense, yearMonthOf(transaction), true, learnedMerchantAliasTerm,
+                billerAssignedByConfirmation);
     }
 
     /**
@@ -115,7 +138,7 @@ public class FixedExpenseMatchingService {
      */
     @Transactional
     public void confirmManualPayment(CardTransaction transaction, FixedExpense fixedExpense, String yearMonth) {
-        tagAndRecord(transaction, fixedExpense, yearMonth);
+        tagAndRecord(transaction, fixedExpense, yearMonth, false, null, false);
     }
 
     /**

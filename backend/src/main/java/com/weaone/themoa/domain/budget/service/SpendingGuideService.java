@@ -18,6 +18,7 @@ import com.weaone.themoa.domain.budget.entity.Budget;
 import com.weaone.themoa.domain.budget.entity.BudgetIncomeAdjustment;
 import com.weaone.themoa.domain.budget.repository.BudgetIncomeAdjustmentRepository;
 import com.weaone.themoa.domain.budget.repository.BudgetRepository;
+import com.weaone.themoa.domain.budget.repository.SurplusFundRepository;
 import com.weaone.themoa.domain.cardconnection.entity.InitialSyncStatus;
 import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionListResponse;
@@ -73,6 +74,7 @@ public class SpendingGuideService {
     private final MemberWorkScheduleRepository memberWorkScheduleRepository;
     private final WorkScheduleSalaryCalculator workScheduleSalaryCalculator;
     private final BudgetIncomeAdjustmentRepository budgetIncomeAdjustmentRepository;
+    private final SurplusFundRepository surplusFundRepository;
 
     /**
      * S-00A 최초 설정. 월급·급여일을 저장하고 현재 주기 예산을 없으면 생성한 뒤 요약을 돌려준다.
@@ -414,12 +416,17 @@ public class SpendingGuideService {
                         .toList()
                 : List.of();
 
+        // 잉여금 패널 "완료된 주기 합산"(erd.md §6): 마감 배치(SurplusFundBatchService)가 종료된 주기에만
+        // surplus_fund를 적립하므로, 이 회원의 전체 행 수·합계가 곧 완료 주기 통계다.
+        int completedCycleCount = (int) surplusFundRepository.countByMember_Id(memberId);
+        BigDecimal totalSurplusAmount = surplusFundRepository.sumAmountByMember_Id(memberId);
+
         return SpendingGuideSummaryResponse.ready(member.getIncomeType(), member.getHourlyWage(), workSchedule,
                 member.getPayday(), member.getPendingPayday(),
                 budget.getYearMonth(), cycleStart, cycleEnd, remainingDays,
                 budget.getSalaryAmount(), budget.getSavingsGoalAmount(), budget.getExpectedFixedExpenseTotal(),
                 available, daily, todayNetSpend, todayAvailable, remaining, cycleSavings, overCycleBudget,
-                cycleOverspent, budgetUnaffordable);
+                cycleOverspent, budgetUnaffordable, completedCycleCount, totalSurplusAmount);
     }
 
     /**

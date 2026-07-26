@@ -72,14 +72,24 @@ public class AdminErrorLogController {
     }
 
     @Operation(summary = "파일 로그 조회(관리자)",
-            description = "info.log/error.log를 직접 읽어 레벨별로 반환합니다. level은 INFO·WARN·ERROR 중 하나이며, "
-                    + "keyword는 message·logger·traceId 부분 일치입니다. 최신순으로 최대 limit건(기본 200, 최대 1000)을 반환합니다.")
+            description = "info.log/error.log 또는 압축 롤오버된 과거 로그(.log.gz)를 읽어 레벨별로 반환합니다. "
+                    + "date를 생략하면 오늘자 미압축 파일을, yyyy-MM-dd로 지정하면 해당 날짜에 롤오버된 압축 로그를 모아 읽습니다. "
+                    + "level은 INFO·WARN·ERROR 중 하나이며, keyword는 message·logger·traceId 부분 일치입니다. "
+                    + "최신순으로 최대 limit건(기본 200, 최대 1000)을 반환합니다.")
     @GetMapping("/files")
     public ResponseEntity<ApiResponse<List<LogFileEntryResponse>>> files(
             @RequestParam String level,
+            @RequestParam(required = false) String date,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer limit) {
-        return ResponseEntity.ok(ApiResponse.success(logFileViewerService.readRecent(level, keyword, limit)));
+        return ResponseEntity.ok(ApiResponse.success(logFileViewerService.readRecent(level, date, keyword, limit)));
+    }
+
+    @Operation(summary = "파일 로그 조회 가능 날짜 목록(관리자)",
+            description = "오늘(미압축)과, 압축 롤오버된 과거 로그가 남아있는 날짜(yyyy-MM-dd)를 최신순으로 반환합니다.")
+    @GetMapping("/files/dates")
+    public ResponseEntity<ApiResponse<List<String>>> fileDates(@RequestParam String level) {
+        return ResponseEntity.ok(ApiResponse.success(logFileViewerService.listAvailableDates(level)));
     }
 
     @Operation(summary = "API 성능 통계(관리자)",

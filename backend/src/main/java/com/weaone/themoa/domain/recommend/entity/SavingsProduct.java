@@ -76,8 +76,14 @@ public class SavingsProduct {
     @Column(name = "open_date", length = 8)
     private String openDate;           // finlife: dcls_strt_day (공시 시작일 YYYYMMDD)
 
+    /**
+     * 판매종료 마킹(YYYYMMDD). finlife dcls_end_day는 공시 갱신 예정일일 뿐 판매종료를 뜻하지
+     * 않아 그대로 쓰지 않는다({@link com.weaone.themoa.domain.recommend.ingest.SavingsIngestService}
+     * §troubleshooting/financialtroubleshooting.md) — 이번 수집 응답에 더는 나타나지 않으면
+     * 그 시점에 우리가 직접 오늘 날짜로 채운다. null이면 판매중.
+     */
     @Column(name = "close_date", length = 8)
-    private String closeDate;          // finlife: dcls_end_day (공시 종료일) - 값 있으면 판매종료
+    private String closeDate;
 
     // ----- 자동 태깅 결과 -----
     @Column(name = "is_online")
@@ -186,5 +192,12 @@ public class SavingsProduct {
     public void replaceOptions(List<SavingsProductOption> newOptions) {
         this.options.clear();
         newOptions.forEach(this::addOption);
+    }
+
+    /** 이번 수집 응답에 더는 나타나지 않는 상품을 판매종료로 마킹한다. 이미 종료 처리된 건 건드리지 않는다. */
+    public void markClosedIfMissing(String closeDate) {
+        if (this.closeDate == null) {
+            this.closeDate = closeDate;
+        }
     }
 }

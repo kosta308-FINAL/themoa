@@ -2,7 +2,10 @@ package com.weaone.themoa.domain.recommend.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -31,6 +34,7 @@ public class RecommendQueryService {
 
     private static final int TOP_N = 5;
     private static final String DEFAULT_EMPLOYMENT = "무관";
+    private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
 
     /** 잉여금 기록이 아직 없을 때 쓰는 월 납입가능금액 기본값(원). */
     private static final int DEFAULT_MONTHLY_DEPOSIT_WON = 300_000;
@@ -69,6 +73,9 @@ public class RecommendQueryService {
      */
     @Transactional(readOnly = true)
     public RecommendDefaultsResponse findDefaults(Long memberId) {
+        Member member = memberRepository.getReferenceById(memberId);
+        int age = Period.between(member.getBirthDate(), LocalDate.now(SEOUL_ZONE)).getYears();
+
         Integer monthlyIncomeManwon = budgetRepository.findFirstByMember_IdOrderByCycleStartDateDesc(memberId)
                 .map(Budget::getSalaryAmount)
                 .map(salary -> salary.divide(WON_PER_MANWON, 0, RoundingMode.HALF_UP).intValue())
@@ -85,7 +92,7 @@ public class RecommendQueryService {
                 && averageSurplus.compareTo(BigDecimal.valueOf(MIN_MONTHLY_DEPOSIT_WON)) >= 0;
         int monthlyDepositWon = usableSurplus ? averageSurplus.intValue() : DEFAULT_MONTHLY_DEPOSIT_WON;
 
-        return new RecommendDefaultsResponse(monthlyIncomeManwon, monthlyDepositWon, usableSurplus);
+        return new RecommendDefaultsResponse(age, monthlyIncomeManwon, monthlyDepositWon, usableSurplus);
     }
 
     /**

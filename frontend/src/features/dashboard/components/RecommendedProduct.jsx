@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import DashEmptyState from "./DashEmptyState";
+import DashSectionError from "./DashSectionError";
 import { formatDateTime, formatRate } from "../dashboardUtils";
 
 const productTypeLabel = (targetType) => {
@@ -17,16 +19,18 @@ function RecommendedProduct({ bookmarks, loading, error }) {
         <h3>관심 금융상품</h3>
       </div>
       {loading && !bookmarks && <div className="dash-loading">관심 상품을 불러오고 있어요.</div>}
-      {error && !bookmarks && <div className="dash-section-error">관심 금융상품을 불러오지 못했어요.</div>}
+      {error && !bookmarks && <DashSectionError message="관심 금융상품을 불러오지 못했어요." />}
       {!loading && !error && !product && (
-        <div className="dash-empty-state">
-          <strong>아직 관심 상품이 없어요.</strong>
-          <Link to="/dashboard/products/search">금융상품 찾기</Link>
-        </div>
+        <DashEmptyState
+          icon="search"
+          title="아직 관심 상품이 없어요"
+          description="마음에 드는 예·적금이나 대출 상품을 찜해보세요."
+          action={{ label: "금융상품 찾기", to: "/dashboard/products/search" }}
+        />
       )}
       {product && (
         <>
-          {error && <div className="dash-section-error">{error}</div>}
+          {error && <DashSectionError message={error} />}
           <div className="product-card">
             <span className="product-badge">{productTypeLabel(product.targetType)}</span>
             <h4>{product.title}</h4>

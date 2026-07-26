@@ -108,8 +108,7 @@ function OAuthSignupPage() {
     }
   };
 
-  const handleVerifyCode = async (e) => {
-    e.preventDefault();
+  const handleVerifyCode = async () => {
     if (verifying) return;
     setError("");
     setVerifying(true);
@@ -122,6 +121,16 @@ function OAuthSignupPage() {
       );
     } finally {
       setVerifying(false);
+    }
+  };
+
+  /** 코드 전송 전엔 이메일 입력창에서 엔터를 눌러도 코드 검증이 아니라 코드 전송이 실행되게 한다. */
+  const handleEmailStepSubmit = (e) => {
+    e.preventDefault();
+    if (codeSent) {
+      handleVerifyCode();
+    } else {
+      handleSendCode();
     }
   };
 
@@ -256,7 +265,7 @@ function OAuthSignupPage() {
       )}
 
       {step === 2 && (
-        <form className="auth-form" onSubmit={handleVerifyCode} noValidate>
+        <form className="auth-form" onSubmit={handleEmailStepSubmit} noValidate>
           {error && (
             <p className="auth-error" role="alert">
               {error}

@@ -169,7 +169,8 @@ public class SavingsSubscriptionService {
             }
         }
         Long id = subscriptionRepository.save(subscription).getId();
-        eventPublisher.publishEvent(new SavingsSubscriptionCreatedEvent(memberId, id, productName, request.monthlyAmount()));
+        eventPublisher.publishEvent(new SavingsSubscriptionCreatedEvent(
+                memberId, id, productName, request.monthlyAmount(), request.startDate()));
         return id;
     }
 

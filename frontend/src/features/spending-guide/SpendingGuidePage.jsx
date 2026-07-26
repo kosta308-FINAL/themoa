@@ -4,6 +4,7 @@ import {
   getCategorySummary,
   getSpendingTransactions,
 } from "../../api/spendingGuideApi";
+import AnimatedNumber from "../../components/common/AnimatedNumber";
 import CalendarPopover from "../../components/common/CalendarPopover";
 import DashboardIcon from "../../components/common/DashboardIcon";
 import RegisterExpenseModal from "../fixed-expense/components/RegisterExpenseModal";
@@ -144,16 +145,15 @@ function SpendingGuidePage() {
   const displayCategory = isSelectedToday ? data.category : dayCategory;
   const isDayCategoryReady =
     isSelectedToday || (!isDayCategoryLoading && !dayCategoryError);
-  // 완료된 주기의 surplus_fund(erd.md §6) 합계를 반환하는 조회 API가 아직 없어
-  // 완료 주기 누적치는 빈 상태로 둔다(가짜 숫자 금지). 진행 중인 이번 주기는
-  // summary.cycleSavingsAmount(하루 권장액을 날짜별로 재구성해 실사용액과 비교한 누적 절약액)로
-  // 보여준다 — remainingAmount(예산 - 누적 사용액, 주기 마감 시 그대로 surplus_fund에 적립되는 값)와는
-  // 다른 지표다.
+  // 진행 중인 이번 주기는 summary.cycleSavingsAmount(하루 권장액을 날짜별로 재구성해 실사용액과
+  // 비교한 누적 절약액)로 보여준다 — remainingAmount(예산 - 누적 사용액, 주기 마감 시 그대로
+  // surplus_fund에 적립되는 값)와는 다른 지표다. 완료된 주기 합산은 surplus_fund를 그대로 반영한
+  // summary.completedCycleCount/totalSurplusAmount를 쓴다.
   const surplusSummary = {
     hasSavingsGoal: toNumber(summary?.savingsGoalAmount) > 0,
     savingsTargetAmount: toNumber(summary?.savingsGoalAmount),
-    completedCycleCount: 0,
-    totalSurplusAmount: 0,
+    completedCycleCount: summary?.completedCycleCount ?? 0,
+    totalSurplusAmount: toNumber(summary?.totalSurplusAmount),
     recentCycle: null,
     ongoingCycle: summary
       ? {
@@ -359,7 +359,12 @@ function SpendingGuidePage() {
                               ? "오늘 사용 가능 금액"
                               : "이 날 권장액 대비 남은 금액"}
                           </span>
-                          <strong>{formatWon(displayAvailable)}</strong>
+                          <strong>
+                            <AnimatedNumber
+                              value={displayAvailable}
+                              format={formatWon}
+                            />
+                          </strong>
                           <p>
                             {isSelectedToday
                               ? displayAvailable <= 0
@@ -372,7 +377,12 @@ function SpendingGuidePage() {
                         </div>
                         <div className="spending-mini-stat">
                           <span>하루 권장 소비액</span>
-                          <strong>{formatWon(dailyRecommended)}</strong>
+                          <strong>
+                            <AnimatedNumber
+                              value={dailyRecommended}
+                              format={formatWon}
+                            />
+                          </strong>
                           <p>
                             {isSelectedToday
                               ? "자정까지 고정"
@@ -385,7 +395,12 @@ function SpendingGuidePage() {
                               ? "오늘 순사용액"
                               : "이 날 순사용액"}
                           </span>
-                          <strong>{formatWon(displayNetSpend)}</strong>
+                          <strong>
+                            <AnimatedNumber
+                              value={displayNetSpend}
+                              format={formatWon}
+                            />
+                          </strong>
                           <p>취소 반영 금액</p>
                         </div>
                       </div>
@@ -395,9 +410,15 @@ function SpendingGuidePage() {
                             ? "오늘 권장액 사용률"
                             : "이 날 권장액 사용률"}
                         </span>
-                        <strong>{displayUseRate}%</strong>
+                        <strong>
+                          <AnimatedNumber
+                            value={displayUseRate}
+                            duration={700}
+                            format={(n) => `${n}%`}
+                          />
+                        </strong>
                       </div>
-                      <div className="spending-progress">
+                      <div className="spending-progress" key={selectedDate}>
                         <i
                           className={displayUseRate > 100 ? "over" : ""}
                           style={{
@@ -433,7 +454,10 @@ function SpendingGuidePage() {
                         : "spending-cycle-amount"
                     }
                   >
-                    {formatWon(summary.remainingAmount)}
+                    <AnimatedNumber
+                      value={summary.remainingAmount}
+                      format={formatWon}
+                    />
                   </strong>
                   <p>
                     {formatDate(summary.cycleStartDate)} ~{" "}
@@ -442,11 +466,20 @@ function SpendingGuidePage() {
                   <div className="spending-cycle-bottom">
                     <div>
                       <span>남은 기간</span>
-                      <strong>{summary.remainingDays}일</strong>
+                      <strong>
+                        <AnimatedNumber
+                          value={summary.remainingDays}
+                          duration={600}
+                          format={(n) => `${n}`}
+                        />
+                        일
+                      </strong>
                     </div>
                     <div>
                       <span>주기 순사용액</span>
-                      <strong>{formatWon(cycleSpent)}</strong>
+                      <strong>
+                        <AnimatedNumber value={cycleSpent} format={formatWon} />
+                      </strong>
                     </div>
                     <div>
                       <span>
@@ -464,7 +497,10 @@ function SpendingGuidePage() {
                       </span>
                       {surplusSummary.hasSavingsGoal ? (
                         <strong>
-                          {formatWon(surplusSummary.savingsTargetAmount)}
+                          <AnimatedNumber
+                            value={surplusSummary.savingsTargetAmount}
+                            format={formatWon}
+                          />
                         </strong>
                       ) : (
                         <button
@@ -586,6 +622,7 @@ function SpendingGuidePage() {
                       )
                     ) : (
                       <CategorySummary
+                        key={selectedDate}
                         data={displayCategory}
                         error={isSelectedToday ? sectionErrors.category : ""}
                       />

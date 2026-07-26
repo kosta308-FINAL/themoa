@@ -10,6 +10,7 @@ import {
 } from "../../api/spendingGuideApi";
 import {
   getFixedExpenseCoachingCards,
+  getFixedExpense,
   getFixedExpenses,
   reclassifyFixedExpenseCandidateAsHabit,
   rejectFixedExpenseCandidate,
@@ -173,7 +174,17 @@ function FixedExpensePage() {
   };
 
   const handleDetailChanged = async (message) => {
-    await load();
+    const fixedExpenseId = detailExpense?.id;
+    const [, refreshedDetailResult] = await Promise.allSettled([
+      load(),
+      fixedExpenseId ? getFixedExpense(fixedExpenseId) : Promise.resolve(null),
+    ]);
+    if (
+      refreshedDetailResult.status === "fulfilled" &&
+      refreshedDetailResult.value
+    ) {
+      setDetailExpense(refreshedDetailResult.value);
+    }
     if (message) showToast(message);
   };
 

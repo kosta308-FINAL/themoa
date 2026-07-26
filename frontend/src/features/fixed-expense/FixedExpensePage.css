@@ -966,6 +966,11 @@
   font-size: 11px;
 }
 
+.fx-expense-payday-unset {
+  color: var(--fx-red);
+  font-weight: 700;
+}
+
 .fx-status-chip {
   padding: 5px 9px;
   border-radius: 999px;
@@ -992,7 +997,13 @@
   background: var(--fx-green-soft);
 }
 
+.fx-expense-row .fx-status-chip {
+  grid-column: 3;
+  justify-self: start;
+}
+
 .fx-expense-amount {
+  grid-column: 4;
   min-width: 100px;
   text-align: right;
 }
@@ -1010,6 +1021,7 @@
 }
 
 .fx-chevron {
+  grid-column: 5;
   display: grid;
   place-items: center;
   color: var(--fx-muted-2);
@@ -1496,6 +1508,37 @@
 
 .fx-detail-row span {
   color: var(--fx-muted);
+}
+
+.fx-detail-row .fx-detail-unset {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fx-red);
+  font-weight: 700;
+}
+
+.fx-detail-unset-cta {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--fx-red);
+  background: var(--fx-red-soft);
+  color: var(--fx-red);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.fx-detail-unset-cta:hover {
+  background: var(--fx-red);
+  color: #fff;
+}
+
+.fx-detail-hint {
+  margin-top: -4px;
+  padding-bottom: 12px;
+  color: var(--fx-muted);
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .fx-missed-payment {
