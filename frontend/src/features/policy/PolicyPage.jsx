@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import PolicyDetailPanel from './components/PolicyDetailPanel'
 import PolicySearchForm from './components/PolicySearchForm'
 import PolicySearchResults from './components/PolicySearchResults'
 import PolicySearchStatus from './components/PolicySearchStatus'
 import { usePolicySearch } from './hooks/usePolicySearch'
+import PolicyRecommendationBanner from './recommendation/components/PolicyRecommendationBanner'
 import PolicyRecommendationSection from './recommendation/components/PolicyRecommendationSection'
 import { usePolicyRecommendations } from './recommendation/hooks/usePolicyRecommendations'
 import './PolicyPage.css'
@@ -17,6 +19,7 @@ const examples = [
 function PolicyPage() {
   const search = usePolicySearch('')
   const recommendation = usePolicyRecommendations()
+  const [showRecommendation, setShowRecommendation] = useState(false)
 
   const handleSaveRecommendationProfile = async (payload) => {
     await recommendation.saveProfile(payload)
@@ -37,45 +40,62 @@ function PolicyPage() {
         </div>
       </div>
 
-      <PolicyRecommendationSection
-        recommendation={recommendation}
-        selected={search.selected}
-        onSaveProfile={handleSaveRecommendationProfile}
-        onRefresh={handleRefreshRecommendations}
-        onOpenDetail={search.openDetail}
-      />
+      {!showRecommendation && (
+        <PolicyRecommendationBanner
+          profile={recommendation.profile}
+          count={recommendation.recommendations?.items?.length}
+          isLoading={recommendation.isLoading}
+          onExpand={() => setShowRecommendation(true)}
+        />
+      )}
 
-      <PolicySearchForm
-        query={search.query}
-        examples={examples}
-        loading={search.loading}
-        totalText={search.totalText}
-        onQueryChange={search.setQuery}
-        onSearch={search.runSearch}
-      />
-
-      {search.error && <div className="policy-alert">{search.error}</div>}
-      <PolicySearchStatus result={search.result} />
-
-      <section className="policy-content">
-        <PolicySearchResults
-          loading={search.loading}
-          result={search.result}
-          results={search.results}
+      {showRecommendation ? (
+        <PolicyRecommendationSection
+          recommendation={recommendation}
           selected={search.selected}
-          page={search.page}
-          totalPages={search.totalPages}
-          hasNextPage={search.hasNextPage}
-          hasPreviousPage={search.hasPreviousPage}
-          onPageChange={search.changePage}
+          onSaveProfile={handleSaveRecommendationProfile}
+          onRefresh={handleRefreshRecommendations}
           onOpenDetail={search.openDetail}
+          onCollapse={() => setShowRecommendation(false)}
         />
-        <PolicyDetailPanel
-          selected={search.selected}
-          detailLoading={search.detailLoading}
-          onClose={search.closeDetail}
-        />
-      </section>
+      ) : (
+        <>
+          <PolicySearchForm
+            query={search.query}
+            examples={examples}
+            loading={search.loading}
+            totalText={search.totalText}
+            onQueryChange={search.setQuery}
+            onSearch={search.runSearch}
+          />
+
+          {search.error && <div className="policy-alert">{search.error}</div>}
+          <PolicySearchStatus result={search.result} />
+
+          {(search.loading || search.result) && (
+            <section className="policy-content">
+              <PolicySearchResults
+                loading={search.loading}
+                result={search.result}
+                results={search.results}
+                selected={search.selected}
+                page={search.page}
+                totalPages={search.totalPages}
+                hasNextPage={search.hasNextPage}
+                hasPreviousPage={search.hasPreviousPage}
+                onPageChange={search.changePage}
+                onOpenDetail={search.openDetail}
+              />
+            </section>
+          )}
+        </>
+      )}
+
+      <PolicyDetailPanel
+        selected={search.selected}
+        detailLoading={search.detailLoading}
+        onClose={search.closeDetail}
+      />
     </main>
   )
 }

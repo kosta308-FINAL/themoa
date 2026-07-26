@@ -8,6 +8,7 @@ function PolicyRecommendationSection({
   onSaveProfile,
   onRefresh,
   onOpenDetail,
+  onCollapse,
   selected,
 }) {
   const bookmarks = usePolicyBookmarks();
@@ -47,16 +48,23 @@ function PolicyRecommendationSection({
               : "기본 정보를 설정하면 회원님의 조건과 관련성이 높은 정책을 미리 찾아드려요."}
           </p>
         </div>
-        {profile?.configured && (
-          <button
-            type="button"
-            className="policy-recommendation-refresh"
-            disabled={isSaving}
-            onClick={handleRefresh}
-          >
-            {isSaving ? "계산 중..." : "다시 추천받기"}
-          </button>
-        )}
+        <div className="policy-recommendation-head-actions">
+          {profile?.configured && (
+            <button
+              type="button"
+              className="policy-recommendation-refresh"
+              disabled={isSaving}
+              onClick={handleRefresh}
+            >
+              {isSaving ? "계산 중..." : "다시 추천받기"}
+            </button>
+          )}
+          {onCollapse && (
+            <button type="button" className="policy-recommendation-collapse" onClick={onCollapse}>
+              직접 검색으로
+            </button>
+          )}
+        </div>
       </div>
 
       {isLoading && <div className="policy-empty">추천 정보를 불러오는 중입니다.</div>}
