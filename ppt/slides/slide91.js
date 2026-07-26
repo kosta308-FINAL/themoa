@@ -40,19 +40,10 @@ document.head.insertAdjacentHTML('beforeend', `
 #s91 .agent .aname{ color:#111; font-size:28px; font-weight:800; margin-bottom:8px; }
 #s91 .agent .adesc{ color:#555; font-size:17px; font-weight:500; line-height:1.5; margin-bottom:18px; }
 
-#s91 .agent .dbtag{
-  display:inline-flex; align-items:center; gap:9px; height:38px; padding:0 15px;
-  border-radius:8px; background:#0F172A; color:#8FF7C0;
-  font-size:16px; font-weight:700; letter-spacing:.2px;
-}
-#s91 .agent .dbtag .dot{ width:8px; height:8px; border-radius:50%; background:#8FF7C0; flex:none; }
-
-/* 통합 응답 박스 */
-#s91 .answer{
-  left:800px; top:642px; width:320px; height:64px; border-radius:14px;
-  background:#111; color:#fff; display:flex; align-items:center; justify-content:center;
-  font-size:19px; font-weight:700; z-index:3; box-shadow:0 10px 22px rgba(0,0,0,.25);
-}
+#s91 .agent .respond{ font-size:16px; font-weight:700; }
+#s91 .agent.a1 .respond{ color:#2F6FED; }
+#s91 .agent.a2 .respond{ color:#007613; }
+#s91 .agent.a3 .respond{ color:#7C3AED; }
 
 /* 장점 칩 */
 #s91 .benefits{ left:70px; top:760px; width:1780px; display:flex; gap:22px; z-index:2; }
@@ -77,9 +68,6 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <path d="M960,230 C960,260 350,260 350,300" fill="none" stroke="#BEC8DA" stroke-width="5"/>
     <path d="M960,230 C960,260 960,260 960,300" fill="none" stroke="#BEC8DA" stroke-width="5"/>
     <path d="M960,230 C960,260 1570,260 1570,300" fill="none" stroke="#BEC8DA" stroke-width="5"/>
-    <path d="M350,580 C350,620 960,610 960,642" fill="none" stroke="#BEC8DA" stroke-width="5"/>
-    <path d="M960,580 C960,610 960,610 960,642" fill="none" stroke="#BEC8DA" stroke-width="5"/>
-    <path d="M1570,580 C1570,620 960,610 960,642" fill="none" stroke="#BEC8DA" stroke-width="5"/>
   </svg>
 
   <div class="agent a1">
@@ -87,7 +75,7 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="icon">🏛️</div>
     <div class="aname">정책 Agent</div>
     <div class="adesc">청년정책 검색 · 조건별 추천</div>
-    <div class="dbtag"><span class="dot"></span>youthcenter_policies</div>
+    <div class="respond">→ 사용자에게 바로 응답</div>
   </div>
 
   <div class="agent a2">
@@ -95,7 +83,7 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="icon">💳</div>
     <div class="aname">금융상품 Agent</div>
     <div class="adesc">예금 · 적금 · 대출 상품 매칭</div>
-    <div class="dbtag"><span class="dot"></span>financial_products</div>
+    <div class="respond">→ 사용자에게 바로 응답</div>
   </div>
 
   <div class="agent a3">
@@ -103,10 +91,8 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="icon">💬</div>
     <div class="aname">고객문의 Agent</div>
     <div class="adesc">FAQ · 이용문의 응답</div>
-    <div class="dbtag"><span class="dot"></span>customer_service_knowledge</div>
+    <div class="respond">→ 사용자에게 바로 응답</div>
   </div>
-
-  <div class="abs answer">통합 응답 생성</div>
 
   <div class="abs benefits">
     <div class="benefit">
