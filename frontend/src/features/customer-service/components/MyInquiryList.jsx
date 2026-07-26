@@ -173,7 +173,7 @@ function MyInquiryList({ refreshKey, focusInquiryId, onNewInquiry }) {
                                 handleDownload(item.id, attachment)
                               }
                             >
-                              📎 {attachment.originalFilename}
+                              {attachment.originalFilename}
                             </button>
                           ))}
                         </div>
@@ -181,7 +181,7 @@ function MyInquiryList({ refreshKey, focusInquiryId, onNewInquiry }) {
                       {detail.answer && (
                         <div className="inquiry-response">
                           <strong>
-                            💬 더모아 고객센터 답변 (
+                            더모아 고객센터 답변 (
                             {formatDateTime(
                               detail.answer.updatedAt ||
                                 detail.answer.createdAt,

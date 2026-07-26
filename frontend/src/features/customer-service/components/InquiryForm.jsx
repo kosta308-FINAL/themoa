@@ -188,7 +188,7 @@ function InquiryForm({ onSubmitted, onCancel }) {
             >
               {selectedFiles.map((file) => (
                 <div key={file.name}>
-                  📎 {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                  {file.name} ({(file.size / 1024).toFixed(1)} KB)
                 </div>
               ))}
             </div>
