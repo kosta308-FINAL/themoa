@@ -6,6 +6,7 @@ import com.weaone.themoa.domain.fixedexpense.dto.request.FixedExpenseCandidateRe
 import com.weaone.themoa.domain.fixedexpense.dto.request.FixedExpenseDirectRegisterRequest;
 import com.weaone.themoa.domain.fixedexpense.dto.request.FixedExpenseUpdateRequest;
 import com.weaone.themoa.domain.fixedexpense.dto.response.FixedExpenseListResponse;
+import com.weaone.themoa.domain.fixedexpense.dto.response.FixedExpensePaymentConfirmationResponse;
 import com.weaone.themoa.domain.fixedexpense.dto.response.FixedExpenseResponse;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
 import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseConfirmationService;
@@ -140,6 +141,27 @@ public class FixedExpenseController {
             @PathVariable Long fixedExpenseId,
             @PathVariable Long transactionId) {
         fixedExpenseConfirmationService.confirm(memberId, fixedExpenseId, transactionId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "사용자가 직접 연결한 이번 주기 결제 조회",
+            description = "\"이 거래예요\"로 직접 연결한 거래만 반환합니다. 자동 매칭·수기 결제는 반환하지 않습니다.")
+    @GetMapping("/{fixedExpenseId}/payment-confirmation")
+    public ResponseEntity<ApiResponse<FixedExpensePaymentConfirmationResponse>> getPaymentConfirmation(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
+            @PathVariable Long fixedExpenseId) {
+        return ResponseEntity.ok(ApiResponse.success(
+                fixedExpenseConfirmationService.getCurrentConfirmation(memberId, fixedExpenseId)));
+    }
+
+    @Operation(summary = "사용자가 직접 연결한 결제 해제",
+            description = "이행 기록과 거래 태그를 해제하고, 이 확정에서 새로 생성된 학습·biller 연결만 되돌립니다.")
+    @DeleteMapping("/{fixedExpenseId}/payment-confirmation/{transactionId}")
+    public ResponseEntity<Void> undoPaymentConfirmation(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
+            @PathVariable Long fixedExpenseId,
+            @PathVariable Long transactionId) {
+        fixedExpenseConfirmationService.undoConfirmation(memberId, fixedExpenseId, transactionId);
         return ResponseEntity.noContent().build();
     }
 
