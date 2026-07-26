@@ -45,6 +45,7 @@ public class ConsumptionHistoryService {
     private final SpendingGuideService spendingGuideService;
     private final BudgetRepository budgetRepository;
     private final CardTransactionRepository cardTransactionRepository;
+    private final CardTransactionResponseMapper cardTransactionResponseMapper;
 
     @Transactional(readOnly = true)
     public ConsumptionHistorySummaryResponse getSummary(Long memberId, Long budgetId) {
@@ -93,9 +94,9 @@ public class ConsumptionHistoryService {
         LocalDate dataEndDate = budget.getCycleEndDate().isBefore(today) ? budget.getCycleEndDate() : today;
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<CardTransactionResponse> result = cardTransactionRepository.findConsumptionHistoryPage(
-                        memberId, TransactionStatus.REJECTED, budget.getCycleStartDate(), dataEndDate, pageable)
-                .map(CardTransactionResponse::from);
+        Page<CardTransactionResponse> result = cardTransactionResponseMapper.mapPage(memberId,
+                cardTransactionRepository.findConsumptionHistoryPage(
+                        memberId, TransactionStatus.REJECTED, budget.getCycleStartDate(), dataEndDate, pageable));
         return CardTransactionListResponse.from(result);
     }
 

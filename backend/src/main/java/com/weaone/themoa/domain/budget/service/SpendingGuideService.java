@@ -26,6 +26,7 @@ import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionResp
 import com.weaone.themoa.domain.cardtransaction.dto.response.CategorySummaryListResponse;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
+import com.weaone.themoa.domain.cardtransaction.service.CardTransactionResponseMapper;
 import com.weaone.themoa.domain.cardtransaction.support.BackfillWindowPolicy;
 import com.weaone.themoa.domain.member.entity.EntryMode;
 import com.weaone.themoa.domain.member.entity.IncomeType;
@@ -70,6 +71,7 @@ public class SpendingGuideService {
     private final BudgetRepository budgetRepository;
     private final BudgetCycleService budgetCycleService;
     private final CardTransactionRepository cardTransactionRepository;
+    private final CardTransactionResponseMapper cardTransactionResponseMapper;
     private final CardConnectionRepository cardConnectionRepository;
     private final MemberWorkScheduleRepository memberWorkScheduleRepository;
     private final WorkScheduleSalaryCalculator workScheduleSalaryCalculator;
@@ -231,10 +233,9 @@ public class SpendingGuideService {
         Member member = getMemberWithSetup(memberId);
         int clampedLimit = clamp(limit, TODAY_TRANSACTIONS_DEFAULT_LIMIT, TODAY_TRANSACTIONS_MAX_LIMIT);
         LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
-        Page<CardTransactionResponse> page = cardTransactionRepository
-                .findByMember_IdAndStatusNotAndUsedDateOrderByUsedAtDesc(
-                        member.getId(), TransactionStatus.REJECTED, today, PageRequest.of(0, clampedLimit))
-                .map(CardTransactionResponse::from);
+        Page<CardTransactionResponse> page = cardTransactionResponseMapper.mapPage(member.getId(),
+                cardTransactionRepository.findByMember_IdAndStatusNotAndUsedDateOrderByUsedAtDesc(
+                        member.getId(), TransactionStatus.REJECTED, today, PageRequest.of(0, clampedLimit)));
         return new TodayTransactionsResponse(page.getContent(), page.getTotalElements());
     }
 
@@ -270,10 +271,10 @@ public class SpendingGuideService {
         LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
         Budget budget = resolveBudgetForDate(member, budgetId, date, today);
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "usedAt"));
-        Page<CardTransactionResponse> page = cardTransactionRepository.searchForSpendingGuide(
+        Page<CardTransactionResponse> page = cardTransactionResponseMapper.mapPage(member.getId(),
+                cardTransactionRepository.searchForSpendingGuide(
                         member.getId(), TransactionStatus.REJECTED, budget.getCycleStartDate(), budget.getCycleEndDate(),
-                        date, categoryId, sorted)
-                .map(CardTransactionResponse::from);
+                        date, categoryId, sorted));
         return CardTransactionListResponse.from(page);
     }
 

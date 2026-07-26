@@ -264,6 +264,7 @@ function ExpenseDetailModal({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
+    name: expense.name,
     amount: String(Number(expense.expectedAmount)),
     currency: expense.expectedCurrency,
     payDay: String(expense.expectedPayDay),
@@ -288,6 +289,7 @@ function ExpenseDetailModal({
     setIsSaving(true);
     try {
       await updateFixedExpense(expense.id, {
+        name: editForm.name.trim(),
         expectedAmount: Number(editForm.amount),
         expectedCurrency: editForm.currency,
         expectedPayDay: Number(editForm.payDay),
@@ -374,6 +376,21 @@ function ExpenseDetailModal({
 
           {isEditing ? (
             <form className="fx-form-grid fx-edit-form" onSubmit={handleSave}>
+              <div className="fx-field full">
+                <label htmlFor="fx-edit-name">고정지출 이름 *</label>
+                <input
+                  id="fx-edit-name"
+                  value={editForm.name}
+                  onChange={(event) =>
+                    setEditForm((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                  maxLength={100}
+                  required
+                />
+              </div>
               <div className="fx-field">
                 <label htmlFor="fx-edit-amount">예상 금액 *</label>
                 <input
