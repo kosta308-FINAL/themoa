@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
+import DashboardIcon from "../../../components/common/DashboardIcon";
 import MarkdownContent from "../../../components/common/MarkdownContent";
 import { getFaqs, putFaqFeedback } from "../../../api/customerServiceApi";
 import { getApiErrorMessage } from "../../../utils/apiError";
 
-const CATEGORY_EMOJI = {
-  CARD_SYNC: "💳",
-  DAILY_BUDGET: "🎯",
-  FIXED_EXPENSE: "🔄",
-  MANUAL_EXPENSE: "✏️",
-  ACCOUNT_SECURITY: "🔒",
-  POLICY_PRODUCT: "🏛️",
+const CATEGORY_ICON = {
+  CARD_SYNC: "card",
+  DAILY_BUDGET: "target",
+  FIXED_EXPENSE: "repeat",
+  MANUAL_EXPENSE: "edit",
+  ACCOUNT_SECURITY: "lock",
+  POLICY_PRODUCT: "building",
 };
+
+const PAGE_SIZE = 6;
 
 function FaqPanel({ searchTerm }) {
   const [items, setItems] = useState([]);
@@ -20,6 +23,7 @@ function FaqPanel({ searchTerm }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [feedbackPending, setFeedbackPending] = useState({});
+  const [page, setPage] = useState(0);
 
   const load = async () => {
     setIsLoading(true);
@@ -32,6 +36,7 @@ function FaqPanel({ searchTerm }) {
       });
       const nextItems = data?.items || [];
       setItems(nextItems);
+      setPage(0);
       setCategories((prev) =>
         prev.length > 0 ? prev : deriveCategories(nextItems),
       );
@@ -100,6 +105,14 @@ function FaqPanel({ searchTerm }) {
     [categories],
   );
 
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages - 1);
+  const pagedItems = useMemo(
+    () =>
+      items.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE),
+    [items, currentPage],
+  );
+
   return (
     <div>
       <div className="faq-categories">
@@ -110,9 +123,10 @@ function FaqPanel({ searchTerm }) {
             className={`cat-btn ${selectedCategory === cat.code ? "active" : ""}`}
             onClick={() => setSelectedCategory(cat.code)}
           >
-            {cat.code === "all"
-              ? cat.name
-              : `${CATEGORY_EMOJI[cat.code] || ""} ${cat.name}`}
+            {cat.code !== "all" && (
+              <DashboardIcon name={CATEGORY_ICON[cat.code]} size={14} />
+            )}
+            {cat.name}
           </button>
         ))}
       </div>
@@ -129,7 +143,7 @@ function FaqPanel({ searchTerm }) {
           </div>
         )}
         {!isLoading &&
-          items.map((item) => {
+          pagedItems.map((item) => {
             const isOpen = openFaqId === item.id;
             return (
               <div key={item.id} className={`faq-item ${isOpen ? "open" : ""}`}>
@@ -171,14 +185,14 @@ function FaqPanel({ searchTerm }) {
                           className={`feedback-btn ${item.myFeedback === true ? "selected" : ""}`}
                           onClick={() => handleFeedback(item, true)}
                         >
-                          👍 예
+                          예
                         </button>
                         <button
                           type="button"
                           className={`feedback-btn ${item.myFeedback === false ? "selected" : ""}`}
                           onClick={() => handleFeedback(item, false)}
                         >
-                          👎 아니오
+                          아니오
                         </button>
                       </div>
                     </div>
@@ -188,6 +202,39 @@ function FaqPanel({ searchTerm }) {
             );
           })}
       </div>
+
+      {!isLoading && items.length > PAGE_SIZE && (
+        <div className="faq-pagination">
+          <button
+            type="button"
+            className="faq-page-nav"
+            onClick={() => setPage((prev) => Math.max(0, prev - 1))}
+            disabled={currentPage === 0}
+            aria-label="이전 페이지"
+          >
+            <DashboardIcon name="chevron-left" size={16} />
+          </button>
+          {Array.from({ length: totalPages }, (_, index) => (
+            <button
+              key={index}
+              type="button"
+              className={`faq-page-num ${index === currentPage ? "active" : ""}`}
+              onClick={() => setPage(index)}
+            >
+              {index + 1}
+            </button>
+          ))}
+          <button
+            type="button"
+            className="faq-page-nav"
+            onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
+            disabled={currentPage === totalPages - 1}
+            aria-label="다음 페이지"
+          >
+            <DashboardIcon name="chevron-right" size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
