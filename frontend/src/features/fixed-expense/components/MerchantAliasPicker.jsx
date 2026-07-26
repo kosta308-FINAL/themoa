@@ -45,8 +45,12 @@ function MerchantAliasPicker({ initialName = "", onChange }) {
       if (boxRef.current && !boxRef.current.contains(event.target))
         setIsOpen(false);
     };
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
+    // 캡처 단계로 등록한다 — 이 피커를 담은 모달은 배경 클릭으로 닫히는 걸 막으려고 내부 클릭에
+    // stopPropagation을 거는데, 버블 단계에서 듣고 있으면 모달 안 다른 곳을 눌러도 document까지
+    // 이벤트가 올라오지 못해 리스트가 안 닫힌다. 캡처는 그 stopPropagation보다 먼저 실행된다.
+    document.addEventListener("mousedown", handleOutsideClick, true);
+    return () =>
+      document.removeEventListener("mousedown", handleOutsideClick, true);
   }, []);
 
   const handleInput = (event) => {

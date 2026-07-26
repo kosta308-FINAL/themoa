@@ -2785,6 +2785,13 @@
 .spending-detail-inline-edit .spending-secondary {
   min-height: 39px;
 }
+.spending-detail-inline-edit-actions {
+  display: flex;
+  gap: 7px;
+}
+.spending-detail-inline-edit-actions .spending-secondary {
+  flex: 1;
+}
 .spending-detail-register-fixed {
   display: flex;
   align-items: center;

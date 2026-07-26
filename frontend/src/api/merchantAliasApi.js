@@ -7,6 +7,13 @@ export const searchMerchantAliases = (query) =>
     .get("/api/merchant-aliases", { params: query ? { q: query } : {} })
     .then(responseData);
 
+// 회원 개인 표시명 - 전역 이름보다 항상 우선 적용된다
+export const setMerchantAliasLabel = (aliasId, label) =>
+  axiosInstance.put(`/api/merchant-aliases/${aliasId}/label`, { label });
+
+export const clearMerchantAliasLabel = (aliasId) =>
+  axiosInstance.delete(`/api/merchant-aliases/${aliasId}/label`);
+
 // 가맹점 & 서비스 마스터 - 관리자
 export const getPromotionCandidates = () =>
   axiosInstance

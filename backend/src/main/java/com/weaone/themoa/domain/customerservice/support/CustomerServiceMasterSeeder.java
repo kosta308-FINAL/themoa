@@ -114,7 +114,7 @@ public class CustomerServiceMasterSeeder implements ApplicationRunner {
                 - 카드사 비밀번호를 3회 이상 잘못 입력하여 일시적으로 연결이 제한된 경우
                 - 카드사 서버 점검 시간
 
-                **해결 방법:** [카드/소비내역] 또는 [설정] 메뉴에서 해당 카드사의 '연결 재시도' 버튼을 눌러 자격 증명을 갱신해 보세요.
+                **해결 방법:** 마이페이지 > 카드 연동에서 해당 카드사 연동을 해제한 뒤, '카드사 추가' 버튼으로 자격 증명을 다시 입력해 재연결해 보세요.
                 """, 100, now);
     }
 
@@ -235,7 +235,7 @@ public class CustomerServiceMasterSeeder implements ApplicationRunner {
 
     private Faq manualExpenseWhileSyncing(FaqCategory category, LocalDateTime now) {
         return Faq.seed(category, "카드 자동수집 중에도 다시 수기 입력 모드로 돌아갈 수 있나요?", """
-                네, [설정]에서 카드 자동수집을 끌 수 있습니다. 다만 이는 자동수집 여부를 끄고 켜는 것일 뿐, 한 번 카드 연동으로 전환한 입력 모드 자체가 되돌아가지는 않습니다. 자동수집을 끄면 그 시점부터 결제수단이 카드인 지출도 다시 수기로 입력할 수 있습니다.
+                네, 마이페이지 > 카드 연동에서 '카드 자동수집' 토글을 꺼서 전환할 수 있습니다. 다만 이는 자동수집 여부를 끄고 켜는 것일 뿐, 한 번 카드 연동으로 전환한 입력 모드 자체가 되돌아가지는 않습니다. 자동수집을 끄면 그 시점부터 결제수단이 카드인 지출도 다시 수기로 입력할 수 있습니다.
 
                 기존에 자동 수집된 내역은 그대로 보존됩니다.
                 """, 50, now);

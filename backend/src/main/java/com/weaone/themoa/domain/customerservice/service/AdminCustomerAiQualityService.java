@@ -118,9 +118,9 @@ public class AdminCustomerAiQualityService {
         if (results.isEmpty()) {
             return new AdminCustomerAiPreviewResponse(search, "Qdrant 검색 결과가 없어 답변을 생성하지 않았습니다.", true);
         }
-        String answer = chatService.generateGroundedAnswer(query, results, values.systemPrompt());
-        return new AdminCustomerAiPreviewResponse(search, answer,
-                answer.contains("1:1 문의") || answer.contains("확인이 필요"));
+        CustomerServiceChatService.GroundedChatAnswer answer = chatService.generateGroundedChatAnswer(
+                query, results, values.systemPrompt());
+        return new AdminCustomerAiPreviewResponse(search, answer.answerMarkdown(), answer.needsHumanSupport());
     }
 
     @Transactional(readOnly = true)

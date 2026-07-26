@@ -34,6 +34,8 @@ import java.util.stream.Collectors;
 @Service
 public class CustomerServiceChatService {
 
+    private static final String HUMAN_SUPPORT_MARKER = "NEEDS_HUMAN_SUPPORT:";
+
     public static final String DEFAULT_SYSTEM_PROMPT = """
             당신은 더모아 고객센터 전용 챗봇이다.
             반드시 제공된 고객센터 지식 문서에 근거해서만 답변한다.
@@ -87,12 +89,16 @@ public class CustomerServiceChatService {
             recordUnanswered(memberId, request, UnansweredQuestionReason.NO_GROUNDING, answer);
             return new CustomerServiceChatResponse(request.conversationId(), answer, List.of(), true);
         }
-        String answer = generateGroundedAnswer(request.message(), results, settings.systemPrompt());
-        boolean needsHumanSupport = answer.contains("1:1 문의") || answer.contains("확인이 필요");
-        if (needsHumanSupport) {
-            recordUnanswered(memberId, request, UnansweredQuestionReason.NEEDS_HUMAN_SUPPORT, answer);
+        GroundedChatAnswer answer = generateGroundedChatAnswer(request.message(), results, settings.systemPrompt());
+        if (answer.needsHumanSupport()) {
+            recordUnanswered(
+                    memberId,
+                    request,
+                    UnansweredQuestionReason.NEEDS_HUMAN_SUPPORT,
+                    answer.answerMarkdown());
         }
-        return new CustomerServiceChatResponse(request.conversationId(), answer, citations, needsHumanSupport);
+        return new CustomerServiceChatResponse(
+                request.conversationId(), answer.answerMarkdown(), citations, answer.needsHumanSupport());
     }
 
     private void recordUnanswered(Long memberId, CustomerServiceChatRequest request,
@@ -108,12 +114,17 @@ public class CustomerServiceChatService {
 
     public String generateGroundedAnswer(String message, List<CustomerKnowledgeSearchResult> results,
                                          String systemPrompt) {
+        return generateGroundedChatAnswer(message, results, systemPrompt).answerMarkdown();
+    }
+
+    public GroundedChatAnswer generateGroundedChatAnswer(String message, List<CustomerKnowledgeSearchResult> results,
+                                                         String systemPrompt) {
         ChatModel chatModel = openAiChatModelProvider.getIfAvailable();
         if (chatModel == null) {
-            return templateAnswer(results.get(0).document());
+            return new GroundedChatAnswer(templateAnswer(results.get(0).document()), false);
         }
         try {
-            return callWithTimeout(() -> ChatClient.builder(chatModel).build()
+            String rawAnswer = callWithTimeout(() -> ChatClient.builder(chatModel).build()
                     .prompt()
                     .system(StringUtils.hasText(systemPrompt) ? systemPrompt : DEFAULT_SYSTEM_PROMPT)
                     .user("""
@@ -122,13 +133,33 @@ public class CustomerServiceChatService {
 
                             고객센터 지식 문서:
                             %s
+
+                            응답 형식:
+                            첫 줄에는 반드시 "NEEDS_HUMAN_SUPPORT: true" 또는 "NEEDS_HUMAN_SUPPORT: false"만 쓴다.
+                            고객센터 지식 문서만으로 질문에 답할 수 없을 때만 true다.
+                            답변이 가능하지만 추가 안내로 1:1 문의를 언급하는 경우는 false다.
+                            둘째 줄부터 사용자에게 보여줄 답변을 쓴다.
                             """.formatted(message, context(results)))
                     .call()
                     .content());
+            return parseGroundedChatAnswer(rawAnswer);
         } catch (Exception ex) {
             log.warn("고객센터 챗봇 LLM 호출 실패, 템플릿 답변으로 대체합니다.", ex);
-            return templateAnswer(results.get(0).document());
+            return new GroundedChatAnswer(templateAnswer(results.get(0).document()), false);
         }
+    }
+
+    private GroundedChatAnswer parseGroundedChatAnswer(String rawAnswer) {
+        String answer = rawAnswer == null ? "" : rawAnswer.trim();
+        String[] lines = answer.split("\\R", 2);
+        String firstLine = lines.length == 0 ? "" : lines[0].trim();
+        if (firstLine.regionMatches(true, 0, HUMAN_SUPPORT_MARKER, 0, HUMAN_SUPPORT_MARKER.length())) {
+            boolean needsHumanSupport = Boolean.parseBoolean(
+                    firstLine.substring(HUMAN_SUPPORT_MARKER.length()).trim());
+            String answerMarkdown = lines.length > 1 ? lines[1].trim() : "";
+            return new GroundedChatAnswer(answerMarkdown, needsHumanSupport);
+        }
+        return new GroundedChatAnswer(answer, false);
     }
 
     private String callWithTimeout(Callable<String> call) throws Exception {
@@ -192,5 +223,11 @@ public class CustomerServiceChatService {
         return value.replaceAll("[`*_>#-]", "")
                 .replaceAll("\\n{3,}", "\n\n")
                 .trim();
+    }
+
+    public record GroundedChatAnswer(
+            String answerMarkdown,
+            boolean needsHumanSupport
+    ) {
     }
 }

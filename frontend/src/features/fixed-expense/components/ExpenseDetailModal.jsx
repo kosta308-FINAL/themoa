@@ -23,9 +23,57 @@ import {
 const PAY_DAYS = Array.from({ length: 31 }, (_, index) => index + 1);
 const WON = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
 
+function ConfirmModal({
+  title,
+  message,
+  confirmLabel,
+  isDanger,
+  isBusy,
+  onConfirm,
+  onCancel,
+}) {
+  return (
+    <div
+      className="fx-confirm-backdrop"
+      role="presentation"
+      onMouseDown={onCancel}
+    >
+      <section
+        className="fx-confirm-modal"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="fx-confirm-title"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <h3 id="fx-confirm-title">{title}</h3>
+        <p>{message}</p>
+        <div className="fx-confirm-actions">
+          <button
+            type="button"
+            className="fx-ghost-button"
+            disabled={isBusy}
+            onClick={onCancel}
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            className={isDanger ? "fx-danger-button" : "fx-primary-button"}
+            disabled={isBusy}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function MissedPaymentSection({
   fixedExpenseId,
   fixedExpenseName,
+  paymentStatus,
   onConfirmed,
 }) {
   const [state, setState] = useState({
@@ -36,6 +84,8 @@ function MissedPaymentSection({
   const [confirmingId, setConfirmingId] = useState(null);
   const [confirmedPayment, setConfirmedPayment] = useState(undefined);
   const [isUndoing, setIsUndoing] = useState(false);
+  const [pendingConfirm, setPendingConfirm] = useState(null);
+  const [pendingUndo, setPendingUndo] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -67,14 +117,12 @@ function MissedPaymentSection({
     }
   };
 
-  const confirm = async (transaction) => {
-    const merchantName =
-      transaction.merchantDisplayName || transaction.merchantNameRaw;
-    const shouldConfirm = window.confirm(
-      `${merchantName} · ${transaction.usedDate} · ${formatWon(transaction.netAmount)}\n\n이 거래를 '${fixedExpenseName}' 결제로 연결할까요?\n필요한 경우 이 가맹점 표기가 학습에 반영됩니다.`,
-    );
-    if (!shouldConfirm) return;
+  const requestConfirm = (transaction) => setPendingConfirm(transaction);
 
+  const performConfirm = async () => {
+    const transaction = pendingConfirm;
+    if (!transaction) return;
+    setPendingConfirm(null);
     setConfirmingId(transaction.id);
     try {
       await confirmMissedPayment(fixedExpenseId, transaction.id);
@@ -92,12 +140,10 @@ function MissedPaymentSection({
     }
   };
 
-  const undo = async () => {
-    const shouldUndo = window.confirm(
-      `'${confirmedPayment.merchantName}' 결제 연결을 해제할까요?\n이번 연결에서 새로 학습된 가맹점 정보도 함께 되돌립니다.`,
-    );
-    if (!shouldUndo) return;
+  const requestUndo = () => setPendingUndo(true);
 
+  const performUndo = async () => {
+    setPendingUndo(false);
     setIsUndoing(true);
     try {
       await undoFixedExpensePaymentConfirmation(
@@ -117,15 +163,22 @@ function MissedPaymentSection({
     }
   };
 
+  // 이번 달 결제가 이미 자동으로(F-05 수동 확인이 아니라) 매칭돼 있으면, 아직 결제를 못 찾은
+  // 것처럼 "결제내역이 안 보이나요?"를 보여줄 필요가 없다 — getFixedExpensePaymentConfirmation은
+  // 사용자가 직접 확인한 건만 돌려주므로, 자동 매칭 건은 여기선 null로 온다.
+  const isAutoResolved = paymentStatus === "PAID" && confirmedPayment === null;
+
   return (
     <div className="fx-missed-payment">
       <div className="fx-missed-payment-head">
         <h4>
           {confirmedPayment
             ? "이번 달 연결된 결제"
-            : "결제내역이 안 보이나요?"}
+            : isAutoResolved
+              ? "이번 달 결제, 자동으로 확인했어요"
+              : "결제내역이 안 보이나요?"}
         </h4>
-        {confirmedPayment === null && (
+        {confirmedPayment === null && !isAutoResolved && (
           <button type="button" className="fx-ghost-button" onClick={load}>
             {state.loading ? "찾는 중..." : "결제내역 확인"}
           </button>
@@ -146,14 +199,20 @@ function MissedPaymentSection({
               type="button"
               className="fx-ghost-button"
               disabled={isUndoing}
-              onClick={undo}
+              onClick={requestUndo}
             >
               {isUndoing ? "해제 중..." : "연결 해제"}
             </button>
           </div>
         </div>
       )}
+      {isAutoResolved && (
+        <p className="fx-missed-payment-empty">
+          카드 결제내역과 자동으로 대조해 이번 달 결제를 확인했어요.
+        </p>
+      )}
       {confirmedPayment === null &&
+        !isAutoResolved &&
         state.items &&
         (state.items.length ? (
           <div className="fx-missed-payment-list">
@@ -172,7 +231,7 @@ function MissedPaymentSection({
                   type="button"
                   className="fx-secondary-button"
                   disabled={confirmingId === transaction.id}
-                  onClick={() => confirm(transaction)}
+                  onClick={() => requestConfirm(transaction)}
                 >
                   {confirmingId === transaction.id
                     ? "확인 중..."
@@ -186,6 +245,27 @@ function MissedPaymentSection({
             비슷한 미태깅 거래를 찾지 못했어요.
           </p>
         ))}
+      {pendingConfirm && (
+        <ConfirmModal
+          title="이 거래로 연결할까요?"
+          message={`${pendingConfirm.merchantDisplayName || pendingConfirm.merchantNameRaw} · ${pendingConfirm.usedDate} · ${formatWon(pendingConfirm.netAmount)}\n\n이 거래를 '${fixedExpenseName}' 결제로 연결할까요?\n필요한 경우 이 가맹점 표기가 학습에 반영됩니다.`}
+          confirmLabel="연결할게요"
+          isBusy={confirmingId === pendingConfirm.id}
+          onConfirm={performConfirm}
+          onCancel={() => setPendingConfirm(null)}
+        />
+      )}
+      {pendingUndo && (
+        <ConfirmModal
+          title="결제 연결을 해제할까요?"
+          message={`'${confirmedPayment?.merchantName}' 결제 연결을 해제할까요?\n이번 연결에서 새로 학습된 가맹점 정보도 함께 되돌립니다.`}
+          confirmLabel="해제할게요"
+          isDanger
+          isBusy={isUndoing}
+          onConfirm={performUndo}
+          onCancel={() => setPendingUndo(false)}
+        />
+      )}
     </div>
   );
 }
@@ -198,6 +278,7 @@ function ExpenseDetailModal({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
+    name: expense.name,
     amount: String(Number(expense.expectedAmount)),
     currency: expense.expectedCurrency,
     payDay: String(expense.expectedPayDay),
@@ -222,6 +303,7 @@ function ExpenseDetailModal({
     setIsSaving(true);
     try {
       await updateFixedExpense(expense.id, {
+        name: editForm.name.trim(),
         expectedAmount: Number(editForm.amount),
         expectedCurrency: editForm.currency,
         expectedPayDay: Number(editForm.payDay),
@@ -308,6 +390,21 @@ function ExpenseDetailModal({
 
           {isEditing ? (
             <form className="fx-form-grid fx-edit-form" onSubmit={handleSave}>
+              <div className="fx-field full">
+                <label htmlFor="fx-edit-name">고정지출 이름 *</label>
+                <input
+                  id="fx-edit-name"
+                  value={editForm.name}
+                  onChange={(event) =>
+                    setEditForm((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                  maxLength={100}
+                  required
+                />
+              </div>
               <div className="fx-field">
                 <label htmlFor="fx-edit-amount">예상 금액 *</label>
                 <input
@@ -412,6 +509,7 @@ function ExpenseDetailModal({
                 <MissedPaymentSection
                   fixedExpenseId={expense.id}
                   fixedExpenseName={expense.name}
+                  paymentStatus={expense.paymentStatus}
                   onConfirmed={onChanged}
                 />
               )}

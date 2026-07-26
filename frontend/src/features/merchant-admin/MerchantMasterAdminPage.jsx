@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "../../components/layout/AdminLayout";
-import DashboardIcon from "../../components/common/DashboardIcon";
 import {
   getPromotionCandidates,
   promoteMerchantAliasTerm,
@@ -198,52 +197,28 @@ function MerchantMasterAdminPage() {
 
   return (
     <AdminLayout
-      title="가맹점 & 서비스 마스터 관리"
-      subtitle="데이터 수집·활용에 동의한 회원의 학습 표기·거래만 모아 전역 승격과 미식별 가맹점 등록을 관리합니다"
+      title="가맹점 마스터 관리"
+      subtitle="전역 승격과 미식별 가맹점을 관리합니다"
     >
       <div className="mma-page">
         <section className="mma-kpi-grid">
           <div className="mma-kpi-card">
-            <span className="mma-kpi-icon purple">
-              <DashboardIcon name="sparkle" size={18} />
-            </span>
-            <div className="mma-kpi-body">
-              <span className="mma-kpi-title">전역 승격 대기 표기</span>
-              <span className="mma-kpi-value">{candidateGroups.length} 건</span>
-              <span className="mma-kpi-hint">
-                서비스명 제안 {candidates.length}건
-              </span>
-            </div>
+            <span>전역 승격 대기</span>
+            <strong>{candidateGroups.length}건</strong>
           </div>
           <div className="mma-kpi-card">
-            <span className="mma-kpi-icon amber">
-              <DashboardIcon name="search" size={18} />
-            </span>
-            <div className="mma-kpi-body">
-              <span className="mma-kpi-title">최근 15일 미식별 가맹점</span>
-              <span className="mma-kpi-value warn">
-                {unclassified.length} 건
-              </span>
-            </div>
+            <span>최근 15일 미식별</span>
+            <strong>{unclassified.length}건</strong>
           </div>
         </section>
 
         {error && <div className="mma-alert">{error}</div>}
 
         <section className="mma-panel">
-          <div className="mma-panel-header">
-            <div className="mma-panel-heading">
-              <span className="mma-panel-icon purple">
-                <DashboardIcon name="sparkle" size={18} />
-              </span>
-              <div>
-                <div className="mma-panel-title">전역 마스터 승격 대기목록</div>
-                <div className="mma-panel-sub">
-                  원본 표기별로 회원들이 제안한 서비스명을 모아 보여줍니다.
-                  승격은 새 회원의 기본값만 정하며, 기존 학습 회원에게는
-                  영향을 주지 않습니다.
-                </div>
-              </div>
+          <div className="mma-panel-heading">
+            <div>
+              <h2>전역 마스터 승격 대기목록</h2>
+              <p>원본 표기별 서비스명 제안을 확인합니다.</p>
             </div>
           </div>
           {isLoading ? (
@@ -354,21 +329,10 @@ function MerchantMasterAdminPage() {
         </section>
 
         <section className="mma-panel">
-          <div className="mma-panel-header">
-            <div className="mma-panel-heading">
-              <span className="mma-panel-icon amber">
-                <DashboardIcon name="search" size={18} />
-              </span>
-              <div>
-                <div className="mma-panel-title">
-                  미식별 &amp; &apos;기타&apos; 가맹점 작업대
-                </div>
-                <div className="mma-panel-sub">
-                  최근 15일간 전역 alias가 없는 상위 원본 가맹점 리스트입니다
-                  (데이터 수집·활용에 동의한 회원의 거래만 집계). 바로
-                  마스터에 등록하세요.
-                </div>
-              </div>
+          <div className="mma-panel-heading">
+            <div>
+              <h2>미식별 가맹점 작업대</h2>
+              <p>최근 15일 미식별 원본을 바로 등록합니다.</p>
             </div>
           </div>
           {isLoading ? (
