@@ -23,6 +23,53 @@ import {
 const PAY_DAYS = Array.from({ length: 31 }, (_, index) => index + 1);
 const WON = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
 
+function ConfirmModal({
+  title,
+  message,
+  confirmLabel,
+  isDanger,
+  isBusy,
+  onConfirm,
+  onCancel,
+}) {
+  return (
+    <div
+      className="fx-confirm-backdrop"
+      role="presentation"
+      onMouseDown={onCancel}
+    >
+      <section
+        className="fx-confirm-modal"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="fx-confirm-title"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <h3 id="fx-confirm-title">{title}</h3>
+        <p>{message}</p>
+        <div className="fx-confirm-actions">
+          <button
+            type="button"
+            className="fx-ghost-button"
+            disabled={isBusy}
+            onClick={onCancel}
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            className={isDanger ? "fx-danger-button" : "fx-primary-button"}
+            disabled={isBusy}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function MissedPaymentSection({
   fixedExpenseId,
   fixedExpenseName,
@@ -36,6 +83,8 @@ function MissedPaymentSection({
   const [confirmingId, setConfirmingId] = useState(null);
   const [confirmedPayment, setConfirmedPayment] = useState(undefined);
   const [isUndoing, setIsUndoing] = useState(false);
+  const [pendingConfirm, setPendingConfirm] = useState(null);
+  const [pendingUndo, setPendingUndo] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -67,14 +116,12 @@ function MissedPaymentSection({
     }
   };
 
-  const confirm = async (transaction) => {
-    const merchantName =
-      transaction.merchantDisplayName || transaction.merchantNameRaw;
-    const shouldConfirm = window.confirm(
-      `${merchantName} · ${transaction.usedDate} · ${formatWon(transaction.netAmount)}\n\n이 거래를 '${fixedExpenseName}' 결제로 연결할까요?\n필요한 경우 이 가맹점 표기가 학습에 반영됩니다.`,
-    );
-    if (!shouldConfirm) return;
+  const requestConfirm = (transaction) => setPendingConfirm(transaction);
 
+  const performConfirm = async () => {
+    const transaction = pendingConfirm;
+    if (!transaction) return;
+    setPendingConfirm(null);
     setConfirmingId(transaction.id);
     try {
       await confirmMissedPayment(fixedExpenseId, transaction.id);
@@ -92,12 +139,10 @@ function MissedPaymentSection({
     }
   };
 
-  const undo = async () => {
-    const shouldUndo = window.confirm(
-      `'${confirmedPayment.merchantName}' 결제 연결을 해제할까요?\n이번 연결에서 새로 학습된 가맹점 정보도 함께 되돌립니다.`,
-    );
-    if (!shouldUndo) return;
+  const requestUndo = () => setPendingUndo(true);
 
+  const performUndo = async () => {
+    setPendingUndo(false);
     setIsUndoing(true);
     try {
       await undoFixedExpensePaymentConfirmation(
@@ -146,7 +191,7 @@ function MissedPaymentSection({
               type="button"
               className="fx-ghost-button"
               disabled={isUndoing}
-              onClick={undo}
+              onClick={requestUndo}
             >
               {isUndoing ? "해제 중..." : "연결 해제"}
             </button>
@@ -172,7 +217,7 @@ function MissedPaymentSection({
                   type="button"
                   className="fx-secondary-button"
                   disabled={confirmingId === transaction.id}
-                  onClick={() => confirm(transaction)}
+                  onClick={() => requestConfirm(transaction)}
                 >
                   {confirmingId === transaction.id
                     ? "확인 중..."
@@ -186,6 +231,27 @@ function MissedPaymentSection({
             비슷한 미태깅 거래를 찾지 못했어요.
           </p>
         ))}
+      {pendingConfirm && (
+        <ConfirmModal
+          title="이 거래로 연결할까요?"
+          message={`${pendingConfirm.merchantDisplayName || pendingConfirm.merchantNameRaw} · ${pendingConfirm.usedDate} · ${formatWon(pendingConfirm.netAmount)}\n\n이 거래를 '${fixedExpenseName}' 결제로 연결할까요?\n필요한 경우 이 가맹점 표기가 학습에 반영됩니다.`}
+          confirmLabel="연결할게요"
+          isBusy={confirmingId === pendingConfirm.id}
+          onConfirm={performConfirm}
+          onCancel={() => setPendingConfirm(null)}
+        />
+      )}
+      {pendingUndo && (
+        <ConfirmModal
+          title="결제 연결을 해제할까요?"
+          message={`'${confirmedPayment?.merchantName}' 결제 연결을 해제할까요?\n이번 연결에서 새로 학습된 가맹점 정보도 함께 되돌립니다.`}
+          confirmLabel="해제할게요"
+          isDanger
+          isBusy={isUndoing}
+          onConfirm={performUndo}
+          onCancel={() => setPendingUndo(false)}
+        />
+      )}
     </div>
   );
 }
