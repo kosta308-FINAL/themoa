@@ -1,4 +1,4 @@
-const WON = new Intl.NumberFormat("ko-KR");
+const WON = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
 const RATE = new Intl.NumberFormat("ko-KR", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -12,7 +12,7 @@ export const toNumber = (value) => {
 
 export const formatWon = (value) => {
   const number = toNumber(value);
-  return number == null ? "미설정" : `${WON.format(number)}원`;
+  return number == null ? "미설정" : `${WON.format(Math.trunc(number))}원`;
 };
 
 export const formatCount = (value, unit = "건") => {
@@ -39,7 +39,7 @@ export const formatDateTime = (value) => {
 export const formatTransactionAmount = (netAmount) => {
   const number = toNumber(netAmount);
   if (number == null) return "미설정";
-  const formatted = `${WON.format(Math.abs(number))}원`;
+  const formatted = `${WON.format(Math.trunc(Math.abs(number)))}원`;
   if (number > 0) return `-${formatted}`;
   if (number < 0) return `+${formatted}`;
   return "0원";
