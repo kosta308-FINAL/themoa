@@ -81,17 +81,17 @@ function Dashboard() {
           loading={isLoading}
           error={sectionErrors.recentTransactions}
         />
+        <PolicyRecommendations
+          bookmarks={data.policyBookmarks}
+          loading={isLoading}
+          error={sectionErrors.policyBookmarks}
+        />
       </section>
       <section className="dash-secondary-grid">
         <RecommendedProduct
           bookmarks={data.productBookmarks}
           loading={isLoading}
           error={sectionErrors.productBookmarks}
-        />
-        <PolicyRecommendations
-          bookmarks={data.policyBookmarks}
-          loading={isLoading}
-          error={sectionErrors.policyBookmarks}
         />
         <SpendingTipCard
           coaching={data.coaching}
