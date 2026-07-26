@@ -73,6 +73,7 @@ function ConfirmModal({
 function MissedPaymentSection({
   fixedExpenseId,
   fixedExpenseName,
+  paymentStatus,
   onConfirmed,
 }) {
   const [state, setState] = useState({
@@ -162,15 +163,22 @@ function MissedPaymentSection({
     }
   };
 
+  // 이번 달 결제가 이미 자동으로(F-05 수동 확인이 아니라) 매칭돼 있으면, 아직 결제를 못 찾은
+  // 것처럼 "결제내역이 안 보이나요?"를 보여줄 필요가 없다 — getFixedExpensePaymentConfirmation은
+  // 사용자가 직접 확인한 건만 돌려주므로, 자동 매칭 건은 여기선 null로 온다.
+  const isAutoResolved = paymentStatus === "PAID" && confirmedPayment === null;
+
   return (
     <div className="fx-missed-payment">
       <div className="fx-missed-payment-head">
         <h4>
           {confirmedPayment
             ? "이번 달 연결된 결제"
-            : "결제내역이 안 보이나요?"}
+            : isAutoResolved
+              ? "이번 달 결제, 자동으로 확인했어요"
+              : "결제내역이 안 보이나요?"}
         </h4>
-        {confirmedPayment === null && (
+        {confirmedPayment === null && !isAutoResolved && (
           <button type="button" className="fx-ghost-button" onClick={load}>
             {state.loading ? "찾는 중..." : "결제내역 확인"}
           </button>
@@ -198,7 +206,13 @@ function MissedPaymentSection({
           </div>
         </div>
       )}
+      {isAutoResolved && (
+        <p className="fx-missed-payment-empty">
+          카드 결제내역과 자동으로 대조해 이번 달 결제를 확인했어요.
+        </p>
+      )}
       {confirmedPayment === null &&
+        !isAutoResolved &&
         state.items &&
         (state.items.length ? (
           <div className="fx-missed-payment-list">
@@ -495,6 +509,7 @@ function ExpenseDetailModal({
                 <MissedPaymentSection
                   fixedExpenseId={expense.id}
                   fixedExpenseName={expense.name}
+                  paymentStatus={expense.paymentStatus}
                   onConfirmed={onChanged}
                 />
               )}
