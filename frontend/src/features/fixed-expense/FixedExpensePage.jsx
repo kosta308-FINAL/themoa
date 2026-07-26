@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
+import AnimatedNumber from "../../components/common/AnimatedNumber";
 import DashboardIcon from "../../components/common/DashboardIcon";
 import { getApiErrorMessage } from "../../utils/apiError";
 import {
@@ -40,6 +41,7 @@ function FixedExpensePage() {
   const [registerState, setRegisterState] = useState(null); // { candidate } | { candidate: null }
   const [detailExpense, setDetailExpense] = useState(null);
   const [toast, setToast] = useState("");
+  const [animatedRatio, setAnimatedRatio] = useState(0);
 
   const showToast = (message) => setToast(message);
 
@@ -202,6 +204,24 @@ function FixedExpensePage() {
   const remaining = cycleIncomeAmount - totalExpected;
   const isOverBudget = ratio !== null && ratio > 100;
   const isEmptyState = items.length === 0 && candidates.length === 0;
+  const itemCount = expenseList?.count || 0;
+  const cardPaymentCount = items.filter(
+    (item) => item.paymentMethod === "CARD",
+  ).length;
+  const transferPaymentCount = items.filter(
+    (item) => item.paymentMethod === "TRANSFER",
+  ).length;
+
+  useEffect(() => {
+    if (ratio === null) {
+      setAnimatedRatio(0);
+      return undefined;
+    }
+    const cappedRatio = Math.min(100, ratio);
+    setAnimatedRatio(0);
+    const timer = setTimeout(() => setAnimatedRatio(cappedRatio), 80);
+    return () => clearTimeout(timer);
+  }, [ratio]);
 
   return (
     <div className="fixed-expense">
@@ -253,36 +273,54 @@ function FixedExpensePage() {
                   <DashboardIcon name="repeat" size={15} />월 예상 고정지출
                 </span>
                 <div className="fx-summary-total">
-                  <strong>{formatWon(totalExpected)}</strong>
-                  <span>총 {expenseList?.count || 0}건</span>
+                  <strong>
+                    <AnimatedNumber value={totalExpected} format={formatWon} />
+                  </strong>
+                  <span>
+                    총{" "}
+                    <AnimatedNumber
+                      value={itemCount}
+                      duration={600}
+                      delay={120}
+                    />
+                    건
+                  </span>
                 </div>
                 <p className="fx-summary-caption">
-                  등록된 고정지출 {expenseList?.count || 0}건의 원화 예상
+                  등록된 고정지출 {itemCount}건의 원화 예상
                   금액이에요.
                 </p>
                 <div className="fx-summary-stats">
                   <div>
                     <span>등록 항목</span>
-                    <strong>{items.length}건</strong>
+                    <strong>
+                      <AnimatedNumber
+                        value={items.length}
+                        duration={550}
+                        delay={180}
+                      />
+                      건
+                    </strong>
                   </div>
                   <div>
                     <span>카드 결제</span>
                     <strong>
-                      {
-                        items.filter((item) => item.paymentMethod === "CARD")
-                          .length
-                      }
+                      <AnimatedNumber
+                        value={cardPaymentCount}
+                        duration={550}
+                        delay={240}
+                      />
                       건
                     </strong>
                   </div>
                   <div>
                     <span>계좌이체</span>
                     <strong>
-                      {
-                        items.filter(
-                          (item) => item.paymentMethod === "TRANSFER",
-                        ).length
-                      }
+                      <AnimatedNumber
+                        value={transferPaymentCount}
+                        duration={550}
+                        delay={300}
+                      />
                       건
                     </strong>
                   </div>
@@ -297,11 +335,22 @@ function FixedExpensePage() {
                         급여 대비 고정지출
                       </span>
                       <strong className={isOverBudget ? "over" : ""}>
-                        {ratio.toFixed(1)}%
+                        <AnimatedNumber
+                          value={Math.round(ratio * 10)}
+                          duration={850}
+                          format={(value) => `${(value / 10).toFixed(1)}%`}
+                        />
                       </strong>
                     </div>
                     <span className="fx-salary-base">
-                      이번 주기 소득 {formatWon(cycleIncomeAmount)} 기준
+                      이번 주기 소득{" "}
+                      <AnimatedNumber
+                        value={cycleIncomeAmount}
+                        duration={850}
+                        delay={120}
+                        format={formatWon}
+                      />{" "}
+                      기준
                     </span>
                     <div
                       className="fx-progress-track"
@@ -313,12 +362,21 @@ function FixedExpensePage() {
                     >
                       <div
                         className={`fx-progress-value${isOverBudget ? " over" : ""}`}
-                        style={{ width: `${Math.min(100, ratio)}%` }}
+                        style={{
+                          width: `${animatedRatio}%`,
+                          minWidth: animatedRatio > 0 ? "8px" : "0",
+                        }}
                       />
                     </div>
                     <p className="fx-ratio-help">
-                      급여 중 {formatWon(totalExpected)}이 고정지출로 먼저
-                      나가요.
+                      급여 중{" "}
+                      <AnimatedNumber
+                        value={totalExpected}
+                        duration={850}
+                        delay={160}
+                        format={formatWon}
+                      />
+                      이 고정지출로 먼저 나가요.
                     </p>
                     <div
                       className={`fx-salary-remaining${isOverBudget ? " over" : ""}`}
@@ -328,7 +386,14 @@ function FixedExpensePage() {
                           ? "고정지출 제외 후 남는 급여"
                           : "급여보다 많은 고정지출"}
                       </span>
-                      <strong>{formatWon(Math.abs(remaining))}</strong>
+                      <strong>
+                        <AnimatedNumber
+                          value={Math.abs(remaining)}
+                          duration={850}
+                          delay={220}
+                          format={formatWon}
+                        />
+                      </strong>
                     </div>
                   </>
                 ) : (
