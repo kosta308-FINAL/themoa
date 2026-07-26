@@ -98,7 +98,7 @@ public class CustomerInquiryDemoSeeder implements ApplicationRunner {
         // 최신 문의 1건은 의도적으로 미응답(PENDING) 상태로 남겨 관리자 큐 데모에 사용한다.
         submit(demo.getId(), categoryIdByName.get("계정·보안"),
                 "다른 사람이 제 계정에 로그인을 시도한 것 같아요",
-                "어제 밤에 로그인 실패 알림을 여러 번 받았어요. 제가 시도한 게 아닌데 계정이 안전한지 확인 부탁드립니다.",
+                "어제 밤에 로그인을 5번 넘게 실패해서 계정이 잠겼었어요. 제가 시도한 게 아닌데 계정이 안전한지 확인 부탁드립니다.",
                 null, null);
 
         log.info("데모 1:1 문의 5건 시드 완료(member_id={}, 답변 4건/미응답 1건)", demo.getId());
