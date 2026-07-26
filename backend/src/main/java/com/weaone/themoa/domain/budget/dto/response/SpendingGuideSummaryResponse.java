@@ -47,7 +47,10 @@ public record SpendingGuideSummaryResponse(
 
         boolean overCycleBudget,
         BigDecimal cycleOverspentAmount,
-        boolean budgetUnaffordable) {
+        boolean budgetUnaffordable,
+
+        int completedCycleCount,
+        BigDecimal totalSurplusAmount) {
 
     /** 시급제(HOURLY) 요일별 근무시간 1건. 설정 변경 모달이 기존 값을 미리 채우는 데 쓴다. */
     public record WorkScheduleItemResponse(DayOfWeek dayOfWeek, BigDecimal hours) {
@@ -63,7 +66,8 @@ public record SpendingGuideSummaryResponse(
                 null, null, null, null,
                 null, null, null, null,
                 null, null, null, null, null,
-                false, null, false);
+                false, null, false,
+                0, BigDecimal.ZERO);
     }
 
     public static SpendingGuideSummaryResponse ready(
@@ -73,12 +77,14 @@ public record SpendingGuideSummaryResponse(
             BigDecimal salaryAmount, BigDecimal savingsGoalAmount, BigDecimal expectedFixedExpenseTotal,
             BigDecimal availableAmount, BigDecimal dailyRecommendedAmount, BigDecimal todayNetSpend,
             BigDecimal todayAvailableAmount, BigDecimal remainingAmount, BigDecimal cycleSavingsAmount,
-            boolean overCycleBudget, BigDecimal cycleOverspentAmount, boolean budgetUnaffordable) {
+            boolean overCycleBudget, BigDecimal cycleOverspentAmount, boolean budgetUnaffordable,
+            int completedCycleCount, BigDecimal totalSurplusAmount) {
         return new SpendingGuideSummaryResponse(false, List.of(),
                 incomeType, hourlyWage, workSchedule, payday, pendingPayday,
                 yearMonth, cycleStartDate, cycleEndDate, remainingDays,
                 salaryAmount, savingsGoalAmount, expectedFixedExpenseTotal, availableAmount,
                 dailyRecommendedAmount, todayNetSpend, todayAvailableAmount, remainingAmount, cycleSavingsAmount,
-                overCycleBudget, cycleOverspentAmount, budgetUnaffordable);
+                overCycleBudget, cycleOverspentAmount, budgetUnaffordable,
+                completedCycleCount, totalSurplusAmount);
     }
 }
