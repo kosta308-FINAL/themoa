@@ -9,6 +9,14 @@ import com.weaone.themoa.domain.cardconnection.repository.CardIssuerRepository;
 import com.weaone.themoa.domain.cardtransaction.client.CodefApprovalRecord;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
 import com.weaone.themoa.domain.cardtransaction.service.CardTransactionCollectionService;
+import com.weaone.themoa.domain.category.entity.Category;
+import com.weaone.themoa.domain.category.entity.CategoryCode;
+import com.weaone.themoa.domain.category.repository.CategoryRepository;
+import com.weaone.themoa.domain.fixedexpense.dto.request.FixedExpenseDirectRegisterRequest;
+import com.weaone.themoa.domain.fixedexpense.entity.FixedExpensePaymentMethod;
+import com.weaone.themoa.domain.fixedexpense.entity.FixedExpenseStatus;
+import com.weaone.themoa.domain.fixedexpense.repository.FixedExpenseRepository;
+import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseRegistrationService;
 import com.weaone.themoa.domain.member.entity.IncomeType;
 import com.weaone.themoa.domain.member.entity.Member;
 import com.weaone.themoa.domain.member.repository.MemberRepository;
@@ -41,6 +49,8 @@ public class PromotionDemoSeeder implements ApplicationRunner {
 
     private static final String CARD_ISSUER_ORGANIZATION = "0306";
     private static final String DEMO_MERCHANT_NAME = "(주)왓챠";
+    private static final String DEMO_FIXED_EXPENSE_NAME = "왓챠";
+    private static final BigDecimal DEMO_AMOUNT = new BigDecimal("13900");
     private static final DateTimeFormatter USED_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
     private static final BigDecimal DEMO_SALARY_AMOUNT = new BigDecimal("2000000");
     private static final int DEMO_PAYDAY = 10;
@@ -51,6 +61,9 @@ public class PromotionDemoSeeder implements ApplicationRunner {
     private final CardTransactionRepository cardTransactionRepository;
     private final CardTransactionCollectionService cardTransactionCollectionService;
     private final SpendingGuideService spendingGuideService;
+    private final FixedExpenseRegistrationService fixedExpenseRegistrationService;
+    private final FixedExpenseRepository fixedExpenseRepository;
+    private final CategoryRepository categoryRepository;
 
     @Override
     @Transactional
@@ -63,7 +76,10 @@ public class PromotionDemoSeeder implements ApplicationRunner {
         memberRepository.findByEmail(MemberDemoSeeder.DEMO_EMAIL)
                 .ifPresent(member -> seedIfAbsent(member, cardIssuer, "46195410****DEM1"));
         memberRepository.findByEmail(MemberDemoSeeder.DEMO_EMAIL_2)
-                .ifPresent(member -> seedIfAbsent(member, cardIssuer, "46195410****DEM2"));
+                .ifPresent(member -> {
+                    seedIfAbsent(member, cardIssuer, "46195410****DEM2");
+                    registerFixedExpenseIfAbsent(member);
+                });
     }
 
     private void seedIfAbsent(Member member, CardIssuer cardIssuer, String cardNo) {
@@ -75,7 +91,7 @@ public class PromotionDemoSeeder implements ApplicationRunner {
         ensureSpendingGuideSetUp(member);
         String usedDate = LocalDate.now().format(USED_DATE_FORMAT);
         CodefApprovalRecord record = new CodefApprovalRecord(usedDate, "093000", cardNo, "",
-                DEMO_MERCHANT_NAME, "13900", "KRW", approvalNo, "1", "", "", "", "0", "", "", "");
+                DEMO_MERCHANT_NAME, DEMO_AMOUNT.toPlainString(), "KRW", approvalNo, "1", "", "", "", "0", "", "", "");
         cardTransactionCollectionService.collect(member, connection, cardIssuer, record);
         log.info("승격 데모 거래 시드 완료(memberId={}, merchant={})", member.getId(), DEMO_MERCHANT_NAME);
     }
@@ -108,5 +124,28 @@ public class PromotionDemoSeeder implements ApplicationRunner {
         spendingGuideService.setup(member.getId(),
                 new SpendingGuideSetupRequest(IncomeType.SALARY, DEMO_SALARY_AMOUNT, null, null, DEMO_PAYDAY));
         log.info("승격 데모 소비가이드 설정 완료(memberId={})", member.getId());
+    }
+
+    /**
+     * test2가 admin 승격 전에 이미 "왓챠" 고정지출을 등록해 둔 상태를 시드한다 — 그래야 admin이 승격을
+     * 누르는 순간 {@link com.weaone.themoa.domain.merchant.service.AdminMerchantService}의 소급 재분류가
+     * 이 고정지출까지 자동으로 완납 매칭한다. 결제일은 항상 오늘 날짜로 맞춰 어느 날 재기동해도 방금 심은
+     * "(주)왓챠" 거래와 결제일 창(±window)이 어긋나지 않게 한다.
+     */
+    private void registerFixedExpenseIfAbsent(Member member) {
+        boolean alreadyRegistered = fixedExpenseRepository
+                .findByMember_IdAndStatus(member.getId(), FixedExpenseStatus.ACTIVE).stream()
+                .anyMatch(fixedExpense -> DEMO_FIXED_EXPENSE_NAME.equals(fixedExpense.getName()));
+        if (alreadyRegistered) {
+            return;
+        }
+        Category subscriptionCategory = categoryRepository.findByCode(CategoryCode.SUBSCRIPTION.name())
+                .orElseThrow(() -> new IllegalStateException("SUBSCRIPTION 카테고리가 시드되지 않았습니다."));
+        FixedExpenseDirectRegisterRequest request = new FixedExpenseDirectRegisterRequest(
+                DEMO_FIXED_EXPENSE_NAME, subscriptionCategory.getId(), FixedExpensePaymentMethod.CARD,
+                null, DEMO_FIXED_EXPENSE_NAME, DEMO_AMOUNT, "KRW",
+                (short) LocalDate.now().getDayOfMonth());
+        fixedExpenseRegistrationService.registerDirect(member.getId(), request);
+        log.info("승격 데모 고정지출 시드 완료(memberId={}, name={})", member.getId(), DEMO_FIXED_EXPENSE_NAME);
     }
 }
