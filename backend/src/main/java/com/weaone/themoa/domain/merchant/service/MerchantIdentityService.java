@@ -78,6 +78,15 @@ public class MerchantIdentityService {
      */
     @Transactional
     public void learnTerm(Long memberId, Long aliasId, String termText) {
+        learnTermIfAbsent(memberId, aliasId, termText);
+    }
+
+    /**
+     * 사용자 표기를 학습하고, 이번 호출에서 새로 만든 행만 반환한다. F-05 결제 확정 취소 시 기존 학습어를
+     * 지우지 않고 이 확정에서 만든 학습어만 되돌리기 위한 provenance다.
+     */
+    @Transactional
+    public Optional<MerchantAliasTerms> learnTermIfAbsent(Long memberId, Long aliasId, String termText) {
         if (billerRepository.existsByNameNormalized(termText)) {
             throw new BusinessException(ErrorCode.MERCHANT_ALIAS_TERM_BILLER_FORBIDDEN);
         }
@@ -87,18 +96,31 @@ public class MerchantIdentityService {
         Optional<MerchantAliasTerms> existing = merchantAliasTermsRepository.findByMember_IdAndAliasText(memberId, termText);
         if (existing.isPresent()) {
             rejectIfPointsToOtherAlias(existing.get(), aliasId);
-            return;
+            return Optional.empty();
         }
 
         Member member = memberRepository.getReferenceById(memberId);
         try {
-            merchantAliasTermsRepository.save(MerchantAliasTerms.learn(alias, member, termText));
+            return Optional.of(merchantAliasTermsRepository.save(MerchantAliasTerms.learn(alias, member, termText)));
         } catch (DataIntegrityViolationException e) {
-            merchantAliasTermsRepository.findByMember_IdAndAliasText(memberId, termText)
-                    .ifPresentOrElse(raced -> rejectIfPointsToOtherAlias(raced, aliasId), () -> {
-                        throw e;
-                    });
+            Optional<MerchantAliasTerms> raced = merchantAliasTermsRepository
+                    .findByMember_IdAndAliasText(memberId, termText);
+            if (raced.isEmpty()) {
+                throw e;
+            }
+            rejectIfPointsToOtherAlias(raced.get(), aliasId);
+            return Optional.empty();
         }
+    }
+
+    /** F-05 연결 해제 시 이번 확정에서 새로 만든 사용자 학습어만 삭제한다. */
+    @Transactional
+    public void unlearnTerm(Long memberId, Long aliasId, Long termId) {
+        merchantAliasTermsRepository.findByIdAndMember_IdAndMerchantAlias_Id(termId, memberId, aliasId)
+                .ifPresent(term -> {
+                    merchantAliasTermsRepository.delete(term);
+                    merchantAliasTermsRepository.flush();
+                });
     }
 
     private void rejectIfPointsToOtherAlias(MerchantAliasTerms term, Long expectedAliasId) {

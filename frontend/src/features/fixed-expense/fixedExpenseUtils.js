@@ -69,6 +69,9 @@ const paymentStatusBadge = (paymentStatus) =>
 const formatMonthDay = (date) =>
   date ? `${date.getMonth() + 1}월 ${date.getDate()}일` : "—";
 
+const formatPayDay = (payDay) =>
+  payDay ? `매월 ${payDay}일` : "결제일 미설정";
+
 const METHOD_LABEL = { CARD: "카드", TRANSFER: "계좌이체" };
 
 const serviceInitial = (name = "") => {
@@ -86,6 +89,7 @@ const toneForId = (id) => ICON_TONES[toNumber(id) % ICON_TONES.length];
 export {
   formatAmount,
   formatMonthDay,
+  formatPayDay,
   formatWon,
   METHOD_LABEL,
   nextPayDate,

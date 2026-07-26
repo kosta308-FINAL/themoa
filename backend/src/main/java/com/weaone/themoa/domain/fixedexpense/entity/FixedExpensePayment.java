@@ -1,6 +1,7 @@
 package com.weaone.themoa.domain.fixedexpense.entity;
 
 import com.weaone.themoa.domain.cardtransaction.entity.CardTransaction;
+import com.weaone.themoa.domain.merchant.entity.MerchantAliasTerms;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -58,20 +59,46 @@ public class FixedExpensePayment {
     @Column(nullable = false, length = 10)
     private FixedExpensePaymentStatus status;
 
+    /** true면 F-05 "이 거래예요"에서 사용자가 직접 연결한 이행이다. 기존 행의 NULL은 false로 취급한다. */
+    @Column(name = "user_confirmed_match")
+    private Boolean userConfirmedMatch;
+
+    /** 이 확정에서 새로 만든 사용자 학습어. 기존부터 있던 학습어는 연결하지 않아 해제 시 보존한다. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "learned_merchant_alias_term_id")
+    private MerchantAliasTerms learnedMerchantAliasTerm;
+
+    /** 이 확정이 fixed_expense.biller_merchant_id를 처음 채웠는지 여부. */
+    @Column(name = "biller_assigned_by_confirmation")
+    private Boolean billerAssignedByConfirmation;
+
     private FixedExpensePayment(FixedExpense fixedExpense, String yearMonth, CardTransaction cardTransaction,
-                                 BigDecimal paidAmount, FixedExpensePaymentStatus status) {
+                                 BigDecimal paidAmount, FixedExpensePaymentStatus status, Boolean userConfirmedMatch,
+                                 MerchantAliasTerms learnedMerchantAliasTerm, Boolean billerAssignedByConfirmation) {
         this.fixedExpense = fixedExpense;
         this.yearMonth = yearMonth;
         this.cardTransaction = cardTransaction;
         this.paidAmount = paidAmount;
         this.status = status;
+        this.userConfirmedMatch = userConfirmedMatch;
+        this.learnedMerchantAliasTerm = learnedMerchantAliasTerm;
+        this.billerAssignedByConfirmation = billerAssignedByConfirmation;
     }
 
     /** 수집 매칭 성공 시 생성(fixedExpense.md §5). */
     public static FixedExpensePayment paid(FixedExpense fixedExpense, String yearMonth,
                                             CardTransaction cardTransaction, BigDecimal paidAmount) {
         return new FixedExpensePayment(fixedExpense, yearMonth, cardTransaction, paidAmount,
-                FixedExpensePaymentStatus.PAID);
+                FixedExpensePaymentStatus.PAID, false, null, false);
+    }
+
+    /** F-05 "이 거래예요" 사용자 확정. 연결 해제에 필요한 학습·biller provenance를 함께 남긴다. */
+    public static FixedExpensePayment userConfirmed(FixedExpense fixedExpense, String yearMonth,
+                                                     CardTransaction cardTransaction, BigDecimal paidAmount,
+                                                     MerchantAliasTerms learnedMerchantAliasTerm,
+                                                     boolean billerAssignedByConfirmation) {
+        return new FixedExpensePayment(fixedExpense, yearMonth, cardTransaction, paidAmount,
+                FixedExpensePaymentStatus.PAID, true, learnedMerchantAliasTerm, billerAssignedByConfirmation);
     }
 
     /** 취소 재수집 시 매칭 건이 취소되면 이 행을 삭제한다(미납 복귀, §7) — UNPAID 행을 별도로 만들지 않는다. */

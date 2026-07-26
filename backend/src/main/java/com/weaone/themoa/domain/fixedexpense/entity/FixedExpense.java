@@ -196,10 +196,17 @@ public class FixedExpense {
      * 직접 등록(경로 B) 당시엔 결제내역이 없어 알 수 없었던 biller를 F-05 미납 확인 시점에 소급 채운다
      * (troubleshooting/billerProblem.md). 이미 채워진 값은 덮어쓰지 않는다 — 최초 확인이 정본이다.
      */
-    public void assignBillerMerchant(Merchant billerMerchant) {
+    public boolean assignBillerMerchant(Merchant billerMerchant) {
         if (this.billerMerchant == null) {
             this.billerMerchant = billerMerchant;
+            return true;
         }
+        return false;
+    }
+
+    /** 사용자 결제 연결에서 처음 채운 biller를 그 연결 해제 시 되돌린다. */
+    public void clearBillerMerchant() {
+        this.billerMerchant = null;
     }
 
     public boolean isActive() {
