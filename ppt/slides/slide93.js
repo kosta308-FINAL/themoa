@@ -114,10 +114,7 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     </div>
 
     <div class="member m2">
-      <div class="photo">
-        <div class="phead"></div><div class="pbody"></div>
-        <div class="ptag">사진 추가</div>
-      </div>
+      <div class="photo has-photo" style="background-image:url('assets/team_munhoyeon.png')"></div>
       <div class="body">
         <div class="mname"><span class="dot"></span>문호연</div>
         <div class="mcount">담당 1개</div>
@@ -127,7 +124,7 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
         <div class="persona">
           <div class="hr"></div>
           <div class="plabel">AI가 본 성격</div>
-          <div class="pbox empty">여기에 성격을 채워보세요</div>
+          <div class="pbox filled">AI를 조교급으로 갈아넣는 집착형 실전파</div>
         </div>
       </div>
     </div>
