@@ -290,28 +290,28 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="abs htitle">카테고리 하나만 파고들기</div>
     <div class="abs hsub">카테고리를 선택하면 지난 주기 대비 변화부터<br>결제내역, 소비 시점까지 한 화면에서 보여줍니다.</div>
 
-    <div class="abs shotcard" style="height:848px;">
+    <div class="abs shotcard" style="height:850px;">
       <div class="img" style="background-image:url('assets/s90_category_detail.png'); background-position:center top;"></div>
     </div>
 
-    <div class="abs hl" style="left:132px; top:374px; width:471px; height:359px;"></div>
-    <div class="abs hl" style="left:628px; top:374px; width:392px; height:359px;"></div>
-    <div class="abs hl" style="left:132px; top:745px; width:888px; height:45px;"></div>
-    <div class="abs hl" style="left:132px; top:798px; width:591px; height:280px;"></div>
-    <div class="abs hl" style="left:737px; top:798px; width:284px; height:280px;"></div>
+    <div class="abs hl" style="left:194px; top:374px; width:475px; height:359px;"></div>
+    <div class="abs hl" style="left:682px; top:374px; width:403px; height:359px;"></div>
+    <div class="abs hl" style="left:194px; top:747px; width:891px; height:39px;"></div>
+    <div class="abs hl" style="left:194px; top:799px; width:593px; height:281px;"></div>
+    <div class="abs hl" style="left:800px; top:799px; width:285px; height:281px;"></div>
 
-    <div class="abs badge" style="left:112px; top:344px;">01</div>
-    <div class="abs badge" style="left:608px; top:344px;">02</div>
-    <div class="abs badge" style="left:84px; top:748px;">03</div>
-    <div class="abs badge" style="left:112px; top:875px;">04</div>
-    <div class="abs badge" style="left:705px; top:755px;">05</div>
+    <div class="abs badge" style="left:170px; top:344px;">01</div>
+    <div class="abs badge" style="left:658px; top:344px;">02</div>
+    <div class="abs badge" style="left:154px; top:746px;">03</div>
+    <div class="abs badge" style="left:170px; top:875px;">04</div>
+    <div class="abs badge" style="left:770px; top:755px;">05</div>
 
     <svg class="abs wires" viewBox="0 0 1920 1080" width="1920" height="1080">
-      <path d="M603,554  Q1150,400 1300,262" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1020,554 Q1160,470 1300,394" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1020,768 Q1160,640 1300,524" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M723,938  Q1150,780 1300,654" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1021,938 Q1160,850 1300,784" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
+      <path d="M669,554  Q1150,400 1300,262" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
+      <path d="M1085,554 Q1160,470 1300,394" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
+      <path d="M1085,767 Q1160,640 1300,524" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
+      <path d="M787,940  Q1150,780 1300,654" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
+      <path d="M1085,940 Q1160,850 1300,784" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
     </svg>
 
     <div class="citem" style="top:240px;">
