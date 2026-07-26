@@ -1,0 +1,53 @@
+:root{
+  --slide-w: 1920px;
+  --slide-h: 1080px;
+  --pretendard: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+html,body{ height:100%; background:#0d0f0c; overflow:hidden; font-family:var(--pretendard); }
+
+/* 뷰포트에 맞춰 슬라이드(1920x1080)를 중앙 스케일 */
+#stage{ position:fixed; inset:0; overflow:hidden; }
+#deck{
+  width:var(--slide-w); height:var(--slide-h);
+  position:absolute; top:0; left:0;
+  transform-origin:top left;
+  box-shadow:0 30px 80px rgba(0,0,0,.55);
+  background:linear-gradient(135deg,#F5FFF5 0%,#E0FFE8 100%);  /* 공통 배경 고정 */
+  overflow:hidden;
+}
+.slide{
+  position:absolute; inset:0;
+  width:var(--slide-w); height:var(--slide-h);
+  overflow:hidden;
+  transform:translateX(100%);          /* 아직 안 나온 슬라이드는 오른쪽 대기 */
+  transition:transform .55s cubic-bezier(.7,0,.25,1);
+  will-change:transform;
+}
+.slide.active{ transform:translateX(0); }      /* 현재 슬라이드 */
+.slide.past{ transform:translateX(-100%); }    /* 지나간 슬라이드는 왼쪽으로 */
+#deck.notrans .slide{ transition:none; }       /* 최초 로드 시 애니메이션 방지 */
+
+/* 절대좌표 배치용 헬퍼: 원본 PPT 1920x1080 좌표를 그대로 사용 */
+.abs{ position:absolute; }
+
+/* 클릭 애니메이션(프래그먼트) 공통 베이스 — 슬라이드별 transform은 각 슬라이드 css에서 확장 */
+.frag{ opacity:0; transition:opacity .45s ease, transform .45s ease; }
+.frag.show{ opacity:1; }
+
+/* 하단 네비게이션 */
+#nav{
+  position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+  display:flex; align-items:center; gap:14px;
+  background:rgba(20,24,20,.72); backdrop-filter:blur(8px);
+  padding:8px 16px; border-radius:999px; z-index:100;
+  font-family:var(--pretendard); color:#eafff0; font-size:14px;
+  border:1px solid rgba(255,255,255,.08);
+}
+#nav button{
+  background:transparent; border:none; color:#eafff0; cursor:pointer;
+  font-size:18px; width:30px; height:30px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+}
+#nav button:hover{ background:rgba(255,255,255,.12); }
+#pageInd{ min-width:56px; text-align:center; font-variant-numeric:tabular-nums; }
