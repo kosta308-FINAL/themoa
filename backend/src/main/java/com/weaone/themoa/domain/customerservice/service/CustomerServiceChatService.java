@@ -159,22 +159,7 @@ public class CustomerServiceChatService {
             String answerMarkdown = lines.length > 1 ? lines[1].trim() : "";
             return new GroundedChatAnswer(answerMarkdown, needsHumanSupport);
         }
-        return new GroundedChatAnswer(answer, isInsufficientGroundingAnswer(answer));
-    }
-
-    private boolean isInsufficientGroundingAnswer(String answer) {
-        if (!StringUtils.hasText(answer)) {
-            return true;
-        }
-        String normalized = answer.replaceAll("\\s+", "");
-        return normalized.contains("문서만으로는")
-                || normalized.contains("근거가부족")
-                || normalized.contains("근거를찾지못")
-                || normalized.contains("정보를찾지못")
-                || normalized.contains("정보가없")
-                || normalized.contains("정보가포함되어있지")
-                || normalized.contains("답변드리기어렵")
-                || normalized.contains("알수없");
+        return new GroundedChatAnswer(answer, false);
     }
 
     private String callWithTimeout(Callable<String> call) throws Exception {

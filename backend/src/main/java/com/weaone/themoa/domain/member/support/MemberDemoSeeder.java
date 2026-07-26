@@ -38,6 +38,7 @@ public class MemberDemoSeeder implements ApplicationRunner {
             "$2a$10$gFDQQs84GQbyA12PQnkecOTti2Xy6hErVG271TQq7xHgL8aWy8B4y";
     public static final String DEMO_EMAIL = "test";
     public static final String ADMIN_EMAIL = "admin";
+    public static final String DEMO_EMAIL_2 = "test2";
 
     private final MemberRepository memberRepository;
     private final MemberTermsAgreementRepository memberTermsAgreementRepository;
@@ -51,6 +52,7 @@ public class MemberDemoSeeder implements ApplicationRunner {
         if (memberRepository.count() > 0) {
             memberRepository.findById(DEMO_MEMBER_ID)
                     .ifPresent(member -> seedTermsAgreements(member, now));
+            ensureSecondDemoAccount(now);
             return;
         }
         jdbcTemplate.execute("ALTER TABLE member AUTO_INCREMENT = 1");
@@ -66,6 +68,24 @@ public class MemberDemoSeeder implements ApplicationRunner {
         admin.changeRole(Role.ADMIN);
         admin.recordLoginSuccess(now);
         memberRepository.save(admin);
+
+        ensureSecondDemoAccount(now);
+    }
+
+    /**
+     * 승격/재분류 시연용 두 번째 일반 회원(email="test2"). {@link
+     * com.weaone.themoa.domain.merchant.support.PromotionDemoSeeder}가 이 계정을 대상으로
+     * test와 같은 원본 가맹점명의 미분류 거래를 심는다. 이미 있으면 건드리지 않는다.
+     */
+    private void ensureSecondDemoAccount(LocalDateTime now) {
+        if (memberRepository.findByEmail(DEMO_EMAIL_2).isPresent()) {
+            return;
+        }
+        Member demo2 = Member.signUp(DEMO_EMAIL_2, DEMO_PASSWORD_HASH, "더모아2", Gender.FEMALE,
+                LocalDate.of(1999, 1, 1), now);
+        demo2.recordLoginSuccess(now);
+        memberRepository.save(demo2);
+        seedTermsAgreements(demo2, now);
     }
 
     private void seedTermsAgreements(Member member, LocalDateTime now) {

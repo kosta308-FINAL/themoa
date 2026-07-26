@@ -5,7 +5,9 @@ import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.domain.auth.entity.TermsType;
 import com.weaone.themoa.domain.category.entity.Category;
 import com.weaone.themoa.domain.category.repository.CategoryRepository;
+import com.weaone.themoa.domain.cardtransaction.entity.CardTransaction;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
+import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseMatchingService;
 import com.weaone.themoa.domain.merchant.dto.response.AdminMerchantPromotionCandidateResponse;
 import com.weaone.themoa.domain.merchant.dto.response.AdminUnclassifiedMerchantResponse;
 import com.weaone.themoa.domain.merchant.entity.Merchant;
@@ -55,6 +57,7 @@ public class AdminMerchantService {
     private final CardTransactionRepository cardTransactionRepository;
     private final CategoryRepository categoryRepository;
     private final PromotionCandidateRejectionRepository promotionCandidateRejectionRepository;
+    private final FixedExpenseMatchingService fixedExpenseMatchingService;
 
     @Transactional(readOnly = true)
     public List<AdminMerchantPromotionCandidateResponse> listPromotionCandidates() {
@@ -71,6 +74,9 @@ public class AdminMerchantService {
      * 이미 전역 표기로 있으면 아무 것도 하지 않는다(멱등) — 여러 회원이 같은 표기를 각자 학습했어도 승격은 한 번만 실질 반영된다.
      * 전역 표기 추가에 그치지 않고, 이 원본 가맹점명으로 이미 쌓여 있던 모든 회원의 미분류 거래도 그 자리에서
      * 소급 재분류한다(다음 동기화까지 기다리지 않아도 됨) — 승격의 효과가 관리자 화면에서 바로 확인돼야 하기 때문이다.
+     * 재분류된 거래가 아직 어떤 고정지출에도 안 태깅됐다면(§5 매칭 미시도 상태), 그 자리에서 고정지출 매칭도
+     * 같이 재시도한다 — 그렇지 않으면 이미 alias를 기다리며 등록해 둔 다른 회원의 고정지출이 다음 실제 카드
+     * 동기화 전까지 계속 미납으로 남는다.
      */
     @Transactional
     public void promote(Long aliasId, String aliasText) {
@@ -107,8 +113,12 @@ public class AdminMerchantService {
     private void reclassifyExistingTransactions(MerchantAlias alias, String aliasText) {
         merchantRepository.findByMerchantNameRaw(aliasText).ifPresent(merchant -> {
             merchant.linkGlobalAlias(alias);
-            cardTransactionRepository.findByMerchant_IdAndMerchantAliasIsNull(merchant.getId())
-                    .forEach(tx -> tx.assignMerchant(merchant, alias));
+            for (CardTransaction tx : cardTransactionRepository.findByMerchant_IdAndMerchantAliasIsNull(merchant.getId())) {
+                tx.assignMerchant(merchant, alias);
+                if (tx.getFixedExpense() == null) {
+                    fixedExpenseMatchingService.match(tx);
+                }
+            }
         });
     }
 
