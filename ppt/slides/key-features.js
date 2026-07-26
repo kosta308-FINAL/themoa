@@ -1,4 +1,4 @@
-/* ===================== Slide 90 (내 기능 소개 · 소비가이드 → 고정지출 → 전체 소비내역, 클릭으로 전환) ===================== */
+/* ===================== Slide 90 (내 기능 소개 · 소비가이드 → 고정지출 → 전체 소비내역 → 카테고리 상세, 클릭으로 전환) ===================== */
 document.head.insertAdjacentHTML('beforeend', `
 <style>
 #s90{ background:transparent; }   /* 배경은 #deck에 고정된 공통 그라데이션을 그대로 사용 */
@@ -8,7 +8,8 @@ document.head.insertAdjacentHTML('beforeend', `
 #s90[data-step="0"] .step0,
 #s90[data-step="1"] .step1,
 #s90[data-step="2"] .step2,
-#s90[data-step="3"] .step3{ opacity:1; pointer-events:auto; }
+#s90[data-step="3"] .step3,
+#s90[data-step="4"] .step4{ opacity:1; pointer-events:auto; }
 
 #s90 .htitle{ left:70px; top:50px; width:1000px; color:#171717; font-size:40px; font-weight:800; }
 #s90 .hsub{ left:70px; top:112px; width:1050px; color:#333; font-size:20px; font-weight:600; line-height:1.5; }
@@ -57,7 +58,7 @@ document.head.insertAdjacentHTML('beforeend', `
   position:absolute; left:70px; top:970px; color:#6B7C8A; font-size:16px; font-weight:700;
   display:flex; align-items:center; gap:6px; transition:opacity .3s ease; z-index:5;
 }
-#s90[data-step="3"] .hint{ opacity:0; pointer-events:none; }
+#s90[data-step="4"] .hint{ opacity:0; pointer-events:none; }
 #s90 .hint .arrow{ display:inline-block; animation:s90bounce 1.2s ease-in-out infinite; }
 @keyframes s90bounce{ 0%,100%{ transform:translateX(0); } 50%{ transform:translateX(6px); } }
 </style>
@@ -65,8 +66,8 @@ document.head.insertAdjacentHTML('beforeend', `
 
 document.getElementById('deck').insertAdjacentHTML('beforeend', `
 <section class="slide" id="s90">
-  <!-- 이 슬라이드의 최대 스텝 수(3)를 엔진에 알려주는 표시용 마커 -->
-  <div class="frag" data-step="3" style="display:none"></div>
+  <!-- 이 슬라이드의 최대 스텝 수(4)를 엔진에 알려주는 표시용 마커 -->
+  <div class="frag" data-step="4" style="display:none"></div>
 
   <div class="abs hint">클릭하면 다음 화면으로 <span class="arrow">→</span></div>
 
@@ -280,6 +281,72 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
       <div>
         <div class="ctitle">결제내역 전체 목록</div>
         <div class="cdesc">날짜별로 묶어서 최신순으로,<br>페이지를 넘겨가며 확인합니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================= STEP 4 : 카테고리 소비 상세 (category-detail) ========================= -->
+  <div class="step step4">
+    <div class="abs htitle">카테고리 하나만 파고들기</div>
+    <div class="abs hsub">카테고리를 선택하면 지난 주기 대비 변화부터<br>결제내역, 소비 시점까지 한 화면에서 보여줍니다.</div>
+
+    <div class="abs shotcard" style="height:848px;">
+      <div class="img" style="background-image:url('assets/s90_category_detail.png'); background-position:center top;"></div>
+    </div>
+
+    <div class="abs hl" style="left:132px; top:374px; width:471px; height:359px;"></div>
+    <div class="abs hl" style="left:628px; top:374px; width:392px; height:359px;"></div>
+    <div class="abs hl" style="left:132px; top:745px; width:888px; height:45px;"></div>
+    <div class="abs hl" style="left:132px; top:798px; width:591px; height:280px;"></div>
+    <div class="abs hl" style="left:737px; top:798px; width:284px; height:280px;"></div>
+
+    <div class="abs badge" style="left:112px; top:344px;">01</div>
+    <div class="abs badge" style="left:608px; top:344px;">02</div>
+    <div class="abs badge" style="left:84px; top:748px;">03</div>
+    <div class="abs badge" style="left:112px; top:875px;">04</div>
+    <div class="abs badge" style="left:705px; top:755px;">05</div>
+
+    <svg class="abs wires" viewBox="0 0 1920 1080" width="1920" height="1080">
+      <path d="M603,554  Q1150,400 1300,262" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
+      <path d="M1020,554 Q1160,470 1300,394" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
+      <path d="M1020,768 Q1160,640 1300,524" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
+      <path d="M723,938  Q1150,780 1300,654" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
+      <path d="M1021,938 Q1160,850 1300,784" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
+    </svg>
+
+    <div class="citem" style="top:240px;">
+      <div class="cnum">01</div>
+      <div>
+        <div class="ctitle">카테고리별 지난 주기 대비 변화</div>
+        <div class="cdesc">이번 주기 소비 규모를 이전 주기와 비교해<br>증감액까지 함께 보여줍니다.</div>
+      </div>
+    </div>
+    <div class="citem" style="top:372px;">
+      <div class="cnum">02</div>
+      <div>
+        <div class="ctitle">카테고리별 결제내역</div>
+        <div class="cdesc">선택한 카테고리의 결제 건을 날짜별로<br>모아서 보여줍니다.</div>
+      </div>
+    </div>
+    <div class="citem" style="top:502px;">
+      <div class="cnum">03</div>
+      <div>
+        <div class="ctitle">카테고리 전환</div>
+        <div class="cdesc">탭 하나로 다른 카테고리의 상세 분석으로<br>바로 넘어갑니다.</div>
+      </div>
+    </div>
+    <div class="citem" style="top:632px;">
+      <div class="cnum">04</div>
+      <div>
+        <div class="ctitle">급여주기별 소비 흐름</div>
+        <div class="cdesc">선택한 카테고리가 급여주기마다 어떻게<br>변해왔는지 그래프로 보여줍니다.</div>
+      </div>
+    </div>
+    <div class="citem" style="top:762px;">
+      <div class="cnum">05</div>
+      <div>
+        <div class="ctitle">급여주기 내 소비 시점</div>
+        <div class="cdesc">초반·중반·후반, 평일·주말 중 언제<br>많이 썼는지 비교해서 보여줍니다.</div>
       </div>
     </div>
   </div>
