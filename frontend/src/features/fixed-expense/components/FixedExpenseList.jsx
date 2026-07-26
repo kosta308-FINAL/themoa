@@ -130,8 +130,10 @@ function FixedExpenseList({
                     <strong>{item.name}</strong>
                   </span>
                   <span className="fx-expense-meta">
-                    {item.categoryName} · {METHOD_LABEL[item.paymentMethod]} ·
-                    매월 {item.expectedPayDay}일
+                    {item.categoryName} · {METHOD_LABEL[item.paymentMethod]} ·{" "}
+                    {item.expectedPayDay ? `매월 ${item.expectedPayDay}일` : (
+                      <span className="fx-expense-payday-unset">결제일 미설정</span>
+                    )}
                   </span>
                 </span>
                 {badge && (

@@ -1,7 +1,11 @@
 package com.weaone.themoa.domain.recommend.ingest;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -18,13 +22,20 @@ import com.weaone.themoa.domain.recommend.dto.SavingsOptionItem;
 
 /**
  * 예·적금 수집→저장 서비스 (배치 4단계 중 예적금 파트).
- * 흐름: finlife 호출 → 판매중(close_date 없음)만 남김 → base·option 매칭 → 회사코드+상품코드+유형 기준 Upsert.
+ * 흐름: finlife 호출(응답에 있으면 전부 판매중) → base·option 매칭 → Upsert →
+ * 이번 응답에 없었던 기존 상품은 판매종료로 마킹.
+ *
+ * <p>finlife의 dcls_end_day(공시 종료일)는 판매종료를 뜻하지 않는다(공시 갱신 예정일에
+ * 가깝고, 무기한이면 "99991231"). 실제 판매종료 상품은 다음 수집 때 응답 자체에서 사라지는
+ * 것으로 확인되어, 그걸 기준으로 우리가 직접 close_date를 채운다
+ * (troubleshooting/financialtroubleshooting.md 참고).
  */
 @Service
 public class SavingsIngestService {
 
     /** 수집 대상 권역: 020000 은행, 030300 저축은행. */
     private static final List<String> GROUPS = List.of("020000", "030300");
+    private static final DateTimeFormatter CLOSE_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private final FinlifeClient finlifeClient;
     private final SavingsProductRepository repository;
@@ -34,19 +45,23 @@ public class SavingsIngestService {
         this.repository = repository;
     }
 
-    /** 예금+적금을 은행/저축은행 권역별로 모두 수집·저장하고 집계를 돌려준다. */
+    /** 예금+적금을 은행/저축은행 권역별로 모두 수집·저장하고, 응답에서 빠진 기존 상품을 판매종료 마킹한다. */
     @Transactional
     public IngestSummary ingestAll() {
         IngestSummary summary = new IngestSummary();
+        Set<String> seenDepositKeys = new HashSet<>();
+        Set<String> seenSavingKeys = new HashSet<>();
         for (String group : GROUPS) {
-            ingest(finlifeClient.fetchDeposits(group), SavingsType.DEPOSIT, summary);
-            ingest(finlifeClient.fetchSavings(group), SavingsType.SAVING, summary);
+            ingest(finlifeClient.fetchDeposits(group), SavingsType.DEPOSIT, summary, seenDepositKeys);
+            ingest(finlifeClient.fetchSavings(group), SavingsType.SAVING, summary, seenSavingKeys);
         }
+        closeMissing(SavingsType.DEPOSIT, seenDepositKeys, summary);
+        closeMissing(SavingsType.SAVING, seenSavingKeys, summary);
         return summary;
     }
 
     private void ingest(CollectResult<SavingsBaseItem, SavingsOptionItem> result,
-                        SavingsType type, IngestSummary summary) {
+                        SavingsType type, IngestSummary summary, Set<String> seenKeys) {
 
         // 옵션을 (회사코드+상품코드) 기준으로 묶어둔다 → 각 상품이 자기 옵션을 빠르게 찾도록.
         Map<String, List<SavingsOptionItem>> optionsByKey = result.optionList().stream()
@@ -54,12 +69,7 @@ public class SavingsIngestService {
 
         for (SavingsBaseItem base : result.baseList()) {
             summary.fetched++;
-
-            // 판매종료 상품(close_date 있음)은 저장하지 않는다.
-            if (isClosed(base.dclsEndDay())) {
-                summary.skippedClosed++;
-                continue;
-            }
+            seenKeys.add(key(base.finCoNo(), base.finPrdtCd()));
 
             List<SavingsProductOption> options = optionsByKey
                     .getOrDefault(key(base.finCoNo(), base.finPrdtCd()), List.of())
@@ -84,11 +94,12 @@ public class SavingsIngestService {
 
         repository.findByCompanyCodeAndProductCodeAndProductType(base.finCoNo(), base.finPrdtCd(), type)
                 .ifPresentOrElse(existing -> {
-                    // 이미 있으면 기본정보 갱신 + 옵션 통째로 교체
+                    // 이미 있으면 기본정보 갱신 + 옵션 통째로 교체. 응답에 다시 나타났으니 판매종료였다면
+                    // 재개(close_date null)로 되돌린다.
                     existing.updateBasicInfo(base.korCoNm(), base.finPrdtNm(), base.joinWay(),
                             base.joinDeny(), base.joinMember(), base.spclCnd(), base.mtrtInt(),
                             base.etcNote(), SavingsMapper.toIntOrNull(base.maxLimit()),
-                            base.dclsStrtDay(), base.dclsEndDay());
+                            base.dclsStrtDay(), null);
                     existing.replaceOptions(options);
                     existing.applyParsedCondition(parsed.minAge(), parsed.maxAge(), parsed.incomeLimit(),
                             parsed.incomeMin(), parsed.employmentType(), lowIncome);
@@ -106,8 +117,16 @@ public class SavingsIngestService {
                 });
     }
 
-    private static boolean isClosed(String dclsEndDay) {
-        return dclsEndDay != null && !dclsEndDay.isBlank();
+    /** 이번 수집 응답에 없었던(=판매종료로 추정되는) 기존 상품을 오늘 날짜로 마킹한다. */
+    private void closeMissing(SavingsType type, Set<String> seenKeys, IngestSummary summary) {
+        String today = LocalDate.now().format(CLOSE_DATE_FORMAT);
+        for (SavingsProduct product : repository.findAllByProductType(type)) {
+            if (!seenKeys.contains(key(product.getCompanyCode(), product.getProductCode()))
+                    && product.getCloseDate() == null) {
+                product.markClosedIfMissing(today);
+                summary.closedMissing++;
+            }
+        }
     }
 
     private static String key(String companyCode, String productCode) {
@@ -117,7 +136,7 @@ public class SavingsIngestService {
     /** 수집 집계 결과. */
     public static class IngestSummary {
         public int fetched;        // finlife에서 받은 총 상품 수
-        public int skippedClosed;  // 판매종료로 제외
+        public int closedMissing;  // 이번 응답에 없어서 새로 판매종료 마킹한 기존 상품 수
         public int inserted;       // 신규 저장
         public int updated;        // 기존 갱신
 
@@ -127,7 +146,7 @@ public class SavingsIngestService {
 
         @Override
         public String toString() {
-            return "받음 " + fetched + " / 판매종료제외 " + skippedClosed
+            return "받음 " + fetched + " / 신규 종료마킹 " + closedMissing
                     + " / 신규 " + inserted + " / 갱신 " + updated + " (저장합계 " + saved() + ")";
         }
     }

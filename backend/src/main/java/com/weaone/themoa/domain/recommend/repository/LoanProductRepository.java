@@ -4,6 +4,7 @@ import com.weaone.themoa.domain.recommend.entity.LoanProduct;
 import com.weaone.themoa.domain.recommend.entity.LoanProductOption;
 import com.weaone.themoa.domain.recommend.entity.LoanType;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,4 +23,7 @@ public interface LoanProductRepository extends JpaRepository<LoanProduct, Long> 
     /** 존재 여부만 필요할 때. */
     boolean existsByCompanyCodeAndProductCodeAndProductType(
             String companyCode, String productCode, LoanType productType);
+
+    /** 수집 후 판매종료 마킹용 - 유형별 전체 상품(이번 응답에 없었던 것들을 걸러내는 기준 집합). */
+    List<LoanProduct> findAllByProductType(LoanType productType);
 }

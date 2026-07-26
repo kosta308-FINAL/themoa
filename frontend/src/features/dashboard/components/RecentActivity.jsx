@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import DashboardIcon from "../../../components/common/DashboardIcon";
+import DashEmptyState from "./DashEmptyState";
+import DashSectionError from "./DashSectionError";
 import { formatDateTime, formatTransactionAmount } from "../dashboardUtils";
 
 function RecentActivity({ transactions, loading, error }) {
@@ -12,13 +14,16 @@ function RecentActivity({ transactions, loading, error }) {
         <Link to="/dashboard/spending/transactions">더보기 &gt;</Link>
       </div>
       {loading && !transactions && <div className="dash-loading">최근 소비를 불러오고 있어요.</div>}
-      {error && !transactions && <div className="dash-section-error">최근 소비 내역을 불러오지 못했어요.</div>}
-      {!loading && !error && items.length === 0 && (
-        <div className="dash-empty-state">최근 소비 내역이 없어요.</div>
+      {!loading && items.length === 0 && (
+        <DashEmptyState
+          icon="receipt"
+          title="최근 소비 내역이 없어요"
+          description="소비가이드를 설정하고 소비가 발생하면 여기에 자동으로 표시돼요."
+        />
       )}
       {items.length > 0 && (
         <>
-          {error && <div className="dash-section-error">{error}</div>}
+          {error && <DashSectionError message={error} />}
           <ul className="activity-list">
             {items.map((item) => (
               <li key={item.transactionId || `${item.usedAt}-${item.netAmount}`}>

@@ -4,6 +4,7 @@ import {
   getCategorySummary,
   getSpendingTransactions,
 } from "../../api/spendingGuideApi";
+import AnimatedNumber from "../../components/common/AnimatedNumber";
 import CalendarPopover from "../../components/common/CalendarPopover";
 import DashboardIcon from "../../components/common/DashboardIcon";
 import RegisterExpenseModal from "../fixed-expense/components/RegisterExpenseModal";
@@ -359,7 +360,12 @@ function SpendingGuidePage() {
                               ? "오늘 사용 가능 금액"
                               : "이 날 권장액 대비 남은 금액"}
                           </span>
-                          <strong>{formatWon(displayAvailable)}</strong>
+                          <strong>
+                            <AnimatedNumber
+                              value={displayAvailable}
+                              format={formatWon}
+                            />
+                          </strong>
                           <p>
                             {isSelectedToday
                               ? displayAvailable <= 0
@@ -372,7 +378,12 @@ function SpendingGuidePage() {
                         </div>
                         <div className="spending-mini-stat">
                           <span>하루 권장 소비액</span>
-                          <strong>{formatWon(dailyRecommended)}</strong>
+                          <strong>
+                            <AnimatedNumber
+                              value={dailyRecommended}
+                              format={formatWon}
+                            />
+                          </strong>
                           <p>
                             {isSelectedToday
                               ? "자정까지 고정"
@@ -385,7 +396,12 @@ function SpendingGuidePage() {
                               ? "오늘 순사용액"
                               : "이 날 순사용액"}
                           </span>
-                          <strong>{formatWon(displayNetSpend)}</strong>
+                          <strong>
+                            <AnimatedNumber
+                              value={displayNetSpend}
+                              format={formatWon}
+                            />
+                          </strong>
                           <p>취소 반영 금액</p>
                         </div>
                       </div>
@@ -395,9 +411,15 @@ function SpendingGuidePage() {
                             ? "오늘 권장액 사용률"
                             : "이 날 권장액 사용률"}
                         </span>
-                        <strong>{displayUseRate}%</strong>
+                        <strong>
+                          <AnimatedNumber
+                            value={displayUseRate}
+                            duration={700}
+                            format={(n) => `${n}%`}
+                          />
+                        </strong>
                       </div>
-                      <div className="spending-progress">
+                      <div className="spending-progress" key={selectedDate}>
                         <i
                           className={displayUseRate > 100 ? "over" : ""}
                           style={{
@@ -433,7 +455,10 @@ function SpendingGuidePage() {
                         : "spending-cycle-amount"
                     }
                   >
-                    {formatWon(summary.remainingAmount)}
+                    <AnimatedNumber
+                      value={summary.remainingAmount}
+                      format={formatWon}
+                    />
                   </strong>
                   <p>
                     {formatDate(summary.cycleStartDate)} ~{" "}
@@ -442,11 +467,20 @@ function SpendingGuidePage() {
                   <div className="spending-cycle-bottom">
                     <div>
                       <span>남은 기간</span>
-                      <strong>{summary.remainingDays}일</strong>
+                      <strong>
+                        <AnimatedNumber
+                          value={summary.remainingDays}
+                          duration={600}
+                          format={(n) => `${n}`}
+                        />
+                        일
+                      </strong>
                     </div>
                     <div>
                       <span>주기 순사용액</span>
-                      <strong>{formatWon(cycleSpent)}</strong>
+                      <strong>
+                        <AnimatedNumber value={cycleSpent} format={formatWon} />
+                      </strong>
                     </div>
                     <div>
                       <span>
@@ -464,7 +498,10 @@ function SpendingGuidePage() {
                       </span>
                       {surplusSummary.hasSavingsGoal ? (
                         <strong>
-                          {formatWon(surplusSummary.savingsTargetAmount)}
+                          <AnimatedNumber
+                            value={surplusSummary.savingsTargetAmount}
+                            format={formatWon}
+                          />
                         </strong>
                       ) : (
                         <button
@@ -586,6 +623,7 @@ function SpendingGuidePage() {
                       )
                     ) : (
                       <CategorySummary
+                        key={selectedDate}
                         data={displayCategory}
                         error={isSelectedToday ? sectionErrors.category : ""}
                       />

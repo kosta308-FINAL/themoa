@@ -211,7 +211,9 @@ public class FinancialProductSearchService {
                 String key = "SAVINGS-" + product.getId();
                 String productText = nullToEmpty(product.getJoinTarget()) + " " + nullToEmpty(product.getSpecialCondition());
                 String excludedReason = null;
-                if ("LOAN".equals(typeIntent)) {
+                if (product.getCloseDate() != null) {
+                    excludedReason = "판매종료된 상품이라 제외";
+                } else if ("LOAN".equals(typeIntent)) {
                     excludedReason = "검색어가 대출 의도로 감지되어 예·적금은 제외";
                 } else if (isDemographicMismatch(queryGroups, productText)) {
                     excludedReason = "상품이 다른 인구집단 전용이라 제외";
@@ -226,7 +228,9 @@ public class FinancialProductSearchService {
             for (LoanProduct product : loanProductRepository.findAllById(loanIds)) {
                 String key = "LOAN-" + product.getId();
                 String excludedReason = null;
-                if ("SAVINGS".equals(typeIntent)) {
+                if (product.getCloseDate() != null) {
+                    excludedReason = "판매종료된 상품이라 제외";
+                } else if ("SAVINGS".equals(typeIntent)) {
                     excludedReason = "검색어가 저축 의도로 감지되어 대출은 제외";
                 } else if (isDemographicMismatch(queryGroups, nullToEmpty(product.getSpecialCondition()))) {
                     excludedReason = "상품이 다른 인구집단 전용이라 제외";
@@ -351,6 +355,11 @@ public class FinancialProductSearchService {
         List<ScoredItem> scoredItems = new ArrayList<>();
         if (!savingsIds.isEmpty() && !"LOAN".equals(typeIntent)) {
             for (SavingsProduct product : savingsProductRepository.findAllById(savingsIds)) {
+                // 벡터 검색(semanticScores)은 Qdrant 색인 상태를 그대로 따르므로, 색인 시점 이후
+                // 판매종료된 상품이 여기 섞여 들어올 수 있다 - DB 최신 상태로 한 번 더 걸러낸다.
+                if (product.getCloseDate() != null) {
+                    continue;
+                }
                 String productText = nullToEmpty(product.getJoinTarget()) + " " + nullToEmpty(product.getSpecialCondition());
                 if (isDemographicMismatch(queryGroups, productText)) {
                     continue;
@@ -366,6 +375,9 @@ public class FinancialProductSearchService {
         }
         if (!loanIds.isEmpty() && !"SAVINGS".equals(typeIntent)) {
             for (LoanProduct product : loanProductRepository.findAllById(loanIds)) {
+                if (product.getCloseDate() != null) {
+                    continue;
+                }
                 String productText = nullToEmpty(product.getSpecialCondition());
                 if (isDemographicMismatch(queryGroups, productText)) {
                     continue;
@@ -394,7 +406,7 @@ public class FinancialProductSearchService {
     private List<FinancialSearchResultItem> typedFallback(String typeIntent, FinancialRagSettingValues settings) {
         String reason = "정확히 일치하는 상품 정보는 없지만, 검색어가 %s 관련 표현으로 보여 관련 상품을 보여드려요";
         if ("LOAN".equals(typeIntent)) {
-            return loanProductRepository.findAll().stream()
+            return loanProductRepository.findAllByCloseDateIsNull().stream()
                     .map(product -> toItem(product, reason.formatted("대출")))
                     .sorted(Comparator.comparing(FinancialSearchResultItem::representativeRate,
                             Comparator.nullsLast(Comparator.naturalOrder())))
@@ -402,7 +414,7 @@ public class FinancialProductSearchService {
                     .toList();
         }
         if ("SAVINGS".equals(typeIntent)) {
-            return savingsProductRepository.findAll().stream()
+            return savingsProductRepository.findAllByCloseDateIsNull().stream()
                     .map(product -> toItem(product, reason.formatted("예금/적금")))
                     .sorted(Comparator.comparing(FinancialSearchResultItem::representativeRate,
                             Comparator.nullsLast(Comparator.reverseOrder())))

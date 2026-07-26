@@ -50,7 +50,8 @@ public final class HardFilter {
         return true;
     }
 
-    private static boolean isClosed(String dclsEndDay) {
-        return dclsEndDay != null && !dclsEndDay.isBlank();
+    /** close_date는 finlife dcls_end_day가 아니라 수집 배치가 직접 마킹한 값이다(SavingsIngestService). */
+    private static boolean isClosed(String closeDate) {
+        return closeDate != null && !closeDate.isBlank();
     }
 }

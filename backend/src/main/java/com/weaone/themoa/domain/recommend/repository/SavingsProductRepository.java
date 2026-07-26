@@ -26,6 +26,9 @@ public interface SavingsProductRepository extends JpaRepository<SavingsProduct, 
     boolean existsByCompanyCodeAndProductCodeAndProductType(
             String companyCode, String productCode, SavingsType productType);
 
+    /** 수집 후 판매종료 마킹용 - 유형별 전체 상품(이번 응답에 없었던 것들을 걸러내는 기준 집합). */
+    List<SavingsProduct> findAllByProductType(SavingsType productType);
+
     /** 추천용 - 판매중(close_date 없음) 상품을 옵션까지 함께(fetch join) 조회. */
     @Query("select distinct p from SavingsProduct p left join fetch p.options where p.closeDate is null")
     List<SavingsProduct> findAllSellingWithOptions();

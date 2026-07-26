@@ -42,6 +42,9 @@ function SummaryCards({
     return (
       <div className="summary-cards summary-cards-compact">
         <div className="summary-card summary-card-empty">
+          <span className="summary-card-icon">
+            <DashboardIcon name="x" />
+          </span>
           <span className="summary-card-label">소비 현황</span>
           <p>소비 현황을 불러오지 못했어요.</p>
         </div>

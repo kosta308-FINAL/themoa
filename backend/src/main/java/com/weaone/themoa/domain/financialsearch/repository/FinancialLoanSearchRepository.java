@@ -34,6 +34,9 @@ public interface FinancialLoanSearchRepository extends JpaRepository<LoanProduct
     /** 판매중(공시종료일 없음) 상품 수. */
     long countByCloseDateIsNull();
 
+    /** 임베딩 배치용 - 판매중인 상품만 Qdrant에 색인한다(판매종료 상품이 검색에 잡히지 않도록). */
+    List<LoanProduct> findAllByCloseDateIsNull();
+
     /** {@link FinancialSavingsSearchRepository#findLastUpdatedAt()}의 대출 버전. */
     @Query("select max(p.updatedAt) from LoanProduct p")
     LocalDateTime findLastUpdatedAt();

@@ -287,8 +287,27 @@ function ExpenseDetailModal({
                 </div>
                 <div className="fx-detail-row">
                   <span>결제일</span>
-                  <strong>매월 {expense.expectedPayDay}일</strong>
+                  {expense.expectedPayDay ? (
+                    <strong>매월 {expense.expectedPayDay}일</strong>
+                  ) : (
+                    <span className="fx-detail-unset">
+                      미설정
+                      <button
+                        type="button"
+                        className="fx-detail-unset-cta"
+                        onClick={() => setIsEditing(true)}
+                      >
+                        설정하기
+                      </button>
+                    </span>
+                  )}
                 </div>
+                {!expense.expectedPayDay && (
+                  <p className="fx-detail-hint">
+                    예·적금 가입으로 자동 등록된 고정지출이라 결제일이 아직
+                    없어요. 아래에서 직접 입력할 수 있어요.
+                  </p>
+                )}
                 {expense.paymentStatus && (
                   <div className="fx-detail-row">
                     <span>이번 달 이행 상태</span>

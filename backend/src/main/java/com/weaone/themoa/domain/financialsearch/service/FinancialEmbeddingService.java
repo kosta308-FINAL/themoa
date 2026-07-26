@@ -49,7 +49,9 @@ public class FinancialEmbeddingService {
         VectorStore vectorStore = financialVectorStore.delegate();
         int count = 0;
         List<Document> batch = new ArrayList<>(BATCH_SIZE);
-        for (SavingsProduct product : savingsProductRepository.findAll()) {
+        // 판매종료(close_date 있음) 상품은 색인하지 않는다 - findAll()을 쓰면 판매종료 상품도 임베딩돼
+        // 벡터 검색에 계속 걸린다(troubleshooting/financialtroubleshooting.md).
+        for (SavingsProduct product : savingsProductRepository.findAllByCloseDateIsNull()) {
             batch.add(documentBuilder.build(product));
             count++;
             if (batch.size() >= BATCH_SIZE) {
@@ -57,7 +59,7 @@ public class FinancialEmbeddingService {
                 batch.clear();
             }
         }
-        for (LoanProduct product : loanProductRepository.findAll()) {
+        for (LoanProduct product : loanProductRepository.findAllByCloseDateIsNull()) {
             batch.add(documentBuilder.build(product));
             count++;
             if (batch.size() >= BATCH_SIZE) {
