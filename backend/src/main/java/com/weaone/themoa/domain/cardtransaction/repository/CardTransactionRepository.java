@@ -67,6 +67,9 @@ public interface CardTransactionRepository extends JpaRepository<CardTransaction
     /** 데모 시드 재기동 시 중복 생성 방지용. */
     boolean existsByApprovalNo(String approvalNo);
 
+    /** 데모 카드거래 시드 재기동 가드({@code CardTransactionDemoSeeder}): 이미 시드됐으면 다시 돌지 않는다. */
+    boolean existsByMember_Id(Long memberId);
+
     /**
      * F-05 미납 확인 후보(troubleshooting/billerProblem.md §6): 미태깅 + 금액오차 + 결제일 윈도우.
      * 가맹점은 미식별(merchantAlias null, biller 경유 포함) 거래이거나 이 고정지출과 같은 alias로
