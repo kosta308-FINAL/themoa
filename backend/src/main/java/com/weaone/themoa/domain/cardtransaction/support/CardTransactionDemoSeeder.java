@@ -14,6 +14,7 @@ import com.weaone.themoa.domain.cardconnection.repository.CardIssuerRepository;
 import com.weaone.themoa.domain.cardtransaction.client.CodefApprovalRecord;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
 import com.weaone.themoa.domain.cardtransaction.service.CardTransactionCollectionService;
+import com.weaone.themoa.domain.coaching.service.HabitCoachingCardBatchService;
 import com.weaone.themoa.domain.fixedexpense.service.FixedExpenseDetectionService;
 import com.weaone.themoa.domain.member.entity.IncomeType;
 import com.weaone.themoa.domain.member.entity.Member;
@@ -65,6 +66,7 @@ public class CardTransactionDemoSeeder implements ApplicationRunner {
     private final SpendingGuideService spendingGuideService;
     private final BudgetRepository budgetRepository;
     private final SurplusFundBatchService surplusFundBatchService;
+    private final HabitCoachingCardBatchService habitCoachingCardBatchService;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -118,6 +120,12 @@ public class CardTransactionDemoSeeder implements ApplicationRunner {
 
         fixedExpenseDetectionService.detectForMember(member.getId());
         log.info("데모 고정지출 후보 탐지 완료(member_id={})", member.getId());
+
+        // 습관 코칭 카드도 실제 급여일 새벽 배치와 같은 온디맨드 진입점을 그대로 호출한다 — 직전 완료
+        // 주기의 실제 card_transaction(SYNC, 소비성 카테고리)을 규칙 계층(HabitSavingRatioPolicy)으로
+        // 집계해 상위 3개를 뽑고 LLM(실패 시 템플릿 폴백)으로 문구를 써서 저장한다. 손으로 만든 문구가 아니다.
+        habitCoachingCardBatchService.generateForMember(member.getId(), today);
+        log.info("데모 습관 코칭 카드 생성 완료(member_id={})", member.getId());
     }
 
     private List<CodefApprovalRecord> loadRecords() throws IOException {
