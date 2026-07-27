@@ -9,20 +9,24 @@ const formatDate = (value) => {
 
 const periodText = (item) => {
   if (item.alwaysOpen) return "상시 신청";
-  if (item.applicationEndDate) return `${formatDate(item.applicationEndDate)} 마감`;
-  if (item.applicationStartDate) return `${formatDate(item.applicationStartDate)}부터 신청`;
+  if (item.applicationEndDate)
+    return `${formatDate(item.applicationEndDate)} 마감`;
+  if (item.applicationStartDate)
+    return `${formatDate(item.applicationStartDate)}부터 신청`;
   return "신청 기간 확인 필요";
 };
 
 const ageText = (item) => {
   if (item.minAge == null && item.maxAge == null) return "";
-  if (item.minAge != null && item.maxAge != null) return `만 ${item.minAge}~${item.maxAge}세`;
+  if (item.minAge != null && item.maxAge != null)
+    return `만 ${item.minAge}~${item.maxAge}세`;
   if (item.minAge != null) return `만 ${item.minAge}세 이상`;
   return `만 ${item.maxAge}세 이하`;
 };
 
 function PolicyRecommendationTile({
   item,
+  rank,
   active,
   bookmarked,
   bookmarkBusy,
@@ -30,11 +34,9 @@ function PolicyRecommendationTile({
   onOpenDetail,
 }) {
   const policyId = item.policyId;
-  const metaItems = [
-    ageText(item),
-    item.applicationStatus,
-    periodText(item),
-  ].filter(Boolean).slice(0, 3);
+  const metaItems = [ageText(item), item.applicationStatus, periodText(item)]
+    .filter(Boolean)
+    .slice(0, 3);
 
   const handleOpenDetail = () => {
     onOpenDetail(policyId);
@@ -65,34 +67,42 @@ function PolicyRecommendationTile({
       onClick={handleOpenDetail}
       onKeyDown={handleKeyDown}
     >
-      <div className="policy-recommendation-tile-head">
-        <span className="policy-recommendation-region">{dash(item.region)}</span>
-        <div className="policy-recommendation-bookmark" onClick={(event) => event.stopPropagation()}>
-          <BookmarkButton
-            bookmarked={bookmarked}
-            busy={bookmarkBusy}
-            onToggle={handleBookmarkToggle}
-          />
-        </div>
-      </div>
+      <span className="policy-recommendation-rank">{rank}</span>
 
-      <div className="policy-recommendation-tile-body">
-        <h3 className="policy-recommendation-title">{dash(item.title)}</h3>
-        <p className="policy-recommendation-tile-summary">{dash(item.summary)}</p>
-        <div className="policy-recommendation-meta">
-          {metaItems.map((meta) => (
-            <span key={meta}>{meta}</span>
-          ))}
-        </div>
-        {item.matchReason && (
-          <div className="policy-recommendation-reason-box">
-            <span>추천 이유</span>
-            <p>{item.matchReason}</p>
+      <div className="policy-recommendation-tile-main">
+        <div className="policy-recommendation-tile-head">
+          <span className="policy-recommendation-region">
+            {dash(item.region)}
+          </span>
+          <div className="policy-recommendation-meta">
+            {metaItems.map((meta) => (
+              <span key={meta}>{meta}</span>
+            ))}
           </div>
+        </div>
+
+        <h3 className="policy-recommendation-title">{dash(item.title)}</h3>
+        <p className="policy-recommendation-tile-summary">
+          {dash(item.summary)}
+        </p>
+
+        {item.matchReason && (
+          <p className="policy-recommendation-reason-inline">
+            <span>추천 이유</span>
+            {item.matchReason}
+          </p>
         )}
       </div>
 
-      <div className="policy-recommendation-tile-footer">
+      <div
+        className="policy-recommendation-tile-side"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <BookmarkButton
+          bookmarked={bookmarked}
+          busy={bookmarkBusy}
+          onToggle={handleBookmarkToggle}
+        />
         <button type="button" onClick={handleDetailButtonClick}>
           상세보기
         </button>

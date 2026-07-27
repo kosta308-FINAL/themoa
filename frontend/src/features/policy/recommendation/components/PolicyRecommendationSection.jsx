@@ -180,11 +180,12 @@ function PolicyRecommendationSection({
                 </div>
               )}
               {!recommendationError && recommendations?.items?.length > 0 && (
-                <div className="policy-recommendation-grid">
-                  {recommendations.items.map((item) => (
+                <div className="policy-recommendation-list">
+                  {recommendations.items.map((item, index) => (
                     <PolicyRecommendationTile
                       key={item.policyId}
                       item={item}
+                      rank={index + 1}
                       active={selected?.policyId === item.policyId}
                       bookmarked={bookmarks.isBookmarked(item.policyId)}
                       bookmarkBusy={
