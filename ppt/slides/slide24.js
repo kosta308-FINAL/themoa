@@ -1,110 +1,152 @@
-/* ===================== Slide 24 ===================== */
-/*
-policy_detail.png original: 458 x 469
-capture-wrap: left 90, top 225, width 850, height 805
-object-fit contain, object-position center top
-scale: 1.716418
-rendered image: 786.12 x 805
-image content offset: left 121.94, top 225
-*/
+/* ===================== Slide 24 (정책 상세 조회 · 6페이지 형식/파란색 + 호버 확대) ===================== */
 document.head.insertAdjacentHTML('beforeend', `
 <style>
-#s24{
-  background:transparent;
+#s24{ background:transparent; }
+
+#s24 .htitle{ left:70px; top:50px; width:1150px; color:#171717; font-size:40px; font-weight:800; }
+#s24 .hsub{ left:70px; top:112px; width:1150px; color:#333; font-size:20px; font-weight:600; line-height:1.5; }
+
+#s24 .shotcard{
+  left:260px; top:200px; width:786px; height:805px; border-radius:18px;
+  overflow:hidden; background:#fff; border:1px solid #E3E9F5;
+  box-shadow:0 24px 55px rgba(0,0,0,.14);
 }
-#s24 .ptitle{
-  left:52px; top:40px; width:760px;
-  color:#6B7C8A; font-size:45px; font-weight:800; letter-spacing:-1px;
-}
-#s24 .lead{
-  left:92px; top:128px; width:900px;
-  color:#111; font-size:38px; font-weight:700; line-height:1.32; letter-spacing:-1.1px;
-}
-#s24 .capture-wrap{
-  left:90px; top:225px; width:850px; height:805px;
-  background:#fff; border:1px solid rgba(28,92,58,.18);
-  box-shadow:0 12px 30px rgba(34,70,48,.12);
-  overflow:hidden;
-}
-#s24 .capture{
-  width:100%; height:100%; object-fit:contain; object-position:center top; display:block;
-}
-#s24.entering .capture-wrap{
-  animation:s24CaptureIn .55s ease both;
-}
-#s24 .items{
-  left:1060px; top:236px; width:720px;
-}
-#s24 .item{
-  position:relative; margin-bottom:26px; padding-left:64px;
-  color:#202522; font-size:25px; font-weight:700; line-height:1.32; letter-spacing:-.6px;
-  transform:translateY(18px);
-}
-#s24 .item.frag.show{
-  transform:translateY(0);
-}
-#s24 .item4{
-  margin-top:8px;
-}
-#s24 .num{
-  position:absolute; left:0; top:0; width:42px; height:42px;
-  border:2px solid #00A651; color:#007613; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  font-size:18px; font-weight:800;
-}
-#s24 .sub{
-  display:block; margin-top:7px;
-  color:#5B6760; font-size:18px; font-weight:500; line-height:1.35;
-}
-#s24 .mark{
-  position:absolute; z-index:4; pointer-events:none;
-  border:2px solid rgba(0,166,81,.86);
-  background:rgba(0,166,81,.035);
-  opacity:0; transform:scale(.99);
-  transition:opacity .45s ease, transform .45s ease;
-}
-#s24 .mark.frag.show{
-  opacity:1; transform:scale(1);
-}
-#s24 .mark-num{
-  position:absolute; left:-13px; top:-13px; width:30px; height:30px;
-  border-radius:50%; background:#00A651; color:#fff;
-  display:flex; align-items:center; justify-content:center;
-  font-size:14px; font-weight:800;
-}
-#s24 .m1{ left:153px; top:345px; width:726px; height:115px; }
-#s24 .m2{ left:154px; top:480px; width:224px; height:212px; }
-#s24 .m3{ left:153px; top:704px; width:726px; height:55px; }
-#s24 .m4{ left:153px; top:772px; width:186px; height:71px; }
-#s24 .m5{ left:346px; top:772px; width:188px; height:71px; }
-@keyframes s24CaptureIn{
-  0%{ opacity:0; transform:translateY(20px); }
-  100%{ opacity:1; transform:translateY(0); }
-}
+#s24 .shotcard .img{ width:100%; height:100%; background-repeat:no-repeat; background-size:100% auto; }
+
+#s24 .hl{ position:absolute; border:3px solid #1667D6; border-radius:10px;
+  box-shadow:0 0 0 4px rgba(22,103,214,.12); cursor:pointer; transition:opacity .3s ease; }
+#s24.zooming .hl{ opacity:0; }
+#s24.zooming .badge{ opacity:0; }
+#s24 .zoompop{ position:absolute; opacity:0; pointer-events:none; z-index:20;
+  background-repeat:no-repeat; border:3px solid #1667D6; border-radius:12px;
+  box-shadow:0 22px 55px rgba(0,0,0,.35); transition:opacity .2s ease; }
+#s24 .zoompop.show{ opacity:1; }
+#s24 .zoomnum{ position:absolute; top:-18px; left:-18px; width:46px; height:46px; border-radius:50%;
+  background:#1667D6; color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:18px; font-weight:800; box-shadow:0 8px 18px rgba(22,103,214,.4); }
+#s24 .zoomwire{ opacity:0; transition:opacity .2s ease; }
+#s24 .zoomwire.show{ opacity:1; }
+
+#s24 .badge{ position:absolute; width:40px; height:40px; border-radius:50%;
+  background:#1667D6; color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:17px; font-weight:800; box-shadow:0 8px 18px rgba(22,103,214,.35); z-index:4;
+  transition:opacity .3s ease; }
+
+#s24 .citem{ position:absolute; left:1300px; width:560px; display:flex; align-items:flex-start; gap:18px;
+  transform-origin:left center; cursor:pointer; transition:transform .2s ease; }
+#s24 .citem.big{ transform:scale(1.5); z-index:6; }
+#s24 .cnum{ width:44px; height:44px; border-radius:50%; flex:none; background:#1667D6; color:#fff;
+  display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800;
+  box-shadow:0 8px 18px rgba(22,103,214,.3); }
+#s24 .ctitle{ color:#171717; font-size:23px; font-weight:800; margin-bottom:7px; width:fit-content; padding:0 4px; }
+#s24 .cdesc{ color:#555; font-size:17px; font-weight:500; line-height:1.5; }
+#s24 .citem.big .ctitle{ background:linear-gradient(transparent 55%, rgba(255,224,20,.65) 55%); }
 </style>
 `);
 
 document.getElementById('deck').insertAdjacentHTML('beforeend', `
 <section class="slide" id="s24">
-  <div class="abs ptitle">정책 상세 조회</div>
-  <div class="abs lead">정책의 핵심 정보와 신청 경로를<br>한 화면에서 확인할 수 있습니다.</div>
+  <div class="abs htitle">정책 상세 조회</div>
+  <div class="abs hsub">정책의 핵심 정보와 신청 경로를<br>한 화면에서 확인할 수 있습니다.</div>
 
-  <div class="abs capture-wrap">
-    <img class="capture" src="assets/policy_detail.png" alt="정책 상세 조회 화면">
+  <div class="zoompop"><span class="zoomnum"></span></div>
+  <svg class="abs zoomwire" viewBox="0 0 1920 1080" width="1920" height="1080" style="left:0;top:0;z-index:19;pointer-events:none">
+    <path d="" fill="none" stroke="#1667D6" stroke-width="3" opacity=".75"/>
+  </svg>
+
+  <div class="abs shotcard">
+    <div class="img" style="background-image:url('assets/policy_detail.png'); background-position:center top;"></div>
   </div>
 
-  <div class="abs mark m1 frag" data-step="1"><div class="mark-num">01</div></div>
-  <div class="abs mark m2 frag" data-step="2"><div class="mark-num">02</div></div>
-  <div class="abs mark m3 frag" data-step="3"><div class="mark-num">03</div></div>
-  <div class="abs mark m4 frag" data-step="4"><div class="mark-num">04</div></div>
-  <div class="abs mark m5 frag" data-step="5"><div class="mark-num">05</div></div>
+  <div class="abs hl" style="left:291px; top:320px; width:726px; height:115px;"></div>
+  <div class="abs hl" style="left:292px; top:455px; width:224px; height:212px;"></div>
+  <div class="abs hl" style="left:291px; top:679px; width:726px; height:55px;"></div>
+  <div class="abs hl" style="left:291px; top:747px; width:186px; height:71px;"></div>
+  <div class="abs hl" style="left:484px; top:747px; width:188px; height:71px;"></div>
 
-  <div class="abs items">
-    <div class="item frag" data-step="1"><span class="num">01</span>정책 기본 정보<span class="sub">정책 식별값과 정책명을 한 화면에서 확인</span></div>
-    <div class="item frag" data-step="2"><span class="num">02</span>정책 분류 및 운영 정보<span class="sub">기관, 분야, 상태, 지역 정보 표시</span></div>
-    <div class="item frag" data-step="3"><span class="num">03</span>정책 요약<span class="sub">정책의 핵심 내용을 짧게 확인</span></div>
-    <div class="item item4 frag" data-step="4"><span class="num">04</span>즐겨찾기 추가<span class="sub">관심 정책으로 저장</span></div>
-    <div class="item frag" data-step="5"><span class="num">05</span>공식 링크<span class="sub">공식 안내 페이지로 이동</span></div>
+  <div class="abs badge" style="left:275px; top:304px;">01</div>
+  <div class="abs badge" style="left:276px; top:439px;">02</div>
+  <div class="abs badge" style="left:275px; top:663px;">03</div>
+  <div class="abs badge" style="left:275px; top:731px;">04</div>
+  <div class="abs badge" style="left:468px; top:731px;">05</div>
+
+  <div class="citem" style="top:220px;">
+    <div class="cnum">01</div>
+    <div><div class="ctitle">정책 기본 정보</div>
+      <div class="cdesc">정책 식별값과 정책명을<br>한 화면에서 확인합니다.</div></div>
+  </div>
+  <div class="citem" style="top:360px;">
+    <div class="cnum">02</div>
+    <div><div class="ctitle">정책 분류 및 운영 정보</div>
+      <div class="cdesc">기관, 분야, 상태, 지역 정보를<br>함께 표시합니다.</div></div>
+  </div>
+  <div class="citem" style="top:500px;">
+    <div class="cnum">03</div>
+    <div><div class="ctitle">정책 요약</div>
+      <div class="cdesc">정책의 핵심 내용을<br>짧게 확인합니다.</div></div>
+  </div>
+  <div class="citem" style="top:640px;">
+    <div class="cnum">04</div>
+    <div><div class="ctitle">즐겨찾기 추가</div>
+      <div class="cdesc">관심 정책으로 저장합니다.</div></div>
+  </div>
+  <div class="citem" style="top:780px;">
+    <div class="cnum">05</div>
+    <div><div class="ctitle">공식 링크</div>
+      <div class="cdesc">공식 안내 페이지로 이동합니다.</div></div>
   </div>
 </section>
 `);
+
+/* ── 호버 확대 ── */
+(function(){
+  const sec = document.getElementById('s24');
+  if(!sec) return;
+  const pop = sec.querySelector('.zoompop');
+  const zoomnum = pop.querySelector('.zoomnum');
+  const zoomwire = sec.querySelector('.zoomwire');
+  const zoompath = zoomwire.querySelector('path');
+  const card = sec.querySelector('.shotcard');
+  const imgEl = sec.querySelector('.shotcard .img');
+  const bg = imgEl.style.backgroundImage;
+  const CARD_L = card.offsetLeft, CARD_T = card.offsetTop, DISP_W = card.offsetWidth;
+  const Z = 1.9;
+  const hls = Array.from(sec.querySelectorAll('.hl'));
+  const items = Array.from(sec.querySelectorAll('.citem'));
+  hls.forEach(function(hl, i){
+    const item = items[i];
+    const on = function(){
+      const rx = hl.offsetLeft - CARD_L;
+      const ry = hl.offsetTop  - CARD_T;
+      const rw = hl.offsetWidth, rh = hl.offsetHeight;
+      const z = Math.min(Z, 1200/rw, 620/rh);
+      const popW = rw*z, popH = rh*z;
+      let popL = hl.offsetLeft - rw*(z-1)/2;
+      let popT = hl.offsetTop  - rh*(z-1)/2;
+      popL = Math.max(20, Math.min(popL, 1920 - popW - 20));
+      popT = Math.max(20, Math.min(popT, 1080 - popH - 20));
+      pop.style.left = popL+'px'; pop.style.top = popT+'px';
+      pop.style.width = popW+'px'; pop.style.height = popH+'px';
+      pop.style.backgroundImage    = bg;
+      pop.style.backgroundSize     = (DISP_W*z)+'px auto';
+      pop.style.backgroundPosition = (-rx*z)+'px '+(-ry*z)+'px';
+      pop.classList.add('show');
+      sec.classList.add('zooming');
+      if(item) item.classList.add('big');
+      const popR = popL+popW, popCY = popT+popH/2;
+      if(item){
+        zoomnum.textContent = item.querySelector('.cnum').textContent;
+        const ex = item.offsetLeft, ey = item.offsetTop + 26;
+        zoompath.setAttribute('d', 'M'+popR+','+popCY+' L'+ex+','+ey);
+        zoomwire.classList.add('show');
+      }
+    };
+    const off = function(){
+      pop.classList.remove('show');
+      zoomwire.classList.remove('show');
+      sec.classList.remove('zooming');
+      if(item) item.classList.remove('big');
+    };
+    [hl, item].forEach(function(t){ if(t){ t.addEventListener('mouseenter', on); t.addEventListener('mouseleave', off); } });
+  });
+})();
