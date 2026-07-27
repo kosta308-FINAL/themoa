@@ -7,10 +7,12 @@ import com.weaone.themoa.domain.budget.dto.request.PaydayUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.SalaryUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.SavingsGoalUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.SpendingGuideSetupRequest;
+import com.weaone.themoa.domain.budget.dto.request.SurplusTransferCreateRequest;
 import com.weaone.themoa.domain.budget.dto.request.WorkScheduleUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.response.IncomeAdjustmentResponse;
 import com.weaone.themoa.domain.budget.dto.response.RecentDaysResponse;
 import com.weaone.themoa.domain.budget.dto.response.SpendingGuideSummaryResponse;
+import com.weaone.themoa.domain.budget.dto.response.SurplusTransferResponse;
 import com.weaone.themoa.domain.budget.dto.response.TodayTransactionsResponse;
 import com.weaone.themoa.domain.budget.service.SpendingGuideService;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionListResponse;
@@ -58,7 +60,7 @@ public class SpendingGuideController {
     }
 
     @Operation(summary = "오늘 현황·예산 기준(S-01)",
-            description = "하루 권장 소비액·오늘 순사용액·오늘 사용 가능 금액·남은 예산을 계산해 반환합니다. 월급·급여일 미등록이면 오류가 아니라 setupRequired=true로 반환합니다.")
+            description = "하루 권장 소비액·오늘 순사용액·남은 예산과 완료 주기 잉여금의 사용 가능 잔액을 계산해 반환합니다. 월급·급여일 미등록이면 오류가 아니라 setupRequired=true로 반환합니다.")
     @GetMapping("/summary")
     public ResponseEntity<ApiResponse<SpendingGuideSummaryResponse>> summary(
             @Parameter(hidden = true) @AuthenticationPrincipal Long memberId) {
@@ -141,6 +143,16 @@ public class SpendingGuideController {
             @PathVariable Long id) {
         spendingGuideService.deleteIncomeAdjustment(memberId, id);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "잉여금을 이번 주기 예산으로 가져오기",
+            description = "완료 주기에서 쌓인 사용 가능 잉여금 일부를 현재 급여 주기 예산에 더합니다.")
+    @PostMapping("/surplus-transfers")
+    public ResponseEntity<ApiResponse<SurplusTransferResponse>> transferSurplus(
+            @Parameter(hidden = true) @AuthenticationPrincipal Long memberId,
+            @Valid @RequestBody SurplusTransferCreateRequest request) {
+        SurplusTransferResponse response = spendingGuideService.transferSurplus(memberId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
     @Operation(summary = "오늘 거래 미리보기(S-01)",

@@ -3866,6 +3866,24 @@
   color: #96a29b;
   font-size: 11px;
 }
+.spending-surplus-transfer-button {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 5px;
+  margin-top: 5px;
+  padding: 6px 9px;
+  border: 1px solid #cce9d6;
+  border-radius: 8px;
+  color: var(--spending-green-dark);
+  background: var(--spending-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+.spending-surplus-transfer-button:hover {
+  border-color: #9edab3;
+  background: #e4f8eb;
+}
 .spending-surplus-panel .spending-empty {
   width: 100%;
   min-height: 90px;
@@ -3891,6 +3909,46 @@
 .spending-surplus-goal-edit:hover {
   color: var(--spending-green-dark);
   background: var(--spending-soft);
+}
+
+.spending-surplus-transfer-modal {
+  width: min(430px, 100%);
+}
+.spending-surplus-transfer-balance,
+.spending-surplus-transfer-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--spending-soft);
+}
+.spending-surplus-transfer-balance span,
+.spending-surplus-transfer-preview span {
+  color: var(--spending-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.spending-surplus-transfer-balance strong {
+  color: var(--spending-green-dark);
+  font-size: 20px;
+}
+.spending-surplus-transfer-preview {
+  background: #f7faf8;
+}
+.spending-surplus-transfer-preview strong {
+  color: var(--spending-text);
+  font-size: 15px;
+}
+.spending-surplus-transfer-note {
+  margin: 0;
+  padding: 11px 13px;
+  border-radius: 10px;
+  color: var(--spending-muted);
+  background: #f6f8f7;
+  font-size: 11px;
+  line-height: 1.55;
 }
 
 .spending-settings-button {

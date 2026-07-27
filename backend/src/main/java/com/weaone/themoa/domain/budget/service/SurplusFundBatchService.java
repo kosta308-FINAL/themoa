@@ -5,6 +5,7 @@ import com.weaone.themoa.domain.budget.entity.SurplusFund;
 import com.weaone.themoa.domain.budget.repository.BudgetIncomeAdjustmentRepository;
 import com.weaone.themoa.domain.budget.repository.BudgetRepository;
 import com.weaone.themoa.domain.budget.repository.SurplusFundRepository;
+import com.weaone.themoa.domain.budget.repository.SurplusFundTransferRepository;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class SurplusFundBatchService {
     private final SurplusFundRepository surplusFundRepository;
     private final CardTransactionRepository cardTransactionRepository;
     private final BudgetIncomeAdjustmentRepository budgetIncomeAdjustmentRepository;
+    private final SurplusFundTransferRepository surplusFundTransferRepository;
 
     /** 알림 배치(04:00) 이후 정리성으로 04:30에 돈다. */
     @Scheduled(cron = "0 30 4 * * *", zone = "Asia/Seoul")
@@ -57,8 +59,10 @@ public class SurplusFundBatchService {
         BigDecimal spentThisCycle = cardTransactionRepository.sumNetSpend(
                 memberId, TransactionStatus.REJECTED, budget.getCycleStartDate(), budget.getCycleEndDate());
         BigDecimal incomeAdjustmentTotal = budgetIncomeAdjustmentRepository.sumAmountByBudget_Id(budget.getId());
-        // 음수 그대로 — 0으로 깎지 않는다. "수입 직접 입력" 합계도 사용가능금액에 반영해 잉여금에 자연히 흡수된다.
-        BigDecimal amount = budget.getRemainingAmount(spentThisCycle, incomeAdjustmentTotal);
+        BigDecimal surplusTransferTotal = surplusFundTransferRepository.sumAmountByBudget_Id(budget.getId());
+        // 음수 그대로 — 수입 직접 입력과 이번 주기로 가져온 잉여금도 사용가능금액에 반영한다.
+        BigDecimal amount = budget.getRemainingAmount(
+                spentThisCycle, incomeAdjustmentTotal.add(surplusTransferTotal));
         try {
             surplusFundRepository.save(SurplusFund.accrue(
                     budget.getMember(), budget.getYearMonth(), amount, today, LocalDateTime.now()));

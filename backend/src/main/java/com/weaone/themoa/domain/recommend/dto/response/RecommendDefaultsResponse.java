@@ -10,9 +10,9 @@ import com.weaone.themoa.domain.recommend.service.RiskType;
  *                             초기값은 실제 나이여야 한다(고정값으로 두면 사용자가 안 고쳤을 때 존재하지도
  *                             않는 나이 기준으로 추천되어, 나이 제한 상품이 잘못 추천/제외될 수 있다).
  * @param monthlyIncomeManwon 월소득(만원). 소비가이드 설정 전이라 알 수 없으면 null → 화면에서 직접 입력받는다.
- * @param monthlyDepositWon   월 납입가능금액(원). 최근 급여주기 잉여금을 쓰고, 아직 적립된 잉여금이 없으면
- *                            기본값을 내려준다(항상 값이 있다).
- * @param depositFromSurplus  monthlyDepositWon이 실제 잉여금 기록에서 온 값이면 true, 기본값이면 false.
+ * @param monthlyDepositWon   월 납입가능금액(원). 완료 주기 잉여금에서 이번 주기들로 가져간 금액을 뺀
+ *                            순잔액의 주기당 평균이며, 적립 이력이 없으면 기본값을 내려준다.
+ * @param depositFromSurplus  monthlyDepositWon이 잉여금 순잔액에서 온 값이면 true, 기본값이면 false.
  *                            화면에서 "지난 주기 잉여금 기준"인지 안내할 때 쓴다.
  * @param employmentType      마지막 추천의 취업유형. 저장 이력이 없으면 null.
  * @param lowIncome           마지막 추천의 차상위계층 여부.
