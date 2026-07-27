@@ -18,6 +18,9 @@ export const useFinancialSearch = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
+  // 정책 검색과 같은 "목록 → 상세 모달" 흐름. 검색 결과에 이미 전체 정보가 들어 있어
+  // 정책과 달리 별도 상세 API 호출 없이 목록에서 고른 항목을 그대로 보여준다.
+  const [selected, setSelected] = useState(null);
 
   const runSearch = async (nextQuery = query, nextSort = sort) => {
     const trimmed = nextQuery.trim();
@@ -30,6 +33,7 @@ export const useFinancialSearch = () => {
     setSort(nextSort);
     setLoading(true);
     setError("");
+    setSelected(null);
     try {
       const result = await searchFinancialProducts({
         query: trimmed,
@@ -46,6 +50,9 @@ export const useFinancialSearch = () => {
     }
   };
 
+  const openDetail = (item) => setSelected(item);
+  const closeDetail = () => setSelected(null);
+
   return {
     query,
     setQuery,
@@ -55,6 +62,9 @@ export const useFinancialSearch = () => {
     loading,
     error,
     searched,
+    selected,
+    openDetail,
+    closeDetail,
     runSearch,
   };
 };
