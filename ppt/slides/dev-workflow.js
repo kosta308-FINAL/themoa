@@ -84,7 +84,7 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="step st1">
       <div class="bar"></div><div class="num">1</div>
       <div class="stitle">작업지시서 확인</div>
-      <div class="sdesc">도메인의 중분류 기능별로<br>md 파일 분리(auth, fixedExpense,<br>habitExpense...). 구현 방식 +<br>erd.md 참고 + 필요 endpoint가<br>이미 문서에 명시돼 있음</div>
+      <div class="sdesc">기능별 작업지시서에<br>구현 방법, 참고 문서,<br>필요한 API와 완료 기준을<br>미리 정리했습니다</div>
     </div>
     <div class="step st2">
       <div class="bar"></div><div class="num">2</div>
