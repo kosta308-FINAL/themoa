@@ -45,7 +45,7 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="ccol p2">
       <div class="chead"><div class="cavatar">호연</div><div class="cname">문호연</div></div>
       <div class="cquote">&ldquo;</div>
-      <div class="placeholder">여기에 문호연님의 소감을<br>채워주세요.</div>
+      <div class="ctext">외부 API에서 정보를 받아 RAG를 구현하는 과정에서,<br>통일되지 않은 데이터 형태를 정제하기 위한 기준을 세우고<br>직접 적용하며 성취감을 느낄 수 있었습니다.<br><br>단순해 보이는 결과를 만들기 위해서는<br>복잡한 데이터를 사용자가 이해하기 쉬운 형태로<br>정제하는 과정이 중요하다는 것을 깨달았습니다.<br><br>다음 프로젝트에서는 초반부터 더 명확한 기준을 세워<br>데이터 정제와 구현에 드는 시간을<br>더욱 효율적으로 단축하고 싶습니다.</div>
     </div>
 
     <div class="ccol p3">
