@@ -1,5 +1,8 @@
 .policy-page {
   width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 30px 40px 56px;
 }
 
 .policy-topbar {
