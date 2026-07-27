@@ -1,135 +1,174 @@
-/* ===================== Slide 23 ===================== */
-/*
-policy_search_result.png original: 1099 x 715
-capture-wrap: left 92, top 326, width 1338, height 668
-object-fit contain scale: 0.934266
-rendered image: 1026.76 x 668
-image content offset: left 247.62, top 326
-*/
+/* ===================== Slide 23 (자연어 정책 검색 · 6페이지 형식/파란색 + 호버 확대) ===================== */
 document.head.insertAdjacentHTML('beforeend', `
 <style>
-#s23{
-  background:transparent;
+#s23{ background:transparent; }
+
+#s23 .htitle{ left:70px; top:50px; width:1200px; color:#171717; font-size:40px; font-weight:800; }
+#s23 .hsub{ left:70px; top:112px; width:1180px; color:#333; font-size:20px; font-weight:600; line-height:1.5; }
+
+/* 순서 흐름: 자연어 질문 → 조건 추출 → 정책 검색 결과 */
+#s23 .flow{ left:70px; top:184px; width:1100px; display:flex; align-items:center; gap:18px;
+  font-size:22px; font-weight:700; }
+#s23 .flow .chip{ border:1.5px solid rgba(22,103,214,.42); background:rgba(22,103,214,.07);
+  padding:10px 24px; border-radius:999px; color:#12508F;
+  transition:background .25s ease, color .25s ease, border-color .25s ease, box-shadow .25s ease; }
+#s23 .flow .chip.active{ background:#1667D6; color:#fff; border-color:#1667D6;
+  box-shadow:0 8px 20px rgba(22,103,214,.38); }
+#s23 .flow .arr{ color:#1667D6; font-size:26px; font-weight:800; }
+
+/* 마지막 강조 문구 (카드) */
+#s23 .final{ left:1300px; top:800px; width:544px; padding:24px 30px 26px; border-radius:20px;
+  background:linear-gradient(135deg, rgba(22,103,214,.13), rgba(22,103,214,.02));
+  border:1px solid rgba(22,103,214,.20); box-shadow:0 16px 38px rgba(22,103,214,.16); }
+#s23 .final .flabel{ display:inline-flex; align-items:center; margin-bottom:13px;
+  padding:5px 14px; border-radius:999px; background:#1667D6; color:#fff;
+  font-size:13px; font-weight:800; letter-spacing:.5px; }
+#s23 .final .ftext{ color:#173A66; font-size:23px; font-weight:800; line-height:1.48; letter-spacing:-.4px; }
+#s23 .final .ftext b{ color:#1667D6; }
+
+#s23 .shotcard{
+  left:70px; top:250px; width:1027px; height:668px; border-radius:18px;
+  overflow:hidden; background:#fff; border:1px solid #E3E9F5;
+  box-shadow:0 24px 55px rgba(0,0,0,.14);
 }
-#s23 .ptitle{
-  left:52px; top:40px; width:760px;
-  color:#6B7C8A; font-size:45px; font-weight:800; letter-spacing:-1px;
-}
-#s23 .question{
-  left:92px; top:126px; width:1280px;
-  color:#111; font-size:38px; font-weight:800; line-height:1.28; letter-spacing:-1.2px;
-  transform:translateY(18px);
-}
-#s23 .question.frag.show{
-  transform:translateY(0);
-}
-#s23 .flow{
-  left:97px; top:230px; width:1040px; height:58px;
-  display:flex; align-items:center; gap:22px;
-  color:#2C3E50; font-size:24px; font-weight:700;
-}
-#s23 .flow-item{
-  border:1px solid rgba(0,118,19,.28); background:rgba(255,255,255,.62);
-  padding:13px 24px; border-radius:999px;
-}
-#s23 .arrow{
-  color:#00A651; font-size:30px; font-weight:800;
-}
-#s23 .capture-wrap{
-  left:92px; top:326px; width:1338px; height:668px;
-  background:#fff; border:1px solid rgba(28,92,58,.18);
-  box-shadow:0 12px 30px rgba(34,70,48,.12);
-  overflow:hidden;
-}
-#s23 .capture{
-  width:100%; height:100%; object-fit:contain; display:block;
-}
-#s23.entering .capture-wrap{
-  animation:s23CaptureIn .55s ease both;
-}
-#s23 .labels{
-  left:1484px; top:356px; width:340px;
-  color:#202522;
-}
-#s23 .label{
-  position:relative; margin-bottom:44px; padding-left:64px;
-  font-size:25px; font-weight:700; line-height:1.35; letter-spacing:-.5px;
-  transform:translateX(20px);
-}
-#s23 .label.frag.show{
-  transform:translateX(0);
-}
-#s23 .label .num{
-  position:absolute; left:0; top:0; width:42px; height:42px;
-  border:2px solid #00A651; color:#007613; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  font-size:18px; font-weight:800;
-}
-#s23 .label .sub{
-  display:block; margin-top:7px;
-  color:#5B6760; font-size:18px; font-weight:500; line-height:1.35;
-}
-#s23 .final{
-  left:1484px; top:742px; width:350px;
-  color:#111; font-size:29px; font-weight:800; line-height:1.36; letter-spacing:-.8px;
-  border-left:5px solid #00A651; padding-left:22px;
-  transform:translateY(18px);
-}
-#s23 .final.frag.show{
-  transform:translateY(0);
-}
-#s23 .mark{
-  position:absolute; z-index:4; pointer-events:none;
-  border:2px solid rgba(0,166,81,.86);
-  background:rgba(0,166,81,.035);
-  opacity:0; transform:scale(.99);
-  transition:opacity .45s ease, transform .45s ease;
-}
-#s23 .mark.frag.show{
-  opacity:1; transform:scale(1);
-}
-#s23 .mark-num{
-  position:absolute; left:-13px; top:-13px; width:30px; height:30px;
-  border-radius:50%; background:#00A651; color:#fff;
-  display:flex; align-items:center; justify-content:center;
-  font-size:14px; font-weight:800;
-}
-#s23 .m1{ left:260px; top:341px; width:1005px; height:101px; }
-#s23 .m2{ left:257px; top:590px; width:407px; height:42px; }
-#s23 .m3{ left:247px; top:659px; width:1030px; height:166px; }
-@keyframes s23CaptureIn{
-  0%{ opacity:0; transform:translateY(20px); }
-  100%{ opacity:1; transform:translateY(0); }
-}
+#s23 .shotcard .img{ width:100%; height:100%; background-repeat:no-repeat; background-size:100% auto; }
+
+#s23 .hl{ position:absolute; border:3px solid #1667D6; border-radius:10px;
+  box-shadow:0 0 0 4px rgba(22,103,214,.12); cursor:pointer; transition:opacity .3s ease; }
+#s23.zooming .hl{ opacity:0; }
+#s23.zooming .badge{ opacity:0; }
+#s23 .zoompop{ position:absolute; opacity:0; pointer-events:none; z-index:20;
+  background-repeat:no-repeat; border:3px solid #1667D6; border-radius:12px;
+  box-shadow:0 22px 55px rgba(0,0,0,.35); transition:opacity .2s ease; }
+#s23 .zoompop.show{ opacity:1; }
+#s23 .zoomnum{ position:absolute; top:-18px; left:-18px; width:46px; height:46px; border-radius:50%;
+  background:#1667D6; color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:18px; font-weight:800; box-shadow:0 8px 18px rgba(22,103,214,.4); }
+#s23 .zoomwire{ opacity:0; transition:opacity .2s ease; }
+#s23 .zoomwire.show{ opacity:1; }
+
+#s23 .badge{ position:absolute; width:40px; height:40px; border-radius:50%;
+  background:#1667D6; color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:17px; font-weight:800; box-shadow:0 8px 18px rgba(22,103,214,.35); z-index:4;
+  transition:opacity .3s ease; }
+
+#s23 .citem{ position:absolute; left:1300px; width:560px; display:flex; align-items:flex-start; gap:18px;
+  transform-origin:left center; cursor:pointer; transition:transform .2s ease; }
+#s23 .citem.big{ transform:scale(1.5); z-index:6; }
+#s23 .cnum{ width:44px; height:44px; border-radius:50%; flex:none; background:#1667D6; color:#fff;
+  display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800;
+  box-shadow:0 8px 18px rgba(22,103,214,.3); }
+#s23 .ctitle{ color:#171717; font-size:23px; font-weight:800; margin-bottom:7px; width:fit-content; padding:0 4px; }
+#s23 .cdesc{ color:#555; font-size:17px; font-weight:500; line-height:1.5; }
+#s23 .citem.big .ctitle{ background:linear-gradient(transparent 55%, rgba(255,224,20,.65) 55%); }
 </style>
 `);
 
 document.getElementById('deck').insertAdjacentHTML('beforeend', `
 <section class="slide" id="s23">
-  <div class="abs ptitle">자연어 정책 검색</div>
-  <div class="abs question frag" data-step="1">수원에 사는 27살 취준생이 혜택 받을 수 있는 정책이 있을까?</div>
+  <div class="abs htitle">자연어 정책 검색</div>
+  <div class="abs hsub">"수원에 사는 27살 취준생이 혜택 받을 정책 있을까?" 처럼<br>자연어로 물어보면 조건을 자동으로 추출해 검색합니다.</div>
 
   <div class="abs flow">
-    <div class="flow-item">자연어 질문</div>
-    <div class="arrow">→</div>
-    <div class="flow-item">조건 추출</div>
-    <div class="arrow">→</div>
-    <div class="flow-item">정책 검색 결과</div>
+    <div class="chip">자연어 질문</div>
+    <div class="arr">&#8594;</div>
+    <div class="chip">조건 추출</div>
+    <div class="arr">&#8594;</div>
+    <div class="chip">정책 검색 결과</div>
   </div>
 
-  <div class="abs capture-wrap">
-    <img class="capture" src="assets/policy_search_result.png" alt="자연어 정책 검색 결과 화면">
+  <div class="zoompop"><span class="zoomnum"></span></div>
+  <svg class="abs zoomwire" viewBox="0 0 1920 1080" width="1920" height="1080" style="left:0;top:0;z-index:19;pointer-events:none">
+    <path d="" fill="none" stroke="#1667D6" stroke-width="3" opacity=".75"/>
+  </svg>
+
+  <div class="abs shotcard">
+    <div class="img" style="background-image:url('assets/policy_search_result.png'); background-position:center top;"></div>
   </div>
 
-  <div class="abs mark m1 frag" data-step="1"><div class="mark-num">01</div></div>
-  <div class="abs mark m2 frag" data-step="2"><div class="mark-num">02</div></div>
-  <div class="abs mark m3 frag" data-step="3"><div class="mark-num">03</div></div>
+  <div class="abs hl" style="left:82px; top:265px; width:1005px; height:101px;"></div>
+  <div class="abs hl" style="left:79px; top:514px; width:407px; height:42px;"></div>
+  <div class="abs hl" style="left:69px; top:583px; width:1024px; height:166px;"></div>
 
-  <div class="abs labels">
-    <div class="label frag" data-step="1"><span class="num">01</span>자연어 질문 입력<span class="sub">사용자가 입력한 문장을 그대로 검색</span></div>
-    <div class="label frag" data-step="2"><span class="num">02</span>검색 조건 자동 추출<span class="sub">지역, 나이, 취업 상태, 검색 모드 구조화</span></div>
-    <div class="label frag" data-step="3"><span class="num">03</span>정책 검색 결과 제공<span class="sub">조건에 맞는 정책 카드를 우선 표시</span></div>
+  <div class="abs badge" style="left:66px; top:249px;">01</div>
+  <div class="abs badge" style="left:63px; top:498px;">02</div>
+  <div class="abs badge" style="left:53px; top:567px;">03</div>
+
+  <div class="citem" style="top:300px;">
+    <div class="cnum">01</div>
+    <div><div class="ctitle">자연어 질문 입력</div>
+      <div class="cdesc">사용자가 입력한 문장을<br>그대로 검색합니다.</div></div>
   </div>
-  <div class="abs final frag" data-step="3">자연어로 입력해도<br>검색에 필요한 조건을 자동으로 구조화합니다.</div>
+  <div class="citem" style="top:480px;">
+    <div class="cnum">02</div>
+    <div><div class="ctitle">검색 조건 자동 추출</div>
+      <div class="cdesc">지역, 나이, 취업 상태, 검색 모드를<br>자동으로 구조화합니다.</div></div>
+  </div>
+  <div class="citem" style="top:660px;">
+    <div class="cnum">03</div>
+    <div><div class="ctitle">정책 검색 결과 제공</div>
+      <div class="cdesc">조건에 맞는 정책 카드를<br>우선 표시합니다.</div></div>
+  </div>
+
+  <div class="abs final">
+    <span class="flabel">자동 구조화</span>
+    <div class="ftext">자연어로 입력해도<br>검색에 필요한 <b>조건을 자동으로</b> 구조화합니다.</div>
+  </div>
 </section>
 `);
+
+/* ── 호버 확대 ── */
+(function(){
+  const sec = document.getElementById('s23');
+  if(!sec) return;
+  const pop = sec.querySelector('.zoompop');
+  const zoomnum = pop.querySelector('.zoomnum');
+  const zoomwire = sec.querySelector('.zoomwire');
+  const zoompath = zoomwire.querySelector('path');
+  const card = sec.querySelector('.shotcard');
+  const imgEl = sec.querySelector('.shotcard .img');
+  const bg = imgEl.style.backgroundImage;
+  const CARD_L = card.offsetLeft, CARD_T = card.offsetTop, DISP_W = card.offsetWidth;
+  const Z = 1.9;
+  const hls = Array.from(sec.querySelectorAll('.hl'));
+  const items = Array.from(sec.querySelectorAll('.citem'));
+  const chips = Array.from(sec.querySelectorAll('.flow .chip'));
+  hls.forEach(function(hl, i){
+    const item = items[i];
+    const on = function(){
+      const rx = hl.offsetLeft - CARD_L;
+      const ry = hl.offsetTop  - CARD_T;
+      const rw = hl.offsetWidth, rh = hl.offsetHeight;
+      const z = Math.min(Z, 1200/rw, 620/rh);
+      const popW = rw*z, popH = rh*z;
+      let popL = hl.offsetLeft - rw*(z-1)/2;
+      let popT = hl.offsetTop  - rh*(z-1)/2;
+      popL = Math.max(20, Math.min(popL, 1920 - popW - 20));
+      popT = Math.max(20, Math.min(popT, 1080 - popH - 20));
+      pop.style.left = popL+'px'; pop.style.top = popT+'px';
+      pop.style.width = popW+'px'; pop.style.height = popH+'px';
+      pop.style.backgroundImage    = bg;
+      pop.style.backgroundSize     = (DISP_W*z)+'px auto';
+      pop.style.backgroundPosition = (-rx*z)+'px '+(-ry*z)+'px';
+      pop.classList.add('show');
+      sec.classList.add('zooming');
+      if(item) item.classList.add('big');
+      if(chips[i]) chips[i].classList.add('active');
+      const popR = popL+popW, popCY = popT+popH/2;
+      if(item){
+        zoomnum.textContent = item.querySelector('.cnum').textContent;
+        const ex = item.offsetLeft, ey = item.offsetTop + 26;
+        zoompath.setAttribute('d', 'M'+popR+','+popCY+' L'+ex+','+ey);
+        zoomwire.classList.add('show');
+      }
+    };
+    const off = function(){
+      pop.classList.remove('show');
+      zoomwire.classList.remove('show');
+      sec.classList.remove('zooming');
+      if(item) item.classList.remove('big');
+      if(chips[i]) chips[i].classList.remove('active');
+    };
+    [hl, item].forEach(function(t){ if(t){ t.addEventListener('mouseenter', on); t.addEventListener('mouseleave', off); } });
+  });
+})();
