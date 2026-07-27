@@ -39,8 +39,12 @@
   // 클릭/→ : 남은 단계가 있으면 한 단계씩, 아니면 다음 슬라이드
   function next(){
     const s=slides[idx], cur=+s.dataset.step||0, mx=maxStep(s);
-    if(cur<mx) setStep(s, cur+1);
-    else show(idx+1);
+    if(cur<mx){ setStep(s, cur+1); return; }
+    // 슬라이드에 data-skip-to="N" 이 있으면 다음 슬라이드 대신 N페이지로 건너뜀
+    // (예: 소개 페이지의 버튼으로만 진입하는 핵심기능 하위 페이지들을 다음 이동에서 건너뛸 때 사용)
+    const skip = s.dataset.skipTo;
+    if(skip){ location.hash = '#' + skip; return; }
+    show(idx+1);
   }
   function prev(){
     const s=slides[idx], cur=+s.dataset.step||0;
