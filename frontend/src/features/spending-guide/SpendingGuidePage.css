@@ -192,8 +192,12 @@
   transition: width 0.25s ease;
 }
 
-.spending-progress i.over {
+.spending-progress i.warning {
   background: linear-gradient(90deg, #f3b049, #ef8f32);
+}
+
+.spending-progress i.over {
+  background: linear-gradient(90deg, #f36a6a, #dc4c4c);
 }
 
 .spending-cycle-card {
@@ -2988,8 +2992,11 @@
 .spending-guide .spending-progress i {
   background: linear-gradient(90deg, #22c55e, #16a34a);
 }
-.spending-guide .spending-progress i.over {
+.spending-guide .spending-progress i.warning {
   background: linear-gradient(90deg, #f3b049, #ef8f32);
+}
+.spending-guide .spending-progress i.over {
+  background: linear-gradient(90deg, #f36a6a, #dc4c4c);
 }
 .spending-guide .spending-today-message {
   display: flex;

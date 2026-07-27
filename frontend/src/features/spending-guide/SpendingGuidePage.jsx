@@ -156,9 +156,7 @@ function SpendingGuidePage() {
     savingsTargetAmount: toNumber(summary?.savingsGoalAmount),
     completedCycleCount: summary?.completedCycleCount ?? 0,
     totalSurplusAmount: toNumber(summary?.totalSurplusAmount),
-    totalSurplusTransferAmount: toNumber(
-      summary?.totalSurplusTransferAmount,
-    ),
+    totalSurplusTransferAmount: toNumber(summary?.totalSurplusTransferAmount),
     currentCycleSurplusTransferAmount: toNumber(
       summary?.currentCycleSurplusTransferAmount,
     ),
@@ -429,7 +427,13 @@ function SpendingGuidePage() {
                       </div>
                       <div className="spending-progress" key={selectedDate}>
                         <i
-                          className={displayUseRate > 100 ? "over" : ""}
+                          className={
+                            displayUseRate >= 100
+                              ? "over"
+                              : displayUseRate >= 80
+                                ? "warning"
+                                : ""
+                          }
                           style={{
                             width: `${Math.min(100, Math.max(0, displayUseRate))}%`,
                           }}
