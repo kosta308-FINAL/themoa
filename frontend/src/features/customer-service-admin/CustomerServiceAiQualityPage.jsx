@@ -858,20 +858,26 @@ function CustomerServiceAiQualityPage() {
                 : uploadDocument
             }
           >
-            <input
-              type="text"
-              placeholder="문서 제목 선택 또는 신규 입력"
-              list="aiq-title-options"
-              value={uploadTitle}
-              onChange={(event) => setUploadTitle(event.target.value)}
-            />
-            <input
-              type="text"
-              placeholder="카테고리 선택 또는 신규 입력"
-              list="aiq-category-options"
-              value={uploadCategory}
-              onChange={(event) => setUploadCategory(event.target.value)}
-            />
+            <label className="aiq-field">
+              <span>문서 제목 (필수)</span>
+              <input
+                type="text"
+                placeholder="문서 제목 선택 또는 신규 입력"
+                list="aiq-title-options"
+                value={uploadTitle}
+                onChange={(event) => setUploadTitle(event.target.value)}
+              />
+            </label>
+            <label className="aiq-field">
+              <span>카테고리 (필수)</span>
+              <input
+                type="text"
+                placeholder="카테고리 선택 또는 신규 입력"
+                list="aiq-category-options"
+                value={uploadCategory}
+                onChange={(event) => setUploadCategory(event.target.value)}
+              />
+            </label>
             {knowledgeInputMode === "text" ? (
               <textarea
                 className="aiq-knowledge-textarea"

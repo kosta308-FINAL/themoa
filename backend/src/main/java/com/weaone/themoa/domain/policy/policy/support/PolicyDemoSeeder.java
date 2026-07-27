@@ -70,6 +70,8 @@ public class PolicyDemoSeeder implements ApplicationRunner {
 
     private void insert(DemoPolicy demo) {
         LocalDate today = LocalDate.now();
+        LocalDate startDate = today.minusMonths(1);
+        LocalDate dueDate = today.plusMonths(2);
         jdbcTemplate.update("""
                         INSERT INTO policy
                             (id, title, source_policy_id, source_type, agency_name, category,
@@ -84,8 +86,8 @@ public class PolicyDemoSeeder implements ApplicationRunner {
                 demo.category().name(),
                 "실 데이터 동기화 전 임시로 채운 데모 정책입니다.",
                 null,
-                today,
-                today.plusMonths(3),
+                startDate,
+                dueDate,
                 false,
                 true,
                 "OPEN"

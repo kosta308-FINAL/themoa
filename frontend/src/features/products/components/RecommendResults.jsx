@@ -51,7 +51,7 @@ function RecommendIntroState() {
     <div className="rec-empty">
       <div className="rec-empty-content">
         <span className="rec-empty-kicker">추천 준비</span>
-        <h2>가입 가능한 적금을 조건에 맞춰 골라드려요.</h2>
+        <h2>입력한 조건으로 가입 가능한 적금을 먼저 걸러드려요.</h2>
         <p>
           월 납입금액, 선호 기간, 우대조건 수용 여부를 반영해 예상 만기금액과
           추천 이유를 함께 보여드릴게요.

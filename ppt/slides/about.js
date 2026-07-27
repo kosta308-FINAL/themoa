@@ -39,7 +39,7 @@ document.head.insertAdjacentHTML('beforeend', `
 `);
 
 document.getElementById('deck').insertAdjacentHTML('beforeend', `
-<section class="slide" id="sAbout" data-skip-to="14">
+<section class="slide" id="sAbout" data-skip-to="15">
   <div class="abs htitle">소개</div>
   <img class="abs hero" src="assets/about_intro.png" alt="TheMoa 소개">
   <img class="abs brandmark" src="assets/themoa_logo.png" alt="TheMoa 로고">
@@ -72,9 +72,9 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
 
 /* 버튼 클릭 → 각 기능 핵심소개 페이지로 이동 */
 const ABOUT_FEATURE_PAGE = {
-  '소비관리': 6,     // key-features.js
-  '정책추천': 7,     // slide22.js (정책 4장 중 첫 장, 7~10페이지)
-  '금융상품추천': 11 // slide40.js (금융상품 3장 중 첫 장, 11~13페이지)
+  '소비관리': 7,     // key-features.js
+  '정책추천': 8,     // slide22.js (정책 4장 중 첫 장, 8~11페이지)
+  '금융상품추천': 12 // slide40.js (금융상품 3장 중 첫 장, 12~14페이지)
 };
 document.querySelectorAll('#sAbout .chip').forEach(function(chip){
   chip.addEventListener('click', function(e){

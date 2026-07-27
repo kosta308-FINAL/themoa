@@ -91,46 +91,67 @@ function FinancialProductDetailModal({ item, bookmarks, onClose }) {
           </button>
         </div>
 
-        {item.discontinued && (
-          <p className="fs-eyebrow fs-eyebrow-discontinued">판매종료</p>
-        )}
-        <p className="fs-eyebrow">{typeLabel}</p>
+        <div className="fs-detail-badges">
+          {item.discontinued && (
+            <span className="fs-eyebrow fs-eyebrow-discontinued">
+              판매종료
+            </span>
+          )}
+          <span className="fs-eyebrow">{typeLabel}</span>
+        </div>
         <h2 id="fs-detail-title">{item.productName}</h2>
+        <p className="fs-detail-company">
+          <DashboardIcon name="building" size={14} />
+          {dash(item.companyName)}
+        </p>
+
+        {item.representativeRate != null && (
+          <div className="fs-detail-rate">
+            <span className="fs-detail-rate-label">{rateLabel}</span>
+            <strong className="fs-detail-rate-value">
+              {item.representativeRate}
+              <em>%</em>
+            </strong>
+            {item.representativeTermMonth != null && (
+              <span className="fs-detail-rate-term">
+                {item.representativeTermMonth}개월
+              </span>
+            )}
+          </div>
+        )}
 
         <dl className="fs-detail-list">
           <div>
-            <dt>은행</dt>
-            <dd>{dash(item.companyName)}</dd>
-          </div>
-          <div>
-            <dt>가입방법</dt>
+            <dt>
+              <DashboardIcon name="card" size={13} />
+              가입방법
+            </dt>
             <dd>{dash(item.joinMethod)}</dd>
           </div>
-          {item.representativeRate != null && (
-            <div>
-              <dt>{rateLabel}</dt>
-              <dd>
-                {item.representativeRate}%
-                {item.representativeTermMonth != null &&
-                  ` · ${item.representativeTermMonth}개월`}
-              </dd>
-            </div>
-          )}
         </dl>
 
         {/* 파싱된 우대조건이 있으면 체크리스트로, 없으면 원문 폴백. */}
         {item.conditions?.length > 0 ? (
-          <ul className="fs-conditions">
-            {item.conditions.map((condition, index) => (
-              <li key={index}>
-                <span>{condition.description}</span>
-                {condition.rateBonus > 0 && <em>+{condition.rateBonus}%p</em>}
-              </li>
-            ))}
-          </ul>
+          <div className="fs-detail-section">
+            <p className="fs-detail-section-title">우대금리 조건</p>
+            <ul className="fs-conditions">
+              {item.conditions.map((condition, index) => (
+                <li key={index}>
+                  <DashboardIcon name="check" size={13} />
+                  <span>{condition.description}</span>
+                  {condition.rateBonus > 0 && (
+                    <em>+{condition.rateBonus}%p</em>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : (
           item.specialCondition && (
-            <p className="fs-special">{item.specialCondition}</p>
+            <div className="fs-detail-section">
+              <p className="fs-detail-section-title">우대금리 조건</p>
+              <p className="fs-special">{item.specialCondition}</p>
+            </div>
           )
         )}
 

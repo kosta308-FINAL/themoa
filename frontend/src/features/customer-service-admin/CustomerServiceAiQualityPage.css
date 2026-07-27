@@ -377,8 +377,9 @@
   margin: 0;
   padding: 16px;
   border-radius: 8px;
-  background: #0f172a;
-  color: #e2e8f0;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
   font-family:
     Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
   font-size: 14px;
