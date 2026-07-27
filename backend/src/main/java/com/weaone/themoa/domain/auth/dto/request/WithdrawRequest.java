@@ -1,11 +1,8 @@
 package com.weaone.themoa.domain.auth.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
-
-/** 회원 탈퇴 확인. 현재 비밀번호로 본인 확인 후 처리한다. */
+/** 일반 회원은 현재 비밀번호를 제출하고, 비밀번호가 없는 소셜 전용 회원은 로그인 세션으로 확인한다. */
 public record WithdrawRequest(
 
-        @NotBlank(message = "비밀번호를 입력해 주세요.")
         String password
 ) {
 }

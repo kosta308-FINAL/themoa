@@ -12,6 +12,7 @@ import com.weaone.themoa.domain.auth.dto.request.WithdrawRequest;
 import com.weaone.themoa.domain.auth.dto.response.FindEmailResponse;
 import com.weaone.themoa.domain.auth.entity.MemberTermsAgreement;
 import com.weaone.themoa.domain.auth.entity.TermsType;
+import com.weaone.themoa.domain.auth.repository.MemberSocialAccountRepository;
 import com.weaone.themoa.domain.auth.repository.MemberTermsAgreementRepository;
 import com.weaone.themoa.domain.auth.support.EmailMasker;
 import com.weaone.themoa.domain.auth.support.EmailNormalizer;
@@ -36,6 +37,7 @@ public class AuthService {
     private static final int MIN_SIGNUP_AGE = 19;
 
     private final MemberRepository memberRepository;
+    private final MemberSocialAccountRepository memberSocialAccountRepository;
     private final MemberTermsAgreementRepository memberTermsAgreementRepository;
     private final EmailVerificationService emailVerificationService;
     private final PasswordResetService passwordResetService;
@@ -158,17 +160,20 @@ public class AuthService {
     }
 
     /**
-     * 회원 탈퇴(마이페이지). 비밀번호 확인 후 개인정보를 익명화하고 전 세션을 즉시 무효화한다.
+     * 회원 탈퇴(마이페이지). 일반 회원은 비밀번호를 확인하고, 소셜 전용 회원은 인증된 세션을 기준으로
+     * 처리한다. 소셜 연결을 먼저 제거해 같은 제공자 계정의 다음 로그인이 신규 가입으로 분기되게 한다.
      * 카드연동·거래 등 연관 데이터의 파기는 별도 배치가 처리한다.
      */
     @Transactional
     public void withdraw(Long memberId, WithdrawRequest request) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS));
-        if (member.getPassword() == null
-                || !passwordEncoder.matches(request.password(), member.getPassword())) {
+        if (member.getPassword() != null
+                && (request.password() == null
+                || !passwordEncoder.matches(request.password(), member.getPassword()))) {
             throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS);
         }
+        memberSocialAccountRepository.deleteByMember_Id(memberId);
         member.withdraw(LocalDateTime.now());
         authTokenService.revokeAll(member);
     }

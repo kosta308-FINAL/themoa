@@ -246,6 +246,7 @@ function MyPage() {
               {activeTab === "account" && (
                 <div className="mp-tab-panel mp-split">
                   <AccountSecurityCard
+                    passwordLoginEnabled={profile.passwordLoginEnabled}
                     onOpenChangePassword={() => setIsChangingPassword(true)}
                     onLogoutAllDevices={handleLogoutAllDevices}
                     onOpenWithdraw={() => setIsWithdrawing(true)}
@@ -282,6 +283,7 @@ function MyPage() {
 
         {isWithdrawing && (
           <WithdrawAccountModal
+            passwordLoginEnabled={profile.passwordLoginEnabled}
             onClose={() => setIsWithdrawing(false)}
             onWithdrawn={handleWithdrawn}
           />

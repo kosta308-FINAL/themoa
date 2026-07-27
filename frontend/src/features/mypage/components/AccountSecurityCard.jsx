@@ -2,6 +2,7 @@ import { useState } from "react";
 import DashboardIcon from "../../../components/common/DashboardIcon";
 
 function AccountSecurityCard({
+  passwordLoginEnabled,
   onOpenChangePassword,
   onLogoutAllDevices,
   onOpenWithdraw,
@@ -29,13 +30,15 @@ function AccountSecurityCard({
         <h2>계정 관리</h2>
       </div>
       <div className="mp-account-actions">
-        <button
-          type="button"
-          className="mp-ghost-button"
-          onClick={onOpenChangePassword}
-        >
-          비밀번호 변경
-        </button>
+        {passwordLoginEnabled && (
+          <button
+            type="button"
+            className="mp-ghost-button"
+            onClick={onOpenChangePassword}
+          >
+            비밀번호 변경
+          </button>
+        )}
         <button
           type="button"
           className="mp-danger-button"
@@ -48,7 +51,7 @@ function AccountSecurityCard({
       <div className="mp-danger-zone">
         <div>
           <strong>회원 탈퇴</strong>
-          <p>탈퇴하면 계정과 데이터가 지체 없이 파기되며 되돌릴 수 없어요.</p>
+          <p>탈퇴한 계정과 기존 데이터는 복구하거나 다시 연결할 수 없어요.</p>
         </div>
         <button
           type="button"
