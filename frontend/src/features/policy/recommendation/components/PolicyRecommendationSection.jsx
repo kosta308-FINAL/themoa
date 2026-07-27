@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { usePolicyBookmarks } from "../../hooks/usePolicyBookmarks";
 import PolicyRecommendationProfileForm from "./PolicyRecommendationProfileForm";
 import PolicyRecommendationProfileSummary from "./PolicyRecommendationProfileSummary";
@@ -11,6 +12,7 @@ function PolicyRecommendationSection({
   selected,
 }) {
   const bookmarks = usePolicyBookmarks();
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const {
     profile,
     recommendations,
@@ -34,6 +36,11 @@ function PolicyRecommendationSection({
     }
   };
 
+  const handleProfileUpdate = async (payload) => {
+    await onSaveProfile(payload);
+    setIsEditingProfile(false);
+  };
+
   return (
     <section className="policy-recommendation-panel">
       <div className="policy-recommendation-head">
@@ -51,14 +58,23 @@ function PolicyRecommendationSection({
         </div>
         <div className="policy-recommendation-head-actions">
           {profile?.configured && (
-            <button
-              type="button"
-              className="policy-recommendation-refresh"
-              disabled={isSaving}
-              onClick={handleRefresh}
-            >
-              {isSaving ? "계산 중..." : "다시 추천받기"}
-            </button>
+            <>
+              <button
+                type="button"
+                className="policy-recommendation-edit"
+                onClick={() => setIsEditingProfile(true)}
+              >
+                추천 조건 수정
+              </button>
+              <button
+                type="button"
+                className="policy-recommendation-refresh"
+                disabled={isSaving}
+                onClick={handleRefresh}
+              >
+                {isSaving ? "계산 중..." : "다시 추천받기"}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -160,6 +176,50 @@ function PolicyRecommendationSection({
             <p className="policy-bookmark-error">{bookmarks.error}</p>
           )}
         </>
+      )}
+
+      {isEditingProfile && (
+        <div
+          className="policy-recommendation-modal-backdrop"
+          role="presentation"
+          onMouseDown={() => setIsEditingProfile(false)}
+        >
+          <section
+            className="policy-recommendation-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="policy-recommendation-edit-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="policy-recommendation-modal-head">
+              <div>
+                <h2 id="policy-recommendation-edit-title">추천 조건 수정</h2>
+                <p>
+                  거주지와 취업 상태를 변경하면 추천 정책을 다시 계산해드려요.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="policy-recommendation-modal-close"
+                onClick={() => setIsEditingProfile(false)}
+                aria-label="닫기"
+              >
+                ×
+              </button>
+            </div>
+            <PolicyRecommendationProfileForm
+              profile={profile}
+              regions={regions}
+              isSaving={isSaving}
+              submitLabel="저장"
+              onCancel={() => setIsEditingProfile(false)}
+              onSubmit={handleProfileUpdate}
+            />
+            {mutationError && (
+              <p className="policy-recommendation-error">{mutationError}</p>
+            )}
+          </section>
+        </div>
       )}
     </section>
   );
