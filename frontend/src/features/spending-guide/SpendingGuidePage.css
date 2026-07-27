@@ -1414,6 +1414,7 @@
 }
 
 .spending-setup-shell {
+  position: relative;
   max-width: 820px;
   min-height: 470px;
   margin: 28px auto;
@@ -1439,6 +1440,26 @@
 
 .spending-setup-progress span.active {
   background: var(--spending-green);
+}
+.spending-setup-back {
+  position: absolute;
+  top: 57px;
+  left: 26px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 32px;
+  padding: 0 8px 0 4px;
+  border-radius: 9px;
+  color: var(--spending-muted);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 750;
+}
+.spending-setup-back:hover,
+.spending-setup-back:focus-visible {
+  color: var(--spending-green-dark);
+  background: var(--spending-soft);
 }
 .spending-setup-copy {
   text-align: center;

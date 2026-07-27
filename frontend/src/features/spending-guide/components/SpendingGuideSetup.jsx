@@ -45,6 +45,13 @@ function SpendingGuideSetup({ onComplete, onCardConnected }) {
       payday
     : salaryAmount && payday;
 
+  const handlePreviousStep = () => {
+    setStep((currentStep) => Math.max(1, currentStep - 1));
+    setError("");
+    setIsPaydayOpen(false);
+    setIsIssuerOpen(false);
+  };
+
   const handleSalarySubmit = async (event) => {
     event.preventDefault();
     setError("");
@@ -141,6 +148,18 @@ function SpendingGuideSetup({ onComplete, onCardConnected }) {
           <span className={number <= step ? "active" : ""} key={number} />
         ))}
       </div>
+
+      {step > 1 && (
+        <button
+          className="spending-setup-back"
+          type="button"
+          onClick={handlePreviousStep}
+          aria-label="이전 단계로"
+        >
+          <DashboardIcon name="chevron-left" size={17} />
+          이전
+        </button>
+      )}
 
       {step === 1 && (
         <>
