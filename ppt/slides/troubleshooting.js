@@ -120,7 +120,29 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
   <div class="phead"><div class="tavatar">수지</div><div class="tname">임수지</div></div>
 
   <div class="cases">
-    <div class="placeholder">임수지님의 트러블슈팅 사례를 여기에 채워주세요.<br>(문제 → 원인 → 해결 형태로 2~3건)</div>
+    <div class="tcase">
+      <div class="ttop"><div class="ttag">검색 정확도</div><div class="ttitle">금융상품 검색 정확도 개선</div></div>
+      <div class="body">
+        <div class="half prob"><span class="lbl bad">문제</span>임베딩 모델이 청년·임산부·아동을 같은 복지 의미 공간으로 인식해<br>‘청년’ 검색 시 대상이 다른 상품까지 상위에 노출됐습니다.</div>
+        <div class="half sol"><span class="lbl good">해결</span>Hybrid Search(BM25+Vector)로 키워드 일치도를 우선 반영하고<br>target_group 메타데이터로 Hard Filter를 추가해 정확도를 높였습니다.</div>
+      </div>
+    </div>
+
+    <div class="tcase">
+      <div class="ttop"><div class="ttag">추천 로직</div><div class="ttitle">금융상품 추천 점수 왜곡 개선</div></div>
+      <div class="body">
+        <div class="half prob"><span class="lbl bad">문제</span>정기예금이 위험도·유동성·복리 점수에서 중복 가산돼<br>안정형 성향 사용자에게 항상 1순위로 추천됐습니다.</div>
+        <div class="half sol"><span class="lbl good">해결</span>목돈 보유 여부와 최소 예치금(50만 원) 조건을 추가하고<br>점수 계산 로직을 모든 항목에 일괄 적용해 현실성을 높였습니다.</div>
+      </div>
+    </div>
+
+    <div class="tcase">
+      <div class="ttop"><div class="ttag">LLM 신뢰성</div><div class="ttitle">LLM 응답 신뢰성 개선</div></div>
+      <div class="body">
+        <div class="half prob"><span class="lbl bad">문제</span>호출마다 LLM이 상품 정보를 새로 파싱해 동일 상품도<br>우대조건 체크리스트가 매번 다르게 나왔습니다.</div>
+        <div class="half sol"><span class="lbl good">해결</span>파싱 결과를 DB에 캐싱하고 관리자 수정을 보호하는 Lock 구조를<br>적용해 변경된 상품만 배치 재파싱하도록 개선했습니다.</div>
+      </div>
+    </div>
   </div>
 </section>
 `);

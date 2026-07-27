@@ -181,6 +181,11 @@
   white-space: nowrap;
 }
 
+.mma-table-scroll {
+  max-height: 520px;
+  overflow-y: auto;
+}
+
 .mma-table {
   width: 100%;
   min-width: 860px;
@@ -189,6 +194,9 @@
 }
 
 .mma-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   text-align: left;
   padding: 12px 14px;
   background: #f8fafc;
