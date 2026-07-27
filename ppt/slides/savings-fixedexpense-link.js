@@ -5,8 +5,6 @@ document.head.insertAdjacentHTML('beforeend', `
 #s-savlink .ptitle{ position:absolute; left:58px; top:50px; width:1300px; color:#0E1A2A; font-size:52px; font-weight:850; line-height:1.08; letter-spacing:0; }
 #s-savlink .ptitle .accent{ color:#007A3D; }
 #s-savlink .psub{ position:absolute; left:60px; top:126px; width:1380px; color:#152235; font-size:25px; font-weight:620; line-height:1.48; letter-spacing:0; }
-#s-savlink .piggy{ position:absolute; right:206px; top:44px; width:245px; height:130px; opacity:.56; z-index:1; }
-#s-savlink .piggy svg{ width:100%; height:100%; display:block; }
 #s-savlink .flow{ position:absolute; left:70px; top:216px; width:1780px; display:grid; grid-template-columns:405px 170px 470px 170px 405px; column-gap:40px; align-items:start; z-index:3; }
 #s-savlink .stepcard{ position:relative; height:558px; border-radius:24px; background:rgba(255,255,255,.95); border:1px solid rgba(203,215,209,.88); box-shadow:0 18px 40px rgba(26,50,39,.12); overflow:hidden; padding:29px 30px 24px; text-align:center; transform:translateY(18px); }
 #s-savlink .stepcard.show{ transform:translateY(0); }
@@ -51,17 +49,6 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
 <section class="slide" id="s-savlink">
   <div class="ptitle"><span class="accent">예·적금</span>-고정지출 자동연동</div>
   <div class="psub">예·적금에 가입하면 납입액이 고정지출로 자동 반영됩니다.<br>두 도메인은 서로 직접 참조하지 않고, 이벤트로만 연결합니다.</div>
-
-  <div class="piggy">
-    <svg viewBox="0 0 260 140" aria-hidden="true">
-      <ellipse cx="130" cy="114" rx="86" ry="12" fill="#0D7F49" opacity=".12"></ellipse>
-      <path d="M60 68c8-27 36-44 77-40 30 3 55 18 65 40h18c7 0 12 5 12 12v20c0 7-5 12-12 12h-14c-7 13-20 23-37 29v-17H92v17c-18-7-30-18-36-33H38c-10 0-17-8-17-17s7-17 17-17h15c2-2 4-4 7-6z" fill="#17A86B" opacity=".45"></path>
-      <circle cx="194" cy="72" r="5" fill="#087540" opacity=".55"></circle>
-      <path d="M111 28h45" stroke="#087540" stroke-width="8" stroke-linecap="round" opacity=".36"></path>
-      <circle cx="184" cy="22" r="20" fill="none" stroke="#18A96C" stroke-width="5" opacity=".45"></circle>
-      <text x="174" y="30" fill="#087540" font-size="22" font-weight="850" opacity=".55">₩</text>
-    </svg>
-  </div>
 
   <div class="flow">
     <div class="stepcard c1 frag" data-step="1">
