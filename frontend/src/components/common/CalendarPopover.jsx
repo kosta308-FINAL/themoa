@@ -21,6 +21,8 @@ const buildCalendarDays = (year, month) => {
  * 펼쳐지는 달력 팝오버. 사용하는 쪽에서 트리거를 감싼 컨테이너에
  * position: relative를 지정해야 위치가 맞습니다.
  * placement="top"이면 트리거 위쪽으로, 기본값("bottom")이면 아래쪽으로 열립니다.
+ * placement="center"이면 트리거 위치와 무관하게 화면 정중앙에 고정 모달로 뜹니다
+ * (좁은 컨테이너 안에 있어서 아래/위로 펼치면 잘리는 경우에 사용).
  * minYear로 연도 선택 목록의 하한을 지정할 수 있습니다(기본값: max 연도 - 5).
  */
 function CalendarPopover({
@@ -71,15 +73,17 @@ function CalendarPopover({
     setViewMonth(nextMonth);
   };
 
+  const centered = placement === "center";
+
   return (
     <>
       <div
-        className="calendar-popover-backdrop"
+        className={`calendar-popover-backdrop${centered ? " placement-center" : ""}`}
         role="presentation"
         onMouseDown={onClose}
       />
       <section
-        className={`calendar-popover${placement === "top" ? " placement-top" : ""}`}
+        className={`calendar-popover${placement === "top" ? " placement-top" : ""}${centered ? " placement-center" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="calendar-popover-title"

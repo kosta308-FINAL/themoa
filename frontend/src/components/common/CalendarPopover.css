@@ -21,6 +21,23 @@
   bottom: calc(100% + 10px);
 }
 
+/* 좁은 컨테이너(모달 안 절반 폭 필드 등) 안에서 열면 잘리므로,
+   트리거 위치와 무관하게 화면 정중앙에 별도 모달처럼 띄운다. */
+.calendar-popover-backdrop.placement-center {
+  z-index: 320;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.calendar-popover.placement-center {
+  position: fixed;
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  z-index: 330;
+}
+
 .calendar-popover-head {
   display: flex;
   align-items: center;

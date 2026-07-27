@@ -17,7 +17,7 @@ const homepageSearchUrl = (company) =>
  * 추천 상품 카드 1건. 백엔드 Recommendation DTO를 그대로 렌더링한다.
  * 금리·기간·예상만기는 상단 칩으로 모아 밀도를 높이고, 추천 이유는 전부 보여준다.
  */
-function RecommendResultCard({ item, rank, bookmarks }) {
+function RecommendResultCard({ item, rank, bookmarks, depositWon }) {
   const [registerOpen, setRegisterOpen] = useState(false);
   const rotating = item.productName?.includes("회전");
   // 추천은 예·적금만 다루므로 북마크 대상 타입은 항상 SAVINGS_PRODUCT다.
@@ -116,6 +116,7 @@ function RecommendResultCard({ item, rank, bookmarks }) {
       {registerOpen && (
         <SavingsSubscriptionModal
           productId={item.id}
+          initialMonthlyAmount={depositWon}
           onClose={() => setRegisterOpen(false)}
           onCreated={(message) => bookmarks.showToast?.(message)}
         />
