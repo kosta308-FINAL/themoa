@@ -32,6 +32,12 @@
   transform: scale(1.06);
 }
 
+.bookmark-button:focus-visible {
+  border-color: #e11d48;
+  outline: 2px solid #f3c6d0;
+  outline-offset: 2px;
+}
+
 .bookmark-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
