@@ -45,6 +45,22 @@ function coachingCardContent(card) {
   };
 }
 
+function renderCoachingText(text) {
+  const parts = String(text).split(
+    /([+-]?\d[\d,]*(?:\.\d+)?\s*(?:원|회|번|건|일|개월|달|%)?)/g,
+  );
+
+  return parts.map((part, index) => {
+    if (!part) return null;
+    if (!/\d/.test(part)) return part;
+    return (
+      <strong className="spending-coach-metric" key={`${part}-${index}`}>
+        {part}
+      </strong>
+    );
+  });
+}
+
 function CoachingCards({ data, error, onDismiss, pendingId, expanded }) {
   if (error) return <SectionError message={error} />;
   if (!data) return <LoadingState />;
@@ -73,7 +89,7 @@ function CoachingCards({ data, error, onDismiss, pendingId, expanded }) {
               <DashboardIcon name={content.icon} size={18} />
             </span>
             <h3>{card.title}</h3>
-            {content.body && <p>{content.body}</p>}
+            {content.body && <p>{renderCoachingText(content.body)}</p>}
             {content.saving && <strong>{content.saving}</strong>}
             <div className="spending-coach-actions">
               <button

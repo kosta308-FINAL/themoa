@@ -4,6 +4,7 @@ import {
   getInquiryCategories,
 } from "../../../api/customerServiceApi";
 import { getApiErrorMessage } from "../../../utils/apiError";
+import Toast from "../../../components/common/Toast";
 
 const MAX_FILES = 3;
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -18,6 +19,12 @@ function InquiryForm({ onSubmitted, onCancel }) {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const selectedCategory = categories.find(
+    (category) => String(category.id) === String(inquiryCategoryId),
+  );
 
   useEffect(() => {
     getInquiryCategories()
@@ -27,16 +34,14 @@ function InquiryForm({ onSubmitted, onCancel }) {
       );
   }, []);
 
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files || []);
+  const applyFiles = (files) => {
     if (files.length === 0) {
       setSelectedFiles([]);
-      return;
+      return true;
     }
     if (files.length > MAX_FILES) {
       setError(`이미지는 최대 ${MAX_FILES}개까지 첨부할 수 있어요.`);
-      e.target.value = "";
-      return;
+      return false;
     }
     const invalid = files.find(
       (file) =>
@@ -46,17 +51,43 @@ function InquiryForm({ onSubmitted, onCancel }) {
       setError(
         "PNG 또는 JPEG 이미지만, 파일당 최대 10MB까지 첨부할 수 있어요.",
       );
-      e.target.value = "";
-      return;
+      return false;
     }
     setError("");
     setSelectedFiles(files);
+    return true;
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!applyFiles(files)) {
+      e.target.value = "";
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleFileDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = Array.from(e.dataTransfer.files || []);
+    applyFiles(files);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!inquiryCategoryId || !title.trim() || !content.trim() || !agreeTerms) {
+    if (!inquiryCategoryId || !title.trim() || !content.trim()) {
       setError("필수 항목을 모두 입력해 주세요.");
+      return;
+    }
+    if (!agreeTerms) {
+      setToast({
+        message: "개인정보 수집 및 이용에 동의해 주셔야 접수할 수 있어요.",
+        id: Date.now(),
+      });
       return;
     }
     setIsSubmitting(true);
@@ -101,19 +132,50 @@ function InquiryForm({ onSubmitted, onCancel }) {
           <label className="form-label">
             문의 유형 <span className="req">*</span>
           </label>
-          <select
-            className="form-control"
-            value={inquiryCategoryId}
-            onChange={(e) => setInquiryCategoryId(e.target.value)}
-            required
-          >
-            <option value="">문의 유형을 선택해 주세요</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+          <div className="category-select-wrap">
+            <button
+              type="button"
+              className="form-control category-trigger"
+              onClick={() => setIsCategoryModalOpen((prev) => !prev)}
+            >
+              <span>
+                {selectedCategory
+                  ? selectedCategory.name
+                  : "문의 유형을 선택해 주세요"}
+              </span>
+              <span className="category-trigger-arrow" aria-hidden="true">
+                ▾
+              </span>
+            </button>
+
+            {isCategoryModalOpen && (
+              <>
+                <div
+                  className="category-dropdown-catcher"
+                  onClick={() => setIsCategoryModalOpen(false)}
+                />
+                <div className="category-dropdown">
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      className={`category-dropdown-item ${
+                        String(category.id) === String(inquiryCategoryId)
+                          ? "selected"
+                          : ""
+                      }`}
+                      onClick={() => {
+                        setInquiryCategoryId(String(category.id));
+                        setIsCategoryModalOpen(false);
+                      }}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="form-group">
@@ -127,7 +189,6 @@ function InquiryForm({ onSubmitted, onCancel }) {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="제목을 입력해 주세요 (예: 카드 연동 중 오류 코드가 뜹니다)"
             maxLength={200}
-            required
           />
         </div>
 
@@ -141,13 +202,17 @@ function InquiryForm({ onSubmitted, onCancel }) {
             onChange={(e) => setContent(e.target.value)}
             placeholder="자세한 문의 내용이나 발생 상황을 작성해 주시면 더욱 정확하고 빠른 답변이 가능합니다."
             maxLength={10000}
-            required
           />
         </div>
 
         <div className="form-group">
           <label className="form-label">화면 캡처 파일 첨부 (선택)</label>
-          <label htmlFor="fileInput" className="file-dropzone">
+          <label
+            htmlFor="fileInput"
+            className="file-dropzone"
+            onDragOver={handleDragOver}
+            onDrop={handleFileDrop}
+          >
             <div className="icon-box">
               <svg
                 width="20"
@@ -201,7 +266,6 @@ function InquiryForm({ onSubmitted, onCancel }) {
               type="checkbox"
               checked={agreeTerms}
               onChange={(e) => setAgreeTerms(e.target.checked)}
-              required
             />
             <span>
               문의 처리 및 답변 안내를 위한{" "}
@@ -224,6 +288,8 @@ function InquiryForm({ onSubmitted, onCancel }) {
           </button>
         </div>
       </form>
+
+      <Toast toast={toast} onClose={() => setToast(null)} />
     </div>
   );
 }

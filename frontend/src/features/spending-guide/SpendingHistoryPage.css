@@ -525,16 +525,26 @@
   display: grid;
 }
 .consume-history-page .transaction-row {
+  width: 100%;
   min-height: 65px;
   padding: 7px 4px;
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr) 120px;
   align-items: center;
   gap: 12px;
+  border: 0;
   border-bottom: 1px solid #edf2ef;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 .consume-history-page .transaction-row:last-child {
   border-bottom: 0;
+}
+.consume-history-page .transaction-row:hover {
+  background: #f8fcf9;
 }
 .consume-history-page .tx-icon {
   width: 40px;

@@ -47,6 +47,8 @@ function AdminInquiryDetailPanel({ inquiryId, onClose, onAnswered }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [isMacroModalOpen, setIsMacroModalOpen] = useState(false);
+  const [zoomScale, setZoomScale] = useState(1);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -99,6 +101,7 @@ function AdminInquiryDetailPanel({ inquiryId, onClose, onAnswered }) {
       );
       const url = window.URL.createObjectURL(blob);
       setImagePreview({ url, filename: attachment.originalFilename });
+      setZoomScale(1);
     } catch {
       setError("첨부파일을 불러오지 못했어요.");
     } finally {
@@ -111,6 +114,24 @@ function AdminInquiryDetailPanel({ inquiryId, onClose, onAnswered }) {
       window.URL.revokeObjectURL(imagePreview.url);
     }
     setImagePreview(null);
+    setZoomScale(1);
+  };
+
+  const handleZoomIn = () => {
+    setZoomScale((prev) => Math.min(3, Math.round((prev + 0.5) * 10) / 10));
+  };
+
+  const handleZoomOut = () => {
+    setZoomScale((prev) => Math.max(1, Math.round((prev - 0.5) * 10) / 10));
+  };
+
+  const handleToggleZoom = () => {
+    setZoomScale((prev) => (prev > 1 ? 1 : 2));
+  };
+
+  const handleSelectMacro = (macro) => {
+    setAnswerText(macro.text);
+    setIsMacroModalOpen(false);
   };
 
   const handleSubmitAnswer = async () => {
@@ -203,26 +224,46 @@ function AdminInquiryDetailPanel({ inquiryId, onClose, onAnswered }) {
                 <label className="csa-label">
                   자주 쓰는 매크로 답변 템플릿
                 </label>
-                <select
-                  className="csa-select"
-                  value=""
-                  onChange={(e) => {
-                    const macro = MACROS.find(
-                      (m) => m.label === e.target.value,
-                    );
-                    if (macro) setAnswerText(macro.text);
-                  }}
-                >
-                  <option value="">매크로 템플릿을 선택하세요</option>
-                  {MACROS.map((macro) => (
-                    <option key={macro.label} value={macro.label}>
-                      {macro.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="csa-macro-select-wrap">
+                  <button
+                    type="button"
+                    className="csa-macro-trigger"
+                    onClick={() => setIsMacroModalOpen((prev) => !prev)}
+                  >
+                    <span>매크로 템플릿을 선택하세요</span>
+                    <span
+                      className="csa-macro-trigger-arrow"
+                      aria-hidden="true"
+                    >
+                      ▾
+                    </span>
+                  </button>
+
+                  {isMacroModalOpen && (
+                    <>
+                      <div
+                        className="csa-macro-dropdown-catcher"
+                        onClick={() => setIsMacroModalOpen(false)}
+                      />
+                      <div className="csa-macro-dropdown">
+                        {MACROS.map((macro) => (
+                          <button
+                            key={macro.label}
+                            type="button"
+                            className="csa-macro-item"
+                            onClick={() => handleSelectMacro(macro)}
+                          >
+                            <strong>{macro.label}</strong>
+                            <span>{macro.text}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
 
                 <label className="csa-label" style={{ marginTop: 14 }}>
-                  답변 내용(Markdown) <span className="csa-required">*</span>
+                  답변 내용 <span className="csa-required">*</span>
                 </label>
                 <textarea
                   className="csa-textarea"
@@ -273,6 +314,29 @@ function AdminInquiryDetailPanel({ inquiryId, onClose, onAnswered }) {
           >
             <div className="csa-image-preview-header">
               <span>{imagePreview.filename}</span>
+              <div className="csa-image-preview-zoom-controls">
+                <button
+                  type="button"
+                  className="csa-icon-btn"
+                  onClick={handleZoomOut}
+                  disabled={zoomScale <= 1}
+                  aria-label="축소"
+                >
+                  −
+                </button>
+                <span className="csa-zoom-level">
+                  {Math.round(zoomScale * 100)}%
+                </span>
+                <button
+                  type="button"
+                  className="csa-icon-btn"
+                  onClick={handleZoomIn}
+                  disabled={zoomScale >= 3}
+                  aria-label="확대"
+                >
+                  +
+                </button>
+              </div>
               <button
                 type="button"
                 className="csa-icon-btn"
@@ -281,7 +345,15 @@ function AdminInquiryDetailPanel({ inquiryId, onClose, onAnswered }) {
                 ✕
               </button>
             </div>
-            <img src={imagePreview.url} alt={imagePreview.filename} />
+            <div className="csa-image-preview-body">
+              <img
+                src={imagePreview.url}
+                alt={imagePreview.filename}
+                className={zoomScale > 1 ? "zoomed" : ""}
+                style={{ transform: `scale(${zoomScale})` }}
+                onClick={handleToggleZoom}
+              />
+            </div>
             <div className="csa-image-preview-footer">
               <a
                 className="csa-btn csa-btn-secondary"

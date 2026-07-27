@@ -1551,6 +1551,81 @@
   font-size: 18px;
 }
 
+.fx-detail-name {
+  position: relative;
+  display: inline-block;
+  max-width: calc(100% - 36px);
+  vertical-align: top;
+}
+
+.fx-detail-name-button,
+.fx-detail-name-action {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  color: var(--fx-muted);
+  background: transparent;
+}
+
+.fx-detail-name-button:hover,
+.fx-detail-name-action:hover:not(:disabled) {
+  color: var(--fx-green-dark);
+  background: var(--fx-green-soft);
+}
+
+.fx-detail-name-button {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 5px);
+  transform: translateY(-50%);
+}
+
+.fx-detail-name-edit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.fx-detail-name-input {
+  width: min(220px, calc(100% - 68px));
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--fx-border-strong);
+  border-radius: 9px;
+  color: var(--fx-text);
+  background: #fff;
+  font: inherit;
+  font-weight: 700;
+  text-align: center;
+}
+
+.fx-detail-name-action {
+  flex: 0 0 auto;
+  background: var(--fx-page);
+}
+
+.fx-detail-name-action.confirm {
+  color: var(--fx-green-dark);
+  background: var(--fx-green-soft);
+}
+
+.fx-detail-name-action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.fx-detail-name-error {
+  margin: 6px 0 0;
+  color: var(--fx-red);
+  font-size: 11px;
+}
+
 .fx-detail-hero strong {
   margin-top: 6px;
   font-size: 26px;

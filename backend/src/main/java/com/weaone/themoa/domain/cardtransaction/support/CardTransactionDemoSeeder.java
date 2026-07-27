@@ -27,6 +27,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,6 +59,10 @@ public class CardTransactionDemoSeeder implements ApplicationRunner {
     private static final String DEMO_CONNECTED_ID = "DEMO-SEED-CONNECTED-ID";
     private static final BigDecimal DEMO_SALARY_AMOUNT = new BigDecimal("1700000");
     private static final int DEMO_PAYDAY = 5;
+    /** 추천 폼 "월 납입가능금액" 기본값(RecommendQueryService)이 이 값의 평균으로 채워지길 원해서 맞춘
+     * 목표치. 3월 주기는 카드 연동 첫 며칠(4/1~4/4)치만 실제 거래가 잡혀 잉여금이 비정상적으로 커지므로
+     * (월급 대비 실사용액이 거의 없어 보임), 소급 적립 직후 이 값으로 균일하게 덮어써 데모 평균을 고정한다. */
+    private static final BigDecimal DEMO_SURPLUS_TARGET_AMOUNT = new BigDecimal("300000");
 
     private final MemberRepository memberRepository;
     private final CardConnectionRepository cardConnectionRepository;
@@ -70,6 +75,7 @@ public class CardTransactionDemoSeeder implements ApplicationRunner {
     private final SurplusFundBatchService surplusFundBatchService;
     private final HabitCoachingCardBatchService habitCoachingCardBatchService;
     private final ObjectMapper objectMapper;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
@@ -87,6 +93,14 @@ public class CardTransactionDemoSeeder implements ApplicationRunner {
 
         if (!cardTransactionRepository.existsByMember_Id(member.getId())) {
             seedDemoData(member);
+        } else if (!member.hasSpendingGuideSetup()) {
+            // 최초 시드 이후 salary_amount/payday가 비워진 드리프트(다른 기능 테스트 등)를 재기동 시
+            // 데모 기본값(월급 1,700,000원·급여일 5일)으로 복구한다. setup()은 멱등이라 기존
+            // budget 스냅샷을 다시 만들지 않고 회원 필드만 채운다.
+            spendingGuideService.setup(member.getId(),
+                    new SpendingGuideSetupRequest(IncomeType.SALARY, DEMO_SALARY_AMOUNT, null, null, DEMO_PAYDAY));
+            log.info("데모 소비가이드 설정 드리프트 복구 완료(member_id={}, salary={}, payday={})",
+                    member.getId(), DEMO_SALARY_AMOUNT, DEMO_PAYDAY);
         }
 
         // 습관 코칭 카드 생성은 원래 월급일 새벽 배치(HabitCoachingCardBatchService.runPaydayBatch)가
@@ -138,6 +152,13 @@ public class CardTransactionDemoSeeder implements ApplicationRunner {
             surplusFundBatchService.accrueIfAbsent(budget, today);
         }
         log.info("데모 잉여금 적립 완료(member_id={}, 완료주기={}건)", member.getId(), endedCycles.size());
+
+        // 방금 적립한 완료 주기들의 잉여금을 데모용 목표치로 균일하게 맞춘다(DEMO_SURPLUS_TARGET_AMOUNT
+        // 주석 참고) — 추천 폼 월 납입가능금액 기본값이 평균을 그대로 쓰므로, 3월 주기 이상치 하나 때문에
+        // 평균이 크게 튀는 걸 막는다.
+        int normalized = jdbcTemplate.update(
+                "UPDATE surplus_fund SET amount = ? WHERE member_id = ?", DEMO_SURPLUS_TARGET_AMOUNT, member.getId());
+        log.info("데모 잉여금 금액 정규화 완료(member_id={}, {}건 -> {}원)", member.getId(), normalized, DEMO_SURPLUS_TARGET_AMOUNT);
 
         fixedExpenseDetectionService.detectForMember(member.getId());
         log.info("데모 고정지출 후보 탐지 완료(member_id={})", member.getId());
