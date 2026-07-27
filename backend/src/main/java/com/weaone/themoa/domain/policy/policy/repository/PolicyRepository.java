@@ -17,6 +17,8 @@ public interface PolicyRepository extends JpaRepository<Policy, Integer> {
 
     List<Policy> findByActiveTrue(Pageable pageable);
 
+    List<Policy> findByTitleAndActiveTrue(String title);
+
     @Query("""
             select distinct p
             from Policy p

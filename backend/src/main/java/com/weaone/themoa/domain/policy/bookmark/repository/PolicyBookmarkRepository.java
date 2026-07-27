@@ -15,6 +15,8 @@ public interface PolicyBookmarkRepository extends JpaRepository<PolicyBookmark, 
     @EntityGraph(attributePaths = {"policy"})
     Optional<PolicyBookmark> findByMember_IdAndPolicy_Id(Long memberId, Integer policyId);
 
+    boolean existsByMember_IdAndPolicy_Id(Long memberId, Integer policyId);
+
     @EntityGraph(attributePaths = {"policy"})
     List<PolicyBookmark> findByMember_IdOrderByIdDesc(Long memberId);
 
