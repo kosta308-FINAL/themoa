@@ -1,15 +1,18 @@
 package com.weaone.themoa.common.logging;
 
+import com.weaone.themoa.domain.logging.service.ApiMaxResponseTimeTracker;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerMapping;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -21,11 +24,14 @@ import java.util.UUID;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class MdcLoggingFilter extends OncePerRequestFilter {
 
     private static final String TRACE_ID_HEADER = "X-Trace-Id";
     private static final String TRACE_ID_MDC_KEY = "traceId";
     private static final String ANONYMOUS_MEMBER_ID = "anonymous";
+
+    private final ApiMaxResponseTimeTracker maxResponseTimeTracker;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -39,6 +45,7 @@ public class MdcLoggingFilter extends OncePerRequestFilter {
         } finally {
             long durationMs = (System.nanoTime() - startNanos) / 1_000_000;
             logRequestCompletion(request, response, durationMs);
+            recordMaxResponseTime(request, response, durationMs);
             MDC.clear();
         }
     }
@@ -55,6 +62,16 @@ public class MdcLoggingFilter extends OncePerRequestFilter {
         } else {
             log.info(message);
         }
+    }
+
+    /**
+     * ApiPerformanceStatService가 Micrometer의 http.server.requests 타이머와 같은 기준(요청 패턴 + 상태코드)으로
+     * 조회할 수 있도록, 매칭된 URI 패턴(BEST_MATCHING_PATTERN_ATTRIBUTE)을 키로 lifetime max를 누적한다.
+     */
+    private void recordMaxResponseTime(HttpServletRequest request, HttpServletResponse response, long durationMs) {
+        Object matchedPattern = request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+        String uri = matchedPattern != null ? matchedPattern.toString() : request.getRequestURI();
+        maxResponseTimeTracker.record(request.getMethod(), uri, String.valueOf(response.getStatus()), durationMs);
     }
 
     /** 인증된 요청의 principal은 {@code JwtAuthenticationFilter}가 항상 Long memberId를 넣는다. */

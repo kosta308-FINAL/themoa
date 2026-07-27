@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 public class ApiPerformanceStatService {
 
     private final MeterRegistry meterRegistry;
+    private final ApiMaxResponseTimeTracker maxResponseTimeTracker;
 
     public List<ApiPerformanceStatResponse> readStats(String keyword) {
         String normalizedKeyword = keyword == null ? "" : keyword.trim().toLowerCase();
@@ -33,13 +34,11 @@ public class ApiPerformanceStatService {
         long count = timer.count();
         double totalMs = timer.totalTime(TimeUnit.MILLISECONDS);
         double avgMs = count == 0 ? 0 : totalMs / count;
-        return new ApiPerformanceStatResponse(
-                tag(timer, "method"),
-                tag(timer, "uri"),
-                tag(timer, "status"),
-                count,
-                round(avgMs),
-                round(timer.max(TimeUnit.MILLISECONDS)));
+        String method = tag(timer, "method");
+        String uri = tag(timer, "uri");
+        String status = tag(timer, "status");
+        long maxMs = maxResponseTimeTracker.getMaxMs(method, uri, status);
+        return new ApiPerformanceStatResponse(method, uri, status, count, round(avgMs), maxMs);
     }
 
     private String tag(Timer timer, String key) {
