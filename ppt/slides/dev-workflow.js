@@ -50,7 +50,7 @@ document.head.insertAdjacentHTML('beforeend', `
 
 /* 실제 예시 카드 */
 #s-dev-workflow .example{
-  left:70px; top:648px; width:1780px; height:360px; border-radius:20px;
+  left:70px; top:648px; width:1780px; height:400px; border-radius:20px;
   background:#fff; box-shadow:0 18px 40px rgba(0,0,0,.10); overflow:hidden;
 }
 #s-dev-workflow .ex-head{
@@ -60,8 +60,8 @@ document.head.insertAdjacentHTML('beforeend', `
 }
 #s-dev-workflow .ex-head .extag{ background:#EAF1FF; color:#2F6FED; font-size:14px; font-weight:800; padding:6px 14px; border-radius:8px; }
 #s-dev-workflow .ex-head .exname{ color:#171717; font-size:18px; font-weight:800; }
-#s-dev-workflow .ex-body{ position:absolute; left:0; top:56px; width:100%; height:304px; display:flex; }
-#s-dev-workflow .ex-col{ flex:1; padding:26px 34px; }
+#s-dev-workflow .ex-body{ position:absolute; left:0; top:56px; width:100%; height:344px; display:flex; }
+#s-dev-workflow .ex-col{ flex:1; padding:22px 34px; }
 #s-dev-workflow .ex-col.left{ border-right:1px solid #EAEDF0; }
 #s-dev-workflow .ex-collabel{ color:#8A93A0; font-size:14px; font-weight:800; margin-bottom:14px; }
 #s-dev-workflow .toc{ list-style:none; }
@@ -69,8 +69,10 @@ document.head.insertAdjacentHTML('beforeend', `
 #s-dev-workflow .toc li .n{ flex:none; color:#2F6FED; font-weight:800; }
 #s-dev-workflow .toc li.hi .n, #s-dev-workflow .toc li.hi span:last-child{ color:#C0392B; }
 
-#s-dev-workflow .check{ display:flex; align-items:flex-start; gap:12px; font-size:16px; font-weight:600; color:#333; margin-bottom:16px; line-height:1.5; }
+#s-dev-workflow .check{ display:flex; flex-direction:column; gap:5px; margin-bottom:13px; }
+#s-dev-workflow .check .crow{ display:flex; align-items:flex-start; gap:12px; font-size:16px; font-weight:600; color:#333; line-height:1.5; }
 #s-dev-workflow .check .cb{ flex:none; width:22px; height:22px; border-radius:6px; background:#E8F5EE; color:#1E7A3D; font-size:15px; font-weight:900; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+#s-dev-workflow .check .utag{ margin-left:34px; display:inline-block; background:#F1EBFC; color:#7C3AED; font-size:12px; font-weight:800; padding:3px 10px; border-radius:999px; }
 </style>
 `);
 
@@ -102,7 +104,7 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
       <div class="bar"></div><div class="num">4</div>
       <div class="icon">✅</div>
       <div class="stitle">체크리스트 확인</div>
-      <div class="sdesc">md 하단 "구현 체크리스트"<br>항목을 하나씩 체크하며<br>빠짐없이 구현됐는지 검증</div>
+      <div class="sdesc">작업단위마다 대응하는<br>체크리스트 항목을 하나씩<br>체크하며 빠짐없이 구현됐는지 검증</div>
     </div>
     <div class="step st5">
       <div class="bar"></div><div class="num">5</div>
@@ -146,10 +148,19 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
         </ul>
       </div>
       <div class="ex-col right">
-        <div class="ex-collabel">§8 구현 체크리스트에서 발췌</div>
-        <div class="check"><div class="cb">✓</div><span>fixed_expense.candidate_id NULL 허용(직접 등록)</span></div>
-        <div class="check"><div class="cb">✓</div><span>CHECK: payment_method='CARD'면<br>merchant_alias_id NOT NULL</span></div>
-        <div class="check"><div class="cb">✓</div><span>탐지 배치: alias 그룹핑 + 규칙 5가지<br>(3회↑ / 28~33일 / ±10% / 취소 제외)</span></div>
+        <div class="ex-collabel">작업단위별 체크리스트 (§8 발췌)</div>
+        <div class="check">
+          <div class="crow"><div class="cb">✓</div><span>fixed_expense.candidate_id NULL 허용(직접 등록)</span></div>
+          <div class="utag">작업단위: 등록 API</div>
+        </div>
+        <div class="check">
+          <div class="crow"><div class="cb">✓</div><span>CHECK: payment_method='CARD'면<br>merchant_alias_id NOT NULL</span></div>
+          <div class="utag">작업단위: ERD 수정</div>
+        </div>
+        <div class="check">
+          <div class="crow"><div class="cb">✓</div><span>탐지 배치: alias 그룹핑 + 규칙 5가지<br>(3회↑ / 28~33일 / ±10% / 취소 제외)</span></div>
+          <div class="utag">작업단위: 탐지 배치</div>
+        </div>
       </div>
     </div>
   </div>
