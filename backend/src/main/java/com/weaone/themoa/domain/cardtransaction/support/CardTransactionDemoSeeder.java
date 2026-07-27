@@ -56,7 +56,7 @@ public class CardTransactionDemoSeeder implements ApplicationRunner {
     private static final String SEED_RESOURCE = "seed/demo-card-transactions.json";
     private static final String CARD_ISSUER_ORGANIZATION = "0306"; // 신한카드(실제 데모 카드 발급사)
     private static final String DEMO_CONNECTED_ID = "DEMO-SEED-CONNECTED-ID";
-    private static final BigDecimal DEMO_SALARY_AMOUNT = new BigDecimal("2000000");
+    private static final BigDecimal DEMO_SALARY_AMOUNT = new BigDecimal("1700000");
     private static final int DEMO_PAYDAY = 5;
 
     private final MemberRepository memberRepository;
