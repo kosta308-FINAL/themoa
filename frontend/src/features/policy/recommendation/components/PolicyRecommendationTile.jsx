@@ -89,7 +89,11 @@ function PolicyRecommendationTile({
         onClick={handleToggleExpand}
         onKeyDown={handleKeyDown}
       >
-        <span className="policy-recommendation-rank">{rank}</span>
+        <span
+          className={`policy-recommendation-rank${rank <= 3 ? " top" : ""}`}
+        >
+          {rank}
+        </span>
 
         <div className="policy-recommendation-tile-main">
           <div className="policy-recommendation-tile-head">
@@ -146,52 +150,56 @@ function PolicyRecommendationTile({
       </div>
 
       <div className={`policy-recommendation-detail${expanded ? " open" : ""}`}>
-        {detailLoading && (
-          <p className="policy-recommendation-detail-loading">
-            상세 정보를 불러오는 중입니다.
-          </p>
-        )}
-        {detailError && (
-          <p className="policy-recommendation-error">{detailError}</p>
-        )}
-        {!detailLoading && !detailError && detail && (
-          <>
-            <dl className="policy-recommendation-detail-list">
-              <div>
-                <dt>기관</dt>
-                <dd>{dash(detail.agencyName)}</dd>
-              </div>
-              <div>
-                <dt>분야</dt>
-                <dd>{dash(detail.category)}</dd>
-              </div>
-              <div>
-                <dt>상태</dt>
-                <dd>{dash(detail.status)}</dd>
-              </div>
-              <div>
-                <dt>지역</dt>
-                <dd>{listText(detail.regions)}</dd>
-              </div>
-              <div>
-                <dt>요약</dt>
-                <dd>{dash(detail.summary)}</dd>
-              </div>
-            </dl>
-            {detail.officialUrl && (
-              <a
-                className="policy-official-link"
-                href={detail.officialUrl}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(event) => event.stopPropagation()}
-              >
-                공식 링크
-                <DashboardIcon name="chevron-right" size={16} />
-              </a>
+        <div className="policy-recommendation-detail-inner">
+          <div className="policy-recommendation-detail-content">
+            {detailLoading && (
+              <p className="policy-recommendation-detail-loading">
+                상세 정보를 불러오는 중입니다.
+              </p>
             )}
-          </>
-        )}
+            {detailError && (
+              <p className="policy-recommendation-error">{detailError}</p>
+            )}
+            {!detailLoading && !detailError && detail && (
+              <>
+                <dl className="policy-recommendation-detail-list">
+                  <div>
+                    <dt>기관</dt>
+                    <dd>{dash(detail.agencyName)}</dd>
+                  </div>
+                  <div>
+                    <dt>분야</dt>
+                    <dd>{dash(detail.category)}</dd>
+                  </div>
+                  <div>
+                    <dt>상태</dt>
+                    <dd>{dash(detail.status)}</dd>
+                  </div>
+                  <div>
+                    <dt>지역</dt>
+                    <dd>{listText(detail.regions)}</dd>
+                  </div>
+                  <div>
+                    <dt>요약</dt>
+                    <dd>{dash(detail.summary)}</dd>
+                  </div>
+                </dl>
+                {detail.officialUrl && (
+                  <a
+                    className="policy-official-link"
+                    href={detail.officialUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    공식 링크
+                    <DashboardIcon name="chevron-right" size={16} />
+                  </a>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </article>
   );

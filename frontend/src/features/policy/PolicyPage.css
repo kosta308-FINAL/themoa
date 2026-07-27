@@ -308,18 +308,27 @@
   margin-top: 0;
 }
 
-.policy-recommendation-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.policy-recommendation-list,
+.policy-recommendation-column {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
   gap: 12px;
-  align-items: start;
+}
+
+.policy-recommendation-columns {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.policy-recommendation-column {
+  flex: 1;
 }
 
 .policy-recommendation-tile {
-  position: relative;
   display: flex;
   min-width: 0;
-  height: 100%;
   flex-direction: column;
   padding: 18px 20px;
   border: 1px solid var(--dash-border);
@@ -336,7 +345,6 @@
 }
 
 .policy-recommendation-tile.active {
-  z-index: 6;
   border-color: var(--dash-accent);
   box-shadow:
     0 0 0 2px var(--dash-accent-light),
@@ -371,7 +379,7 @@
   font-weight: 700;
 }
 
-.policy-recommendation-tile:nth-child(-n + 3) .policy-recommendation-rank {
+.policy-recommendation-rank.top {
   background: var(--dash-accent);
   color: #fff;
 }
@@ -493,6 +501,12 @@
   background: var(--dash-accent-light);
 }
 
+.policy-recommendation-toggle:focus-visible {
+  border-color: var(--dash-accent);
+  outline: 2px solid var(--dash-accent-light);
+  outline-offset: 2px;
+}
+
 .policy-recommendation-toggle.open {
   border-color: var(--dash-accent);
   background: var(--dash-accent-light);
@@ -507,29 +521,24 @@
 }
 
 .policy-recommendation-detail {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
-  right: 0;
-  z-index: 6;
-  padding: 20px;
-  border: 1px solid var(--dash-border);
-  border-radius: var(--dash-radius);
-  background: var(--dash-bg-card);
-  box-shadow: 0 24px 50px rgba(15, 34, 23, 0.18);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px);
-  transition:
-    opacity 0.22s ease-out,
-    transform 0.22s ease-out,
-    visibility 0.22s;
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease;
 }
 
 .policy-recommendation-detail.open {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+  grid-template-rows: 1fr;
+}
+
+.policy-recommendation-detail-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.policy-recommendation-detail-content {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--dash-border);
 }
 
 .policy-recommendation-detail-loading {
@@ -1218,12 +1227,6 @@
   font-size: 13px;
   font-weight: 700;
   text-align: center;
-}
-
-@media (max-width: 1100px) {
-  .policy-recommendation-list {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 @media (max-width: 720px) {

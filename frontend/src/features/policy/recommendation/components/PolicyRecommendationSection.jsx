@@ -1,8 +1,29 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePolicyBookmarks } from "../../hooks/usePolicyBookmarks";
 import PolicyRecommendationProfileForm from "./PolicyRecommendationProfileForm";
 import PolicyRecommendationProfileSummary from "./PolicyRecommendationProfileSummary";
 import PolicyRecommendationTile from "./PolicyRecommendationTile";
+
+const TWO_COLUMN_QUERY = "(min-width: 1101px)";
+
+// 카드 펼침에 따라 높이가 계속 바뀌므로, CSS 멀티컬럼(자동 재배치)이 아니라
+// 항목을 고정된 두 칸으로 직접 나눠서 펼쳐도 항목이 칸을 옮겨 다니지 않게 한다.
+function useTwoColumnLayout() {
+  const [isTwoColumn, setIsTwoColumn] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia(TWO_COLUMN_QUERY).matches,
+  );
+
+  useEffect(() => {
+    const mql = window.matchMedia(TWO_COLUMN_QUERY);
+    const handleChange = (event) => setIsTwoColumn(event.matches);
+    mql.addEventListener("change", handleChange);
+    return () => mql.removeEventListener("change", handleChange);
+  }, []);
+
+  return isTwoColumn;
+}
 
 function PolicyRecommendationSection({
   recommendation,
@@ -10,6 +31,7 @@ function PolicyRecommendationSection({
   onRefresh,
 }) {
   const bookmarks = usePolicyBookmarks();
+  const isTwoColumn = useTwoColumnLayout();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const {
     profile,
@@ -177,13 +199,18 @@ function PolicyRecommendationSection({
                   검색에서 다른 조건으로 찾아볼 수 있어요.
                 </div>
               )}
-              {!recommendationError && recommendations?.items?.length > 0 && (
-                <div className="policy-recommendation-list">
-                  {recommendations.items.map((item, index) => (
+              {!recommendationError &&
+                recommendations?.items?.length > 0 &&
+                (() => {
+                  const ranked = recommendations.items.map((item, index) => ({
+                    item,
+                    rank: index + 1,
+                  }));
+                  const renderTile = ({ item, rank }) => (
                     <PolicyRecommendationTile
                       key={item.policyId}
                       item={item}
-                      rank={index + 1}
+                      rank={rank}
                       bookmarked={bookmarks.isBookmarked(item.policyId)}
                       bookmarkBusy={
                         bookmarks.loading ||
@@ -191,9 +218,29 @@ function PolicyRecommendationSection({
                       }
                       onBookmarkToggle={bookmarks.toggleBookmark}
                     />
-                  ))}
-                </div>
-              )}
+                  );
+
+                  if (!isTwoColumn) {
+                    return (
+                      <div className="policy-recommendation-list">
+                        {ranked.map(renderTile)}
+                      </div>
+                    );
+                  }
+
+                  const leftColumn = ranked.filter((_, i) => i % 2 === 0);
+                  const rightColumn = ranked.filter((_, i) => i % 2 === 1);
+                  return (
+                    <div className="policy-recommendation-columns">
+                      <div className="policy-recommendation-column">
+                        {leftColumn.map(renderTile)}
+                      </div>
+                      <div className="policy-recommendation-column">
+                        {rightColumn.map(renderTile)}
+                      </div>
+                    </div>
+                  );
+                })()}
               {bookmarks.error && (
                 <p className="policy-bookmark-error">{bookmarks.error}</p>
               )}
