@@ -39,7 +39,7 @@ document.head.insertAdjacentHTML('beforeend', `
 `);
 
 document.getElementById('deck').insertAdjacentHTML('beforeend', `
-<section class="slide" id="sAbout" data-skip-to="16">
+<section class="slide" id="sAbout" data-skip-to="11">
   <div class="abs htitle">소개</div>
   <img class="abs hero" src="assets/about_intro.png" alt="TheMoa 소개">
   <img class="abs brandmark" src="assets/themoa_logo.png" alt="TheMoa 로고">
@@ -52,14 +52,7 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="ctitle">소비관리</div>
   </div>
 
-  <div class="chip" style="left:502px" data-feature="정책추천">
-    <div class="icircle"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M3 10 12 4l9 6"/><path d="M5 10v9M10 10v9M14 10v9M19 10v9"/><path d="M3 19h18"/>
-    </svg></div>
-    <div class="ctitle">정책 추천</div>
-  </div>
-
-  <div class="chip" style="left:850px" data-feature="금융상품추천">
+  <div class="chip" style="left:502px" data-feature="금융상품추천">
     <div class="icircle"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12.5 5.5c-3.5 0-6.5 2.2-6.5 5.6 0 1.5.5 2.6 1.3 3.4V17a1 1 0 0 0 1 1H10v-1.3c.6.1 1.3.2 2 .2s1.4-.1 2-.2V18a1 1 0 0 0 1 1h1.7a1 1 0 0 0 1-1v-2.5c1-.8 1.8-2 1.8-3.5v-.6h1.1c.5 0 .9-.4.9-.9 0-.9-.7-1.6-1.6-1.6h-.7C18.4 7 15.8 5.5 12.5 5.5Z"/>
       <path d="M8.7 7.2 7.3 5.8"/>
@@ -67,14 +60,21 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     </svg></div>
     <div class="ctitle">금융상품 추천</div>
   </div>
+
+  <div class="chip" style="left:850px" data-feature="정책추천">
+    <div class="icircle"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 10 12 4l9 6"/><path d="M5 10v9M10 10v9M14 10v9M19 10v9"/><path d="M3 19h18"/>
+    </svg></div>
+    <div class="ctitle">정책 추천</div>
+  </div>
 </section>
 `);
 
 /* 버튼 클릭 → 각 기능 핵심소개 페이지로 이동 */
 const ABOUT_FEATURE_PAGE = {
-  '소비관리': 8,     // key-features.js
-  '정책추천': 9,     // slide22.js (정책 4장 중 첫 장, 9~12페이지)
-  '금융상품추천': 13 // slide40.js (금융상품 3장 중 첫 장, 13~15페이지)
+  '소비관리': 8,      // key-features.js (내부 5단계)
+  '금융상품추천': 9,  // financial-features.js (내부 3단계로 통합)
+  '정책추천': 10      // policy-features.js (내부 4단계로 통합)
 };
 document.querySelectorAll('#sAbout .chip').forEach(function(chip){
   chip.addEventListener('click', function(e){
