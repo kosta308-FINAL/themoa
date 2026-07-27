@@ -9,8 +9,10 @@ function FinancialSearchResults({
   error,
   data,
   searched,
-  onSearch,
+  selected,
   bookmarks,
+  onSearch,
+  onOpenDetail,
 }) {
   if (loading) {
     return <div className="fs-state">금융상품을 찾고 있어요…</div>;
@@ -69,7 +71,9 @@ function FinancialSearchResults({
               <FinancialSearchResultCard
                 key={`${item.productType}-${item.id}`}
                 item={item}
+                active={selected?.id === item.id}
                 bookmarks={bookmarks}
+                onOpen={onOpenDetail}
               />
             ))}
           </div>
