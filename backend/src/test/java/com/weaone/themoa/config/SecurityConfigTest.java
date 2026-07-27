@@ -4,6 +4,7 @@ import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.common.logging.MdcLoggingFilter;
 import com.weaone.themoa.common.logging.ErrorLogSanitizer;
+import com.weaone.themoa.domain.logging.service.ApiMaxResponseTimeTracker;
 import com.weaone.themoa.domain.logging.service.AsyncErrorLogRecorder;
 import com.weaone.themoa.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
 import com.weaone.themoa.security.oauth.SocialLoginFailureHandler;
@@ -228,8 +229,13 @@ class SecurityConfigTest {
         }
 
         @Bean
-        MdcLoggingFilter mdcLoggingFilter() {
-            return new MdcLoggingFilter();
+        ApiMaxResponseTimeTracker apiMaxResponseTimeTracker() {
+            return mock(ApiMaxResponseTimeTracker.class);
+        }
+
+        @Bean
+        MdcLoggingFilter mdcLoggingFilter(ApiMaxResponseTimeTracker maxResponseTimeTracker) {
+            return new MdcLoggingFilter(maxResponseTimeTracker);
         }
     }
 
