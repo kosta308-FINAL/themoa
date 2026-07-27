@@ -92,6 +92,7 @@ function CustomerServiceAiQualityPage() {
   const [unansweredQuestions, setUnansweredQuestions] = useState([]);
   const [unansweredNewCount, setUnansweredNewCount] = useState(0);
   const [unansweredStatusFilter, setUnansweredStatusFilter] = useState("NEW");
+  const [zeroResultModal, setZeroResultModal] = useState(null);
 
   const embeddedCount = useMemo(
     () => documents.filter((item) => item.status === "EMBEDDED").length,
@@ -309,6 +310,7 @@ function CustomerServiceAiQualityPage() {
     setError("");
     setNotice("");
     setAnswerPreview("");
+    setZeroResultModal(null);
     try {
       const data = await searchAdminCustomerAiKnowledge({
         query,
@@ -316,6 +318,9 @@ function CustomerServiceAiQualityPage() {
         minimumSimilarity: Number(minimumSimilarity),
       });
       setSearchResult(data);
+      if (!data?.results || data.results.length === 0) {
+        setZeroResultModal({ query, minimumSimilarity });
+      }
     } catch (requestError) {
       setError(
         getApiErrorMessage(requestError, "Qdrant 검색 테스트에 실패했어요."),
@@ -329,6 +334,7 @@ function CustomerServiceAiQualityPage() {
     setBusyKey("preview");
     setError("");
     setNotice("");
+    setZeroResultModal(null);
     try {
       const data = await previewAdminCustomerAiAnswer({
         query,
@@ -338,6 +344,9 @@ function CustomerServiceAiQualityPage() {
       });
       setSearchResult(data.search);
       setAnswerPreview(data.answerMarkdown || "");
+      if (!data.search?.results || data.search.results.length === 0) {
+        setZeroResultModal({ query, minimumSimilarity });
+      }
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, "답변 미리보기에 실패했어요."));
     } finally {
@@ -542,6 +551,38 @@ function CustomerServiceAiQualityPage() {
           <div className="aiq-toast-stack" role="status" aria-live="polite">
             {notice && <div className="aiq-toast success">{notice}</div>}
             {error && <div className="aiq-toast error">{error}</div>}
+          </div>
+        )}
+
+        {zeroResultModal && (
+          <div className="aiq-zero-backdrop" role="presentation">
+            <section
+              className="aiq-zero-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="aiq-zero-modal-title"
+            >
+              <h2 id="aiq-zero-modal-title">검색된 문서가 없어요</h2>
+              <p>
+                <strong>&ldquo;{zeroResultModal.query}&rdquo;</strong>에 대해
+                최소 유사도{" "}
+                <strong>
+                  {Number(zeroResultModal.minimumSimilarity).toFixed(2)}
+                </strong>{" "}
+                이상인 문서를 Qdrant에서 찾지 못했어요.
+              </p>
+              <p className="aiq-zero-hint">
+                검색 자체는 정상적으로 실행됐지만 조건에 맞는 지식 문서가 없다는
+                뜻이에요. 최소 유사도를 낮추거나 관련 지식 문서를 추가해 보세요.
+              </p>
+              <button
+                type="button"
+                className="aiq-btn aiq-btn-primary"
+                onClick={() => setZeroResultModal(null)}
+              >
+                확인
+              </button>
+            </section>
           </div>
         )}
 

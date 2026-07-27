@@ -3,13 +3,13 @@ document.head.insertAdjacentHTML('beforeend', `
 <style>
 #s92{ background:transparent; }   /* 배경은 #deck에 고정된 공통 그라데이션을 그대로 사용 */
 #s92 .ptitle{ left:52px; top:40px; width:1100px; color:#6B7C8A; font-size:45px; font-weight:800; }
-#s92 .psub{ left:52px; top:112px; width:1500px; color:#111; font-size:24px; font-weight:500; }
+#s92 .psub{ left:52px; top:112px; width:1600px; color:#111; font-size:26px; font-weight:500; }
 
 /* 사용자 질문 pill */
 #s92 .query{
-  left:830px; top:172px; width:260px; height:58px; border-radius:999px;
+  left:820px; top:172px; width:280px; height:60px; border-radius:999px;
   background:#111; color:#fff; display:flex; align-items:center; justify-content:center;
-  font-size:20px; font-weight:700; z-index:3; box-shadow:0 10px 22px rgba(0,0,0,.25);
+  font-size:22px; font-weight:700; z-index:3; box-shadow:0 10px 22px rgba(0,0,0,.25);
 }
 
 /* 연결선 */
@@ -30,17 +30,17 @@ document.head.insertAdjacentHTML('beforeend', `
 #s92 .agent.a3 .bar{ background:#7C3AED; }
 
 #s92 .agent .icon{
-  width:56px; height:56px; border-radius:14px; display:flex; align-items:center;
-  justify-content:center; font-size:28px; margin-bottom:14px;
+  width:58px; height:58px; border-radius:14px; display:flex; align-items:center;
+  justify-content:center; font-size:29px; margin-bottom:14px;
 }
 #s92 .agent.a1 .icon{ background:#EAF1FF; }
 #s92 .agent.a2 .icon{ background:#E8F5EE; }
 #s92 .agent.a3 .icon{ background:#F1EBFC; }
 
-#s92 .agent .aname{ color:#111; font-size:28px; font-weight:800; margin-bottom:8px; }
-#s92 .agent .adesc{ color:#555; font-size:17px; font-weight:500; line-height:1.5; margin-bottom:18px; }
+#s92 .agent .aname{ color:#111; font-size:30px; font-weight:800; margin-bottom:9px; }
+#s92 .agent .adesc{ color:#555; font-size:19px; font-weight:500; line-height:1.5; margin-bottom:18px; }
 
-#s92 .agent .respond{ font-size:16px; font-weight:700; }
+#s92 .agent .respond{ font-size:18px; font-weight:700; }
 #s92 .agent.a1 .respond{ color:#2F6FED; }
 #s92 .agent.a2 .respond{ color:#007613; }
 #s92 .agent.a3 .respond{ color:#7C3AED; }
@@ -51,9 +51,9 @@ document.head.insertAdjacentHTML('beforeend', `
   flex:1; background:#fff; border-radius:16px; padding:20px 22px;
   box-shadow:0 12px 26px rgba(0,0,0,.10);
 }
-#s92 .benefit .btitle{ color:#007613; font-size:19px; font-weight:800; margin-bottom:8px;
+#s92 .benefit .btitle{ color:#007613; font-size:20px; font-weight:800; margin-bottom:9px;
   display:flex; align-items:center; gap:8px; }
-#s92 .benefit .bdesc{ color:#333; font-size:15px; font-weight:500; line-height:1.5; }
+#s92 .benefit .bdesc{ color:#333; font-size:17px; font-weight:500; line-height:1.5; }
 </style>
 `);
 
@@ -97,19 +97,19 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
   <div class="abs benefits">
     <div class="benefit">
       <div class="btitle">도메인 간 간섭 없음</div>
-      <div class="bdesc">컬렉션이 분리돼 있어 정책 임베딩이 금융상품 검색에<br>노이즈로 섞이지 않습니다.</div>
+      <div class="bdesc">컬렉션이 분리돼 있어 정책 임베딩이<br>금융상품 검색에 노이즈로 섞이지 않습니다.</div>
     </div>
     <div class="benefit">
       <div class="btitle">독립적인 확장</div>
-      <div class="bdesc">한 도메인의 임베딩 모델·스키마를 바꿔도 다른 도메인 코드에는<br>영향이 없습니다.</div>
+      <div class="bdesc">한 도메인의 임베딩 모델·스키마를 바꿔도<br>다른 도메인 코드에는 영향이 없습니다.</div>
     </div>
     <div class="benefit">
       <div class="btitle">명확한 유지보수</div>
-      <div class="bdesc">Agent 하나가 모든 걸 처리하지 않아, 도메인별로 로직과 책임이<br>분리돼 있습니다.</div>
+      <div class="bdesc">Agent 하나가 모든 걸 처리하지 않아,<br>도메인별로 로직과 책임이 분리돼 있습니다.</div>
     </div>
     <div class="benefit">
       <div class="btitle">손쉬운 도메인 추가</div>
-      <div class="bdesc">새 컬렉션과 서비스만 추가하면 기존 도메인 로직은<br>그대로 유지됩니다.</div>
+      <div class="bdesc">새 컬렉션과 서비스만 추가하면<br>기존 도메인 로직은 그대로 유지됩니다.</div>
     </div>
   </div>
 </section>
