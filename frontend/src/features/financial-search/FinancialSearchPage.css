@@ -603,7 +603,7 @@
   flex-shrink: 0;
   padding: 2px 7px;
   border-radius: 999px;
-  background: var(--dash-accent-light);
+  background: #ffffff;
   font-style: normal;
   font-size: 11.5px;
   font-weight: 700;
@@ -625,7 +625,20 @@
 }
 
 /* ─── 상세 모달 (정책 검색의 상세 모달과 같은 구조) ───────────────── */
+/*
+ * createPortal로 document.body에 붙기 때문에 .dashboard 아래에서 정의된
+ * --dash-* 변수를 상속받지 못한다(DOM 트리 밖). var() 하나하나에 폴백을
+ * 넣는 대신 이 서브트리 루트에서 변수를 다시 선언해 모든 하위 규칙이
+ * 정상적으로 값을 받도록 한다.
+ */
 .fs-detail-modal-backdrop {
+  --dash-accent: #22c55e;
+  --dash-accent-dark: #16a34a;
+  --dash-accent-light: #e7f9ee;
+  --dash-bg: #ffffff;
+  --dash-border: #e5ede8;
+  --dash-text-primary: #16241c;
+  --dash-text-secondary: #6b7a72;
   position: fixed;
   inset: 0;
   z-index: 90;
@@ -775,6 +788,9 @@
   display: grid;
   gap: 12px;
   margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--dash-accent-light);
 }
 
 .fs-detail-list div {
@@ -807,8 +823,9 @@
 
 .fs-detail-section {
   margin: 0 0 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--dash-border);
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--dash-accent-light);
 }
 
 .fs-detail-section-title {

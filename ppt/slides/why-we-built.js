@@ -32,7 +32,7 @@ document.head.insertAdjacentHTML('beforeend', `
 #sWhy .banner{ position:absolute; left:52px; top:720px; width:1816px; height:180px; z-index:1;
   background:linear-gradient(135deg,#2D8A5E,#43A873); border-radius:24px; color:#fff;
   display:flex; align-items:center; justify-content:center; text-align:center; padding:0 40px;
-  font-size:21px; font-weight:700; white-space:nowrap; box-shadow:0 22px 44px rgba(45,138,94,.32); }
+  font-size:28px; font-weight:700; white-space:nowrap; box-shadow:0 22px 44px rgba(45,138,94,.32); }
 #sWhy .banner b{ font-weight:900; }
 </style>
 `);
@@ -75,6 +75,6 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     </div>
   </div>
 
-  <div class="banner">그래서 <b>소비 습관</b>을 잡아주고, 남는 돈은 <b>예·적금</b>으로, 놓치기 쉬운 <b>청년 정책</b>까지 한 곳에서 챙기는 서비스를 만들었습니다.</div>
+  <div class="banner">그래서 <b>소비 습관</b> 형성부터 <b>예·적금</b>, 놓치기 쉬운 <b>청년 정책</b>까지 한 곳에서 챙기는 서비스를 만들었습니다.</div>
 </section>
 `);
