@@ -7,7 +7,6 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Profile;
 
 import java.util.List;
 
@@ -25,34 +24,23 @@ class AdminControllerConditionTest {
     );
 
     @Test
-    @DisplayName("정책 관리자 Controller는 local profile에서만 등록되도록 제한되어 있다")
-    void adminControllersRequireLocalProfile() {
-        for (Class<?> controller : controllers) {
-            Profile profile = controller.getAnnotation(Profile.class);
-
-            assertThat(profile).isNotNull();
-            assertThat(profile.value()).containsExactly("local");
-        }
-    }
-
-    @Test
-    @DisplayName("정책 관리자 Controller는 app.policy.local-tools.enabled=true일 때만 등록되도록 제한되어 있다")
-    void adminControllersRequireLocalToolsEnabled() {
+    @DisplayName("정책 관리자 Controller는 app.policy.admin-tools.enabled=true일 때만 등록되도록 제한되어 있다")
+    void adminControllersRequireAdminToolsEnabled() {
         for (Class<?> controller : controllers) {
             ConditionalOnProperty conditional = controller.getAnnotation(ConditionalOnProperty.class);
 
             assertThat(conditional).isNotNull();
-            assertThat(conditional.prefix()).isEqualTo("app.policy.local-tools");
+            assertThat(conditional.prefix()).isEqualTo("app.policy.admin-tools");
             assertThat(conditional.name()).containsExactly("enabled");
             assertThat(conditional.havingValue()).isEqualTo("true");
         }
     }
 
     @Test
-    @DisplayName("local + enabled=true이면 정책 관리자 Controller Bean이 등록된다")
-    void adminControllerBeansAreRegisteredWhenLocalToolsEnabled() {
+    @DisplayName("admin-tools enabled=true이면 정책 관리자 Controller Bean이 등록된다")
+    void adminControllerBeansAreRegisteredWhenAdminToolsEnabled() {
         adminContext()
-                .withPropertyValues("spring.profiles.active=local", "app.policy.local-tools.enabled=true")
+                .withPropertyValues("app.policy.admin-tools.enabled=true")
                 .run(context -> {
                     assertThat(context).hasSingleBean(PolicyAdminDashboardController.class);
                     assertThat(context).hasSingleBean(PolicyAdminJobController.class);
@@ -64,18 +52,17 @@ class AdminControllerConditionTest {
     }
 
     @Test
-    @DisplayName("local + enabled=false이면 정책 관리자 Controller Bean이 등록되지 않는다")
-    void adminControllerBeansAreNotRegisteredWhenLocalToolsDisabled() {
+    @DisplayName("admin-tools enabled=false이면 정책 관리자 Controller Bean이 등록되지 않는다")
+    void adminControllerBeansAreNotRegisteredWhenAdminToolsDisabled() {
         adminContext()
-                .withPropertyValues("spring.profiles.active=local", "app.policy.local-tools.enabled=false")
+                .withPropertyValues("app.policy.admin-tools.enabled=false")
                 .run(context -> assertThat(context).doesNotHaveBean(PolicyAdminDashboardController.class));
     }
 
     @Test
-    @DisplayName("non-local profile이면 정책 관리자 Controller Bean이 등록되지 않는다")
-    void adminControllerBeansAreNotRegisteredWhenNonLocal() {
+    @DisplayName("admin-tools 설정이 없으면 정책 관리자 Controller Bean이 등록되지 않는다")
+    void adminControllerBeansAreNotRegisteredWhenMissingAdminToolsProperty() {
         adminContext()
-                .withPropertyValues("spring.profiles.active=test", "app.policy.local-tools.enabled=true")
                 .run(context -> assertThat(context).doesNotHaveBean(PolicyAdminDashboardController.class));
     }
 

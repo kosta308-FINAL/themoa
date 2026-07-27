@@ -7,6 +7,7 @@ import com.weaone.themoa.domain.policy.policy.region.RegionMatchEvaluator;
 import com.weaone.themoa.domain.policy.policy.region.ResolvedUserRegion;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyEmploymentAudience;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyGenderClassificationResult;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchCondition;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchIntent;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchPlan;
@@ -14,6 +15,7 @@ import com.weaone.themoa.domain.policy.rag.dto.PolicySearchResultItem;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyTargetAudienceClassification;
 import com.weaone.themoa.domain.policy.rag.dto.SearchQueryType;
 import com.weaone.themoa.domain.policy.rag.dto.UserEmploymentStatusResult;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -35,8 +37,28 @@ public class PolicySearchRuntimeSupport {
     private final PolicySearchIntentBuilder intentBuilder;
     private final PolicyTargetAudienceClassifier targetAudienceClassifier;
     private final PolicyEmploymentAudienceClassifier employmentAudienceClassifier;
+    private final PolicyGenderAudienceClassifier genderAudienceClassifier;
     private final UserEmploymentStatusDetector userEmploymentStatusDetector;
     private final RegionCoverageResultSelector regionCoverageResultSelector;
+
+    @Autowired
+    public PolicySearchRuntimeSupport(PolicyRepository policyRepository,
+                                      RegionMatchEvaluator regionMatchEvaluator,
+                                      PolicySearchIntentBuilder intentBuilder,
+                                      PolicyTargetAudienceClassifier targetAudienceClassifier,
+                                      PolicyEmploymentAudienceClassifier employmentAudienceClassifier,
+                                      PolicyGenderAudienceClassifier genderAudienceClassifier,
+                                      UserEmploymentStatusDetector userEmploymentStatusDetector,
+                                      RegionCoverageResultSelector regionCoverageResultSelector) {
+        this.policyRepository = policyRepository;
+        this.regionMatchEvaluator = regionMatchEvaluator;
+        this.intentBuilder = intentBuilder;
+        this.targetAudienceClassifier = targetAudienceClassifier;
+        this.employmentAudienceClassifier = employmentAudienceClassifier;
+        this.genderAudienceClassifier = genderAudienceClassifier;
+        this.userEmploymentStatusDetector = userEmploymentStatusDetector;
+        this.regionCoverageResultSelector = regionCoverageResultSelector;
+    }
 
     public PolicySearchRuntimeSupport(PolicyRepository policyRepository,
                                       RegionMatchEvaluator regionMatchEvaluator,
@@ -45,13 +67,8 @@ public class PolicySearchRuntimeSupport {
                                       PolicyEmploymentAudienceClassifier employmentAudienceClassifier,
                                       UserEmploymentStatusDetector userEmploymentStatusDetector,
                                       RegionCoverageResultSelector regionCoverageResultSelector) {
-        this.policyRepository = policyRepository;
-        this.regionMatchEvaluator = regionMatchEvaluator;
-        this.intentBuilder = intentBuilder;
-        this.targetAudienceClassifier = targetAudienceClassifier;
-        this.employmentAudienceClassifier = employmentAudienceClassifier;
-        this.userEmploymentStatusDetector = userEmploymentStatusDetector;
-        this.regionCoverageResultSelector = regionCoverageResultSelector;
+        this(policyRepository, regionMatchEvaluator, intentBuilder, targetAudienceClassifier,
+                employmentAudienceClassifier, null, userEmploymentStatusDetector, regionCoverageResultSelector);
     }
 
     PolicySearchIntent buildIntent(PolicySearchPlan plan) {
@@ -69,6 +86,10 @@ public class PolicySearchRuntimeSupport {
 
     Map<Integer, PolicyEmploymentAudience> classifyEmploymentAudiences(List<Integer> policyIds) {
         return employmentAudienceClassifier == null ? Map.of() : employmentAudienceClassifier.classify(policyIds);
+    }
+
+    Map<Integer, PolicyGenderClassificationResult> classifyGenderAudiences(List<Integer> policyIds) {
+        return genderAudienceClassifier == null ? Map.of() : genderAudienceClassifier.findClassifications(policyIds);
     }
 
     UserEmploymentStatusResult detectEmploymentStatus(String query) {

@@ -5,10 +5,15 @@ import com.weaone.themoa.domain.policy.policy.entity.PolicyCondition;
 import com.weaone.themoa.domain.policy.policy.region.RegionCompatibility;
 import com.weaone.themoa.domain.policy.rag.dto.ConditionMatchStatus;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyEmploymentAudience;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyGenderAudience;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyGenderClassificationResult;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyTargetAudienceClassification;
 import com.weaone.themoa.domain.policy.rag.dto.TargetStageMatchResult;
 import com.weaone.themoa.domain.policy.rag.dto.UserEmploymentStatus;
+import com.weaone.themoa.domain.policy.rag.dto.UserGender;
+import com.weaone.themoa.domain.policy.rag.service.PolicyGenderClassificationPolicy;
 import com.weaone.themoa.domain.policy.rag.service.PolicyTargetEligibilityFilter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -18,9 +23,17 @@ import java.util.List;
 @Component
 public class PolicyRecommendationMatcher {
     private final PolicyTargetEligibilityFilter targetEligibilityFilter;
+    private final PolicyGenderClassificationPolicy genderClassificationPolicy;
+
+    @Autowired
+    public PolicyRecommendationMatcher(PolicyTargetEligibilityFilter targetEligibilityFilter,
+                                       PolicyGenderClassificationPolicy genderClassificationPolicy) {
+        this.targetEligibilityFilter = targetEligibilityFilter;
+        this.genderClassificationPolicy = genderClassificationPolicy;
+    }
 
     public PolicyRecommendationMatcher(PolicyTargetEligibilityFilter targetEligibilityFilter) {
-        this.targetEligibilityFilter = targetEligibilityFilter;
+        this(targetEligibilityFilter, new PolicyGenderClassificationPolicy());
     }
 
     public PolicyRecommendationMatch match(Policy policy, RegionCompatibility regionCompatibility, int age,
@@ -35,6 +48,19 @@ public class PolicyRecommendationMatcher {
                                            UserEmploymentStatus employmentStatus,
                                            PolicyEmploymentAudience employmentAudience,
                                            PolicyTargetAudienceClassification targetAudience,
+                                           LocalDate today,
+                                           boolean regionClassificationConflict) {
+        return match(policy, regionCompatibility, age, employmentStatus, employmentAudience, targetAudience,
+                null, PolicyGenderClassificationResult.unknown("저장된 성별 분류가 없습니다."), today,
+                regionClassificationConflict);
+    }
+
+    public PolicyRecommendationMatch match(Policy policy, RegionCompatibility regionCompatibility, int age,
+                                           UserEmploymentStatus employmentStatus,
+                                           PolicyEmploymentAudience employmentAudience,
+                                           PolicyTargetAudienceClassification targetAudience,
+                                           UserGender userGender,
+                                           PolicyGenderClassificationResult genderAudience,
                                            LocalDate today,
                                            boolean regionClassificationConflict) {
         if (policy == null || !policy.isActive()) {
@@ -63,6 +89,10 @@ public class PolicyRecommendationMatcher {
         if (!targetMatchResult.matched()) {
             return PolicyRecommendationMatch.excluded(targetMatchResult.reason());
         }
+        GenderMatchResult genderMatchResult = genderMatches(userGender, genderAudience);
+        if (!genderMatchResult.matched()) {
+            return PolicyRecommendationMatch.excluded(genderMatchResult.reason());
+        }
 
         int score = 0;
         List<String> reasons = new ArrayList<>();
@@ -89,6 +119,10 @@ public class PolicyRecommendationMatcher {
         } else if (policy.getStartDate() != null && policy.getStartDate().isAfter(today)) {
             score += 5;
             reasons.add("신청 시작 예정");
+        }
+        String genderReason = genderReason(userGender, genderAudience);
+        if (genderReason != null) {
+            reasons.add(genderReason);
         }
         if (score <= 0) {
             return PolicyRecommendationMatch.excluded("NO_SCORE");
@@ -138,6 +172,37 @@ public class PolicyRecommendationMatcher {
             return TargetMatchResult.excluded("EDUCATION_STAGE_MISMATCH");
         }
         return TargetMatchResult.included();
+    }
+
+    private GenderMatchResult genderMatches(UserGender userGender, PolicyGenderClassificationResult genderAudience) {
+        PolicyGenderClassificationResult normalized = genderClassificationPolicy.normalize(genderAudience);
+        if (!genderClassificationPolicy.hardFilterable(normalized)) {
+            return GenderMatchResult.included();
+        }
+        if (userGender == null) {
+            return GenderMatchResult.excluded("GENDER_NOT_MATCHED");
+        }
+        if (userGender == UserGender.MALE && normalized.audience() == PolicyGenderAudience.FEMALE_ONLY) {
+            return GenderMatchResult.excluded("GENDER_NOT_MATCHED");
+        }
+        if (userGender == UserGender.FEMALE && normalized.audience() == PolicyGenderAudience.MALE_ONLY) {
+            return GenderMatchResult.excluded("GENDER_NOT_MATCHED");
+        }
+        return GenderMatchResult.included();
+    }
+
+    private String genderReason(UserGender userGender, PolicyGenderClassificationResult genderAudience) {
+        PolicyGenderClassificationResult normalized = genderClassificationPolicy.normalize(genderAudience);
+        if (normalized.audience() == PolicyGenderAudience.ALL) {
+            return "성별 제한 없음";
+        }
+        if (normalized.audience() == PolicyGenderAudience.UNKNOWN) {
+            return "성별 조건 확인 필요";
+        }
+        if (genderClassificationPolicy.hardFilterable(normalized) && userGender != null) {
+            return "회원 성별 조건 일치";
+        }
+        return null;
     }
 
     private boolean isOpenNow(Policy policy, LocalDate today) {
@@ -223,6 +288,16 @@ public class PolicyRecommendationMatcher {
 
         static TargetMatchResult excluded(String reason) {
             return new TargetMatchResult(false, reason);
+        }
+    }
+
+    private record GenderMatchResult(boolean matched, String reason) {
+        static GenderMatchResult included() {
+            return new GenderMatchResult(true, "");
+        }
+
+        static GenderMatchResult excluded(String reason) {
+            return new GenderMatchResult(false, reason);
         }
     }
 }

@@ -7,9 +7,13 @@ import com.weaone.themoa.domain.policy.policy.entity.PolicyRegion;
 import com.weaone.themoa.domain.policy.policy.entity.RegionCode;
 import com.weaone.themoa.domain.policy.policy.region.RegionCompatibility;
 import com.weaone.themoa.domain.policy.rag.dto.EducationStage;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyApplicantScope;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyEmploymentAudience;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyGenderAudience;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyGenderClassificationResult;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyTargetAudienceClassification;
 import com.weaone.themoa.domain.policy.rag.dto.UserEmploymentStatus;
+import com.weaone.themoa.domain.policy.rag.dto.UserGender;
 import com.weaone.themoa.domain.policy.rag.service.PolicyTargetEligibilityFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -355,6 +359,70 @@ class PolicyRecommendationMatcherTest {
         assertThat(match.matched()).isFalse();
     }
 
+    @Test
+    void maleMemberIsExcludedFromFemaleOnlyPolicy() {
+        Policy policy = policy(1, null, null, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31));
+
+        PolicyRecommendationMatch match = matcher.match(
+                policy,
+                RegionCompatibility.NATIONWIDE,
+                27,
+                UserEmploymentStatus.EMPLOYED,
+                PolicyEmploymentAudience.unknown(),
+                PolicyTargetAudienceClassification.unknown(),
+                UserGender.MALE,
+                gender(PolicyGenderAudience.FEMALE_ONLY),
+                LocalDate.of(2026, 7, 24),
+                false
+        );
+
+        assertThat(match.matched()).isFalse();
+        assertThat(match.exclusionReason()).isEqualTo("GENDER_NOT_MATCHED");
+    }
+
+    @Test
+    void sameGenderSpecificPolicyIsAllowedAndAddsAccurateReason() {
+        Policy policy = policy(1, null, null, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31));
+
+        PolicyRecommendationMatch match = matcher.match(
+                policy,
+                RegionCompatibility.NATIONWIDE,
+                27,
+                UserEmploymentStatus.EMPLOYED,
+                PolicyEmploymentAudience.unknown(),
+                PolicyTargetAudienceClassification.unknown(),
+                UserGender.FEMALE,
+                gender(PolicyGenderAudience.FEMALE_ONLY),
+                LocalDate.of(2026, 7, 24),
+                false
+        );
+
+        assertThat(match.matched()).isTrue();
+        assertThat(match.matchReason()).contains("회원 성별 조건 일치");
+    }
+
+    @Test
+    void unknownGenderClassificationDoesNotClaimMatch() {
+        Policy policy = policy(1, null, null, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31));
+
+        PolicyRecommendationMatch match = matcher.match(
+                policy,
+                RegionCompatibility.NATIONWIDE,
+                27,
+                UserEmploymentStatus.EMPLOYED,
+                PolicyEmploymentAudience.unknown(),
+                PolicyTargetAudienceClassification.unknown(),
+                UserGender.MALE,
+                PolicyGenderClassificationResult.unknown("분류 없음"),
+                LocalDate.of(2026, 7, 24),
+                false
+        );
+
+        assertThat(match.matched()).isTrue();
+        assertThat(match.matchReason()).contains("성별 조건 확인 필요");
+        assertThat(match.matchReason()).doesNotContain("회원 성별 조건 일치");
+    }
+
     private Policy policy(Integer id, Integer minAge, Integer maxAge, LocalDate startDate, LocalDate dueDate) {
         Policy policy = new Policy("YC-" + id);
         ReflectionTestUtils.setField(policy, "id", id);
@@ -377,5 +445,10 @@ class PolicyRecommendationMatcherTest {
 
     private RegionCode region(String province, String city, String level) {
         return new RegionCode(null, "TEST:" + province + ":" + city, province, city, level);
+    }
+
+    private PolicyGenderClassificationResult gender(PolicyGenderAudience audience) {
+        return new PolicyGenderClassificationResult(audience, true, 0.9, PolicyApplicantScope.INDIVIDUAL,
+                "개인 신청자 성별 제한");
     }
 }

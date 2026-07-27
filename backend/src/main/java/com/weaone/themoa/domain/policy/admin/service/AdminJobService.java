@@ -13,6 +13,7 @@ import com.weaone.themoa.domain.policy.policy.service.YouthCenterPolicyCollectio
 import com.weaone.themoa.domain.policy.rag.service.EmbeddingProcessResult;
 import com.weaone.themoa.domain.policy.rag.service.EmbeddingQueueResult;
 import com.weaone.themoa.domain.policy.rag.service.PolicyEmbeddingService;
+import com.weaone.themoa.domain.policy.rag.service.PolicyGenderAudienceClassifier;
 import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndex;
 import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndexBuilder;
 import com.weaone.themoa.domain.policy.rag.service.PolicySearchProjectionService;
@@ -23,6 +24,7 @@ import com.weaone.themoa.domain.policy.sync.service.PolicySyncExecutionGuard;
 import com.weaone.themoa.domain.policy.sync.service.PolicySyncMode;
 import com.weaone.themoa.domain.policy.sync.service.PolicySyncPipelineResult;
 import com.weaone.themoa.domain.policy.sync.service.PolicySyncPipelineService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
@@ -48,6 +50,7 @@ public class AdminJobService {
     private final RegionSynchronizationService regionSynchronizationService;
     private final PolicySearchProjectionService projectionService;
     private final PolicyLexicalIndexBuilder lexicalIndexBuilder;
+    private final PolicyGenderAudienceClassifier genderAudienceClassifier;
     private final RegionCodeRepository regionCodeRepository;
     private final PolicySyncPipelineService policySyncPipelineService;
     private final PolicySyncExecutionGuard policySyncExecutionGuard;
@@ -55,11 +58,13 @@ public class AdminJobService {
     private final TaskExecutor adminJobExecutor;
     private final Map<String, MutableJob> jobs = new ConcurrentHashMap<>();
 
+    @Autowired
     public AdminJobService(YouthCenterPolicyCollectionService collectionService, PolicyEmbeddingService embeddingService,
                            PolicyRegionRebuildService regionRebuildService,
                            RegionSynchronizationService regionSynchronizationService,
                            PolicySearchProjectionService projectionService,
                            PolicyLexicalIndexBuilder lexicalIndexBuilder,
+                           PolicyGenderAudienceClassifier genderAudienceClassifier,
                            RegionCodeRepository regionCodeRepository,
                            PolicySyncPipelineService policySyncPipelineService,
                            PolicySyncExecutionGuard policySyncExecutionGuard,
@@ -71,11 +76,27 @@ public class AdminJobService {
         this.regionSynchronizationService = regionSynchronizationService;
         this.projectionService = projectionService;
         this.lexicalIndexBuilder = lexicalIndexBuilder;
+        this.genderAudienceClassifier = genderAudienceClassifier;
         this.regionCodeRepository = regionCodeRepository;
         this.policySyncPipelineService = policySyncPipelineService;
         this.policySyncExecutionGuard = policySyncExecutionGuard;
         this.recommendationBatchService = recommendationBatchService;
         this.adminJobExecutor = adminJobExecutor;
+    }
+
+    public AdminJobService(YouthCenterPolicyCollectionService collectionService, PolicyEmbeddingService embeddingService,
+                           PolicyRegionRebuildService regionRebuildService,
+                           RegionSynchronizationService regionSynchronizationService,
+                           PolicySearchProjectionService projectionService,
+                           PolicyLexicalIndexBuilder lexicalIndexBuilder,
+                           RegionCodeRepository regionCodeRepository,
+                           PolicySyncPipelineService policySyncPipelineService,
+                           PolicySyncExecutionGuard policySyncExecutionGuard,
+                           PolicyRecommendationBatchService recommendationBatchService,
+                           @Qualifier("adminJobExecutor") TaskExecutor adminJobExecutor) {
+        this(collectionService, embeddingService, regionRebuildService, regionSynchronizationService,
+                projectionService, lexicalIndexBuilder, null, regionCodeRepository, policySyncPipelineService,
+                policySyncExecutionGuard, recommendationBatchService, adminJobExecutor);
     }
 
     public AdminJobStatus start(String type) {
@@ -198,6 +219,7 @@ public class AdminJobService {
                             + ". 기존 FK 연결 지역은 삭제하지 않았습니다.";
                 }
                 case "SEARCH_PROJECTION_REBUILD" -> runSearchProjectionRebuild(job);
+                case "POLICY_GENDER_CLASSIFICATION" -> runPolicyGenderClassification(job);
                 case "SEARCH_INDEX_REFRESH" -> runSearchIndexRefresh(job);
                 case "FULL_REINDEX" -> runPolicySync(job, PolicySyncMode.FULL_REINDEX);
                 default -> throw new BusinessException(ErrorCode.POLICY_ADMIN_OPERATION_NOT_SUPPORTED);
@@ -226,15 +248,22 @@ public class AdminJobService {
                 result.total(), result.processed(), result.processed(), 0, 0, 0, 0, 0, null, 0, 0,
                 "Projection 생성 후 검색 인덱스를 갱신합니다."));
         PolicyLexicalIndex index = lexicalIndexBuilder.refresh();
-        refreshPolicyRecommendations();
-        job.total = result.total();
-        job.processed = result.processed();
-        job.success = result.processed();
-        job.failed = 0;
+        PolicyGenderAudienceClassifier.GenderClassificationRebuildResult genderResult =
+                rebuildPolicyGenderClassifications(job, result.total(), result.processed());
+        job.total = result.total() + genderResult.total();
+        job.processed = result.processed() + genderResult.processed() + genderResult.skipped();
+        job.success = result.processed() + genderResult.success();
+        job.failed = genderResult.failed();
+        job.skipped = genderResult.skipped();
         job.remaining = 0;
+        refreshPolicyRecommendations();
         job.message = "SEARCH_PROJECTION_REBUILD_COMPLETED projectionCount=" + result.processed()
                 + ", missingSnapshot=" + result.missingSnapshot()
-                + ", indexDocumentCount=" + index.size();
+                + ", indexDocumentCount=" + index.size()
+                + ", genderProcessed=" + genderResult.processed()
+                + ", genderSkipped=" + genderResult.skipped()
+                + ", genderFailed=" + genderResult.failed()
+                + ", genderUnknown=" + genderResult.unknown();
     }
 
     private void runSearchIndexRefresh(MutableJob job) {
@@ -259,10 +288,26 @@ public class AdminJobService {
                 "SEARCH_PROJECTION_REBUILDING", "Search Projection 생성 중",
                 progress.total(), progress.processed(), progress.processed(), 0, 0, 0,
                 0, 0, null, 0, 0, "Search Projection 생성 중")));
+        rebuildPolicyGenderClassifications(job, projection.total(), projection.processed());
         job.update(new JobProgressUpdate("SEARCH_INDEX_REFRESHING", "검색 인덱스 생성 중",
                 projection.total(), projection.processed(), projection.processed(), 0, 0, 0,
                 0, 0, null, 0, 0, "Projection 생성 후 검색 인덱스를 갱신합니다."));
         lexicalIndexBuilder.refresh();
+    }
+
+    private void runPolicyGenderClassification(MutableJob job) {
+        PolicyGenderAudienceClassifier.GenderClassificationRebuildResult result =
+                rebuildPolicyGenderClassifications(job, 0, 0);
+        job.total = result.total();
+        job.processed = result.processed() + result.skipped();
+        job.success = result.success();
+        job.failed = result.failed();
+        job.skipped = result.skipped();
+        job.remaining = 0;
+        job.message = "POLICY_GENDER_CLASSIFICATION_COMPLETED processed=" + result.processed()
+                + ", skipped=" + result.skipped()
+                + ", failed=" + result.failed()
+                + ", unknown=" + result.unknown();
     }
 
     private void runPolicySync(MutableJob job, PolicySyncMode mode) {
@@ -287,9 +332,16 @@ public class AdminJobService {
                 + result.embeddingProcess().failedCount();
         job.remaining = result.embeddingProcess().pendingCountAfter();
         String prefix = mode == PolicySyncMode.FULL_REINDEX ? "FULL_REINDEX_COMPLETED" : "POLICY_SYNC_COMPLETED";
+        PolicyGenderAudienceClassifier.GenderClassificationRebuildResult genderResult =
+                rebuildPolicyGenderClassifications(job, result.projectionRebuild().total(),
+                        result.projectionRebuild().processed());
         refreshPolicyRecommendations();
         job.message = prefix
                 + " projectionCount=" + result.projectionRebuild().processed()
+                + ", genderProcessed=" + genderResult.processed()
+                + ", genderSkipped=" + genderResult.skipped()
+                + ", genderFailed=" + genderResult.failed()
+                + ", genderUnknown=" + genderResult.unknown()
                 + ", indexDocumentCount=" + result.lexicalIndexDocumentCount()
                 + ", queuedEmbeddingCount=" + (result.embeddingQueue().newlyQueuedCount() + result.embeddingQueue().requeuedCount())
                 + ", embeddingSuccess=" + result.embeddingProcess().successCount()
@@ -303,6 +355,20 @@ public class AdminJobService {
         } catch (RuntimeException ex) {
             log.warn("정책 추천 Batch 실행에 실패했습니다. errorType={}", ex.getClass().getSimpleName());
         }
+    }
+
+    private PolicyGenderAudienceClassifier.GenderClassificationRebuildResult rebuildPolicyGenderClassifications(
+            MutableJob job,
+            long total,
+            long processed
+    ) {
+        if (genderAudienceClassifier == null) {
+            return new PolicyGenderAudienceClassifier.GenderClassificationRebuildResult(0, 0, 0, 0, 0, 0, 0, 0);
+        }
+        job.update(new JobProgressUpdate("POLICY_GENDER_CLASSIFYING", "성별 신청 조건 분류 중",
+                total, processed, processed, job.failed, 0, 0, 0, 0, null, 0, 0,
+                "Search Projection 기준으로 정책별 성별 신청 조건을 분류합니다."));
+        return genderAudienceClassifier.classifyMissingOrStale(progress -> job.updateGenderClassification(progress));
     }
 
     public Optional<AdminJobStatus> find(String jobId) {
@@ -328,6 +394,7 @@ public class AdminJobService {
         private long processed;
         private long success;
         private long failed;
+        private long skipped;
         private long remaining;
         private int currentPage;
         private int totalPages;
@@ -362,13 +429,31 @@ public class AdminJobService {
             this.updatedAt = Instant.now();
         }
 
+        private synchronized void updateGenderClassification(
+                PolicyGenderAudienceClassifier.GenderClassificationProgress progress) {
+            this.stage = "POLICY_GENDER_CLASSIFYING";
+            this.stageLabel = "성별 신청 조건 분류 중";
+            this.total = progress.total();
+            this.processed = progress.processed() + progress.skipped();
+            this.success = progress.success();
+            this.failed = progress.failed();
+            this.skipped = progress.skipped();
+            this.remaining = Math.max(0, progress.total() - this.processed);
+            this.currentBatch = progress.currentBatch();
+            this.totalBatches = progress.totalBatches();
+            this.apiRequestCount = progress.apiRequests();
+            this.retryCount = progress.retries();
+            this.message = progress.message() + " unknown=" + progress.unknown();
+            this.updatedAt = Instant.now();
+        }
+
         private AdminJobStatus snapshot() {
             long elapsed = Duration.between(startedAt, completedAt == null ? Instant.now() : completedAt).toMillis();
             Double throughput = elapsed > 0 && processed > 0 ? processed / (elapsed / 1000.0) : null;
             Long eta = throughput != null && throughput > 0 && remaining > 0 ? Math.round(remaining / throughput) : null;
             Integer percent = percent();
             return new AdminJobStatus(id, type, status, stage, stageLabel, percent, percent, total <= 0,
-                    total, processed, success, failed, remaining, currentPage, totalPages, currentBatch, totalBatches,
+                    total, processed, success, failed, skipped, remaining, currentPage, totalPages, currentBatch, totalBatches,
                     currentItem, apiRequestCount, retryCount, startedAt, updatedAt, completedAt, elapsed, eta, throughput, message);
         }
 

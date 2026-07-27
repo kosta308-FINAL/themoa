@@ -10,6 +10,8 @@ import com.weaone.themoa.domain.policy.rag.dto.ConditionMatchResult;
 import com.weaone.themoa.domain.policy.rag.dto.ConditionMatchStatus;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyApplicantAudience;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyEmploymentAudience;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyGenderAudience;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyGenderClassificationResult;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchCondition;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchPlan;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyTargetAudienceClassification;
@@ -19,6 +21,7 @@ import com.weaone.themoa.domain.policy.rag.dto.TargetStageMatchResult;
 import com.weaone.themoa.domain.policy.rag.dto.UserApplicantType;
 import com.weaone.themoa.domain.policy.rag.dto.UserEmploymentStatus;
 import com.weaone.themoa.domain.policy.rag.dto.UserEmploymentStatusResult;
+import com.weaone.themoa.domain.policy.rag.dto.UserGender;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -49,18 +52,21 @@ public class PolicyEligibilityEvaluator {
     static final String EMPLOYMENT_NOT_MATCHED = "EMPLOYMENT_NOT_MATCHED";
     static final String STUDENT_NOT_MATCHED = "STUDENT_NOT_MATCHED";
     static final String APPLICANT_AUDIENCE_MISMATCH = "APPLICANT_AUDIENCE_MISMATCH";
+    static final String GENDER_NOT_MATCHED = "GENDER_NOT_MATCHED";
 
     private final RagProperties properties;
     private final RegionMatchEvaluator regionMatchEvaluator;
     private final PolicyTargetEligibilityFilter targetEligibilityFilter;
     private final PolicyApplicantAudienceClassifier applicantAudienceClassifier;
     private final UserApplicantTypeDetector userApplicantTypeDetector;
+    private final PolicyGenderClassificationPolicy genderClassificationPolicy;
 
     public PolicyEligibilityEvaluator(RagProperties properties,
                                       RegionMatchEvaluator regionMatchEvaluator,
                                       PolicyTargetEligibilityFilter targetEligibilityFilter) {
         this(properties, regionMatchEvaluator, targetEligibilityFilter,
-                new PolicyApplicantAudienceClassifier(), new UserApplicantTypeDetector());
+                new PolicyApplicantAudienceClassifier(), new UserApplicantTypeDetector(),
+                new PolicyGenderClassificationPolicy());
     }
 
     @Autowired
@@ -68,12 +74,23 @@ public class PolicyEligibilityEvaluator {
                                       RegionMatchEvaluator regionMatchEvaluator,
                                       PolicyTargetEligibilityFilter targetEligibilityFilter,
                                       PolicyApplicantAudienceClassifier applicantAudienceClassifier,
-                                      UserApplicantTypeDetector userApplicantTypeDetector) {
+                                      UserApplicantTypeDetector userApplicantTypeDetector,
+                                      PolicyGenderClassificationPolicy genderClassificationPolicy) {
         this.properties = properties;
         this.regionMatchEvaluator = regionMatchEvaluator;
         this.targetEligibilityFilter = targetEligibilityFilter;
         this.applicantAudienceClassifier = applicantAudienceClassifier;
         this.userApplicantTypeDetector = userApplicantTypeDetector;
+        this.genderClassificationPolicy = genderClassificationPolicy;
+    }
+
+    public PolicyEligibilityEvaluator(RagProperties properties,
+                                      RegionMatchEvaluator regionMatchEvaluator,
+                                      PolicyTargetEligibilityFilter targetEligibilityFilter,
+                                      PolicyApplicantAudienceClassifier applicantAudienceClassifier,
+                                      UserApplicantTypeDetector userApplicantTypeDetector) {
+        this(properties, regionMatchEvaluator, targetEligibilityFilter, applicantAudienceClassifier,
+                userApplicantTypeDetector, new PolicyGenderClassificationPolicy());
     }
 
     public PolicyEvaluationResult evaluate(PolicySearchExecutionContext context,
@@ -81,6 +98,7 @@ public class PolicyEligibilityEvaluator {
                                            ResolvedUserRegion userRegion,
                                            Map<Integer, PolicyTargetAudienceClassification> targetAudienceByPolicyId,
                                            Map<Integer, PolicyEmploymentAudience> employmentAudienceByPolicyId,
+                                           Map<Integer, PolicyGenderClassificationResult> genderAudienceByPolicyId,
                                            UserEmploymentStatusResult userEmploymentStatus) {
         PolicySearchFilterMetrics metrics = new PolicySearchFilterMetrics();
         List<EvaluatedPolicyCandidate> passed = new ArrayList<>();
@@ -91,6 +109,8 @@ public class PolicyEligibilityEvaluator {
             PolicyEligibilityEvaluation evaluation = evaluateOne(context.plan(), policy, userRegion,
                     targetAudienceByPolicyId.getOrDefault(policy.getId(), PolicyTargetAudienceClassification.unknown()),
                     employmentAudienceByPolicyId.getOrDefault(policy.getId(), PolicyEmploymentAudience.unknown()),
+                    genderAudienceByPolicyId.getOrDefault(policy.getId(),
+                            PolicyGenderClassificationResult.unknown("저장된 성별 분류가 없습니다.")),
                     userEmploymentStatus,
                     metrics);
             if (evaluation.passed()) {
@@ -102,11 +122,22 @@ public class PolicyEligibilityEvaluator {
         return new PolicyEvaluationResult(passed, evaluations, metrics);
     }
 
+    public PolicyEvaluationResult evaluate(PolicySearchExecutionContext context,
+                                           PolicyCandidateCollection candidates,
+                                           ResolvedUserRegion userRegion,
+                                           Map<Integer, PolicyTargetAudienceClassification> targetAudienceByPolicyId,
+                                           Map<Integer, PolicyEmploymentAudience> employmentAudienceByPolicyId,
+                                           UserEmploymentStatusResult userEmploymentStatus) {
+        return evaluate(context, candidates, userRegion, targetAudienceByPolicyId, employmentAudienceByPolicyId,
+                Map.of(), userEmploymentStatus);
+    }
+
     private PolicyEligibilityEvaluation evaluateOne(PolicySearchPlan plan,
                                                     Policy policy,
                                                     ResolvedUserRegion userRegion,
                                                     PolicyTargetAudienceClassification targetAudience,
                                                     PolicyEmploymentAudience employmentAudience,
+                                                    PolicyGenderClassificationResult genderAudience,
                                                     UserEmploymentStatusResult userEmploymentStatus,
                                                     PolicySearchFilterMetrics metrics) {
         PolicySearchCondition condition = plan.condition();
@@ -155,6 +186,15 @@ public class PolicyEligibilityEvaluator {
             matched.add("취업 대상 일치: " + employmentAudienceMatch.reason());
         }
 
+        ConditionMatchResult genderMatch = genderMatch(condition, genderAudience);
+        if (genderMatch.status() == ConditionMatchStatus.MISMATCH) {
+            needCheck.add(GENDER_NOT_MATCHED);
+        } else if (condition.genderExplicit() && genderMatch.status() == ConditionMatchStatus.MATCH) {
+            matched.add("성별 조건 일치: " + genderMatch.reason());
+        } else if (condition.genderExplicit() && genderMatch.status() == ConditionMatchStatus.UNKNOWN) {
+            needCheck.add("성별 조건 확인 필요: " + genderMatch.reason());
+        }
+
         Recommendation recommendation = recommendation(plan, targetAudience, targetStageMatch, employmentAudience, employmentAudienceMatch);
         String excludedReason = excludedReason(policy, condition, needCheck, metrics);
         boolean passed = excludedReason == null;
@@ -201,6 +241,10 @@ public class PolicyEligibilityEvaluator {
         if (needCheck.contains(APPLICANT_AUDIENCE_MISMATCH)) {
             metrics.targetFiltered++;
             return APPLICANT_AUDIENCE_MISMATCH;
+        }
+        if (needCheck.contains(GENDER_NOT_MATCHED)) {
+            metrics.targetFiltered++;
+            return GENDER_NOT_MATCHED;
         }
         if (needCheck.contains("TARGET_STAGE_NOT_MATCHED")) {
             metrics.targetFiltered++;
@@ -290,6 +334,27 @@ public class PolicyEligibilityEvaluator {
             return new EmploymentAudienceMatch(ConditionMatchStatus.MISMATCH, reason);
         }
         return new EmploymentAudienceMatch(ConditionMatchStatus.UNKNOWN, "정책 취업 대상 상태가 배타적인지 확인 필요");
+    }
+
+    private ConditionMatchResult genderMatch(PolicySearchCondition condition,
+                                             PolicyGenderClassificationResult genderAudience) {
+        if (condition == null || !condition.genderExplicit() || condition.gender() == null) {
+            return ConditionMatchResult.unknown("성별을 검색 필터로 사용하지 않았습니다.");
+        }
+        PolicyGenderClassificationResult normalized = genderClassificationPolicy.normalize(genderAudience);
+        if (normalized.audience() == PolicyGenderAudience.ALL) {
+            return ConditionMatchResult.match("정책에 신청자 성별 제한이 없습니다.");
+        }
+        if (!genderClassificationPolicy.hardFilterable(normalized)) {
+            return ConditionMatchResult.unknown(normalized.evidence());
+        }
+        if (condition.gender() == UserGender.MALE && normalized.audience() == PolicyGenderAudience.FEMALE_ONLY) {
+            return ConditionMatchResult.mismatch("여성 전용 정책입니다.");
+        }
+        if (condition.gender() == UserGender.FEMALE && normalized.audience() == PolicyGenderAudience.MALE_ONLY) {
+            return ConditionMatchResult.mismatch("남성 전용 정책입니다.");
+        }
+        return ConditionMatchResult.match(normalized.evidence());
     }
 
     private ApplicantAudienceMatch applicantAudienceMatch(PolicySearchPlan plan, Policy policy) {

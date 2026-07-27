@@ -3,6 +3,8 @@ package com.weaone.themoa.domain.policy.rag.service;
 import com.weaone.themoa.common.exception.BusinessException;
 import com.weaone.themoa.common.exception.ErrorCode;
 import com.weaone.themoa.common.exception.YouthCenterApiException;
+import com.weaone.themoa.domain.member.entity.Member;
+import com.weaone.themoa.domain.member.repository.MemberRepository;
 import com.weaone.themoa.domain.policy.policy.entity.Policy;
 import com.weaone.themoa.domain.policy.policy.region.RegionCompatibility;
 import com.weaone.themoa.domain.policy.policy.region.ResolvedUserRegion;
@@ -20,6 +22,8 @@ import com.weaone.themoa.domain.policy.rag.dto.PolicyTargetAudienceClassificatio
 import com.weaone.themoa.domain.policy.rag.dto.SearchReadinessResponse;
 import com.weaone.themoa.domain.policy.rag.dto.SearchQueryType;
 import com.weaone.themoa.domain.policy.rag.dto.UserEmploymentStatusResult;
+import com.weaone.themoa.domain.policy.rag.dto.UserGender;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -59,6 +63,32 @@ public class PolicyRagSearchService {
     private final PolicySearchExplainService explainService;
     private final PolicySearchRuntimeSupport runtimeSupport;
     private final SearchReadinessService readinessService;
+    private final MemberRepository memberRepository;
+
+    @Autowired
+    public PolicyRagSearchService(RagProperties properties,
+                                  PolicySearchPlanService planService,
+                                  PolicySearchCandidateRetriever candidateRetriever,
+                                  PolicyEligibilityEvaluator eligibilityEvaluator,
+                                  PolicyRankingService rankingService,
+                                  PolicySearchResultAssembler resultAssembler,
+                                  PolicySearchDiagnosticsFactory diagnosticsFactory,
+                                  PolicySearchExplainService explainService,
+                                  PolicySearchRuntimeSupport runtimeSupport,
+                                  SearchReadinessService readinessService,
+                                  MemberRepository memberRepository) {
+        this.properties = properties;
+        this.planService = planService;
+        this.candidateRetriever = candidateRetriever;
+        this.eligibilityEvaluator = eligibilityEvaluator;
+        this.rankingService = rankingService;
+        this.resultAssembler = resultAssembler;
+        this.diagnosticsFactory = diagnosticsFactory;
+        this.explainService = explainService;
+        this.runtimeSupport = runtimeSupport;
+        this.readinessService = readinessService;
+        this.memberRepository = memberRepository;
+    }
 
     public PolicyRagSearchService(RagProperties properties,
                                   PolicySearchPlanService planService,
@@ -70,16 +100,8 @@ public class PolicyRagSearchService {
                                   PolicySearchExplainService explainService,
                                   PolicySearchRuntimeSupport runtimeSupport,
                                   SearchReadinessService readinessService) {
-        this.properties = properties;
-        this.planService = planService;
-        this.candidateRetriever = candidateRetriever;
-        this.eligibilityEvaluator = eligibilityEvaluator;
-        this.rankingService = rankingService;
-        this.resultAssembler = resultAssembler;
-        this.diagnosticsFactory = diagnosticsFactory;
-        this.explainService = explainService;
-        this.runtimeSupport = runtimeSupport;
-        this.readinessService = readinessService;
+        this(properties, planService, candidateRetriever, eligibilityEvaluator, rankingService, resultAssembler,
+                diagnosticsFactory, explainService, runtimeSupport, readinessService, null);
     }
 
     public PolicySearchResponse search(PolicySearchRequest request) {
@@ -88,6 +110,14 @@ public class PolicyRagSearchService {
             throw new BusinessException(ErrorCode.POLICY_SEARCH_NOT_READY);
         }
         return execute(request).response();
+    }
+
+    public PolicySearchResponse search(PolicySearchRequest request, Long memberId) {
+        SearchReadinessResponse readiness = readinessService.readiness();
+        if (!readiness.ready()) {
+            throw new BusinessException(ErrorCode.POLICY_SEARCH_NOT_READY);
+        }
+        return execute(request, memberId).response();
     }
 
     public Map<String, Object> explain(String query, Integer policyId, String sourcePolicyId) {
@@ -105,6 +135,10 @@ public class PolicyRagSearchService {
     }
 
     private SearchArtifacts execute(PolicySearchRequest request) {
+        return execute(request, null);
+    }
+
+    private SearchArtifacts execute(PolicySearchRequest request, Long memberId) {
         if (!properties.isEnabled()) {
             throw new YouthCenterApiException("""
                     RAG 기능이 비활성화되어 있습니다.
@@ -115,7 +149,8 @@ public class PolicyRagSearchService {
         int size = request.resolvedSize(properties.getSearch().getResultSize());
         int resultSize = Math.max(size, request.resultSize() == null ? size : request.resultSize());
         PolicySearchPlanService.PlannedSearch planned = planService.build(request.query(), resultSize);
-        PolicySearchExecutionContext context = new PolicySearchExecutionContext(request, planned.plan(), start.toEpochMilli());
+        PolicySearchPlan effectivePlan = applyProfileGender(planned.plan(), memberId);
+        PolicySearchExecutionContext context = new PolicySearchExecutionContext(request, effectivePlan, start.toEpochMilli());
         PolicySearchIntent intent = runtimeSupport.buildIntent(context.plan());
         PolicySearchCondition condition = context.plan().condition();
         ResolvedUserRegion userRegion = runtimeSupport.resolveUserRegion(condition);
@@ -123,9 +158,14 @@ public class PolicyRagSearchService {
         List<Integer> policyIds = candidates.policies().stream().map(Policy::getId).toList();
         Map<Integer, PolicyTargetAudienceClassification> targetAudiences = runtimeSupport.classifyTargetAudiences(policyIds);
         Map<Integer, PolicyEmploymentAudience> employmentAudiences = runtimeSupport.classifyEmploymentAudiences(policyIds);
+        Map<Integer, com.weaone.themoa.domain.policy.rag.dto.PolicyGenderClassificationResult> genderAudiences =
+                runtimeSupport.classifyGenderAudiences(policyIds);
         UserEmploymentStatusResult employmentStatus = runtimeSupport.detectEmploymentStatus(request.query());
-        PolicyEvaluationResult evaluated = eligibilityEvaluator.evaluate(context, candidates, userRegion,
-                targetAudiences, employmentAudiences, employmentStatus);
+        PolicyEvaluationResult evaluated = genderAudiences.isEmpty()
+                ? eligibilityEvaluator.evaluate(context, candidates, userRegion, targetAudiences,
+                employmentAudiences, employmentStatus)
+                : eligibilityEvaluator.evaluate(context, candidates, userRegion, targetAudiences,
+                employmentAudiences, genderAudiences, employmentStatus);
         PolicyRankingResult ranked = rankingService.rank(context, evaluated);
         ranked.metrics().firstRankingResultCount = ranked.rankedCandidates().size();
         if (shouldRunPostRankingFallback(context.plan().queryType(), ranked.rankedCandidates().size(), resultSize)) {
@@ -140,8 +180,13 @@ public class PolicyRagSearchService {
                 List<Integer> fallbackPolicyIds = fallbackCandidates.policies().stream().map(Policy::getId).toList();
                 Map<Integer, PolicyTargetAudienceClassification> fallbackTargetAudiences = runtimeSupport.classifyTargetAudiences(fallbackPolicyIds);
                 Map<Integer, PolicyEmploymentAudience> fallbackEmploymentAudiences = runtimeSupport.classifyEmploymentAudiences(fallbackPolicyIds);
-                PolicyEvaluationResult fallbackEvaluated = eligibilityEvaluator.evaluate(context, fallbackCandidates, userRegion,
-                        fallbackTargetAudiences, fallbackEmploymentAudiences, employmentStatus);
+                Map<Integer, com.weaone.themoa.domain.policy.rag.dto.PolicyGenderClassificationResult> fallbackGenderAudiences =
+                        runtimeSupport.classifyGenderAudiences(fallbackPolicyIds);
+                PolicyEvaluationResult fallbackEvaluated = fallbackGenderAudiences.isEmpty()
+                        ? eligibilityEvaluator.evaluate(context, fallbackCandidates, userRegion,
+                        fallbackTargetAudiences, fallbackEmploymentAudiences, employmentStatus)
+                        : eligibilityEvaluator.evaluate(context, fallbackCandidates, userRegion,
+                        fallbackTargetAudiences, fallbackEmploymentAudiences, fallbackGenderAudiences, employmentStatus);
                 PolicyRankingResult fallbackRanked = rankingService.rank(context, fallbackEvaluated);
                 ranked.metrics().fallbackPassedCandidateCount = fallbackRanked.rankedCandidates().size();
                 targetAudiences = mergeMap(targetAudiences, fallbackTargetAudiences);
@@ -179,6 +224,35 @@ public class PolicyRagSearchService {
                 context.plan().queryType().name(), candidates.metrics().vectorCandidateCount(), results.size(),
                 orderedResults.size(), page, size, to < orderedResults.size(), results, diagnostics);
         return new SearchArtifacts(context, userRegion, candidates, evaluated, ranked, response);
+    }
+
+    private PolicySearchPlan applyProfileGender(PolicySearchPlan plan, Long memberId) {
+        if (plan.condition().genderExplicit() || plan.condition().gender() != null || memberId == null || memberRepository == null) {
+            return plan;
+        }
+        UserGender profileGender = memberRepository.findById(memberId)
+                .map(Member::getGender)
+                .map(UserGender::fromMemberGender)
+                .orElse(null);
+        if (profileGender == null) {
+            return plan;
+        }
+        PolicySearchCondition condition = plan.condition();
+        PolicySearchCondition merged = new PolicySearchCondition(
+                condition.province(), condition.city(), condition.district(), condition.age(),
+                condition.employmentStatus(), condition.studentStatus(), condition.careerStage(), condition.category(),
+                condition.supportTypes(), condition.keywords(), condition.expandedKeywords(), condition.rawRegionText(),
+                condition.regionResolutionStatus(), condition.regionLevel(), condition.regionCandidates(),
+                condition.regionExplicit(), condition.ageExplicit(), condition.employmentExplicit(),
+                condition.studentExplicit(), condition.categoryExplicit(), condition.supportTypeExplicit(),
+                condition.searchMode(), condition.resultSize(), condition.inferredAge(), condition.inferredAgeSource(),
+                condition.inferredMinimumAge(), condition.inferredMaximumAge(), condition.workplaceProvince(),
+                condition.workplaceCity(), condition.workplaceDistrict(), condition.workplaceRawRegionText(),
+                condition.workplaceRegionResolutionStatus(), profileGender, true);
+        return new PolicySearchPlan(plan.queryType(), plan.originalQuery(), plan.normalizedGoal(),
+                plan.desiredDomains(), plan.excludedDomains(), plan.desiredSupportIntents(), plan.benefitGroups(),
+                plan.excludedSupportIntents(), plan.positiveTerms(), plan.excludedTerms(), merged,
+                plan.userEducationStages(), plan.educationStageExplicit(), plan.explicitExclusion(), plan.analysisMode());
     }
 
     private boolean shouldRunPostRankingFallback(SearchQueryType queryType, int rankedCount, int resultSize) {

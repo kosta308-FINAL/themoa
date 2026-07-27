@@ -7,13 +7,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PostPersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import org.springframework.data.domain.Persistable;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "policy_search_projection")
-public class PolicySearchProjection {
+public class PolicySearchProjection implements Persistable<Integer> {
     @Id
     @Column(name = "policy_id")
     private Integer policyId;
@@ -68,6 +72,9 @@ public class PolicySearchProjection {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Transient
+    private boolean isNew = true;
+
     protected PolicySearchProjection() {
     }
 
@@ -97,7 +104,16 @@ public class PolicySearchProjection {
         this.updatedAt = LocalDateTime.now();
     }
 
+    @Override
+    public Integer getId() { return policyId; }
+    @Override
+    public boolean isNew() { return isNew; }
+    @PostLoad
+    @PostPersist
+    private void markNotNew() { this.isNew = false; }
+
     public Integer getPolicyId() { return policyId; }
+    public Policy getPolicy() { return policy; }
     public String getSourcePolicyId() { return sourcePolicyId; }
     public String getNormalizedTitle() { return normalizedTitle; }
     public String getTitleText() { return titleText; }
@@ -112,4 +128,5 @@ public class PolicySearchProjection {
     public String getFullSearchText() { return fullSearchText; }
     public String getProjectionVersion() { return projectionVersion; }
     public boolean isMissingSnapshot() { return missingSnapshot; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

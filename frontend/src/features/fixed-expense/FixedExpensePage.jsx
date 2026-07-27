@@ -214,13 +214,16 @@ function FixedExpensePage() {
 
   useEffect(() => {
     if (ratio === null) {
-      setAnimatedRatio(0);
-      return undefined;
+      const timer = setTimeout(() => setAnimatedRatio(0), 0);
+      return () => clearTimeout(timer);
     }
     const cappedRatio = Math.min(100, ratio);
-    setAnimatedRatio(0);
-    const timer = setTimeout(() => setAnimatedRatio(cappedRatio), 80);
-    return () => clearTimeout(timer);
+    const resetTimer = setTimeout(() => setAnimatedRatio(0), 0);
+    const animateTimer = setTimeout(() => setAnimatedRatio(cappedRatio), 80);
+    return () => {
+      clearTimeout(resetTimer);
+      clearTimeout(animateTimer);
+    };
   }, [ratio]);
 
   return (

@@ -21,6 +21,11 @@ import com.weaone.themoa.domain.policy.policy.repository.PolicyRegionClassificat
 import com.weaone.themoa.domain.policy.policy.repository.PolicySearchProjectionRepository;
 import com.weaone.themoa.domain.policy.policy.repository.RegionCodeRepository;
 import com.weaone.themoa.domain.policy.policy.repository.RegionEligiblePolicyCandidateRepository;
+import com.weaone.themoa.domain.policy.policy.repository.PolicyGenderClassificationRepository;
+import com.weaone.themoa.domain.policy.rag.service.PolicyGenderAiAnalysis;
+import com.weaone.themoa.domain.policy.rag.service.PolicyGenderAudienceClassifier;
+import com.weaone.themoa.domain.policy.rag.service.PolicyGenderClassificationPolicy;
+import com.weaone.themoa.domain.policy.rag.service.PolicyGenderSourceHasher;
 import com.weaone.themoa.domain.policy.policy.service.RegionEligiblePolicyCandidateService;
 import com.weaone.themoa.domain.policy.rag.service.PolicyEmploymentAudienceClassifier;
 import com.weaone.themoa.domain.policy.rag.service.PolicyTargetAudienceClassifier;
@@ -73,7 +78,11 @@ class PolicyRecommendationStrictEligibilityTest {
     @Autowired
     private PolicyRegionClassificationRepository regionClassificationRepository;
 
+    @Autowired
+    private PolicyGenderClassificationRepository genderClassificationRepository;
+
     private PolicyRecommendationService service;
+    private PolicyGenderAudienceClassifier genderAudienceClassifier;
     private RegionCode nationwide;
     private RegionCode gyeonggi;
     private RegionCode yangju;
@@ -93,6 +102,24 @@ class PolicyRecommendationStrictEligibilityTest {
                 new RegionNameAliasGenerator(),
                 normalizer
         );
+        genderAudienceClassifier = new PolicyGenderAudienceClassifier(
+                projectionRepository,
+                genderClassificationRepository,
+                projection -> {
+                    if ("경력단절 및 경력보유 여성 구직자".equals(projection.getTargetText())) {
+                        return new PolicyGenderAiAnalysis("FEMALE_ONLY", true, 0.95,
+                                "INDIVIDUAL", "개인 신청 대상이 여성 구직자로 제한됩니다.");
+                    }
+                    if ("만 19~34세 청년 누구나".equals(projection.getTargetText())) {
+                        return new PolicyGenderAiAnalysis("ALL", false, 0.90,
+                                "INDIVIDUAL", "성별 제한 없이 청년 개인이 신청 가능합니다.");
+                    }
+                    return new PolicyGenderAiAnalysis("UNKNOWN", false, 0.20,
+                            "UNKNOWN", "성별 제한 근거가 불명확합니다.");
+                },
+                new PolicyGenderClassificationPolicy(),
+                new PolicyGenderSourceHasher()
+        );
         service = new PolicyRecommendationService(
                 memberRepository,
                 profileRepository,
@@ -103,6 +130,7 @@ class PolicyRecommendationStrictEligibilityTest {
                 new RegionEligiblePolicyCandidateService(candidateRepository, catalog),
                 new PolicyEmploymentAudienceClassifier(projectionRepository),
                 new PolicyTargetAudienceClassifier(projectionRepository),
+                genderAudienceClassifier,
                 new PolicyRecommendationMatcher(new PolicyTargetEligibilityFilter()),
                 regionClassificationRepository,
                 regionMentionExtractor,
@@ -138,6 +166,85 @@ class PolicyRecommendationStrictEligibilityTest {
                 .extracting(recommendation -> recommendation.getPolicy().getTitle())
                 .containsExactly("중소기업 재직청년 복지지원");
         assertThat(recommendations.get(0).getMatchReason()).contains("재직자 대상 조건 일치");
+    }
+
+    @Test
+    void projectionBasedGenderClassificationExcludesFemaleOnlyPolicyForMaleMember() {
+        Member member = persistEmployedYangjuMember();
+        Policy femaleOnly = persistPolicy("GENDER-FLOW-1", "경력보유여성 면접 정장 대여 지원", gyeonggi);
+        persistProjection(
+                femaleOnly,
+                "경력단절 및 경력보유 여성 구직자",
+                "면접 예정인 여성 구직자",
+                "면접 정장을 대여합니다."
+        );
+        Policy allGender = persistPolicy("GENDER-FLOW-2", "청년 문화생활 지원", gyeonggi);
+        persistProjection(
+                allGender,
+                "만 19~34세 청년 누구나",
+                "관내 청년",
+                "문화생활비를 지원합니다."
+        );
+        entityManager.flush();
+
+        PolicyGenderAudienceClassifier.GenderClassificationRebuildResult genderResult =
+                genderAudienceClassifier.classifyMissingOrStale();
+        entityManager.flush();
+        entityManager.clear();
+
+        service.refreshForMember(member.getId());
+
+        List<MemberPolicyRecommendation> recommendations =
+                recommendationRepository.findByMember_IdOrderByScoreDescGeneratedAtDesc(member.getId());
+        assertThat(genderResult.processed()).isEqualTo(2);
+        assertThat(recommendations)
+                .extracting(recommendation -> recommendation.getPolicy().getTitle())
+                .containsExactly("청년 문화생활 지원");
+        assertThat(recommendations.get(0).getMatchReason()).contains("성별 제한 없음");
+    }
+
+    @Test
+    void listHidesPreviouslyStoredFemaleOnlyRecommendationForMaleMember() {
+        Member member = persistEmployedYangjuMember();
+        Policy femaleOnly = persistPolicy("GENDER-FLOW-3", "경력보유여성 면접 정장 대여 지원", gyeonggi);
+        persistProjection(
+                femaleOnly,
+                "경력단절 및 경력보유 여성 구직자",
+                "면접 예정인 여성 구직자",
+                "면접 정장을 대여합니다."
+        );
+        Policy allGender = persistPolicy("GENDER-FLOW-4", "청년 문화생활 지원", gyeonggi);
+        persistProjection(
+                allGender,
+                "만 19~34세 청년 누구나",
+                "관내 청년",
+                "문화생활비를 지원합니다."
+        );
+        recommendationRepository.save(MemberPolicyRecommendation.create(
+                member,
+                femaleOnly,
+                90,
+                "경기도 거주 조건 일치 · 만 26세 연령 조건 일치",
+                LocalDateTime.of(2026, 7, 25, 10, 0)
+        ));
+        recommendationRepository.save(MemberPolicyRecommendation.create(
+                member,
+                allGender,
+                80,
+                "경기도 거주 조건 일치 · 만 26세 연령 조건 일치",
+                LocalDateTime.of(2026, 7, 25, 10, 0)
+        ));
+        entityManager.flush();
+
+        genderAudienceClassifier.classifyMissingOrStale();
+        entityManager.flush();
+        entityManager.clear();
+
+        PolicyRecommendationListResponse response = service.list(member.getId());
+
+        assertThat(response.items())
+                .extracting(item -> item.title())
+                .containsExactly("청년 문화생활 지원");
     }
 
     @Test
