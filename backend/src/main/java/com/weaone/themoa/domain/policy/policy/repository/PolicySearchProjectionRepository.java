@@ -9,6 +9,7 @@ import java.util.Optional;
 
 public interface PolicySearchProjectionRepository extends JpaRepository<PolicySearchProjection, Integer> {
     Optional<PolicySearchProjection> findByPolicyId(Integer policyId);
+    List<PolicySearchProjection> findByPolicyIdIn(List<Integer> policyIds);
     long countByProjectionVersion(String projectionVersion);
     long countByMissingSnapshotTrue();
 

@@ -3,6 +3,11 @@ const EMPLOYMENT_LABELS = {
   UNEMPLOYED: '미취업',
 }
 
+const GENDER_LABELS = {
+  MALE: '남성',
+  FEMALE: '여성',
+}
+
 const SEARCH_MODE_LABELS = {
   KEYWORD: '키워드 검색',
   CONDITION: '조건 검색',
@@ -16,6 +21,7 @@ function PolicySearchStatus({ result }) {
   const region = [condition.province, condition.city, condition.district].filter(Boolean).join(' ')
   const age = condition.age ?? condition.inferredAge
   const employmentLabel = EMPLOYMENT_LABELS[condition.employmentStatus]
+  const genderLabel = condition.genderExplicit ? GENDER_LABELS[condition.gender] : null
   const searchModeLabel = SEARCH_MODE_LABELS[result.searchMode]
   const items = []
 
@@ -29,6 +35,10 @@ function PolicySearchStatus({ result }) {
 
   if (employmentLabel) {
     items.push(['취업', employmentLabel])
+  }
+
+  if (genderLabel) {
+    items.push(['성별', genderLabel])
   }
 
   if (condition.studentStatus === true) {

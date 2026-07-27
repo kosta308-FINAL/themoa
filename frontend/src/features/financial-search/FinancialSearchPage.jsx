@@ -5,6 +5,7 @@ import ProductsTabNav from "../../components/common/ProductsTabNav";
 import { useBookmarks } from "../../hooks/useBookmarks";
 import FinancialSearchForm from "./components/FinancialSearchForm";
 import FinancialSearchResults from "./components/FinancialSearchResults";
+import FinancialProductDetailModal from "./components/FinancialProductDetailModal";
 import { useFinancialSearch } from "./hooks/useFinancialSearch";
 import "./FinancialSearchPage.css";
 
@@ -51,8 +52,16 @@ function FinancialSearchPage() {
         loading={search.loading}
         error={search.error}
         searched={search.searched}
-        onSearch={search.runSearch}
+        selected={search.selected}
         bookmarks={bookmarks}
+        onSearch={search.runSearch}
+        onOpenDetail={search.openDetail}
+      />
+
+      <FinancialProductDetailModal
+        item={search.selected}
+        bookmarks={bookmarks}
+        onClose={search.closeDetail}
       />
 
       <Toast toast={bookmarks.toast} onClose={bookmarks.clearToast} />

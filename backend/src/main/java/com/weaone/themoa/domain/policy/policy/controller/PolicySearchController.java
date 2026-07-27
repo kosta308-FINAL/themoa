@@ -7,6 +7,8 @@ import com.weaone.themoa.domain.policy.rag.dto.PolicySearchRequest;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchResponse;
 import com.weaone.themoa.domain.policy.rag.service.PolicyRagSearchService;
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Parameter;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,8 +29,9 @@ public class PolicySearchController {
     }
 
     @PostMapping("/search")
-    public ApiResponse<PolicySearchResponse> search(@Valid @RequestBody PolicySearchRequest request) {
-        return ApiResponse.success(searchService.search(request));
+    public ApiResponse<PolicySearchResponse> search(@Valid @RequestBody PolicySearchRequest request,
+                                                    @Parameter(hidden = true) @AuthenticationPrincipal Long memberId) {
+        return ApiResponse.success(searchService.search(request, memberId));
     }
 
     @GetMapping("/{policyId}")

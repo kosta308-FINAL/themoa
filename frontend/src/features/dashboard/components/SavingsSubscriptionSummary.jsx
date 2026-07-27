@@ -5,6 +5,9 @@ import DashEmptyState from "./DashEmptyState";
 import DashSectionError from "./DashSectionError";
 import "./SavingsSubscriptionSummary.css";
 
+// 카드 높이가 옆 위젯보다 길어지지 않도록 요약은 2개까지만 노출한다.
+const PREVIEW_COUNT = 2;
+
 const won = (value) =>
   value == null ? "-" : `${Number(value).toLocaleString("ko-KR")}원`;
 
@@ -102,7 +105,7 @@ function SavingsSubscriptionSummary() {
             </div>
           </div>
           <ul className="sub-summary-list">
-            {items.slice(0, 3).map((item) => (
+            {items.slice(0, PREVIEW_COUNT).map((item) => (
               <li key={item.id}>
                 <div className="sub-summary-item-main">
                   <h4>{item.productName}</h4>
@@ -125,12 +128,12 @@ function SavingsSubscriptionSummary() {
               </li>
             ))}
           </ul>
-          {items.length > 3 && (
+          {items.length > PREVIEW_COUNT && (
             <Link
               to="/dashboard/mypage?tab=subscriptions"
               className="sub-summary-more"
             >
-              +{items.length - 3}개 더 보기
+              +{items.length - PREVIEW_COUNT}개 더 보기
             </Link>
           )}
         </>

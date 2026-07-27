@@ -68,6 +68,11 @@ public class PolicyAdminJobController {
         return accepted(jobService.start("SEARCH_PROJECTION_REBUILD"));
     }
 
+    @PostMapping("/jobs/policy-gender-classification")
+    public ResponseEntity<ApiResponse<AdminJobStatus>> classifyPolicyGenderJob() {
+        return accepted(jobService.start("POLICY_GENDER_CLASSIFICATION"));
+    }
+
     @PostMapping("/jobs/search-index-refresh")
     public ResponseEntity<ApiResponse<AdminJobStatus>> refreshSearchIndexJob() {
         return accepted(jobService.start("SEARCH_INDEX_REFRESH"));

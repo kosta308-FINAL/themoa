@@ -1,7 +1,5 @@
-import { useState } from "react";
 import BankBadge from "../../../components/common/BankBadge";
 import BookmarkButton from "../../../components/common/BookmarkButton";
-import SavingsSubscriptionModal from "../../../components/common/SavingsSubscriptionModal";
 import { bookmarkTargetTypeOf } from "../../../utils/bookmarkTarget";
 
 const PRODUCT_TYPE_LABELS = {
@@ -14,108 +12,71 @@ const PRODUCT_TYPE_LABELS = {
 
 const LOAN_TYPES = new Set(["MORTGAGE", "RENT", "CREDIT"]);
 
+const dash = (value) => value || "-";
+
 /**
- * 검색 결과 카드 1건. 대표금리 기준이 상품 성격에 따라 달라서(예·적금=최고금리, 대출=최저금리)
- * 라벨도 그에 맞춰 바꿔 표시한다.
+ * 검색 결과 카드 1건. 정책 검색 결과 카드와 같은 패턴 — 클릭 가능한 목록 행 하나로
+ * 압축해 보여주고, 우대조건·가입등록 같은 자세한 내용은 상세 모달에서 다룬다.
+ * 북마크는 우측 상단에 겹쳐서 바로 토글할 수 있게 한다(카드 클릭과 겹치지 않도록
+ * 카드 전체를 <button>으로 두지 않고, 안쪽 콘텐츠만 별도 버튼으로 감싼다).
  */
-function FinancialSearchResultCard({ item, bookmarks }) {
-  const [registerOpen, setRegisterOpen] = useState(false);
+function FinancialSearchResultCard({ item, active, bookmarks, onOpen }) {
   const typeLabel = PRODUCT_TYPE_LABELS[item.productType] || item.productType;
   const isLoan = LOAN_TYPES.has(item.productType);
   const rateLabel = isLoan ? "최저" : "최고";
   const targetType = bookmarkTargetTypeOf(item.productType);
   const canBookmark = item.id != null;
-  // 가입 등록은 예·적금만(대출은 만기·월납입 개념이 없어 제외).
-  const canRegister = canBookmark && !isLoan;
 
   return (
-    <article className="fs-card">
-      <div className="fs-card-head">
-        <span className={`fs-type ${isLoan ? "fs-type-loan" : ""}`}>
-          {typeLabel}
-        </span>
-        <div className="fs-card-head-right">
+    <article className={`fs-result-card${active ? " active" : ""}`}>
+      {canBookmark && (
+        <div className="fs-result-bookmark">
+          <BookmarkButton
+            size={28}
+            bookmarked={bookmarks.isBookmarked(targetType, item.id)}
+            busy={bookmarks.isBusy(targetType, item.id)}
+            onToggle={() => bookmarks.toggleBookmark(targetType, item.id)}
+          />
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="fs-result-hit"
+        onClick={() => onOpen(item)}
+      >
+        <div className="fs-result-title-row">
+          <div className="fs-result-title-main">
+            <BankBadge companyName={item.companyName} size={30} />
+            <div>
+              <strong>{item.productName}</strong>
+              <span className="fs-result-company">{item.companyName}</span>
+            </div>
+          </div>
+          {item.discontinued ? (
+            <span className="fs-result-status fs-result-status-discontinued">
+              판매종료
+            </span>
+          ) : (
+            <span className={`fs-result-status${isLoan ? " loan" : ""}`}>
+              {typeLabel}
+            </span>
+          )}
+        </div>
+
+        {item.matchReason && <p>{dash(item.matchReason)}</p>}
+
+        <div className="fs-result-meta-row">
           {item.representativeRate != null && (
-            <span className="fs-rate">
-              {rateLabel} <strong>{item.representativeRate}%</strong>
+            <span className="fs-result-rate">
+              {rateLabel} {item.representativeRate}%
               {item.representativeTermMonth != null &&
                 ` · ${item.representativeTermMonth}개월`}
             </span>
           )}
-          {canBookmark && (
-            <BookmarkButton
-              bookmarked={bookmarks.isBookmarked(targetType, item.id)}
-              busy={bookmarks.isBusy(targetType, item.id)}
-              onToggle={() => bookmarks.toggleBookmark(targetType, item.id)}
-            />
-          )}
+          {item.joinMethod && <span>가입방법 {item.joinMethod}</span>}
         </div>
-      </div>
-
-      <div className="fs-name-row">
-        <BankBadge companyName={item.companyName} size={36} />
-        <h3 className="fs-name">
-          <span className="fs-company">{item.companyName}</span>
-          {item.productName}
-        </h3>
-      </div>
-
-      {item.joinMethod && (
-        <p className="fs-join">가입방법 · {item.joinMethod}</p>
-      )}
-
-      {/* 파싱된 우대조건이 있으면 체크리스트로, 없으면 원문 폴백.
-          (원문 첫 줄의 "(판매중단)" 같은 안내가 오해를 줘서 파싱 결과를 우선한다) */}
-      {item.conditions?.length > 0 ? (
-        <ul className="fs-conditions">
-          {item.conditions.map((condition, index) => (
-            <li key={index}>
-              <span>{condition.description}</span>
-              {condition.rateBonus > 0 && <em>+{condition.rateBonus}%p</em>}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        item.specialCondition && (
-          <p className="fs-special">{item.specialCondition}</p>
-        )
-      )}
-
-      {item.matchReason && (
-        <p className="fs-reason">
-          <b>왜 나왔나요?</b> {item.matchReason}
-        </p>
-      )}
-
-      <div className="fs-actions">
-        {canRegister && (
-          <button
-            type="button"
-            className="fs-register"
-            onClick={() => setRegisterOpen(true)}
-          >
-            가입 등록
-          </button>
-        )}
-        {item.officialUrl && (
-          <a
-            className="fs-link"
-            href={item.officialUrl}
-            target="_blank"
-            rel="noreferrer"
-          >
-            🔗 {item.companyName} 사이트로 이동
-          </a>
-        )}
-      </div>
-
-      {registerOpen && (
-        <SavingsSubscriptionModal
-          productId={item.id}
-          onClose={() => setRegisterOpen(false)}
-          onCreated={(message) => bookmarks.showToast?.(message)}
-        />
-      )}
+      </button>
     </article>
   );
 }

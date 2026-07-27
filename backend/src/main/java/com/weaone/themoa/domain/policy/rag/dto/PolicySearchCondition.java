@@ -34,7 +34,9 @@ public record PolicySearchCondition(
         String workplaceCity,
         String workplaceDistrict,
         String workplaceRawRegionText,
-        String workplaceRegionResolutionStatus
+        String workplaceRegionResolutionStatus,
+        UserGender gender,
+        boolean genderExplicit
 ) {
     public PolicySearchCondition(String province,
                                  String city,
@@ -49,7 +51,8 @@ public record PolicySearchCondition(
                                  Integer resultSize) {
         this(province, city, district, age, employmentStatus, studentStatus, careerStage, category,
                 supportTypes, keywords, Set.of(), null, null, null, Set.of(), false, false, false, false, false, false,
-                PolicySearchMode.KEYWORD, resultSize, null, null, null, null, null, null, null, null, null);
+                PolicySearchMode.KEYWORD, resultSize, null, null, null, null, null, null, null, null, null,
+                null, false);
     }
 
     public PolicySearchCondition(String province,
@@ -79,7 +82,47 @@ public record PolicySearchCondition(
                 supportTypes, keywords, expandedKeywords, rawRegionText, regionResolutionStatus, regionLevel,
                 regionCandidates, regionExplicit, ageExplicit, employmentExplicit, studentExplicit,
                 categoryExplicit, supportTypeExplicit, searchMode, resultSize, null, null, null, null,
-                null, null, null, null, null);
+                null, null, null, null, null, null, false);
+    }
+
+    public PolicySearchCondition(String province,
+                                 String city,
+                                 String district,
+                                 Integer age,
+                                 String employmentStatus,
+                                 Boolean studentStatus,
+                                 String careerStage,
+                                 String category,
+                                 Set<String> supportTypes,
+                                 Set<String> keywords,
+                                 Set<String> expandedKeywords,
+                                 String rawRegionText,
+                                 String regionResolutionStatus,
+                                 String regionLevel,
+                                 Set<String> regionCandidates,
+                                 boolean regionExplicit,
+                                 boolean ageExplicit,
+                                 boolean employmentExplicit,
+                                 boolean studentExplicit,
+                                 boolean categoryExplicit,
+                                 boolean supportTypeExplicit,
+                                 PolicySearchMode searchMode,
+                                 Integer resultSize,
+                                 Integer inferredAge,
+                                 String inferredAgeSource,
+                                 Integer inferredMinimumAge,
+                                 Integer inferredMaximumAge,
+                                 String workplaceProvince,
+                                 String workplaceCity,
+                                 String workplaceDistrict,
+                                 String workplaceRawRegionText,
+                                 String workplaceRegionResolutionStatus) {
+        this(province, city, district, age, employmentStatus, studentStatus, careerStage, category,
+                supportTypes, keywords, expandedKeywords, rawRegionText, regionResolutionStatus, regionLevel,
+                regionCandidates, regionExplicit, ageExplicit, employmentExplicit, studentExplicit,
+                categoryExplicit, supportTypeExplicit, searchMode, resultSize, inferredAge, inferredAgeSource,
+                inferredMinimumAge, inferredMaximumAge, workplaceProvince, workplaceCity, workplaceDistrict,
+                workplaceRawRegionText, workplaceRegionResolutionStatus, null, false);
     }
 
     public PolicySearchCondition {
@@ -112,6 +155,9 @@ public record PolicySearchCondition(
         }
         if (Boolean.FALSE.equals(studentStatus)) {
             studentStatus = null;
+        }
+        if (gender == null) {
+            genderExplicit = false;
         }
         supportTypes = supportTypes == null ? Set.of() : Set.copyOf(supportTypes);
         keywords = keywords == null ? Set.of() : Set.copyOf(keywords);
