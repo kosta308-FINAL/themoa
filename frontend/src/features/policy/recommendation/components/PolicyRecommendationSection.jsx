@@ -8,7 +8,6 @@ function PolicyRecommendationSection({
   onSaveProfile,
   onRefresh,
   onOpenDetail,
-  onCollapse,
   selected,
 }) {
   const bookmarks = usePolicyBookmarks();
@@ -40,7 +39,9 @@ function PolicyRecommendationSection({
       <div className="policy-recommendation-head">
         <div>
           <h2>
-            {profile?.configured ? "회원님을 위한 추천 정책" : "나에게 맞는 정책 추천받기"}
+            {profile?.configured
+              ? "회원님을 위한 추천 정책"
+              : "나에게 맞는 정책 추천받기"}
           </h2>
           <p>
             {profile?.configured
@@ -59,19 +60,20 @@ function PolicyRecommendationSection({
               {isSaving ? "계산 중..." : "다시 추천받기"}
             </button>
           )}
-          {onCollapse && (
-            <button type="button" className="policy-recommendation-collapse" onClick={onCollapse}>
-              직접 검색으로
-            </button>
-          )}
         </div>
       </div>
 
-      {isLoading && <div className="policy-empty">추천 정보를 불러오는 중입니다.</div>}
+      {isLoading && (
+        <div className="policy-empty">추천 정보를 불러오는 중입니다.</div>
+      )}
       {!isLoading && profileError && (
         <div className="policy-recommendation-state">
           <p>{profileError}</p>
-          <button type="button" className="policy-primary-button" onClick={recommendation.load}>
+          <button
+            type="button"
+            className="policy-primary-button"
+            onClick={recommendation.load}
+          >
             다시 불러오기
           </button>
         </div>
@@ -79,7 +81,11 @@ function PolicyRecommendationSection({
       {profileReady && regionError && (
         <div className="policy-recommendation-state">
           <p>{regionError}</p>
-          <button type="button" className="policy-primary-button" onClick={recommendation.load}>
+          <button
+            type="button"
+            className="policy-primary-button"
+            onClick={recommendation.load}
+          >
             다시 불러오기
           </button>
         </div>
@@ -95,7 +101,9 @@ function PolicyRecommendationSection({
       )}
       {profileReady && profile?.configured && (
         <>
-          <PolicyRecommendationProfileSummary profile={recommendations?.profile || profile} />
+          <PolicyRecommendationProfileSummary
+            profile={recommendations?.profile || profile}
+          />
           {recommendationWarning && (
             <div className="policy-recommendation-warning">
               <p>{recommendationWarning}</p>
@@ -109,18 +117,25 @@ function PolicyRecommendationSection({
               </button>
             </div>
           )}
-          {mutationError && <p className="policy-recommendation-error">{mutationError}</p>}
+          {mutationError && (
+            <p className="policy-recommendation-error">{mutationError}</p>
+          )}
           {recommendationError && (
             <div className="policy-recommendation-state">
               <p>{recommendationError}</p>
-              <button type="button" className="policy-primary-button" onClick={recommendation.load}>
+              <button
+                type="button"
+                className="policy-primary-button"
+                onClick={recommendation.load}
+              >
                 다시 불러오기
               </button>
             </div>
           )}
           {!recommendationError && recommendations?.items?.length === 0 && (
             <div className="policy-empty">
-              현재 기본 조건과 일치하는 추천 정책이 없어요. 아래 자연어 검색에서 다른 조건으로 찾아볼 수 있어요.
+              현재 기본 조건과 일치하는 추천 정책이 없어요. 아래 자연어 검색에서
+              다른 조건으로 찾아볼 수 있어요.
             </div>
           )}
           {!recommendationError && recommendations?.items?.length > 0 && (
@@ -131,14 +146,19 @@ function PolicyRecommendationSection({
                   item={item}
                   active={selected?.policyId === item.policyId}
                   bookmarked={bookmarks.isBookmarked(item.policyId)}
-                  bookmarkBusy={bookmarks.loading || bookmarks.busyPolicyId === item.policyId}
+                  bookmarkBusy={
+                    bookmarks.loading ||
+                    bookmarks.busyPolicyId === item.policyId
+                  }
                   onBookmarkToggle={bookmarks.toggleBookmark}
                   onOpenDetail={onOpenDetail}
                 />
               ))}
             </div>
           )}
-          {bookmarks.error && <p className="policy-bookmark-error">{bookmarks.error}</p>}
+          {bookmarks.error && (
+            <p className="policy-bookmark-error">{bookmarks.error}</p>
+          )}
         </>
       )}
     </section>

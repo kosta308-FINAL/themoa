@@ -18,7 +18,7 @@ function PolicySearchForm({
   return (
     <section className="policy-chat-hero">
       <span className="policy-chat-badge">
-        <DashboardIcon name="sparkle" size={13} />
+        <DashboardIcon name="message" size={13} />
         AI 정책 검색
       </span>
 
