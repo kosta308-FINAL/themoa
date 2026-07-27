@@ -39,7 +39,7 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="ccol p1">
       <div class="chead"><div class="cavatar">솔민</div><div class="cname">김솔민</div></div>
       <div class="cquote">&ldquo;</div>
-      <div class="placeholder">여기에 김솔민님의 소감을<br>채워주세요.</div>
+      <div class="ctext">3주라면 길면 길고 짧으면 짧은 시간일 수도 있지만,<br>API를 분석해 ERD를 설계하거나 여러 예외 상황을<br>고려하는 복잡한 설계 과정을 경험해 볼 수 있어서<br>좋았습니다.<br><br>LLM을 활용한 RAG 결과의 퀄리티를 높이기 위해<br>어떤 부분들을 신경 써야 하는지 배울 수 있는<br>좋은 시간이었던 것 같습니다.</div>
     </div>
 
     <div class="ccol p2">
