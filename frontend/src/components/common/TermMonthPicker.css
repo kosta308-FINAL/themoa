@@ -1,0 +1,75 @@
+.term-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.term-picker {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 50;
+  width: 100%;
+  border: 1px solid #e5ede8;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 16px 38px rgba(22, 101, 52, 0.15);
+}
+
+.term-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid #e5ede8;
+}
+
+.term-picker-head h2 {
+  color: #16241c;
+  font-size: 13px;
+}
+
+.term-picker-close {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  color: #637169;
+  background: #f3f7f4;
+}
+
+.term-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 10px;
+  list-style: none;
+  scrollbar-width: none;
+}
+
+.term-picker-list::-webkit-scrollbar {
+  display: none;
+}
+
+.term-picker-list button {
+  width: 100%;
+  min-height: 34px;
+  border-radius: 8px;
+  color: #16241c;
+  background: #f5f8f6;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.term-picker-list button:hover {
+  background: #e7f9ee;
+}
+
+.term-picker-list button.selected {
+  color: #fff;
+  background: #22c55e;
+}

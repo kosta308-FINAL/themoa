@@ -103,7 +103,14 @@ function RecommendIntroState() {
 /**
  * 추천 결과 영역. 로딩·오류·검색 전·빈 결과·정상 목록을 분기해서 보여준다.
  */
-function RecommendResults({ loading, error, data, searched, bookmarks }) {
+function RecommendResults({
+  loading,
+  error,
+  data,
+  searched,
+  bookmarks,
+  depositWon,
+}) {
   if (loading) {
     return <RecommendLoading />;
   }
@@ -130,6 +137,7 @@ function RecommendResults({ loading, error, data, searched, bookmarks }) {
             item={item}
             rank={index + 1}
             bookmarks={bookmarks}
+            depositWon={depositWon}
           />
         ))
       )}

@@ -38,9 +38,6 @@ document.head.insertAdjacentHTML('beforeend', `
   font-size:17px; font-weight:800; box-shadow:0 8px 18px rgba(0,118,19,.35); z-index:4;
 }
 
-/* 연결선 */
-#s90 .wires{ position:absolute; inset:0; z-index:1; pointer-events:none; }
-
 /* 우측 설명 리스트 */
 #s90 .citem{
   position:absolute; left:1300px; width:560px; display:flex; align-items:flex-start; gap:18px;
@@ -90,13 +87,6 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="abs badge" style="left:151px; top:649px;">03</div>
     <div class="abs badge" style="left:722px; top:649px;">04</div>
 
-    <svg class="abs wires" viewBox="0 0 1920 1080" width="1920" height="1080">
-      <path d="M850,531  Q1150,430 1300,352" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1134,531 Q1230,500 1300,487" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M724,724  Q1080,660 1300,622" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1133,795 Q1230,780 1300,757" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-    </svg>
-
     <div class="citem" style="top:330px;">
       <div class="cnum">01</div>
       <div>
@@ -144,12 +134,6 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="abs badge" style="left:722px; top:459px;">02</div>
     <div class="abs badge" style="left:151px; top:552px;">03</div>
 
-    <svg class="abs wires" viewBox="0 0 1920 1080" width="1920" height="1080">
-      <path d="M724,392  Q1080,380 1300,372" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1133,583 Q1230,562 1300,542" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M724,740  Q1080,726 1300,712" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-    </svg>
-
     <div class="citem" style="top:350px;">
       <div class="cnum">01</div>
       <div>
@@ -193,14 +177,6 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="abs badge" style="left:818px; top:530px;">03</div>
     <div class="abs badge" style="left:151px; top:706px;">04</div>
     <div class="abs badge" style="left:818px; top:813px;">05</div>
-
-    <svg class="abs wires" viewBox="0 0 1920 1080" width="1920" height="1080">
-      <path d="M1134,450 Q1230,390 1300,322" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M828,630  Q1080,540 1300,452" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1134,659 Q1230,620 1300,582" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M828,850  Q1080,780 1300,712" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1134,946 Q1230,894 1300,842" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-    </svg>
 
     <div class="citem" style="top:300px;">
       <div class="cnum">01</div>
@@ -256,12 +232,6 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="abs badge" style="left:217px; top:564px;">02</div>
     <div class="abs badge" style="left:217px; top:800px;">03</div>
 
-    <svg class="abs wires" viewBox="0 0 1920 1080" width="1920" height="1080">
-      <path d="M1062,620 Q1180,600 1300,372" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M753,686  Q1080,600 1300,542" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M796,948  Q1080,830 1300,712" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-    </svg>
-
     <div class="citem" style="top:350px;">
       <div class="cnum">01</div>
       <div>
@@ -305,14 +275,6 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="abs badge" style="left:154px; top:746px;">03</div>
     <div class="abs badge" style="left:170px; top:875px;">04</div>
     <div class="abs badge" style="left:770px; top:755px;">05</div>
-
-    <svg class="abs wires" viewBox="0 0 1920 1080" width="1920" height="1080">
-      <path d="M669,554  Q1150,400 1300,262" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1085,554 Q1160,470 1300,394" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1085,767 Q1160,640 1300,524" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M787,940  Q1150,780 1300,654" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1085,940 Q1160,850 1300,784" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-    </svg>
 
     <div class="citem" style="top:240px;">
       <div class="cnum">01</div>

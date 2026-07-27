@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Toast from "../../components/common/Toast";
 import ProductsTabNav from "../../components/common/ProductsTabNav";
@@ -17,6 +18,13 @@ function ProductsPage() {
   const { defaults, loading: defaultsLoading } = useRecommendDefaults();
   const bookmarks = useBookmarks();
   const popular = usePopularProducts();
+  // 추천 요청에 쓴 월 납입가능금액을 그대로 가입 등록 모달의 월 납입액 초기값으로 넘긴다.
+  const [depositWon, setDepositWon] = useState(null);
+
+  const handleRecommendSubmit = (payload) => {
+    setDepositWon(payload.monthlyDepositWon);
+    runRecommend(payload);
+  };
 
   const recommendations = data?.recommendations || [];
   const hasResults = searched && !loading && recommendations.length > 0;
@@ -57,7 +65,7 @@ function ProductsPage() {
           <RecommendForm
             loading={loading}
             defaults={defaults}
-            onSubmit={runRecommend}
+            onSubmit={handleRecommendSubmit}
           />
         )}
         <section
@@ -70,6 +78,7 @@ function ProductsPage() {
               error={error}
               searched={searched}
               bookmarks={bookmarks}
+              depositWon={depositWon}
             />
           </div>
           {showSide && (

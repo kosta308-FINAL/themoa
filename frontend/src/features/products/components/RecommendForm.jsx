@@ -1,4 +1,6 @@
 import { useState } from "react";
+import DashboardIcon from "../../../components/common/DashboardIcon";
+import OptionPicker from "../../../components/common/OptionPicker";
 import { stripCommas, withCommas } from "../../../utils/numberFormat";
 
 const EMPLOYMENT_OPTIONS = [
@@ -73,8 +75,18 @@ function RecommendForm({ loading, defaults, onSubmit }) {
   const [needLiquidity, setNeedLiquidity] = useState(false);
   // 결과를 넓게 보고 싶을 때 입력 패널을 접을 수 있다.
   const [collapsed, setCollapsed] = useState(false);
+  const [isEmploymentOpen, setIsEmploymentOpen] = useState(false);
+  const [isRiskOpen, setIsRiskOpen] = useState(false);
+  const [isPeriodOpen, setIsPeriodOpen] = useState(false);
 
   const hasGoal = goalMode === "set";
+  const employmentLabel =
+    EMPLOYMENT_OPTIONS.find((option) => option.value === employment)?.label ??
+    employment;
+  const riskLabel =
+    RISK_OPTIONS.find((option) => option.value === risk)?.label ?? risk;
+  const periodLabel =
+    PERIOD_OPTIONS.find((option) => option.value === period)?.label ?? period;
   const roundedDeposit = roundToDepositUnit(deposit);
   // 백엔드가 @Min(10000)으로 검증하므로 화면에서도 미달이면 추천을 막는다.
   const depositValid = Number(roundedDeposit) >= 10000;
@@ -142,33 +154,57 @@ function RecommendForm({ loading, defaults, onSubmit }) {
             />
           </label>
 
-          <label className="rec-field">
+          <div className="rec-field">
             <span>취업유형</span>
-            <select
-              value={employment}
-              onChange={(event) => setEmployment(event.target.value)}
-            >
-              {EMPLOYMENT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
+            <div className="rec-select-field">
+              <button
+                type="button"
+                className="rec-select-trigger"
+                onClick={() => setIsEmploymentOpen((open) => !open)}
+              >
+                {employmentLabel}
+                <DashboardIcon name="chevron-down" size={13} />
+              </button>
+              {isEmploymentOpen && (
+                <OptionPicker
+                  options={EMPLOYMENT_OPTIONS}
+                  value={employment}
+                  title="취업유형 선택"
+                  onSelect={(value) => {
+                    setEmployment(value);
+                    setIsEmploymentOpen(false);
+                  }}
+                  onClose={() => setIsEmploymentOpen(false)}
+                />
+              )}
+            </div>
+          </div>
 
-          <label className="rec-field">
+          <div className="rec-field">
             <span>위험성향</span>
-            <select
-              value={risk}
-              onChange={(event) => setRisk(event.target.value)}
-            >
-              {RISK_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
+            <div className="rec-select-field">
+              <button
+                type="button"
+                className="rec-select-trigger"
+                onClick={() => setIsRiskOpen((open) => !open)}
+              >
+                {riskLabel}
+                <DashboardIcon name="chevron-down" size={13} />
+              </button>
+              {isRiskOpen && (
+                <OptionPicker
+                  options={RISK_OPTIONS}
+                  value={risk}
+                  title="위험성향 선택"
+                  onSelect={(value) => {
+                    setRisk(value);
+                    setIsRiskOpen(false);
+                  }}
+                  onClose={() => setIsRiskOpen(false)}
+                />
+              )}
+            </div>
+          </div>
 
           <label className="rec-field">
             <span>월 납입가능금액 (원)</span>
@@ -233,19 +269,31 @@ function RecommendForm({ loading, defaults, onSubmit }) {
               </label>
             </div>
           ) : (
-            <label className="rec-field">
+            <div className="rec-field">
               <span>선호 가입기간</span>
-              <select
-                value={period}
-                onChange={(event) => setPeriod(event.target.value)}
-              >
-                {PERIOD_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <div className="rec-select-field">
+                <button
+                  type="button"
+                  className="rec-select-trigger"
+                  onClick={() => setIsPeriodOpen((open) => !open)}
+                >
+                  {periodLabel}
+                  <DashboardIcon name="chevron-down" size={13} />
+                </button>
+                {isPeriodOpen && (
+                  <OptionPicker
+                    options={PERIOD_OPTIONS}
+                    value={period}
+                    title="선호 가입기간 선택"
+                    onSelect={(value) => {
+                      setPeriod(value);
+                      setIsPeriodOpen(false);
+                    }}
+                    onClose={() => setIsPeriodOpen(false)}
+                  />
+                )}
+              </div>
+            </div>
           )}
 
           <div className="rec-checks">

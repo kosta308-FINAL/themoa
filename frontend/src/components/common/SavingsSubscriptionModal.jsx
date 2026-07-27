@@ -6,6 +6,9 @@ import {
 } from "../../api/savingsSubscriptionApi";
 import { getApiErrorMessage } from "../../utils/apiError";
 import { stripCommas, withCommas } from "../../utils/numberFormat";
+import CalendarPopover from "./CalendarPopover";
+import DashboardIcon from "./DashboardIcon";
+import TermMonthPicker from "./TermMonthPicker";
 import "./SavingsSubscriptionModal.css";
 
 const PRODUCT_TYPE_LABELS = {
@@ -54,17 +57,26 @@ const todayString = () => {
  * 우대조건은 API가 준 목록을 체크리스트로만 렌더하고(직접 입력 X), 사용자는 해당하는 것에 체크만 한다.
  * 내 금리 = 기본금리 + 체크된 우대조건 가산 합. 최고금리를 넘으면 경고만 하고 등록은 막지 않는다.
  */
-function SavingsSubscriptionModal({ productId, onClose, onCreated }) {
+function SavingsSubscriptionModal({
+  productId,
+  initialMonthlyAmount,
+  onClose,
+  onCreated,
+}) {
   const [draft, setDraft] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  const [monthlyAmount, setMonthlyAmount] = useState(300000);
+  const [monthlyAmount, setMonthlyAmount] = useState(
+    initialMonthlyAmount ?? 300000,
+  );
   const [termMonth, setTermMonth] = useState(null);
   const [startDate, setStartDate] = useState(todayString());
   const [conditions, setConditions] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [isTermOpen, setIsTermOpen] = useState(false);
+  const [isDateOpen, setIsDateOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -259,31 +271,57 @@ function SavingsSubscriptionModal({ productId, onClose, onCreated }) {
                 )}
               </label>
 
-              <div className="ss-field-row">
-                <label className="ss-field">
-                  <span>가입기간</span>
-                  <select
-                    value={termMonth ?? ""}
-                    onChange={(event) => setTermMonth(event.target.value)}
+              <label className="ss-field">
+                <span>가입기간</span>
+                <div className="ss-term-field">
+                  <button
+                    type="button"
+                    className="ss-term-trigger"
+                    onClick={() => setIsTermOpen((open) => !open)}
                   >
-                    {termOptions.map((month) => (
-                      <option key={month} value={month}>
-                        {month}개월
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    {termMonth ? `${termMonth}개월` : "선택"}
+                    <DashboardIcon name="chevron-down" size={13} />
+                  </button>
+                  {isTermOpen && (
+                    <TermMonthPicker
+                      options={termOptions}
+                      value={termMonth}
+                      onSelect={(month) => {
+                        setTermMonth(month);
+                        setIsTermOpen(false);
+                      }}
+                      onClose={() => setIsTermOpen(false)}
+                    />
+                  )}
+                </div>
+              </label>
 
-                <label className="ss-field">
-                  <span>가입일</span>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(event) => setStartDate(event.target.value)}
-                    required
-                  />
-                </label>
-              </div>
+              <label className="ss-field">
+                <span>가입일</span>
+                <div className="ss-date-field">
+                  <button
+                    type="button"
+                    className="ss-date-trigger"
+                    onClick={() => setIsDateOpen((open) => !open)}
+                  >
+                    <DashboardIcon name="calendar" size={16} />
+                    {startDate}
+                  </button>
+                  {isDateOpen && (
+                    <CalendarPopover
+                      value={startDate}
+                      max={todayString()}
+                      title="가입일 선택"
+                      placement="center"
+                      onSelect={(date) => {
+                        setStartDate(date);
+                        setIsDateOpen(false);
+                      }}
+                      onClose={() => setIsDateOpen(false)}
+                    />
+                  )}
+                </div>
+              </label>
 
               <div className="ss-conditions">
                 <span className="ss-conditions-title">
