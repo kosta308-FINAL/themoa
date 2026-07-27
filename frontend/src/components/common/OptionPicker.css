@@ -1,10 +1,10 @@
-.term-picker-backdrop {
+.option-picker-backdrop {
   position: fixed;
   inset: 0;
   z-index: 40;
 }
 
-.term-picker {
+.option-picker {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
@@ -16,7 +16,7 @@
   box-shadow: 0 16px 38px rgba(22, 101, 52, 0.15);
 }
 
-.term-picker-head {
+.option-picker-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -25,12 +25,12 @@
   border-bottom: 1px solid #e5ede8;
 }
 
-.term-picker-head h2 {
+.option-picker-head h2 {
   color: #16241c;
   font-size: 13px;
 }
 
-.term-picker-close {
+.option-picker-close {
   display: grid;
   place-items: center;
   width: 24px;
@@ -40,36 +40,38 @@
   background: #f3f7f4;
 }
 
-.term-picker-list {
+.option-picker-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-height: 220px;
+  max-height: 260px;
   overflow-y: auto;
   padding: 10px;
   list-style: none;
   scrollbar-width: none;
 }
 
-.term-picker-list::-webkit-scrollbar {
+.option-picker-list::-webkit-scrollbar {
   display: none;
 }
 
-.term-picker-list button {
+.option-picker-list button {
   width: 100%;
   min-height: 34px;
+  padding: 0 10px;
   border-radius: 8px;
   color: #16241c;
   background: #f5f8f6;
   font-size: 13px;
   font-weight: 600;
+  text-align: left;
 }
 
-.term-picker-list button:hover {
+.option-picker-list button:hover {
   background: #e7f9ee;
 }
 
-.term-picker-list button.selected {
+.option-picker-list button.selected {
   color: #fff;
   background: #22c55e;
 }
