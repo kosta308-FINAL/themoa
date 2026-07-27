@@ -36,6 +36,10 @@ document.head.insertAdjacentHTML('beforeend', `
 
 .s-trouble .placeholder{ background:#fff; border-radius:20px; border:2px dashed #D8DEE5;
   padding:120px 40px; color:#9AA5B1; font-size:22px; font-weight:700; text-align:center; line-height:1.8; }
+
+/* p1(김솔민)만 아래 여백이 커서 카드 3장을 세로 중앙 정렬로 채움 */
+#s-trouble-1 .cases{ top:264px; bottom:64px; display:flex; flex-direction:column; justify-content:center; gap:32px; }
+#s-trouble-1 .tcase{ margin-bottom:0; }
 </style>
 `);
 

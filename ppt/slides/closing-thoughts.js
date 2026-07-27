@@ -22,7 +22,8 @@ document.head.insertAdjacentHTML('beforeend', `
 #s-closing .p2 .cquote{ color:#007613; }
 #s-closing .p3 .cquote{ color:#7C3AED; }
 
-#s-closing .ctext{ flex:1; font-size:17px; color:#333; font-weight:500; line-height:1.75; }
+#s-closing .ctext{ flex:1; font-size:17px; color:#333; font-weight:500; line-height:1.75;
+  display:flex; flex-direction:column; justify-content:center; }
 
 #s-closing .placeholder{ flex:1; border:2px dashed #D8DEE5; border-radius:14px;
   display:flex; align-items:center; justify-content:center; text-align:center;
