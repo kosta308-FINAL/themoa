@@ -205,6 +205,13 @@ app:
     # profile 상관없이 이 값 + ROLE_ADMIN(SecurityConfig)로만 통제한다. true일 때만 prod에서도 사용 가능.
     admin-tools:
       enabled: ${POLICY_ADMIN_TOOLS_ENABLED:false}
+    gender-classification:
+      enabled: ${POLICY_GENDER_CLASSIFICATION_ENABLED:true}
+      batch-size: ${POLICY_GENDER_CLASSIFICATION_BATCH_SIZE:20}
+      concurrency: ${POLICY_GENDER_CLASSIFICATION_CONCURRENCY:2}
+      max-retries: ${POLICY_GENDER_CLASSIFICATION_MAX_RETRIES:2}
+      retry-backoff: ${POLICY_GENDER_CLASSIFICATION_RETRY_BACKOFF:2s}
+      call-timeout: ${POLICY_GENDER_CLASSIFICATION_CALL_TIMEOUT:45s}
     sync:
       enabled: ${POLICY_DAILY_SYNC_ENABLED:false}
       cron: ${POLICY_DAILY_SYNC_CRON:0 0 4 * * *}

@@ -3,6 +3,7 @@ package com.weaone.themoa.domain.policy.rag.service;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchCondition;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyQuerySemantics;
 import com.weaone.themoa.domain.policy.rag.dto.SearchDomain;
+import com.weaone.themoa.domain.policy.rag.dto.UserGender;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.ObjectProvider;
@@ -70,8 +71,15 @@ public class CompositePolicySearchConditionParser implements PolicySearchConditi
                                     "직장에 다니며 이직 지원을 찾고 있다" means employmentStatus=EMPLOYED and desiredDomains may include EMPLOYMENT.
                                     Return normalizedGoal with only positive search purpose. Do not include excluded topic words
                                     in normalizedGoal.
+                                    Extract gender only when the query clearly describes the actual policy search target.
+                                    "남성 청년", "남자인데", "미취업 남성" => gender=MALE, genderExplicit=true.
+                                    "여자 대학생", "여성이 받을 수 있는" => gender=FEMALE, genderExplicit=true.
+                                    "여성가족부 청년 정책", "여성기업에서 일하는 남성" should not use organization words
+                                    as the target gender; in the latter, target gender is MALE.
+                                    "여성 정책은 제외", "남녀 모두", "여자친구와 함께" do not imply the user's gender.
                                     Fields: rawRegionText, province, city, district, age, employmentStatus, studentStatus,
                                     careerStage, category, supportTypes, keywords, resultSize,
+                                    gender, genderExplicit,
                                     normalizedGoal, desiredDomains, excludedDomains, positiveKeywords, excludedKeywords,
                                     explicitExclusion.
                                     employmentStatus examples: UNEMPLOYED, EMPLOYED.
@@ -156,7 +164,9 @@ public class CompositePolicySearchConditionParser implements PolicySearchConditi
                 coalesce(rule.workplaceCity(), openAi.workplaceCity()),
                 coalesce(rule.workplaceDistrict(), openAi.workplaceDistrict()),
                 coalesce(rule.workplaceRawRegionText(), openAi.workplaceRawRegionText()),
-                coalesce(rule.workplaceRegionResolutionStatus(), openAi.workplaceRegionResolutionStatus())
+                coalesce(rule.workplaceRegionResolutionStatus(), openAi.workplaceRegionResolutionStatus()),
+                rule.gender() != null ? rule.gender() : openAi.gender(),
+                rule.genderExplicit() || openAi.genderExplicit()
         );
     }
 
@@ -183,6 +193,8 @@ public class CompositePolicySearchConditionParser implements PolicySearchConditi
             String category,
             java.util.Set<String> supportTypes,
             java.util.Set<String> keywords,
+            String gender,
+            Boolean genderExplicit,
             String normalizedGoal,
             java.util.Set<String> desiredDomains,
             java.util.Set<String> excludedDomains,
@@ -190,10 +202,34 @@ public class CompositePolicySearchConditionParser implements PolicySearchConditi
             java.util.Set<String> excludedKeywords,
             Boolean explicitExclusion
     ) {
+        OpenAiPolicySearchAnalysis(String rawRegionText,
+                                   String province,
+                                   String city,
+                                   String district,
+                                   Integer age,
+                                   String employmentStatus,
+                                   Boolean studentStatus,
+                                   String careerStage,
+                                   String category,
+                                   java.util.Set<String> supportTypes,
+                                   java.util.Set<String> keywords,
+                                   String normalizedGoal,
+                                   java.util.Set<String> desiredDomains,
+                                   java.util.Set<String> excludedDomains,
+                                   java.util.Set<String> positiveKeywords,
+                                   java.util.Set<String> excludedKeywords,
+                                   Boolean explicitExclusion) {
+            this(rawRegionText, province, city, district, age, employmentStatus, studentStatus, careerStage, category,
+                    supportTypes, keywords, null, false, normalizedGoal, desiredDomains, excludedDomains,
+                    positiveKeywords, excludedKeywords, explicitExclusion);
+        }
+
         PolicySearchCondition toCondition(Integer resultSize) {
             return new PolicySearchCondition(province, city, district, age, employmentStatus, studentStatus,
                     careerStage, category, supportTypes, keywords, java.util.Set.of(), rawRegionText, null, null,
-                    java.util.Set.of(), false, false, false, false, false, false, null, resultSize);
+                    java.util.Set.of(), false, false, false, false, false, false, null, resultSize,
+                    null, null, null, null, null, null, null, null, null,
+                    genderValue(gender), Boolean.TRUE.equals(genderExplicit) && genderValue(gender) != null);
         }
 
         PolicyQuerySemantics toSemantics() {
@@ -206,6 +242,17 @@ public class CompositePolicySearchConditionParser implements PolicySearchConditi
             if (raw == null) return java.util.Set.of();
             return raw.stream().map(SearchDomain::fromRaw)
                     .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new));
+        }
+
+        private UserGender genderValue(String raw) {
+            if (raw == null || raw.isBlank()) {
+                return null;
+            }
+            try {
+                return UserGender.valueOf(raw.trim().toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                return null;
+            }
         }
     }
 }

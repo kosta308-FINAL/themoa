@@ -85,20 +85,32 @@ export const usePolicyAdmin = () => {
       }
       return undefined
     }
-    const timer = window.setInterval(async () => {
+    let cancelled = false
+    let timer
+    const poll = async () => {
       try {
         const nextJob = await getPolicyJob(job.jobId)
+        if (cancelled) return
         setJob(nextJob)
         setPollingError('')
         if (terminalStatuses.has(nextJob.status)) {
           setBusyKey('')
+          return
         }
       } catch (error) {
+        if (cancelled) return
         setPollingError(apiError(error))
         setBusyKey('')
       }
-    }, 1500)
-    return () => window.clearInterval(timer)
+      if (!cancelled) {
+        timer = window.setTimeout(poll, 4000)
+      }
+    }
+    timer = window.setTimeout(poll, 4000)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
   }, [job?.jobId, job?.status, refreshDashboard, refreshEmbeddings])
 
   const runJob = async (jobKey, label) => {

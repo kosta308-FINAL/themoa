@@ -10,7 +10,10 @@ import com.weaone.themoa.domain.policy.policy.region.ResolvedUserRegion;
 import com.weaone.themoa.domain.policy.rag.config.RagProperties;
 import com.weaone.themoa.domain.policy.rag.dto.ConditionMatchStatus;
 import com.weaone.themoa.domain.policy.rag.dto.EducationStage;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyApplicantScope;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyEmploymentAudience;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyGenderAudience;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyGenderClassificationResult;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchCondition;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchMode;
 import com.weaone.themoa.domain.policy.rag.dto.PolicySearchPlan;
@@ -21,6 +24,7 @@ import com.weaone.themoa.domain.policy.rag.dto.SearchQueryType;
 import com.weaone.themoa.domain.policy.rag.dto.SupportIntent;
 import com.weaone.themoa.domain.policy.rag.dto.UserEmploymentStatus;
 import com.weaone.themoa.domain.policy.rag.dto.UserEmploymentStatusResult;
+import com.weaone.themoa.domain.policy.rag.dto.UserGender;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -147,6 +151,45 @@ class PolicyEligibilityEvaluatorTest {
         assertThat(result.evaluationsByPolicyId().get(11).excludedReason()).isEqualTo("APPLICANT_AUDIENCE_MISMATCH");
     }
 
+    @Test
+    void filtersGenderMismatchWhenSearchTargetGenderIsExplicit() {
+        Policy femaleOnly = policy(20, "경력보유여성 면접 정장 대여 지원", null);
+        Policy all = policy(21, "청년 면접비 지원", null);
+        when(regionMatchEvaluator.evaluate(any(), any())).thenReturn(region(RegionCompatibility.NATIONWIDE, true));
+
+        PolicyEvaluationResult result = evaluator.evaluate(
+                context(plan(condition(null, null, 26, null, false, false, UserGender.MALE, true),
+                        Set.of(EducationStage.UNKNOWN), false)),
+                collection(femaleOnly, all), userRegion, Map.of(), Map.of(),
+                Map.of(20, gender(PolicyGenderAudience.FEMALE_ONLY), 21, allGender()),
+                UserEmploymentStatusResult.unknown());
+
+        assertThat(result.passedCandidates()).extracting(item -> item.policy().getId()).containsExactly(21);
+        assertThat(result.evaluationsByPolicyId().get(20).excludedReason()).isEqualTo("GENDER_NOT_MATCHED");
+    }
+
+    @Test
+    void doesNotFilterGenderWhenQueryDoesNotSpecifyGenderOrPolicyGenderIsUnknown() {
+        Policy femaleOnly = policy(22, "경력보유여성 면접 정장 대여 지원", null);
+        Policy unknown = policy(23, "여성 관련 지역문화 개선사업", null);
+        when(regionMatchEvaluator.evaluate(any(), any())).thenReturn(region(RegionCompatibility.NATIONWIDE, true));
+
+        PolicyEvaluationResult unspecified = evaluator.evaluate(
+                context(plan(condition(null, null, 26, null, false, false, null, false),
+                        Set.of(EducationStage.UNKNOWN), false)),
+                collection(femaleOnly), userRegion, Map.of(), Map.of(),
+                Map.of(22, gender(PolicyGenderAudience.FEMALE_ONLY)), UserEmploymentStatusResult.unknown());
+
+        PolicyEvaluationResult unknownGender = evaluator.evaluate(
+                context(plan(condition(null, null, 26, null, false, false, UserGender.MALE, true),
+                        Set.of(EducationStage.UNKNOWN), false)),
+                collection(unknown), userRegion, Map.of(), Map.of(),
+                Map.of(23, PolicyGenderClassificationResult.unknown("기관 공모")), UserEmploymentStatusResult.unknown());
+
+        assertThat(unspecified.passedCandidates()).hasSize(1);
+        assertThat(unknownGender.passedCandidates()).hasSize(1);
+    }
+
     private PolicySearchExecutionContext context(PolicySearchPlan plan) {
         return new PolicySearchExecutionContext(new PolicySearchRequest("query", 10), plan, 1L);
     }
@@ -173,9 +216,16 @@ class PolicyEligibilityEvaluatorTest {
 
     private PolicySearchCondition condition(String province, String city, Integer age, String employment,
                                             boolean regionExplicit, boolean employmentExplicit) {
+        return condition(province, city, age, employment, regionExplicit, employmentExplicit, null, false);
+    }
+
+    private PolicySearchCondition condition(String province, String city, Integer age, String employment,
+                                            boolean regionExplicit, boolean employmentExplicit,
+                                            UserGender gender, boolean genderExplicit) {
         return new PolicySearchCondition(province, city, null, age, employment, null, null, "general",
                 Set.of(), Set.of("청년"), Set.of("청년"), city, null, null, Set.of(),
-                regionExplicit, age != null, employmentExplicit, false, false, false, PolicySearchMode.HYBRID, 10);
+                regionExplicit, age != null, employmentExplicit, false, false, false, PolicySearchMode.HYBRID, 10,
+                null, null, null, null, null, null, null, null, null, gender, genderExplicit);
     }
 
     private Policy policy(int id, String title, String employment) {
@@ -200,5 +250,15 @@ class PolicyEligibilityEvaluatorTest {
 
     private PolicyTargetAudienceClassification audience(EducationStage stage, boolean exclusive) {
         return new PolicyTargetAudienceClassification(Set.of(stage), Set.of(), exclusive, 1.0, List.of(stage.name()));
+    }
+
+    private PolicyGenderClassificationResult gender(PolicyGenderAudience audience) {
+        return new PolicyGenderClassificationResult(audience, true, 0.9, PolicyApplicantScope.INDIVIDUAL,
+                "개인 신청자 성별 제한");
+    }
+
+    private PolicyGenderClassificationResult allGender() {
+        return new PolicyGenderClassificationResult(PolicyGenderAudience.ALL, false, 0.9, PolicyApplicantScope.INDIVIDUAL,
+                "성별 제한 없음");
     }
 }

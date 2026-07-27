@@ -25,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +47,7 @@ import java.util.List;
 @Slf4j
 @Component
 @Order(11)
+@ConditionalOnProperty(prefix = "app.demo.fixed-expense", name = "enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 public class FixedExpenseDemoSeeder implements ApplicationRunner {
 

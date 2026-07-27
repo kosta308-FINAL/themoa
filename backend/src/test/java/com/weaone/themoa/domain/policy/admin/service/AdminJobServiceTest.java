@@ -12,6 +12,7 @@ import com.weaone.themoa.domain.policy.policy.service.YouthCenterPolicyCollectio
 import com.weaone.themoa.domain.policy.rag.dto.SearchReadinessResponse;
 import com.weaone.themoa.domain.policy.rag.service.EmbeddingProcessResult;
 import com.weaone.themoa.domain.policy.rag.service.EmbeddingQueueResult;
+import com.weaone.themoa.domain.policy.rag.service.PolicyGenderAudienceClassifier;
 import com.weaone.themoa.domain.policy.rag.service.PolicyEmbeddingService;
 import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndex;
 import com.weaone.themoa.domain.policy.rag.service.PolicyLexicalIndexBuilder;
@@ -45,6 +46,7 @@ class AdminJobServiceTest {
     private final RegionSynchronizationService regionSynchronizationService = mock(RegionSynchronizationService.class);
     private final PolicySearchProjectionService projectionService = mock(PolicySearchProjectionService.class);
     private final PolicyLexicalIndexBuilder lexicalIndexBuilder = mock(PolicyLexicalIndexBuilder.class);
+    private final PolicyGenderAudienceClassifier genderAudienceClassifier = mock(PolicyGenderAudienceClassifier.class);
     private final RegionCodeRepository regionCodeRepository = mock(RegionCodeRepository.class);
     private final PolicySyncPipelineService policySyncPipelineService = mock(PolicySyncPipelineService.class);
     private final PolicySyncExecutionGuard policySyncExecutionGuard = mock(PolicySyncExecutionGuard.class);
@@ -55,15 +57,19 @@ class AdminJobServiceTest {
         allowJobStart();
         when(projectionService.rebuildAll(anyProjectionProgressConsumer()))
                 .thenReturn(new PolicySearchProjectionService.ProjectionRebuildResult(2650, 2650, 0));
+        when(genderAudienceClassifier.classifyMissingOrStale(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new PolicyGenderAudienceClassifier.GenderClassificationRebuildResult(2650, 10, 8, 0, 2640, 2, 10, 0));
         PolicyLexicalIndex index = index(2650);
         when(lexicalIndexBuilder.refresh()).thenReturn(index);
 
         AdminJobStatus status = service().start("SEARCH_PROJECTION_REBUILD");
 
         assertThat(status.status()).isEqualTo("COMPLETED");
-        assertThat(status.message()).contains("projectionCount=2650", "indexDocumentCount=2650");
+        assertThat(status.message()).contains("projectionCount=2650", "indexDocumentCount=2650",
+                "genderProcessed=10", "genderUnknown=2");
         verify(projectionService).rebuildAll(anyProjectionProgressConsumer());
         verify(lexicalIndexBuilder).refresh();
+        verify(genderAudienceClassifier).classifyMissingOrStale(org.mockito.ArgumentMatchers.any());
         verify(recommendationBatchService).refreshAllProfiles();
         verify(policySyncExecutionGuard).release();
     }
@@ -87,13 +93,17 @@ class AdminJobServiceTest {
         allowJobStart();
         when(policySyncPipelineService.synchronize(eq(PolicySyncMode.INCREMENTAL), eq(PolicyCollectionExecutionType.MANUAL),
                 anyJobProgressConsumer())).thenReturn(syncResult(0));
+        when(genderAudienceClassifier.classifyMissingOrStale(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new PolicyGenderAudienceClassifier.GenderClassificationRebuildResult(2650, 4, 3, 0, 2646, 1, 4, 0));
 
         AdminJobStatus status = service().start("POLICY_SYNC");
 
         assertThat(status.status()).isEqualTo("COMPLETED");
-        assertThat(status.message()).contains("POLICY_SYNC_COMPLETED", "queuedEmbeddingCount=12");
+        assertThat(status.message()).contains("POLICY_SYNC_COMPLETED", "queuedEmbeddingCount=12",
+                "genderProcessed=4", "genderUnknown=1");
         verify(policySyncPipelineService).synchronize(eq(PolicySyncMode.INCREMENTAL), eq(PolicyCollectionExecutionType.MANUAL),
                 anyJobProgressConsumer());
+        verify(genderAudienceClassifier).classifyMissingOrStale(org.mockito.ArgumentMatchers.any());
         verify(recommendationBatchService).refreshAllProfiles();
         verify(policySyncExecutionGuard).release();
     }
@@ -103,13 +113,16 @@ class AdminJobServiceTest {
         allowJobStart();
         when(policySyncPipelineService.synchronize(eq(PolicySyncMode.FULL_REINDEX), eq(PolicyCollectionExecutionType.MANUAL),
                 anyJobProgressConsumer())).thenReturn(syncResult(0));
+        when(genderAudienceClassifier.classifyMissingOrStale(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new PolicyGenderAudienceClassifier.GenderClassificationRebuildResult(2650, 4, 3, 0, 2646, 1, 4, 0));
 
         AdminJobStatus status = service().start("FULL_REINDEX");
 
         assertThat(status.status()).isEqualTo("COMPLETED");
-        assertThat(status.message()).contains("FULL_REINDEX_COMPLETED");
+        assertThat(status.message()).contains("FULL_REINDEX_COMPLETED", "genderProcessed=4", "genderUnknown=1");
         verify(policySyncPipelineService).synchronize(eq(PolicySyncMode.FULL_REINDEX), eq(PolicyCollectionExecutionType.MANUAL),
                 anyJobProgressConsumer());
+        verify(genderAudienceClassifier).classifyMissingOrStale(org.mockito.ArgumentMatchers.any());
         verify(recommendationBatchService).refreshAllProfiles();
         verify(policySyncExecutionGuard).release();
     }
@@ -119,6 +132,8 @@ class AdminJobServiceTest {
         allowJobStart();
         when(policySyncPipelineService.synchronize(eq(PolicySyncMode.INCREMENTAL), eq(PolicyCollectionExecutionType.MANUAL),
                 anyJobProgressConsumer())).thenReturn(syncResult(0));
+        when(genderAudienceClassifier.classifyMissingOrStale(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new PolicyGenderAudienceClassifier.GenderClassificationRebuildResult(2650, 4, 3, 0, 2646, 1, 4, 0));
         doThrow(new IllegalStateException("batch failed")).when(recommendationBatchService).refreshAllProfiles();
 
         AdminJobStatus status = service().start("POLICY_SYNC");
@@ -135,6 +150,8 @@ class AdminJobServiceTest {
         when(regionRebuildService.rebuildAll(anyJobProgressConsumer())).thenReturn(regionResult(2650, 10, 0));
         when(projectionService.rebuildAll(anyProjectionProgressConsumer()))
                 .thenReturn(new PolicySearchProjectionService.ProjectionRebuildResult(2650, 2650, 0));
+        when(genderAudienceClassifier.classifyMissingOrStale(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new PolicyGenderAudienceClassifier.GenderClassificationRebuildResult(2650, 10, 8, 0, 2640, 2, 10, 0));
         PolicyLexicalIndex index = index(2650);
         when(lexicalIndexBuilder.refresh()).thenReturn(index);
 
@@ -143,6 +160,7 @@ class AdminJobServiceTest {
         assertThat(status.status()).isEqualTo("COMPLETED");
         assertThat(status.message()).contains("REGION_REBUILD_COMPLETED changed=10");
         verify(projectionService).rebuildAll(anyProjectionProgressConsumer());
+        verify(genderAudienceClassifier).classifyMissingOrStale(org.mockito.ArgumentMatchers.any());
         verify(lexicalIndexBuilder).refresh();
         verify(recommendationBatchService).refreshAllProfiles();
         verify(policySyncExecutionGuard).release();
@@ -200,10 +218,28 @@ class AdminJobServiceTest {
     }
 
     @Test
+    void policyGenderClassificationRunsStandaloneBatch() {
+        allowJobStart();
+        when(genderAudienceClassifier.classifyMissingOrStale(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new PolicyGenderAudienceClassifier.GenderClassificationRebuildResult(2650, 12, 9, 0, 2638, 3, 12, 0));
+
+        AdminJobStatus status = service().start("POLICY_GENDER_CLASSIFICATION");
+
+        assertThat(status.status()).isEqualTo("COMPLETED");
+        assertThat(status.message()).contains("POLICY_GENDER_CLASSIFICATION_COMPLETED",
+                "processed=12", "unknown=3");
+        verify(genderAudienceClassifier).classifyMissingOrStale(org.mockito.ArgumentMatchers.any());
+        verify(recommendationBatchService, never()).refreshAllProfiles();
+        verify(policySyncExecutionGuard).release();
+    }
+
+    @Test
     void policySyncCompletesWithErrorsWhenIncrementalEmbeddingPartiallyFails() {
         allowJobStart();
         when(policySyncPipelineService.synchronize(eq(PolicySyncMode.INCREMENTAL), eq(PolicyCollectionExecutionType.MANUAL),
                 anyJobProgressConsumer())).thenReturn(syncResult(2));
+        when(genderAudienceClassifier.classifyMissingOrStale(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new PolicyGenderAudienceClassifier.GenderClassificationRebuildResult(2650, 4, 3, 0, 2646, 1, 4, 0));
 
         AdminJobStatus status = service().start("POLICY_SYNC");
 
@@ -231,7 +267,7 @@ class AdminJobServiceTest {
 
     private AdminJobService service() {
         return new AdminJobService(collectionService, embeddingService, regionRebuildService, regionSynchronizationService,
-                projectionService, lexicalIndexBuilder, regionCodeRepository,
+                projectionService, lexicalIndexBuilder, genderAudienceClassifier, regionCodeRepository,
                 policySyncPipelineService, policySyncExecutionGuard, recommendationBatchService, new SyncTaskExecutor());
     }
 
