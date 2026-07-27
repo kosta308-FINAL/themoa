@@ -728,6 +728,10 @@
   font-size: 12px;
   line-height: 1.55;
 }
+.spending-coaching-list article > p .spending-coach-metric {
+  color: var(--spending-text);
+  font-weight: 800;
+}
 .spending-coaching-list article > strong {
   display: block;
   margin-top: 8px;
@@ -801,6 +805,108 @@
   background: #f3f7f4;
   font-size: 22px;
   line-height: 1;
+}
+
+.spending-savings-modal {
+  width: min(520px, calc(100vw - 40px));
+  border-radius: 24px;
+}
+
+.spending-savings-modal .spending-modal-head {
+  align-items: flex-start;
+  padding: 32px 36px 24px;
+}
+
+.spending-savings-modal .spending-modal-head h2 {
+  font-size: 24px;
+  line-height: 1.25;
+}
+
+.spending-savings-modal .spending-modal-head p {
+  max-width: 350px;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.spending-savings-modal .spending-modal-close {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+}
+
+.spending-savings-modal .spending-entry-form {
+  gap: 22px;
+  padding: 30px 36px 36px;
+}
+
+.spending-savings-modal .spending-entry-form label {
+  gap: 11px;
+}
+
+.spending-savings-modal .spending-entry-form label > span {
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.spending-savings-modal .spending-entry-form input {
+  min-height: 60px;
+  padding-inline: 18px 48px;
+  border-radius: 14px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.spending-savings-modal .spending-input-suffix em {
+  right: 19px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+}
+
+.spending-savings-modal .spending-segmented-toggle {
+  gap: 12px;
+}
+
+.spending-savings-modal .spending-segmented-toggle button {
+  min-height: 58px;
+  border-radius: 15px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.spending-savings-modal .spending-form-notice {
+  gap: 12px;
+  padding: 17px 19px;
+  border-radius: 15px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.spending-savings-modal .spending-primary {
+  min-height: 58px;
+  border-radius: 15px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+@media (max-width: 480px) {
+  .spending-savings-modal {
+    width: calc(100vw - 24px);
+    border-radius: 20px;
+  }
+
+  .spending-savings-modal .spending-modal-head {
+    padding: 26px 24px 20px;
+  }
+
+  .spending-savings-modal .spending-entry-form {
+    padding: 24px;
+  }
+
+  .spending-savings-modal .spending-segmented-toggle {
+    grid-template-columns: 1fr;
+  }
 }
 
 .spending-entry-form {
@@ -2403,6 +2509,10 @@
   font-size: 12px;
   line-height: 1.6;
 }
+.spending-coaching-list article > p .spending-coach-metric {
+  color: var(--spending-text);
+  font-weight: 800;
+}
 .spending-coaching-list article > strong {
   display: block;
   margin-top: 7px;
@@ -3876,16 +3986,17 @@
 .spending-surplus-transfer-button {
   display: inline-flex;
   align-items: center;
-  align-self: flex-start;
+  flex: 0 0 auto;
   gap: 5px;
-  margin-top: 5px;
-  padding: 6px 9px;
+  min-height: 32px;
+  padding: 0 11px;
   border: 1px solid #cce9d6;
-  border-radius: 8px;
+  border-radius: 9px;
   color: var(--spending-green-dark);
   background: var(--spending-soft);
   font-size: 11px;
   font-weight: 700;
+  white-space: nowrap;
 }
 .spending-surplus-transfer-button:hover {
   border-color: #9edab3;
@@ -3901,6 +4012,13 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+.spending-surplus-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 .spending-surplus-goal-edit {
   width: 24px;

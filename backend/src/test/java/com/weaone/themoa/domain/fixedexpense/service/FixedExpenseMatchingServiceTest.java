@@ -4,6 +4,7 @@ import com.weaone.themoa.domain.budget.service.BudgetCyclePolicy;
 import com.weaone.themoa.domain.budget.service.BudgetCycleService;
 import com.weaone.themoa.domain.cardtransaction.entity.CardTransaction;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
+import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
 import com.weaone.themoa.domain.category.entity.Category;
 import com.weaone.themoa.domain.category.entity.CategoryCode;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
@@ -53,10 +54,12 @@ class FixedExpenseMatchingServiceTest {
     private NotificationService notificationService;
     @Mock
     private BudgetCycleService budgetCycleService;
+    @Mock
+    private CardTransactionRepository cardTransactionRepository;
 
     private FixedExpenseMatchingService matchingService() {
         return new FixedExpenseMatchingService(fixedExpenseRepository, fixedExpensePaymentRepository,
-                billerRepository, notificationService, budgetCycleService);
+                billerRepository, notificationService, budgetCycleService, cardTransactionRepository);
     }
 
     private Member member() {

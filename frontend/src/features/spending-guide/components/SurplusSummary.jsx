@@ -21,21 +21,34 @@ function SurplusSummary({ data, onSetGoal, onTransfer }) {
           description="예산보다 덜 쓴 금액이 급여 주기마다 쌓여요"
           tone="teal"
         />
-        {data.hasSavingsGoal && (
-          <div className="spending-surplus-goal-badge">
-            <span className="spending-status">
-              저축 목표 {formatWon(data.savingsTargetAmount)}
-            </span>
-            <button
-              type="button"
-              className="spending-surplus-goal-edit"
-              onClick={onSetGoal}
-              aria-label="저축 목표 수정"
-            >
-              <DashboardIcon name="edit" size={14} />
-            </button>
-          </div>
-        )}
+        <div className="spending-surplus-head-actions">
+          {data.hasSavingsGoal && (
+            <div className="spending-surplus-goal-badge">
+              <span className="spending-status">
+                저축 목표 {formatWon(data.savingsTargetAmount)}
+              </span>
+              <button
+                type="button"
+                className="spending-surplus-goal-edit"
+                onClick={onSetGoal}
+                aria-label="저축 목표 수정"
+              >
+                <DashboardIcon name="edit" size={14} />
+              </button>
+            </div>
+          )}
+          {data.ongoingCycle &&
+            toNumber(data.availableSurplusAmount) > 0 && (
+              <button
+                type="button"
+                className="spending-surplus-transfer-button"
+                onClick={onTransfer}
+              >
+                <DashboardIcon name="plus" size={13} />
+                이번 주기에 가져오기
+              </button>
+            )}
+        </div>
       </div>
 
       {data.ongoingCycle ? (
@@ -78,16 +91,6 @@ function SurplusSummary({ data, onSetGoal, onTransfer }) {
                     예산으로 가져온 누적{" "}
                     {formatWon(data.totalSurplusTransferAmount)} 제외
                   </p>
-                )}
-                {toNumber(data.availableSurplusAmount) > 0 && (
-                  <button
-                    type="button"
-                    className="spending-surplus-transfer-button"
-                    onClick={onTransfer}
-                  >
-                    <DashboardIcon name="plus" size={13} />
-                    이번 주기에 가져오기
-                  </button>
                 )}
               </>
             ) : (
