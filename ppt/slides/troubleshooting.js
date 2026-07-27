@@ -37,9 +37,15 @@ document.head.insertAdjacentHTML('beforeend', `
 .s-trouble .placeholder{ background:#fff; border-radius:20px; border:2px dashed #D8DEE5;
   padding:120px 40px; color:#9AA5B1; font-size:22px; font-weight:700; text-align:center; line-height:1.8; }
 
-/* p1(김솔민)만 아래 여백이 커서 카드 3장을 세로 중앙 정렬로 채움 */
-#s-trouble-1 .cases{ top:264px; bottom:64px; display:flex; flex-direction:column; justify-content:center; gap:32px; }
-#s-trouble-1 .tcase{ margin-bottom:0; }
+/* p1(김솔민)만 글자를 키우고 카드 여백을 넉넉히 줘서 공간을 채움 */
+#s-trouble-1 .cases{ top:264px; bottom:64px; display:flex; flex-direction:column; justify-content:center; gap:36px; }
+#s-trouble-1 .tcase{ margin-bottom:0; padding:38px 46px; }
+#s-trouble-1 .ttag{ font-size:16px; padding:7px 16px; }
+#s-trouble-1 .ttitle{ font-size:27px; }
+#s-trouble-1 .half{ font-size:19px; line-height:1.7; }
+#s-trouble-1 .lbl{ font-size:15px; padding:4px 11px; }
+#s-trouble-1 .tname{ font-size:36px; }
+#s-trouble-1 .tavatar{ width:70px; height:70px; font-size:24px; }
 </style>
 `);
 

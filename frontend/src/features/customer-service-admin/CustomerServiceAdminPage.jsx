@@ -68,7 +68,10 @@ function CustomerServiceAdminPage() {
         keyword: keyword || undefined,
         size: 50,
       });
-      setItems(data?.items || []);
+      const sortedItems = [...(data?.items || [])].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+      );
+      setItems(sortedItems);
       setTotalElements(data?.totalElements || 0);
     } catch (requestError) {
       setError(
