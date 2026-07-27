@@ -97,6 +97,12 @@ class SpendingGuideServiceTest {
                 .willReturn(new BigDecimal(amount));
     }
 
+    private void stubSurplusAmounts(Long budgetId) {
+        given(surplusFundTransferRepository.sumAmountByBudget_Id(budgetId)).willReturn(BigDecimal.ZERO);
+        given(surplusFundRepository.sumAmountByMember_Id(MEMBER_ID)).willReturn(BigDecimal.ZERO);
+        given(surplusFundTransferRepository.sumAmountByMember_Id(MEMBER_ID)).willReturn(BigDecimal.ZERO);
+    }
+
     @Test
     @DisplayName("월급·급여일 미등록이면 오류가 아니라 setupRequired=true + missingFields로 반환한다")
     void setupRequiredWhenMissing() {
@@ -119,6 +125,7 @@ class SpendingGuideServiceTest {
         given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member));
         given(budgetCycleService.getOrCreateCurrentBudget(any(), any())).willReturn(budget);
         given(budgetIncomeAdjustmentRepository.sumAmountByBudget_Id(any())).willReturn(BigDecimal.ZERO);
+        stubSurplusAmounts(budget.getId());
         stubNetSpend(start, today.minusDays(1), "250000"); // 어제까지
         stubNetSpend(today, today, "10000");               // 오늘
         stubNetSpend(start, today, "260000");              // 주기 누적
@@ -149,6 +156,7 @@ class SpendingGuideServiceTest {
         given(memberRepository.findById(MEMBER_ID)).willReturn(Optional.of(member));
         given(budgetCycleService.getOrCreateCurrentBudget(any(), any())).willReturn(budget);
         given(budgetIncomeAdjustmentRepository.sumAmountByBudget_Id(any())).willReturn(BigDecimal.ZERO);
+        stubSurplusAmounts(budget.getId());
         stubNetSpend(start, today.minusDays(1), "0");
         stubNetSpend(today, today, "0");
         stubNetSpend(start, today, "50000");
