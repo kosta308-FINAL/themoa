@@ -78,7 +78,29 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
   <div class="phead"><div class="tavatar">호연</div><div class="tname">문호연</div></div>
 
   <div class="cases">
-    <div class="placeholder">문호연님의 트러블슈팅 사례를 여기에 채워주세요.<br>(문제 → 원인 → 해결 형태로 2~3건)</div>
+    <div class="tcase">
+      <div class="ttop"><div class="ttag">배치 처리</div><div class="ttitle">정책 1건 오류가 전체 수집 실패로 전파</div></div>
+      <div class="body">
+        <div class="half prob"><span class="lbl bad">문제</span>정책 수집 중 일부 데이터의 필드 누락이나 저장 오류가 발생하면<br>전체 배치 작업이 함께 중단될 위험이 있었습니다.</div>
+        <div class="half sol"><span class="lbl good">해결</span>정책 단위로 예외를 분리하고 신규·수정·중복·실패 건수를 기록해<br>일부 실패가 전체 수집 작업에 전파되지 않도록 개선했습니다.</div>
+      </div>
+    </div>
+
+    <div class="tcase">
+      <div class="ttop"><div class="ttag">검색 정확도</div><div class="ttitle">신청 불가능한 정책이 검색 상단에 노출</div></div>
+      <div class="body">
+        <div class="half prob"><span class="lbl bad">문제</span>벡터 유사도만으로 후보를 찾다 보니 지역·연령·대상 조건이 맞지 않는<br>정책도 검색 결과 상단에 노출되는 문제가 있었습니다.</div>
+        <div class="half sol"><span class="lbl good">해결</span>Qdrant는 관련 후보 검색에 사용하고 MySQL에서 신청 자격을 검증해<br>신청 가능성이 높은 정책 순으로 재정렬했습니다.</div>
+      </div>
+    </div>
+
+    <div class="tcase">
+      <div class="ttop"><div class="ttag">자연어 처리</div><div class="ttitle">유사한 대상 표현을 다른 조건으로 인식</div></div>
+      <div class="body">
+        <div class="half prob"><span class="lbl bad">문제</span>‘청년’, ‘대학생’, ‘학생’처럼 의미가 비슷한 표현을 다르게 처리해<br>관련 정책이 누락되거나 검색 조건이 불안정해졌습니다.</div>
+        <div class="half sol"><span class="lbl good">해결</span>지역·나이·대상·관심 분야를 구조화해 추출하고 유사한 표현을<br>공통 조건으로 정규화해 검색 필터에 반영했습니다.</div>
+      </div>
+    </div>
   </div>
 </section>
 
