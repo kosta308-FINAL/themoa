@@ -11,6 +11,7 @@ import com.weaone.themoa.domain.cardtransaction.dto.response.CategorySummaryList
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
+import com.weaone.themoa.domain.cardtransaction.service.CardTransactionResponseMapper;
 import com.weaone.themoa.domain.cardtransaction.support.BackfillWindowPolicy;
 import com.weaone.themoa.domain.member.entity.Gender;
 import com.weaone.themoa.domain.member.entity.IncomeType;
@@ -53,6 +54,8 @@ class SpendingGuideServiceTest {
     @Mock
     private CardTransactionRepository cardTransactionRepository;
     @Mock
+    private CardTransactionResponseMapper cardTransactionResponseMapper;
+    @Mock
     private CardConnectionRepository cardConnectionRepository;
     @Mock
     private MemberWorkScheduleRepository memberWorkScheduleRepository;
@@ -65,8 +68,8 @@ class SpendingGuideServiceTest {
 
     private SpendingGuideService service() {
         return new SpendingGuideService(memberRepository, budgetRepository, budgetCycleService, cardTransactionRepository,
-                cardConnectionRepository, memberWorkScheduleRepository, workScheduleSalaryCalculator, budgetIncomeAdjustmentRepository,
-                surplusFundRepository);
+                cardTransactionResponseMapper, cardConnectionRepository, memberWorkScheduleRepository, workScheduleSalaryCalculator,
+                budgetIncomeAdjustmentRepository, surplusFundRepository);
     }
 
     private Member member(BigDecimal salary, Integer payday, BigDecimal savingsTarget) {

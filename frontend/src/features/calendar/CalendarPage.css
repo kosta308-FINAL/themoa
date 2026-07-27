@@ -1,5 +1,9 @@
 .calendar-page {
+  flex: 1;
   width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 30px 40px 56px;
 }
 
 .calendar-topbar {
@@ -379,7 +383,17 @@
   }
 }
 
+@media (max-width: 1180px) {
+  .calendar-page {
+    padding-inline: 24px;
+  }
+}
+
 @media (max-width: 760px) {
+  .calendar-page {
+    padding: 24px 24px 40px;
+  }
+
   .calendar-toolbar {
     align-items: stretch;
     flex-direction: column;
@@ -416,5 +430,11 @@
   .calendar-day-panel-header {
     align-items: stretch;
     flex-direction: column;
+  }
+}
+
+@media (max-width: 720px) {
+  .calendar-page {
+    padding: 22px 16px 42px;
   }
 }

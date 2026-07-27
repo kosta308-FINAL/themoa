@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { usePolicyBookmarks } from "../../hooks/usePolicyBookmarks";
 import PolicyRecommendationProfileForm from "./PolicyRecommendationProfileForm";
 import PolicyRecommendationProfileSummary from "./PolicyRecommendationProfileSummary";
@@ -7,11 +8,9 @@ function PolicyRecommendationSection({
   recommendation,
   onSaveProfile,
   onRefresh,
-  onOpenDetail,
-  onCollapse,
-  selected,
 }) {
   const bookmarks = usePolicyBookmarks();
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const {
     profile,
     recommendations,
@@ -35,12 +34,32 @@ function PolicyRecommendationSection({
     }
   };
 
+  const isProfileUnchanged = (payload) =>
+    (payload.residenceSido || "") === (profile?.residenceSido || "") &&
+    (payload.residenceSigungu || null) ===
+      (profile?.residenceSigungu || null) &&
+    (payload.employmentStatus || "") === (profile?.employmentStatus || "");
+
+  const handleProfileUpdate = async (payload) => {
+    setIsEditingProfile(false);
+    if (isProfileUnchanged(payload)) {
+      return;
+    }
+    try {
+      await onSaveProfile(payload);
+    } catch {
+      // 서버 오류 문구는 Hook의 mutationError로 표시한다.
+    }
+  };
+
   return (
     <section className="policy-recommendation-panel">
       <div className="policy-recommendation-head">
         <div>
           <h2>
-            {profile?.configured ? "회원님을 위한 추천 정책" : "나에게 맞는 정책 추천받기"}
+            {profile?.configured
+              ? "회원님을 위한 추천 정책"
+              : "나에게 맞는 정책 추천받기"}
           </h2>
           <p>
             {profile?.configured
@@ -50,28 +69,38 @@ function PolicyRecommendationSection({
         </div>
         <div className="policy-recommendation-head-actions">
           {profile?.configured && (
-            <button
-              type="button"
-              className="policy-recommendation-refresh"
-              disabled={isSaving}
-              onClick={handleRefresh}
-            >
-              {isSaving ? "계산 중..." : "다시 추천받기"}
-            </button>
-          )}
-          {onCollapse && (
-            <button type="button" className="policy-recommendation-collapse" onClick={onCollapse}>
-              직접 검색으로
-            </button>
+            <>
+              <button
+                type="button"
+                className="policy-recommendation-edit"
+                onClick={() => setIsEditingProfile(true)}
+              >
+                추천 조건 수정
+              </button>
+              <button
+                type="button"
+                className="policy-recommendation-refresh"
+                disabled={isSaving}
+                onClick={handleRefresh}
+              >
+                {isSaving ? "계산 중..." : "다시 추천받기"}
+              </button>
+            </>
           )}
         </div>
       </div>
 
-      {isLoading && <div className="policy-empty">추천 정보를 불러오는 중입니다.</div>}
+      {isLoading && (
+        <div className="policy-empty">추천 정보를 불러오는 중입니다.</div>
+      )}
       {!isLoading && profileError && (
         <div className="policy-recommendation-state">
           <p>{profileError}</p>
-          <button type="button" className="policy-primary-button" onClick={recommendation.load}>
+          <button
+            type="button"
+            className="policy-primary-button"
+            onClick={recommendation.load}
+          >
             다시 불러오기
           </button>
         </div>
@@ -79,7 +108,11 @@ function PolicyRecommendationSection({
       {profileReady && regionError && (
         <div className="policy-recommendation-state">
           <p>{regionError}</p>
-          <button type="button" className="policy-primary-button" onClick={recommendation.load}>
+          <button
+            type="button"
+            className="policy-primary-button"
+            onClick={recommendation.load}
+          >
             다시 불러오기
           </button>
         </div>
@@ -95,51 +128,122 @@ function PolicyRecommendationSection({
       )}
       {profileReady && profile?.configured && (
         <>
-          <PolicyRecommendationProfileSummary profile={recommendations?.profile || profile} />
-          {recommendationWarning && (
-            <div className="policy-recommendation-warning">
-              <p>{recommendationWarning}</p>
+          <PolicyRecommendationProfileSummary
+            profile={recommendations?.profile || profile}
+          />
+          {isSaving ? (
+            <div
+              className="policy-recommendation-recalculating"
+              role="status"
+              aria-live="polite"
+            >
+              <span className="policy-recommendation-recalculating-spinner" />
+              <strong>변경된 조건에 맞춰 다시 추천해드려요</strong>
+              <p>정책을 다시 계산하고 있어요. 잠시만 기다려주세요.</p>
+            </div>
+          ) : (
+            <>
+              {recommendationWarning && (
+                <div className="policy-recommendation-warning">
+                  <p>{recommendationWarning}</p>
+                  <button
+                    type="button"
+                    className="policy-primary-button"
+                    disabled={isSaving}
+                    onClick={handleRefresh}
+                  >
+                    다시 추천받기
+                  </button>
+                </div>
+              )}
+              {mutationError && (
+                <p className="policy-recommendation-error">{mutationError}</p>
+              )}
+              {recommendationError && (
+                <div className="policy-recommendation-state">
+                  <p>{recommendationError}</p>
+                  <button
+                    type="button"
+                    className="policy-primary-button"
+                    onClick={recommendation.load}
+                  >
+                    다시 불러오기
+                  </button>
+                </div>
+              )}
+              {!recommendationError && recommendations?.items?.length === 0 && (
+                <div className="policy-empty">
+                  현재 기본 조건과 일치하는 추천 정책이 없어요. 아래 자연어
+                  검색에서 다른 조건으로 찾아볼 수 있어요.
+                </div>
+              )}
+              {!recommendationError && recommendations?.items?.length > 0 && (
+                <div className="policy-recommendation-list">
+                  {recommendations.items.map((item, index) => (
+                    <PolicyRecommendationTile
+                      key={item.policyId}
+                      item={item}
+                      rank={index + 1}
+                      bookmarked={bookmarks.isBookmarked(item.policyId)}
+                      bookmarkBusy={
+                        bookmarks.loading ||
+                        bookmarks.busyPolicyId === item.policyId
+                      }
+                      onBookmarkToggle={bookmarks.toggleBookmark}
+                    />
+                  ))}
+                </div>
+              )}
+              {bookmarks.error && (
+                <p className="policy-bookmark-error">{bookmarks.error}</p>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {isEditingProfile && (
+        <div
+          className="policy-recommendation-modal-backdrop"
+          role="presentation"
+          onMouseDown={() => setIsEditingProfile(false)}
+        >
+          <section
+            className="policy-recommendation-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="policy-recommendation-edit-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="policy-recommendation-modal-head">
+              <div>
+                <h2 id="policy-recommendation-edit-title">추천 조건 수정</h2>
+                <p>
+                  거주지와 취업 상태를 변경하면 추천 정책을 다시 계산해드려요.
+                </p>
+              </div>
               <button
                 type="button"
-                className="policy-primary-button"
-                disabled={isSaving}
-                onClick={handleRefresh}
+                className="policy-recommendation-modal-close"
+                onClick={() => setIsEditingProfile(false)}
+                aria-label="닫기"
               >
-                {isSaving ? "계산 중..." : "다시 추천받기"}
+                ×
               </button>
             </div>
-          )}
-          {mutationError && <p className="policy-recommendation-error">{mutationError}</p>}
-          {recommendationError && (
-            <div className="policy-recommendation-state">
-              <p>{recommendationError}</p>
-              <button type="button" className="policy-primary-button" onClick={recommendation.load}>
-                다시 불러오기
-              </button>
-            </div>
-          )}
-          {!recommendationError && recommendations?.items?.length === 0 && (
-            <div className="policy-empty">
-              현재 기본 조건과 일치하는 추천 정책이 없어요. 아래 자연어 검색에서 다른 조건으로 찾아볼 수 있어요.
-            </div>
-          )}
-          {!recommendationError && recommendations?.items?.length > 0 && (
-            <div className="policy-recommendation-grid">
-              {recommendations.items.map((item) => (
-                <PolicyRecommendationTile
-                  key={item.policyId}
-                  item={item}
-                  active={selected?.policyId === item.policyId}
-                  bookmarked={bookmarks.isBookmarked(item.policyId)}
-                  bookmarkBusy={bookmarks.loading || bookmarks.busyPolicyId === item.policyId}
-                  onBookmarkToggle={bookmarks.toggleBookmark}
-                  onOpenDetail={onOpenDetail}
-                />
-              ))}
-            </div>
-          )}
-          {bookmarks.error && <p className="policy-bookmark-error">{bookmarks.error}</p>}
-        </>
+            <PolicyRecommendationProfileForm
+              profile={profile}
+              regions={regions}
+              isSaving={isSaving}
+              submitLabel="저장"
+              onCancel={() => setIsEditingProfile(false)}
+              onSubmit={handleProfileUpdate}
+            />
+            {mutationError && (
+              <p className="policy-recommendation-error">{mutationError}</p>
+            )}
+          </section>
+        </div>
       )}
     </section>
   );
