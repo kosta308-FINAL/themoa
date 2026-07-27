@@ -110,7 +110,7 @@ function FixedExpenseList({
       {sorted.length ? (
         <div className="fx-expense-list">
           {sorted.map(({ item, schedule }) => {
-            const badge = item.paymentStatus
+            const badge = item.paymentMethod === "CARD" && item.paymentStatus
               ? paymentStatusBadge(item.paymentStatus)
               : schedule
                 ? scheduleBadge(schedule.daysUntil)

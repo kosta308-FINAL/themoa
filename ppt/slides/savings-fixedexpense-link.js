@@ -27,11 +27,7 @@ document.head.insertAdjacentHTML('beforeend', `
 #s-savlink .connector{ height:558px; display:flex; flex-direction:column; align-items:center; justify-content:center; transform:translateY(18px); }
 #s-savlink .connector.show{ transform:translateY(0); }
 #s-savlink .connector svg{ display:block; }
-#s-savlink .connector .arrow-svg{ width:132px; height:36px; color:#23945A; margin-bottom:20px; }
-#s-savlink .connector .badge{ width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#FFFFFF; color:#0B8B55; border:1px solid #DFEEE6; box-shadow:0 13px 26px rgba(27,83,55,.12); margin-bottom:14px; }
-#s-savlink .connector .badge svg{ width:42px; height:42px; }
-#s-savlink .connector .evname{ color:#007A3D; font-size:17px; font-weight:850; text-align:center; line-height:1.32; letter-spacing:0; }
-#s-savlink .connector .move-text{ color:#007A3D; font-size:20px; font-weight:850; text-align:center; line-height:1.25; letter-spacing:0; }
+#s-savlink .connector .arrow-svg{ width:132px; height:36px; color:#23945A; }
 #s-savlink .benefits{ position:absolute; left:56px; top:814px; width:1808px; height:158px; border-radius:24px; background:rgba(255,255,255,.94); border:1px solid rgba(211,224,216,.9); box-shadow:0 16px 34px rgba(24,54,39,.11); display:grid; grid-template-columns:repeat(4,1fr); overflow:hidden; z-index:3; transform:translateY(18px); }
 #s-savlink .benefits.show{ transform:translateY(0); }
 #s-savlink .benefit{ display:flex; align-items:center; gap:20px; padding:23px 28px; position:relative; }
@@ -64,12 +60,6 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
         <path d="M5 18h101" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"></path>
         <path d="M94 6l28 12-28 12" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
       </svg>
-      <div class="badge">
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path d="M35 4L15 35h16l-3 25 21-35H33l2-21z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"></path>
-        </svg>
-      </div>
-      <div class="evname">SavingsSubscription<br>CreatedEvent</div>
     </div>
 
     <div class="stepcard frag" data-step="3">
@@ -90,13 +80,6 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
         <path d="M5 18h101" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"></path>
         <path d="M94 6l28 12-28 12" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
       </svg>
-      <div class="badge">
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path d="M18 8h22l8 8v40H18V8z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"></path>
-          <path d="M39 8v11h11M25 29h16M25 39h12" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path>
-        </svg>
-      </div>
-      <div class="move-text">탭하면<br>상세로</div>
     </div>
 
     <div class="stepcard frag" data-step="5">

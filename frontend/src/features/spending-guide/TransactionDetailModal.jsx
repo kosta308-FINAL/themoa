@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   correctTransactionAmount,
   correctTransactionCanceledAmount,
@@ -70,8 +71,11 @@ function TransactionDetailModal({
   const [transaction, setTransaction] = useState(null);
   const [categoryId, setCategoryId] = useState("");
   const [memo, setMemo] = useState("");
-  const [categoryOpen, setCategoryOpen] = useState(false);
-  const [memoOpen, setMemoOpen] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
+  const [categoryMenuRect, setCategoryMenuRect] = useState(null);
+  const categoryTriggerRef = useRef(null);
+  const categoryMenuRef = useRef(null);
   const [labelOpen, setLabelOpen] = useState(false);
   const [labelInput, setLabelInput] = useState("");
   const [canceledAmountOpen, setCanceledAmountOpen] = useState(false);
@@ -120,6 +124,64 @@ function TransactionDetailModal({
     };
   }, [transactionId]);
 
+  useEffect(() => {
+    if (!justSaved) return undefined;
+    const timer = window.setTimeout(() => setJustSaved(false), 1800);
+    return () => window.clearTimeout(timer);
+  }, [justSaved]);
+
+  useEffect(() => {
+    if (!categoryPickerOpen) return undefined;
+    const handleOutsideClick = (event) => {
+      if (
+        categoryTriggerRef.current?.contains(event.target) ||
+        categoryMenuRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+      setCategoryPickerOpen(false);
+    };
+    // capture phase: the menu's own list scroll fires a "scroll" event too
+    // (it doesn't bubble, but capture listeners on window still see it), so
+    // scrolling inside the dropdown must not be treated as "scrolled away".
+    const handleScroll = (event) => {
+      if (categoryMenuRef.current?.contains(event.target)) return;
+      setCategoryPickerOpen(false);
+    };
+    const handleResize = () => setCategoryPickerOpen(false);
+    document.addEventListener("mousedown", handleOutsideClick);
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleResize);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [categoryPickerOpen]);
+
+  const toggleCategoryPicker = () => {
+    if (categoryPickerOpen) {
+      setCategoryPickerOpen(false);
+      return;
+    }
+    const rect = categoryTriggerRef.current?.getBoundingClientRect();
+    if (rect) {
+      const width = Math.min(240, Math.max(rect.width, 160));
+      setCategoryMenuRect({
+        top: rect.bottom + 6,
+        left: rect.right - width,
+        width,
+      });
+    }
+    setCategoryPickerOpen(true);
+  };
+
+  const originalCategoryId = String(transaction?.categoryId || "");
+  const originalMemo = transaction?.memo || "";
+  const isEditDirty =
+    Boolean(transaction) &&
+    (categoryId !== originalCategoryId || memo !== originalMemo);
+
   const save = async (type, request) => {
     setError("");
     setPending(type);
@@ -139,18 +201,28 @@ function TransactionDetailModal({
     }
   };
 
-  const handleCategoryChange = async (category) => {
-    const saved = await save("category", () =>
-      updateTransactionCategory(transactionId, Number(category.id)),
-    );
-    if (saved) setCategoryOpen(false);
-  };
-
-  const handleMemoSave = async () => {
-    const saved = await save("memo", () =>
-      updateTransactionMemo(transactionId, memo.trim() || null),
-    );
-    if (saved) setMemoOpen(false);
+  const handleSaveEdits = async () => {
+    if (!isEditDirty) return;
+    setError("");
+    setPending("edit");
+    try {
+      if (categoryId !== originalCategoryId) {
+        await updateTransactionCategory(transactionId, Number(categoryId));
+      }
+      if (memo !== originalMemo) {
+        await updateTransactionMemo(transactionId, memo.trim() || null);
+      }
+      await load();
+      await onChanged();
+      setJustSaved(true);
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ||
+          "변경사항을 저장하지 못했습니다.",
+      );
+    } finally {
+      setPending("");
+    }
   };
 
   const handleLabelSave = async () => {
@@ -335,63 +407,80 @@ function TransactionDetailModal({
                     : "카드 자동수집"}
                 </strong>
               </div>
-              <div className="spending-detail-row">
+              <div className="spending-detail-row spending-detail-row-edit">
                 <span>카테고리</span>
-                <strong>
-                  {transaction.categoryName ||
-                    categories?.find(
-                      (category) => String(category.id) === categoryId,
-                    )?.name ||
-                    "미분류"}
-                </strong>
-                <button
-                  type="button"
-                  onClick={() => setCategoryOpen((open) => !open)}
-                >
-                  변경
-                </button>
-              </div>
-              <div
-                className={`spending-detail-category-picker${categoryOpen ? " open" : ""}`}
-              >
-                {(categories || []).map((category) => (
+                <div className="spending-detail-select-field">
                   <button
                     type="button"
-                    key={category.id}
+                    ref={categoryTriggerRef}
+                    className="spending-select-trigger"
+                    aria-expanded={categoryPickerOpen}
                     disabled={Boolean(pending)}
-                    onClick={() => handleCategoryChange(category)}
+                    onClick={toggleCategoryPicker}
                   >
-                    {category.name}
+                    <span className={categoryId ? "" : "placeholder"}>
+                      {categories?.find(
+                        (category) => String(category.id) === categoryId,
+                      )?.name || "미분류"}
+                    </span>
+                    <DashboardIcon name="chevron-down" size={16} />
                   </button>
-                ))}
+                  {categoryPickerOpen &&
+                    categoryMenuRect &&
+                    createPortal(
+                      <ul
+                        ref={categoryMenuRef}
+                        className="spending-select-dropdown spending-detail-select-dropdown-portal"
+                        role="listbox"
+                        style={{
+                          position: "fixed",
+                          top: categoryMenuRect.top,
+                          left: categoryMenuRect.left,
+                          width: categoryMenuRect.width,
+                        }}
+                        onMouseDown={(event) => event.stopPropagation()}
+                      >
+                        {(categories || []).map((category) => (
+                          <li key={category.id}>
+                            <button
+                              type="button"
+                              role="option"
+                              aria-selected={
+                                String(category.id) === categoryId
+                              }
+                              className={
+                                String(category.id) === categoryId
+                                  ? "selected"
+                                  : ""
+                              }
+                              onClick={() => {
+                                setCategoryId(String(category.id));
+                                setJustSaved(false);
+                                setCategoryPickerOpen(false);
+                              }}
+                            >
+                              {category.name}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>,
+                      document.body,
+                    )}
+                </div>
               </div>
-              <div className="spending-detail-row">
+              <div className="spending-detail-row spending-detail-row-edit">
                 <span>메모</span>
-                <strong>{transaction.memo || "메모 없음"}</strong>
-                <button
-                  type="button"
-                  onClick={() => setMemoOpen((open) => !open)}
-                >
-                  {transaction.memo ? "수정" : "추가"}
-                </button>
-              </div>
-              <div
-                className={`spending-detail-inline-edit${memoOpen ? " open" : ""}`}
-              >
                 <input
+                  className="spending-detail-text-input"
                   value={memo}
                   maxLength={100}
-                  onChange={(event) => setMemo(event.target.value)}
+                  disabled={Boolean(pending)}
+                  onChange={(event) => {
+                    setMemo(event.target.value);
+                    setJustSaved(false);
+                  }}
                   placeholder="메모를 입력하세요"
                 />
-                <button
-                  type="button"
-                  className="spending-secondary"
-                  disabled={Boolean(pending)}
-                  onClick={handleMemoSave}
-                >
-                  저장
-                </button>
               </div>
               {transaction.cancelAmountUncertain && (
                 <>
@@ -481,6 +570,25 @@ function TransactionDetailModal({
                   </div>
                 </>
               )}
+            </div>
+            <div className="spending-detail-save-bar">
+              <button
+                type="button"
+                className={`spending-primary spending-detail-save-button${justSaved ? " success" : ""}`}
+                disabled={!isEditDirty || Boolean(pending)}
+                onClick={handleSaveEdits}
+              >
+                {pending === "edit" ? (
+                  "저장 중..."
+                ) : justSaved ? (
+                  <>
+                    <DashboardIcon name="check" size={14} />
+                    수정되었습니다
+                  </>
+                ) : (
+                  "변경"
+                )}
+              </button>
             </div>
             {transaction.fixedExpenseId ? (
               <div className="spending-detail-fixed-linked">

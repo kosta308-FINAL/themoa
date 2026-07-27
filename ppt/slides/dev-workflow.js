@@ -39,7 +39,7 @@ document.head.insertAdjacentHTML('beforeend', `
 #s-dev-workflow .arrow.a4{ left:1419px; }
 
 /* 반복 루프 */
-#s-dev-workflow .loop{ left:70px; top:548px; width:1780px; }
+#s-dev-workflow .loop{ left:599px; top:548px; width:1083px; }
 #s-dev-workflow .loop svg{ display:block; }
 #s-dev-workflow .looplabel{
   position:absolute; left:50%; top:8px; transform:translateX(-50%);
@@ -114,8 +114,8 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
   </div>
 
   <div class="abs loop">
-    <svg viewBox="0 0 1780 90" width="1780" height="90">
-      <path d="M1612,10 C1612,70 529,70 529,10" fill="none" stroke="#B7C0CC" stroke-width="4" marker-end="url(#dw-arrow)"/>
+    <svg viewBox="0 0 1083 90" width="1083" height="90">
+      <path d="M1083,10 C1083,70 0,70 0,10" fill="none" stroke="#B7C0CC" stroke-width="4" marker-end="url(#dw-arrow)"/>
       <defs>
         <marker id="dw-arrow" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
           <path d="M0,0 L6,3 L0,6 Z" fill="#B7C0CC"/>

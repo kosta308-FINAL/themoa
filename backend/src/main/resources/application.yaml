@@ -265,3 +265,10 @@ app:
     storage:
       provider: ${CUSTOMER_SERVICE_STORAGE_PROVIDER:LOCAL}
       local-root: ${CUSTOMER_SERVICE_UPLOAD_DIR:./.local-storage/customer-service}
+
+  demo-seed:
+    # member_id=1(email=test) 앞으로 정책 데모 시드/북마크를 미리 채워 넣는 로컬 데모용 스위치.
+    # 정책 동기화(청년센터 API 수집·임베딩)가 끝나기 전에도 정책 상세·북마크 화면을 확인하려고 켠다.
+    # PolicyDemoSeeder, DemoPolicyBookmarkSeeder 참고.
+    policies-enabled: ${POLICY_DEMO_SEED_ENABLED:true}
+    policy-bookmarks-enabled: ${POLICY_BOOKMARK_DEMO_SEED_ENABLED:true}

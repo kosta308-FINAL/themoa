@@ -575,7 +575,7 @@ function ExpenseDetailModal({
                     없어요. 아래에서 직접 입력할 수 있어요.
                   </p>
                 )}
-                {expense.paymentStatus && (
+                {expense.paymentMethod === "CARD" && expense.paymentStatus && (
                   <div className="fx-detail-row">
                     <span>이번 달 이행 상태</span>
                     <strong>
@@ -597,7 +597,8 @@ function ExpenseDetailModal({
                 />
               )}
 
-              {!(expense.paymentMethod === "CARD" && hasCardConnection) &&
+              {expense.paymentMethod === "CARD" &&
+                !hasCardConnection &&
                 (expense.paymentStatus === "DUE_SOON" ||
                   expense.paymentStatus === "MISSED") && (
                   <div className="fx-manual-confirm">

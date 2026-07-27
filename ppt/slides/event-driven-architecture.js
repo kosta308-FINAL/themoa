@@ -45,23 +45,23 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
       <div class="sitem2">
         <div class="snum2">01</div>
         <div>
-          <div class="stitle2">connectedId 발급</div>
-          <div class="sdesc2">카드사 로그인 정보는 암호화해 SDK에 전달만 하고 저장하지 않습니다.<br>발급받은 연결 식별자(connectedId)만 DB에 남깁니다.</div>
+          <div class="stitle2">cardconnection은 cardtransaction을 모른다</div>
+          <div class="sdesc2">연동 성공·재시도·자동수집 재개 시점마다 cardconnection 도메인은<br>이벤트만 발행할 뿐, 백필을 담당하는 cardtransaction 도메인의<br>존재 자체를 알지 못합니다.</div>
         </div>
       </div>
       <div class="sitem2">
         <div class="snum2">02</div>
         <div>
           <div class="stitle2">비동기 승인내역 백필</div>
-          <div class="sdesc2">연동에 성공하면 이벤트를 발행하고, 별도 리스너가 커밋 이후<br>승인내역 수집을 비동기로 처리해 화면 응답이 지연되지 않습니다.</div>
+          <div class="sdesc2">cardtransaction의 리스너가 이 이벤트들을 구독해 커밋 이후<br>승인내역 수집을 비동기로 처리해 화면 응답이 지연되지 않습니다.</div>
           <div class="scode">@Async @TransactionalEventListener(AFTER_COMMIT)</div>
         </div>
       </div>
       <div class="sitem2">
         <div class="snum2">03</div>
         <div>
-          <div class="stitle2">실패코드 분기 + 쿨다운</div>
-          <div class="sdesc2">CF-12801(비밀번호 오류) 같은 실패 코드별로 다르게 처리하고,<br>반복 실패 시에는 계정을 잠가 추가 시도를 막습니다.</div>
+          <div class="stitle2">트리거가 늘어도 리스너는 그대로</div>
+          <div class="sdesc2">최초 연동뿐 아니라 재시도·재개 같은 진입점이 늘어나도<br>이벤트 클래스만 추가하면 되고, 백필을 처리하는<br>리스너·서비스 코드는 그대로 재사용됩니다.</div>
         </div>
       </div>
       </div>
