@@ -9,6 +9,7 @@ import com.weaone.themoa.domain.budget.service.SpendingGuideService;
 import com.weaone.themoa.domain.cardtransaction.dto.response.ConsumptionHistorySummaryResponse;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
+import com.weaone.themoa.domain.cardtransaction.service.CardTransactionResponseMapper;
 import com.weaone.themoa.domain.member.entity.Gender;
 import com.weaone.themoa.domain.member.entity.Member;
 import org.junit.jupiter.api.DisplayName;
@@ -43,9 +44,11 @@ class ConsumptionHistoryServiceTest {
     private BudgetRepository budgetRepository;
     @Mock
     private CardTransactionRepository cardTransactionRepository;
+    @Mock
+    private CardTransactionResponseMapper cardTransactionResponseMapper;
 
     private ConsumptionHistoryService service() {
-        return new ConsumptionHistoryService(spendingGuideService, budgetRepository, cardTransactionRepository);
+        return new ConsumptionHistoryService(spendingGuideService, budgetRepository, cardTransactionRepository, cardTransactionResponseMapper);
     }
 
     private Member member() {
