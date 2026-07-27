@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import DashboardIcon from "../../../../components/common/DashboardIcon";
+import OptionPicker from "../../../../components/common/OptionPicker";
 import { EMPLOYMENT_STATUS_LABELS } from "../hooks/usePolicyRecommendations";
 
 function PolicyRecommendationProfileForm({
@@ -15,6 +17,9 @@ function PolicyRecommendationProfileForm({
     profile?.employmentStatus || "",
   );
   const [formError, setFormError] = useState("");
+  const [isSidoOpen, setIsSidoOpen] = useState(false);
+  const [isSigunguOpen, setIsSigunguOpen] = useState(false);
+  const [isEmploymentOpen, setIsEmploymentOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -29,12 +34,33 @@ function PolicyRecommendationProfileForm({
     () => regions.find((item) => item.sido === sido),
     [regions, sido],
   );
-  const sigunguOptions = selectedRegion?.sigungu || [];
+  const sigunguOptions = useMemo(
+    () => selectedRegion?.sigungu || [],
+    [selectedRegion],
+  );
   const sigunguRequired = sigunguOptions.length > 0;
 
-  const handleSidoChange = (event) => {
-    setSido(event.target.value);
+  const sidoOptions = useMemo(
+    () => regions.map((item) => ({ value: item.sido, label: item.sido })),
+    [regions],
+  );
+  const sigunguPickerOptions = useMemo(
+    () => sigunguOptions.map((item) => ({ value: item, label: item })),
+    [sigunguOptions],
+  );
+  const employmentOptions = useMemo(
+    () =>
+      Object.entries(EMPLOYMENT_STATUS_LABELS).map(([value, label]) => ({
+        value,
+        label,
+      })),
+    [],
+  );
+
+  const handleSidoSelect = (value) => {
+    setSido(value);
     setSigungu("");
+    setIsSidoOpen(false);
   };
 
   const handleSubmit = async (event) => {
@@ -70,47 +96,81 @@ function PolicyRecommendationProfileForm({
         <strong>만 {profile?.age ?? "-"}세</strong>
         <p>회원가입 시 입력한 생년월일을 기준으로 자동 계산됩니다.</p>
       </div>
-      <label>
-        거주 시·도
-        <select value={sido} onChange={handleSidoChange} disabled={isSaving}>
-          <option value="">선택</option>
-          {regions.map((item) => (
-            <option key={item.sido} value={item.sido}>
-              {item.sido}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        거주 시·군·구
-        <select
-          value={sigungu}
-          onChange={(event) => setSigungu(event.target.value)}
-          disabled={isSaving || !sido || !sigunguRequired}
-        >
-          <option value="">{sigunguRequired ? "선택" : "해당 없음"}</option>
-          {sigunguOptions.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        취업 상태
-        <select
-          value={employmentStatus}
-          onChange={(event) => setEmploymentStatus(event.target.value)}
-          disabled={isSaving}
-        >
-          <option value="">선택</option>
-          {Object.entries(EMPLOYMENT_STATUS_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="policy-recommendation-select">
+        <span>거주 시·도</span>
+        <div className="policy-recommendation-select-field">
+          <button
+            type="button"
+            className="policy-recommendation-select-trigger"
+            disabled={isSaving}
+            onClick={() => setIsSidoOpen((open) => !open)}
+          >
+            {sido || "선택"}
+            <DashboardIcon name="chevron-down" size={13} />
+          </button>
+          {isSidoOpen && (
+            <OptionPicker
+              options={sidoOptions}
+              value={sido}
+              title="거주 시·도 선택"
+              onSelect={handleSidoSelect}
+              onClose={() => setIsSidoOpen(false)}
+            />
+          )}
+        </div>
+      </div>
+      <div className="policy-recommendation-select">
+        <span>거주 시·군·구</span>
+        <div className="policy-recommendation-select-field">
+          <button
+            type="button"
+            className="policy-recommendation-select-trigger"
+            disabled={isSaving || !sido || !sigunguRequired}
+            onClick={() => setIsSigunguOpen((open) => !open)}
+          >
+            {sigungu || (sigunguRequired ? "선택" : "해당 없음")}
+            <DashboardIcon name="chevron-down" size={13} />
+          </button>
+          {isSigunguOpen && (
+            <OptionPicker
+              options={sigunguPickerOptions}
+              value={sigungu}
+              title="거주 시·군·구 선택"
+              onSelect={(value) => {
+                setSigungu(value);
+                setIsSigunguOpen(false);
+              }}
+              onClose={() => setIsSigunguOpen(false)}
+            />
+          )}
+        </div>
+      </div>
+      <div className="policy-recommendation-select">
+        <span>취업 상태</span>
+        <div className="policy-recommendation-select-field">
+          <button
+            type="button"
+            className="policy-recommendation-select-trigger"
+            disabled={isSaving}
+            onClick={() => setIsEmploymentOpen((open) => !open)}
+          >
+            {EMPLOYMENT_STATUS_LABELS[employmentStatus] || "선택"}
+            <DashboardIcon name="chevron-down" size={13} />
+          </button>
+          {isEmploymentOpen && (
+            <OptionPicker
+              options={employmentOptions}
+              value={employmentStatus}
+              title="취업 상태 선택"
+              onSelect={(value) => {
+                setEmploymentStatus(value);
+                setIsEmploymentOpen(false);
+              }}
+              onClose={() => setIsEmploymentOpen(false)}
+            />
+          )}
+        </div>
+      </div>
       {formError && <p className="policy-recommendation-error">{formError}</p>}
       <div className="policy-recommendation-form-actions">
         {onCancel && (
@@ -123,7 +183,11 @@ function PolicyRecommendationProfileForm({
             취소
           </button>
         )}
-        <button type="submit" className="policy-primary-button" disabled={isSaving}>
+        <button
+          type="submit"
+          className="policy-primary-button"
+          disabled={isSaving}
+        >
           {isSaving ? "저장 중..." : submitLabel}
         </button>
       </div>

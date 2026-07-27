@@ -28,34 +28,49 @@ document.head.insertAdjacentHTML('beforeend', `
 /* 스크린샷 위 강조 박스 */
 #s90 .hl{
   position:absolute; border:3px solid #007613; border-radius:12px;
-  box-shadow:0 0 0 4px rgba(0,118,19,.12); pointer-events:none;
+  box-shadow:0 0 0 4px rgba(0,118,19,.12); cursor:pointer; transition:opacity .3s ease;
 }
+/* ── 호버 확대(zoom) ── 강조박스/설명에 마우스 올리면 그 영역을 원본 해상도로 크게 팝업 */
+#s90.zooming .hl{ opacity:0; }
+#s90.zooming .badge{ opacity:0; }
+#s90 .zoompop{ position:absolute; opacity:0; pointer-events:none; z-index:20;
+  background-repeat:no-repeat; border:3px solid #007613; border-radius:12px;
+  box-shadow:0 22px 55px rgba(0,0,0,.35); transition:opacity .2s ease; }
+#s90 .zoompop.show{ opacity:1; }
+#s90 .zoomnum{ position:absolute; top:-18px; left:-18px;
+  width:46px; height:46px; border-radius:50%; background:#007613; color:#fff;
+  display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800;
+  box-shadow:0 8px 18px rgba(0,118,19,.4); }
+#s90 .zoomwire{ opacity:0; transition:opacity .2s ease; }
+#s90 .zoomwire.show{ opacity:1; }
 
 /* 스크린샷 위 번호 배지 */
 #s90 .badge{
   position:absolute; width:40px; height:40px; border-radius:50%;
   background:#007613; color:#fff; display:flex; align-items:center; justify-content:center;
   font-size:17px; font-weight:800; box-shadow:0 8px 18px rgba(0,118,19,.35); z-index:4;
+  transition:opacity .3s ease;
 }
-
-/* 연결선 */
-#s90 .wires{ position:absolute; inset:0; z-index:1; pointer-events:none; }
 
 /* 우측 설명 리스트 */
 #s90 .citem{
   position:absolute; left:1300px; width:560px; display:flex; align-items:flex-start; gap:18px;
+  transform-origin:left center; cursor:pointer; transition:transform .2s ease;
 }
+#s90 .citem.big{ transform:scale(1.5); z-index:6; }
 #s90 .cnum{
   width:44px; height:44px; border-radius:50%; flex:none;
   background:#007613; color:#fff; display:flex; align-items:center; justify-content:center;
   font-size:18px; font-weight:800; box-shadow:0 8px 18px rgba(0,118,19,.3);
 }
-#s90 .ctitle{ color:#171717; font-size:21px; font-weight:800; margin-bottom:6px; }
-#s90 .cdesc{ color:#666; font-size:15px; font-weight:500; line-height:1.5; }
+#s90 .ctitle{ color:#171717; font-size:23px; font-weight:800; margin-bottom:7px; width:fit-content; padding:0 4px; }
+#s90 .cdesc{ color:#555; font-size:17px; font-weight:500; line-height:1.5; }
+/* 호버한 항목의 소제목에만 노란 형광펜 */
+#s90 .citem.big .ctitle{ background:linear-gradient(transparent 55%, rgba(255,224,20,.65) 55%); }
 
 /* 클릭 유도 힌트 (마지막 단계에서는 숨김) */
 #s90 .hint{
-  position:absolute; left:70px; top:970px; color:#6B7C8A; font-size:16px; font-weight:700;
+  position:absolute; right:70px; top:970px; color:#6B7C8A; font-size:16px; font-weight:700;
   display:flex; align-items:center; gap:6px; transition:opacity .3s ease; z-index:5;
 }
 #s90[data-step="4"] .hint{ opacity:0; pointer-events:none; }
@@ -69,7 +84,13 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
   <!-- 이 슬라이드의 최대 스텝 수(4)를 엔진에 알려주는 표시용 마커 -->
   <div class="frag" data-step="4" style="display:none"></div>
 
-  <div class="abs hint">클릭하면 다음 화면으로 <span class="arrow">→</span></div>
+  <div class="abs hint">다음 화면으로 <span class="arrow">→</span></div>
+
+  <!-- 호버 확대(공용): 팝업 + 번호 + 연결선 -->
+  <div class="zoompop"><span class="zoomnum"></span></div>
+  <svg class="abs zoomwire" viewBox="0 0 1920 1080" width="1920" height="1080" style="left:0;top:0;z-index:19;pointer-events:none">
+    <path d="" fill="none" stroke="#007613" stroke-width="3" opacity=".75"/>
+  </svg>
 
   <!-- ========================= STEP 0 : 소비가이드 (상단) ========================= -->
   <div class="step step0">
@@ -89,13 +110,6 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="abs badge" style="left:841px; top:413px;">02</div>
     <div class="abs badge" style="left:151px; top:649px;">03</div>
     <div class="abs badge" style="left:722px; top:649px;">04</div>
-
-    <svg class="abs wires" viewBox="0 0 1920 1080" width="1920" height="1080">
-      <path d="M850,531  Q1150,430 1300,352" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1134,531 Q1230,500 1300,487" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M724,724  Q1080,660 1300,622" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1133,795 Q1230,780 1300,757" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-    </svg>
 
     <div class="citem" style="top:330px;">
       <div class="cnum">01</div>
@@ -144,12 +158,6 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="abs badge" style="left:722px; top:459px;">02</div>
     <div class="abs badge" style="left:151px; top:552px;">03</div>
 
-    <svg class="abs wires" viewBox="0 0 1920 1080" width="1920" height="1080">
-      <path d="M724,392  Q1080,380 1300,372" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1133,583 Q1230,562 1300,542" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M724,740  Q1080,726 1300,712" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-    </svg>
-
     <div class="citem" style="top:350px;">
       <div class="cnum">01</div>
       <div>
@@ -194,14 +202,6 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="abs badge" style="left:151px; top:706px;">04</div>
     <div class="abs badge" style="left:818px; top:813px;">05</div>
 
-    <svg class="abs wires" viewBox="0 0 1920 1080" width="1920" height="1080">
-      <path d="M1134,450 Q1230,390 1300,322" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M828,630  Q1080,540 1300,452" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1134,659 Q1230,620 1300,582" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M828,850  Q1080,780 1300,712" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1134,946 Q1230,894 1300,842" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-    </svg>
-
     <div class="citem" style="top:300px;">
       <div class="cnum">01</div>
       <div>
@@ -244,23 +244,17 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="abs htitle">소비 흐름을 그래프와 순위로</div>
     <div class="abs hsub">급여 주기 전체의 결제 흐름과 자주 이용한 곳을<br>한 번에 확인할 수 있습니다.</div>
 
-    <div class="abs shotcard" style="height:850px;">
+    <div class="abs shotcard" style="left:180px; top:175px; width:760px; height:900px;">
       <div class="img" style="background-image:url('assets/s90_transactions.png'); background-position:center top;"></div>
     </div>
 
-    <div class="abs hl" style="left:771px; top:449px; width:291px; height:341px;"></div>
-    <div class="abs hl" style="left:233px; top:580px; width:520px; height:211px;"></div>
-    <div class="abs hl" style="left:233px; top:816px; width:563px; height:264px;"></div>
+    <div class="abs hl" style="left:643px; top:320px; width:192px; height:225px;"></div>
+    <div class="abs hl" style="left:288px; top:406px; width:344px; height:139px;"></div>
+    <div class="abs hl" style="left:288px; top:562px; width:372px; height:174px;"></div>
 
-    <div class="abs badge" style="left:739px; top:417px;">01</div>
-    <div class="abs badge" style="left:217px; top:564px;">02</div>
-    <div class="abs badge" style="left:217px; top:800px;">03</div>
-
-    <svg class="abs wires" viewBox="0 0 1920 1080" width="1920" height="1080">
-      <path d="M1062,620 Q1180,600 1300,372" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M753,686  Q1080,600 1300,542" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M796,948  Q1080,830 1300,712" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-    </svg>
+    <div class="abs badge" style="left:611px; top:288px;">01</div>
+    <div class="abs badge" style="left:256px; top:374px;">02</div>
+    <div class="abs badge" style="left:256px; top:530px;">03</div>
 
     <div class="citem" style="top:350px;">
       <div class="cnum">01</div>
@@ -290,29 +284,21 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     <div class="abs htitle">카테고리 하나만 파고들기</div>
     <div class="abs hsub">카테고리를 선택하면 지난 주기 대비 변화부터<br>결제내역, 소비 시점까지 한 화면에서 보여줍니다.</div>
 
-    <div class="abs shotcard" style="height:850px;">
+    <div class="abs shotcard" style="left:180px; top:245px; width:760px; height:750px;">
       <div class="img" style="background-image:url('assets/s90_category_detail.png'); background-position:center top;"></div>
     </div>
 
-    <div class="abs hl" style="left:194px; top:374px; width:475px; height:359px;"></div>
-    <div class="abs hl" style="left:682px; top:374px; width:403px; height:359px;"></div>
-    <div class="abs hl" style="left:194px; top:747px; width:891px; height:39px;"></div>
-    <div class="abs hl" style="left:194px; top:799px; width:593px; height:281px;"></div>
-    <div class="abs hl" style="left:800px; top:799px; width:285px; height:281px;"></div>
+    <div class="abs hl" style="left:262px; top:340px; width:314px; height:237px;"></div>
+    <div class="abs hl" style="left:585px; top:340px; width:266px; height:237px;"></div>
+    <div class="abs hl" style="left:262px; top:587px; width:589px; height:26px;"></div>
+    <div class="abs hl" style="left:262px; top:621px; width:392px; height:186px;"></div>
+    <div class="abs hl" style="left:662px; top:621px; width:188px; height:186px;"></div>
 
-    <div class="abs badge" style="left:170px; top:344px;">01</div>
-    <div class="abs badge" style="left:658px; top:344px;">02</div>
-    <div class="abs badge" style="left:154px; top:746px;">03</div>
-    <div class="abs badge" style="left:170px; top:875px;">04</div>
-    <div class="abs badge" style="left:770px; top:755px;">05</div>
-
-    <svg class="abs wires" viewBox="0 0 1920 1080" width="1920" height="1080">
-      <path d="M669,554  Q1150,400 1300,262" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1085,554 Q1160,470 1300,394" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1085,767 Q1160,640 1300,524" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M787,940  Q1150,780 1300,654" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-      <path d="M1085,940 Q1160,850 1300,784" fill="none" stroke="#007613" stroke-width="2.5" opacity=".55"/>
-    </svg>
+    <div class="abs badge" style="left:246px; top:320px;">01</div>
+    <div class="abs badge" style="left:569px; top:320px;">02</div>
+    <div class="abs badge" style="left:236px; top:586px;">03</div>
+    <div class="abs badge" style="left:246px; top:671px;">04</div>
+    <div class="abs badge" style="left:643px; top:592px;">05</div>
 
     <div class="citem" style="top:240px;">
       <div class="cnum">01</div>
@@ -352,3 +338,71 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
   </div>
 </section>
 `);
+
+/* ── 호버 확대: 5단계(step0~4) 모두 적용 ──
+   강조박스(또는 설명)에 마우스 올리면 그 영역을 원본 해상도로 크게 팝업 + 번호 + 직선 연결선 + 소제목 노란 형광펜 */
+(function(){
+  const sec = document.getElementById('s90');
+  if(!sec) return;
+  const pop = sec.querySelector('.zoompop');
+  const zoomnum = pop.querySelector('.zoomnum');
+  const zoomwire = sec.querySelector('.zoomwire');
+  const zoompath = zoomwire.querySelector('path');
+  const NATW = 1600, Z = 1.55;
+  // 스크린샷 원본 세로 픽셀(파일명으로 구분) — center bottom 보정 계산에 사용
+  const NATH = { spending_guide:1821, fixed_expense:1821, transactions:2004, category_detail:1737 };
+  sec.querySelectorAll('.step').forEach(function(step){
+    const card  = step.querySelector('.shotcard');
+    const imgEl = step.querySelector('.shotcard .img');
+    if(!card || !imgEl) return;
+    const bg = imgEl.style.backgroundImage;
+    // 카드(스크린샷) 실제 배치를 스텝마다 읽어옴 — 스텝별로 크기/위치가 달라도 정확
+    const CARD_L = card.offsetLeft, CARD_T = card.offsetTop;
+    const DISP_W = card.offsetWidth, CARD_H = card.offsetHeight;
+    let natH = 1821;
+    Object.keys(NATH).forEach(function(k){ if(bg.indexOf(k) >= 0) natH = NATH[k]; });
+    const imgDispH = natH * (DISP_W / NATW);
+    // center bottom(아래로 스크롤된 화면)은 숨은 위쪽만큼 보정
+    const bottom = /bottom/.test(imgEl.style.backgroundPosition || '');
+    const topHidden = bottom ? (imgDispH - CARD_H) : 0;
+    const hls = Array.from(step.querySelectorAll('.hl'));
+    const items = Array.from(step.querySelectorAll('.citem'));
+    hls.forEach(function(hl, i){
+      const item = items[i];
+      const on = function(){
+        const rx = hl.offsetLeft - CARD_L;
+        const ry = hl.offsetTop  - CARD_T;
+        const rw = hl.offsetWidth, rh = hl.offsetHeight;
+        const iy = ry + topHidden;
+        const z = Math.min(Z, 1200/rw, 800/rh);   // 폭 넓으면 배율 축소(오른쪽 설명 안 가림)
+        const popW = rw*z, popH = rh*z;
+        let popL = hl.offsetLeft - rw*(z-1)/2;
+        let popT = hl.offsetTop  - rh*(z-1)/2;
+        popL = Math.max(20, Math.min(popL, 1920 - popW - 20));
+        popT = Math.max(20, Math.min(popT, 1080 - popH - 20));
+        pop.style.left = popL+'px'; pop.style.top = popT+'px';
+        pop.style.width = popW+'px'; pop.style.height = popH+'px';
+        pop.style.backgroundImage    = bg;
+        pop.style.backgroundSize     = (DISP_W*z)+'px auto';
+        pop.style.backgroundPosition = (-rx*z)+'px '+(-iy*z)+'px';
+        pop.classList.add('show');
+        sec.classList.add('zooming');
+        if(item) item.classList.add('big');
+        const popR = popL+popW, popCY = popT+popH/2;
+        if(item){
+          zoomnum.textContent = item.querySelector('.cnum').textContent;
+          const ex = item.offsetLeft, ey = item.offsetTop + 26;
+          zoompath.setAttribute('d', 'M'+popR+','+popCY+' L'+ex+','+ey);
+          zoomwire.classList.add('show');
+        }
+      };
+      const off = function(){
+        pop.classList.remove('show');
+        zoomwire.classList.remove('show');
+        sec.classList.remove('zooming');
+        if(item) item.classList.remove('big');
+      };
+      [hl, item].forEach(function(t){ if(t){ t.addEventListener('mouseenter', on); t.addEventListener('mouseleave', off); } });
+    });
+  });
+})();

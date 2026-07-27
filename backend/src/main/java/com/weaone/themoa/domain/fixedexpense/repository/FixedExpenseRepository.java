@@ -29,6 +29,8 @@ public interface FixedExpenseRepository extends JpaRepository<FixedExpense, Long
             """)
     List<FixedExpense> findByMember_IdAndStatus(Long memberId, FixedExpenseStatus status);
 
+    boolean existsByMember_IdAndName(Long memberId, String name);
+
     /** 수집 매칭 조건①(fixedExpense.md §5) — 이름 기반 alias 대조. */
     List<FixedExpense> findByMember_IdAndMerchantAlias_IdAndStatusAndPaymentMethod(
             Long memberId, Long merchantAliasId, FixedExpenseStatus status, FixedExpensePaymentMethod paymentMethod);

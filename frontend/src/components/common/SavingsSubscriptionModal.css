@@ -139,17 +139,7 @@
   color: var(--dash-text-secondary, #6b7a72);
 }
 
-.ss-field-row {
-  display: flex;
-  gap: 12px;
-}
-
-.ss-field-row .ss-field {
-  flex: 1;
-}
-
-.ss-field input,
-.ss-field select {
+.ss-field input {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--dash-border, #d8e3dc);
@@ -160,8 +150,40 @@
   background: #fff;
 }
 
-.ss-field input:focus,
-.ss-field select:focus {
+.ss-field input:focus {
+  outline: none;
+  border-color: var(--dash-accent, #22c55e);
+}
+
+.ss-term-field,
+.ss-date-field {
+  position: relative;
+}
+
+.ss-term-trigger,
+.ss-date-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--dash-border, #d8e3dc);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--dash-text, #1f2a24);
+  background: #fff;
+  cursor: pointer;
+}
+
+.ss-term-trigger {
+  justify-content: space-between;
+}
+
+.ss-term-trigger:focus-visible,
+.ss-date-trigger:focus-visible,
+.ss-term-trigger:hover,
+.ss-date-trigger:hover {
   outline: none;
   border-color: var(--dash-accent, #22c55e);
 }
