@@ -18,4 +18,7 @@ public interface CategoryKeywordRuleRepository extends JpaRepository<CategoryKey
             + "where :merchantNameRaw like concat('%', r.keyword, '%') "
             + "order by case when r.priority is null then 1 else 0 end, r.priority asc, length(r.keyword) desc")
     List<CategoryKeywordRule> findMatchingOrderByPriority(@Param("merchantNameRaw") String merchantNameRaw);
+
+    /** 시더가 "없는 것만 추가"할 때 쓰는 존재 확인(완전일치). */
+    boolean existsByKeyword(String keyword);
 }
