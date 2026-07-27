@@ -2,8 +2,6 @@
 document.head.insertAdjacentHTML('beforeend', `
 <style>
 #s92{ background:transparent; color:#0F1B2A; }
-#s92::before{ content:""; position:absolute; right:-170px; top:-120px; width:760px; height:310px; border-radius:0 0 0 90%; background:linear-gradient(180deg,rgba(16,185,129,.12),rgba(16,185,129,.02)); transform:rotate(8deg); }
-#s92::after{ content:""; position:absolute; left:-220px; bottom:-145px; width:760px; height:260px; border-radius:50%; background:linear-gradient(90deg,rgba(16,185,129,.18),rgba(255,255,255,0)); transform:rotate(13deg); }
 #s92 .ptitle{ position:absolute; left:58px; top:50px; width:980px; font-size:54px; font-weight:850; line-height:1.08; color:#0E1A2A; letter-spacing:0; }
 #s92 .ptitle .accent{ color:#007A3D; }
 #s92 .psub{ position:absolute; left:60px; top:124px; width:1580px; color:#152235; font-size:25px; font-weight:560; line-height:1.46; letter-spacing:0; }
