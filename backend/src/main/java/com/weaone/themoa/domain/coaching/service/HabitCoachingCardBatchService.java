@@ -118,7 +118,8 @@ public class HabitCoachingCardBatchService {
         }
         String expectedSaving = candidate.estimatedSaving().toBigInteger().toString();
         String expectedMonthly = candidate.monthlyAverage().toBigInteger().toString();
-        return draft.body().contains(expectedSaving) || draft.body().contains(expectedMonthly);
+        String normalizedBody = draft.body().replace(",", "");
+        return normalizedBody.contains(expectedSaving) || normalizedBody.contains(expectedMonthly);
     }
 
     private void saveCard(Member member, String yearMonth, HabitCoachingCandidate candidate, CoachingCardDraft draft,

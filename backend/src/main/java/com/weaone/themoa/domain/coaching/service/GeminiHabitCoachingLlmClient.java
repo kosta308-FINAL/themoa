@@ -47,6 +47,7 @@ public class GeminiHabitCoachingLlmClient implements HabitCoachingLlmClient {
                선택 제안까지만 쓴다. "~하세요" 같은 지시형은 쓰지 않는다.
             6) toneDown이 true인 후보는 사용자가 이미 "필요한 소비"로 표시한 항목이다 — 단정적 절약 권유 없이
                담담한 정보 제공 톤으로만 쓴다.
+            7) 금액은 천 단위마다 쉼표(,)를 넣어 표기한다(예: 107,300원). 쉼표 없이 붙여 쓰지 않는다.
             각 카드는 targetRef, title, body 세 필드만 가진다. targetRef는 입력값을 그대로 되돌려준다.
             """;
 
