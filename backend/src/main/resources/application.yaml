@@ -205,6 +205,13 @@ app:
     # profile 상관없이 이 값 + ROLE_ADMIN(SecurityConfig)로만 통제한다. true일 때만 prod에서도 사용 가능.
     admin-tools:
       enabled: ${POLICY_ADMIN_TOOLS_ENABLED:false}
+    gender-classification:
+      enabled: ${POLICY_GENDER_CLASSIFICATION_ENABLED:true}
+      batch-size: ${POLICY_GENDER_CLASSIFICATION_BATCH_SIZE:20}
+      concurrency: ${POLICY_GENDER_CLASSIFICATION_CONCURRENCY:2}
+      max-retries: ${POLICY_GENDER_CLASSIFICATION_MAX_RETRIES:2}
+      retry-backoff: ${POLICY_GENDER_CLASSIFICATION_RETRY_BACKOFF:2s}
+      call-timeout: ${POLICY_GENDER_CLASSIFICATION_CALL_TIMEOUT:45s}
     sync:
       enabled: ${POLICY_DAILY_SYNC_ENABLED:false}
       cron: ${POLICY_DAILY_SYNC_CRON:0 0 4 * * *}
@@ -258,3 +265,10 @@ app:
     storage:
       provider: ${CUSTOMER_SERVICE_STORAGE_PROVIDER:LOCAL}
       local-root: ${CUSTOMER_SERVICE_UPLOAD_DIR:./.local-storage/customer-service}
+
+  demo-seed:
+    # member_id=1(email=test) 앞으로 정책 데모 시드/북마크를 미리 채워 넣는 로컬 데모용 스위치.
+    # 정책 동기화(청년센터 API 수집·임베딩)가 끝나기 전에도 정책 상세·북마크 화면을 확인하려고 켠다.
+    # PolicyDemoSeeder, DemoPolicyBookmarkSeeder 참고.
+    policies-enabled: ${POLICY_DEMO_SEED_ENABLED:true}
+    policy-bookmarks-enabled: ${POLICY_BOOKMARK_DEMO_SEED_ENABLED:true}

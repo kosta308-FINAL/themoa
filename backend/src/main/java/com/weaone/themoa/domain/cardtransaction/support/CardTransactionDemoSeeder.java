@@ -24,8 +24,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,14 +50,19 @@ import java.util.List;
 @Slf4j
 @Component
 @Order(10)
+@ConditionalOnProperty(prefix = "app.demo.card-transaction", name = "enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 public class CardTransactionDemoSeeder implements ApplicationRunner {
 
     private static final String SEED_RESOURCE = "seed/demo-card-transactions.json";
     private static final String CARD_ISSUER_ORGANIZATION = "0306"; // 신한카드(실제 데모 카드 발급사)
     private static final String DEMO_CONNECTED_ID = "DEMO-SEED-CONNECTED-ID";
-    private static final BigDecimal DEMO_SALARY_AMOUNT = new BigDecimal("2000000");
+    private static final BigDecimal DEMO_SALARY_AMOUNT = new BigDecimal("1700000");
     private static final int DEMO_PAYDAY = 5;
+    /** 추천 폼 "월 납입가능금액" 기본값(RecommendQueryService)이 이 값의 평균으로 채워지길 원해서 맞춘
+     * 목표치. 3월 주기는 카드 연동 첫 며칠(4/1~4/4)치만 실제 거래가 잡혀 잉여금이 비정상적으로 커지므로
+     * (월급 대비 실사용액이 거의 없어 보임), 소급 적립 직후 이 값으로 균일하게 덮어써 데모 평균을 고정한다. */
+    private static final BigDecimal DEMO_SURPLUS_TARGET_AMOUNT = new BigDecimal("300000");
 
     private final MemberRepository memberRepository;
     private final CardConnectionRepository cardConnectionRepository;
@@ -68,15 +75,44 @@ public class CardTransactionDemoSeeder implements ApplicationRunner {
     private final SurplusFundBatchService surplusFundBatchService;
     private final HabitCoachingCardBatchService habitCoachingCardBatchService;
     private final ObjectMapper objectMapper;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) throws IOException {
         Member member = memberRepository.findByEmail(MemberDemoSeeder.DEMO_EMAIL).orElse(null);
-        if (member == null || cardTransactionRepository.existsByMember_Id(member.getId())) {
+        if (member == null) {
             return;
         }
 
+        // entry_mode를 CARD로 승격한다 — 이미 CARD면 no-op(Member.startCardSync 자체 가드).
+        // cardSyncStartedAt에 실제 카드 연동 시각이 아닌 createdAt을 쓰는 이유: 이 값은 카테고리 도넛
+        // 주기 이동 하한(BackfillWindowPolicy.calendarFloor, 3개월 전 1일)에만 쓰이는데, 데모 거래내역이
+        // createdAt 이전 날짜(4/1~)까지 채워져 있어 실제 연동 시각을 몰라도 이 값이면 정확히 그 범위를 덮는다.
+        member.startCardSync(member.getCreatedAt());
+
+        if (!cardTransactionRepository.existsByMember_Id(member.getId())) {
+            seedDemoData(member);
+        } else if (!member.hasSpendingGuideSetup()) {
+            // 최초 시드 이후 salary_amount/payday가 비워진 드리프트(다른 기능 테스트 등)를 재기동 시
+            // 데모 기본값(월급 1,700,000원·급여일 5일)으로 복구한다. setup()은 멱등이라 기존
+            // budget 스냅샷을 다시 만들지 않고 회원 필드만 채운다.
+            spendingGuideService.setup(member.getId(),
+                    new SpendingGuideSetupRequest(IncomeType.SALARY, DEMO_SALARY_AMOUNT, null, null, DEMO_PAYDAY));
+            log.info("데모 소비가이드 설정 드리프트 복구 완료(member_id={}, salary={}, payday={})",
+                    member.getId(), DEMO_SALARY_AMOUNT, DEMO_PAYDAY);
+        }
+
+        // 습관 코칭 카드 생성은 원래 월급일 새벽 배치(HabitCoachingCardBatchService.runPaydayBatch)가
+        // 매일 돌며 새로 완료된 주기를 채우는데, 로컬/데모 환경은 서버가 상시 기동돼 있지 않아 그 배치를
+        // 놓치기 쉽다. year_month 단위 존재 확인으로 멱등하므로 앱을 띄울 때마다 여기서도 한 번 더
+        // 확인해 최신 완료 주기 카드가 비어 있지 않게 한다(seedDemoData 최초 1회 여부와 무관하게 항상 실행).
+        if (member.getPayday() != null) {
+            habitCoachingCardBatchService.generateForMember(member.getId(), LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL));
+        }
+    }
+
+    private void seedDemoData(Member member) throws IOException {
         CardIssuer cardIssuer = cardIssuerRepository.findById(CARD_ISSUER_ORGANIZATION)
                 .orElseThrow(() -> new IllegalStateException(CARD_ISSUER_ORGANIZATION + " 카드사가 시드되지 않았습니다."));
         CardConnection cardConnection = cardConnectionRepository
@@ -92,7 +128,6 @@ public class CardTransactionDemoSeeder implements ApplicationRunner {
         }
         log.info("데모 카드 거래내역 {}건 시드 완료(member_id={})", created, member.getId());
 
-        // entry_mode는 MANUAL로 유지한다(startCardSync 호출 안 함) — 시연 계정은 UI상 수기모드를 유지하되
         // 더미데이터만 카드 연동이 끝난 것처럼 보이도록 초기수집 상태를 직접 COMPLETED로 마무리 짓는다.
         // 이걸 안 하면 initial_sync_status가 NOT_STARTED로 남아 프론트 InitialSyncView가 "카드 소비내역을
         // 동기화하고 있어요" 스피너를 영구히 띄운다.
@@ -118,14 +153,15 @@ public class CardTransactionDemoSeeder implements ApplicationRunner {
         }
         log.info("데모 잉여금 적립 완료(member_id={}, 완료주기={}건)", member.getId(), endedCycles.size());
 
+        // 방금 적립한 완료 주기들의 잉여금을 데모용 목표치로 균일하게 맞춘다(DEMO_SURPLUS_TARGET_AMOUNT
+        // 주석 참고) — 추천 폼 월 납입가능금액 기본값이 평균을 그대로 쓰므로, 3월 주기 이상치 하나 때문에
+        // 평균이 크게 튀는 걸 막는다.
+        int normalized = jdbcTemplate.update(
+                "UPDATE surplus_fund SET amount = ? WHERE member_id = ?", DEMO_SURPLUS_TARGET_AMOUNT, member.getId());
+        log.info("데모 잉여금 금액 정규화 완료(member_id={}, {}건 -> {}원)", member.getId(), normalized, DEMO_SURPLUS_TARGET_AMOUNT);
+
         fixedExpenseDetectionService.detectForMember(member.getId());
         log.info("데모 고정지출 후보 탐지 완료(member_id={})", member.getId());
-
-        // 습관 코칭 카드도 실제 급여일 새벽 배치와 같은 온디맨드 진입점을 그대로 호출한다 — 직전 완료
-        // 주기의 실제 card_transaction(SYNC, 소비성 카테고리)을 규칙 계층(HabitSavingRatioPolicy)으로
-        // 집계해 상위 3개를 뽑고 LLM(실패 시 템플릿 폴백)으로 문구를 써서 저장한다. 손으로 만든 문구가 아니다.
-        habitCoachingCardBatchService.generateForMember(member.getId(), today);
-        log.info("데모 습관 코칭 카드 생성 완료(member_id={})", member.getId());
     }
 
     private List<CodefApprovalRecord> loadRecords() throws IOException {

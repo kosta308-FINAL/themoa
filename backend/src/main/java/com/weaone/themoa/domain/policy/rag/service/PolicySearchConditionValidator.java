@@ -67,7 +67,9 @@ public class PolicySearchConditionValidator {
                 workplace(regionContext, parsed).city(),
                 workplace(regionContext, parsed).district(),
                 workplace(regionContext, parsed).regionName(),
-                workplace(regionContext, parsed).status().name());
+                workplace(regionContext, parsed).status().name(),
+                parsed == null ? null : parsed.gender(),
+                parsed != null && parsed.genderExplicit());
     }
 
     private String employmentFromParsedWithEvidence(String query, PolicySearchCondition parsed) {

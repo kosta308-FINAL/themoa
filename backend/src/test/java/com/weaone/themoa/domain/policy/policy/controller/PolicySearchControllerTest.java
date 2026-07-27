@@ -63,7 +63,7 @@ class PolicySearchControllerTest {
     @Test
     @DisplayName("검색 정상 응답의 ApiResponse와 JSON 필드 계약을 유지한다")
     void searchReturnsApiResponse() throws Exception {
-        given(searchService.search(any(PolicySearchRequest.class)))
+        given(searchService.search(any(PolicySearchRequest.class), org.mockito.ArgumentMatchers.isNull()))
                 .willReturn(new PolicySearchResponse("answer", null, "RULE", false, "LEXICAL", 1, 0, List.of(), null));
 
         mockMvc.perform(post("/api/policies/search")
@@ -78,7 +78,7 @@ class PolicySearchControllerTest {
     @Test
     @DisplayName("정책 검색 준비가 되지 않으면 POLICY_SEARCH_NOT_READY를 반환한다")
     void searchNotReadyReturnsBusinessError() throws Exception {
-        given(searchService.search(any(PolicySearchRequest.class)))
+        given(searchService.search(any(PolicySearchRequest.class), org.mockito.ArgumentMatchers.isNull()))
                 .willThrow(new BusinessException(ErrorCode.POLICY_SEARCH_NOT_READY));
 
         mockMvc.perform(post("/api/policies/search")

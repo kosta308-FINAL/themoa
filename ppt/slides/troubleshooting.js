@@ -36,6 +36,16 @@ document.head.insertAdjacentHTML('beforeend', `
 
 .s-trouble .placeholder{ background:#fff; border-radius:20px; border:2px dashed #D8DEE5;
   padding:120px 40px; color:#9AA5B1; font-size:22px; font-weight:700; text-align:center; line-height:1.8; }
+
+/* p1(김솔민)만 글자를 키우고 카드 여백을 넉넉히 줘서 공간을 채움 (헤더 바로 아래에서 시작하는 건 p2/p3와 동일) */
+#s-trouble-1 .cases{ top:264px; }
+#s-trouble-1 .tcase{ margin-bottom:36px; padding:38px 46px; }
+#s-trouble-1 .ttag{ font-size:16px; padding:7px 16px; }
+#s-trouble-1 .ttitle{ font-size:27px; }
+#s-trouble-1 .half{ font-size:19px; line-height:1.7; }
+#s-trouble-1 .lbl{ font-size:15px; padding:4px 11px; }
+#s-trouble-1 .tname{ font-size:36px; }
+#s-trouble-1 .tavatar{ width:70px; height:70px; font-size:24px; }
 </style>
 `);
 
@@ -78,7 +88,29 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
   <div class="phead"><div class="tavatar">호연</div><div class="tname">문호연</div></div>
 
   <div class="cases">
-    <div class="placeholder">문호연님의 트러블슈팅 사례를 여기에 채워주세요.<br>(문제 → 원인 → 해결 형태로 2~3건)</div>
+    <div class="tcase">
+      <div class="ttop"><div class="ttag">배치 처리</div><div class="ttitle">정책 1건 오류가 전체 수집 실패로 전파</div></div>
+      <div class="body">
+        <div class="half prob"><span class="lbl bad">문제</span>정책 수집 중 일부 데이터의 필드 누락이나 저장 오류가 발생하면<br>전체 배치 작업이 함께 중단될 위험이 있었습니다.</div>
+        <div class="half sol"><span class="lbl good">해결</span>정책 단위로 예외를 분리하고 신규·수정·중복·실패 건수를 기록해<br>일부 실패가 전체 수집 작업에 전파되지 않도록 개선했습니다.</div>
+      </div>
+    </div>
+
+    <div class="tcase">
+      <div class="ttop"><div class="ttag">검색 정확도</div><div class="ttitle">신청 불가능한 정책이 검색 상단에 노출</div></div>
+      <div class="body">
+        <div class="half prob"><span class="lbl bad">문제</span>벡터 유사도만으로 후보를 찾다 보니 지역·연령·대상 조건이 맞지 않는<br>정책도 검색 결과 상단에 노출되는 문제가 있었습니다.</div>
+        <div class="half sol"><span class="lbl good">해결</span>Qdrant는 관련 후보 검색에 사용하고 MySQL에서 신청 자격을 검증해<br>신청 가능성이 높은 정책 순으로 재정렬했습니다.</div>
+      </div>
+    </div>
+
+    <div class="tcase">
+      <div class="ttop"><div class="ttag">자연어 처리</div><div class="ttitle">유사한 대상 표현을 다른 조건으로 인식</div></div>
+      <div class="body">
+        <div class="half prob"><span class="lbl bad">문제</span>‘청년’, ‘대학생’, ‘학생’처럼 의미가 비슷한 표현을 다르게 처리해<br>관련 정책이 누락되거나 검색 조건이 불안정해졌습니다.</div>
+        <div class="half sol"><span class="lbl good">해결</span>지역·나이·대상·관심 분야를 구조화해 추출하고 유사한 표현을<br>공통 조건으로 정규화해 검색 필터에 반영했습니다.</div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -88,7 +120,29 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
   <div class="phead"><div class="tavatar">수지</div><div class="tname">임수지</div></div>
 
   <div class="cases">
-    <div class="placeholder">임수지님의 트러블슈팅 사례를 여기에 채워주세요.<br>(문제 → 원인 → 해결 형태로 2~3건)</div>
+    <div class="tcase">
+      <div class="ttop"><div class="ttag">검색 정확도</div><div class="ttitle">금융상품 검색 정확도 개선</div></div>
+      <div class="body">
+        <div class="half prob"><span class="lbl bad">문제</span>임베딩 모델이 청년·임산부·아동을 같은 복지 의미 공간으로 인식해<br>‘청년’ 검색 시 대상이 다른 상품까지 상위에 노출됐습니다.</div>
+        <div class="half sol"><span class="lbl good">해결</span>Hybrid Search(BM25+Vector)로 키워드 일치도를 우선 반영하고<br>target_group 메타데이터로 Hard Filter를 추가해 정확도를 높였습니다.</div>
+      </div>
+    </div>
+
+    <div class="tcase">
+      <div class="ttop"><div class="ttag">추천 로직</div><div class="ttitle">금융상품 추천 점수 왜곡 개선</div></div>
+      <div class="body">
+        <div class="half prob"><span class="lbl bad">문제</span>정기예금이 위험도·유동성·복리 점수에서 중복 가산돼<br>안정형 성향 사용자에게 항상 1순위로 추천됐습니다.</div>
+        <div class="half sol"><span class="lbl good">해결</span>목돈 보유 여부와 최소 예치금(50만 원) 조건을 추가하고<br>점수 계산 로직을 모든 항목에 일괄 적용해 현실성을 높였습니다.</div>
+      </div>
+    </div>
+
+    <div class="tcase">
+      <div class="ttop"><div class="ttag">LLM 신뢰성</div><div class="ttitle">LLM 응답 신뢰성 개선</div></div>
+      <div class="body">
+        <div class="half prob"><span class="lbl bad">문제</span>호출마다 LLM이 상품 정보를 새로 파싱해 동일 상품도<br>우대조건 체크리스트가 매번 다르게 나왔습니다.</div>
+        <div class="half sol"><span class="lbl good">해결</span>파싱 결과를 DB에 캐싱하고 관리자 수정을 보호하는 Lock 구조를<br>적용해 변경된 상품만 배치 재파싱하도록 개선했습니다.</div>
+      </div>
+    </div>
   </div>
 </section>
 `);

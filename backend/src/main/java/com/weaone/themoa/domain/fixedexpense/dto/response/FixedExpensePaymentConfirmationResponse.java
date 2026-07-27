@@ -10,7 +10,9 @@ public record FixedExpensePaymentConfirmationResponse(
         Long transactionId,
         String merchantName,
         LocalDate usedDate,
-        BigDecimal amount
+        BigDecimal amount,
+        /** false면 자동 매칭(또는 수기 결제처리)으로 연결된 건 — 프런트 문구 분기에만 쓰인다. */
+        boolean userConfirmedMatch
 ) {
 
     public static FixedExpensePaymentConfirmationResponse from(FixedExpensePayment payment) {
@@ -21,6 +23,7 @@ public record FixedExpensePaymentConfirmationResponse(
                 ? transaction.getMerchant().getDisplayName()
                 : transaction.getMerchantNameRaw();
         return new FixedExpensePaymentConfirmationResponse(
-                transaction.getId(), merchantName, transaction.getUsedDate(), transaction.getNetAmount());
+                transaction.getId(), merchantName, transaction.getUsedDate(), transaction.getNetAmount(),
+                Boolean.TRUE.equals(payment.getUserConfirmedMatch()));
     }
 }

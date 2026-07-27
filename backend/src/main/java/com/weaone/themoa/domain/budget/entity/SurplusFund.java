@@ -22,7 +22,8 @@ import java.time.LocalDateTime;
 /**
  * 주기 마감 잉여금(erd.md §6, MOA-S-BUD-BGT-11). {@code amount = 월 예산 − 그 주기 실제 지출}이며
  * 초과지출한 주기는 음수 그대로 저장한다 — 0으로 깎으면 평균 잉여금이 부풀려져 저축 여력 없는 사람에게
- * 적금을 권하게 된다. UNIQUE(member_id, year_month)로 주기당 1행을 보장해 마감 배치 재시도가 중복 적립되지 않는다.
+ * 적금을 권하게 된다. 추천은 이 합계에서 예산으로 가져간 금액을 빼며, 원본 행은 당시 결과로 보존한다.
+ * UNIQUE(member_id, year_month)로 주기당 1행을 보장해 마감 배치 재시도가 중복 적립되지 않는다.
  */
 @Entity
 @Table(name = "surplus_fund",

@@ -17,8 +17,11 @@ import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRegionClassificationRepository;
 import com.weaone.themoa.domain.policy.policy.service.RegionEligiblePolicyCandidateService;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyEmploymentAudience;
+import com.weaone.themoa.domain.policy.rag.dto.PolicyGenderClassificationResult;
 import com.weaone.themoa.domain.policy.rag.dto.PolicyTargetAudienceClassification;
+import com.weaone.themoa.domain.policy.rag.dto.UserGender;
 import com.weaone.themoa.domain.policy.rag.service.PolicyEmploymentAudienceClassifier;
+import com.weaone.themoa.domain.policy.rag.service.PolicyGenderAudienceClassifier;
 import com.weaone.themoa.domain.policy.rag.service.PolicyTargetAudienceClassifier;
 import com.weaone.themoa.domain.policy.recommendation.dto.response.PolicyRecommendationItemResponse;
 import com.weaone.themoa.domain.policy.recommendation.dto.response.PolicyRecommendationListResponse;
@@ -29,6 +32,7 @@ import com.weaone.themoa.domain.policy.recommendation.repository.MemberPolicyRec
 import com.weaone.themoa.domain.policy.recommendation.repository.PolicyRecommendationProfileRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,10 +62,42 @@ public class PolicyRecommendationService {
     private final RegionEligiblePolicyCandidateService regionCandidateService;
     private final PolicyEmploymentAudienceClassifier employmentAudienceClassifier;
     private final PolicyTargetAudienceClassifier targetAudienceClassifier;
+    private final PolicyGenderAudienceClassifier genderAudienceClassifier;
     private final PolicyRecommendationMatcher matcher;
     private final PolicyRegionClassificationRepository regionClassificationRepository;
     private final StrictPolicyRegionMentionExtractor regionMentionExtractor;
     private final RegionMatchEvaluator regionMatchEvaluator;
+
+    @Autowired
+    public PolicyRecommendationService(MemberRepository memberRepository,
+                                       PolicyRecommendationProfileRepository profileRepository,
+                                       MemberPolicyRecommendationRepository recommendationRepository,
+                                       PolicyRepository policyRepository,
+                                       PolicyRecommendationAgeCalculator ageCalculator,
+                                       PolicyRecommendationRegionService regionService,
+                                       RegionEligiblePolicyCandidateService regionCandidateService,
+                                       PolicyEmploymentAudienceClassifier employmentAudienceClassifier,
+                                       PolicyTargetAudienceClassifier targetAudienceClassifier,
+                                       PolicyGenderAudienceClassifier genderAudienceClassifier,
+                                       PolicyRecommendationMatcher matcher,
+                                       PolicyRegionClassificationRepository regionClassificationRepository,
+                                       StrictPolicyRegionMentionExtractor regionMentionExtractor,
+                                       RegionMatchEvaluator regionMatchEvaluator) {
+        this.memberRepository = memberRepository;
+        this.profileRepository = profileRepository;
+        this.recommendationRepository = recommendationRepository;
+        this.policyRepository = policyRepository;
+        this.ageCalculator = ageCalculator;
+        this.regionService = regionService;
+        this.regionCandidateService = regionCandidateService;
+        this.employmentAudienceClassifier = employmentAudienceClassifier;
+        this.targetAudienceClassifier = targetAudienceClassifier;
+        this.genderAudienceClassifier = genderAudienceClassifier;
+        this.matcher = matcher;
+        this.regionClassificationRepository = regionClassificationRepository;
+        this.regionMentionExtractor = regionMentionExtractor;
+        this.regionMatchEvaluator = regionMatchEvaluator;
+    }
 
     public PolicyRecommendationService(MemberRepository memberRepository,
                                        PolicyRecommendationProfileRepository profileRepository,
@@ -76,19 +112,9 @@ public class PolicyRecommendationService {
                                        PolicyRegionClassificationRepository regionClassificationRepository,
                                        StrictPolicyRegionMentionExtractor regionMentionExtractor,
                                        RegionMatchEvaluator regionMatchEvaluator) {
-        this.memberRepository = memberRepository;
-        this.profileRepository = profileRepository;
-        this.recommendationRepository = recommendationRepository;
-        this.policyRepository = policyRepository;
-        this.ageCalculator = ageCalculator;
-        this.regionService = regionService;
-        this.regionCandidateService = regionCandidateService;
-        this.employmentAudienceClassifier = employmentAudienceClassifier;
-        this.targetAudienceClassifier = targetAudienceClassifier;
-        this.matcher = matcher;
-        this.regionClassificationRepository = regionClassificationRepository;
-        this.regionMentionExtractor = regionMentionExtractor;
-        this.regionMatchEvaluator = regionMatchEvaluator;
+        this(memberRepository, profileRepository, recommendationRepository, policyRepository, ageCalculator,
+                regionService, regionCandidateService, employmentAudienceClassifier, targetAudienceClassifier, null,
+                matcher, regionClassificationRepository, regionMentionExtractor, regionMatchEvaluator);
     }
 
     @Transactional(readOnly = true)
@@ -105,7 +131,7 @@ public class PolicyRecommendationService {
                 .map(MemberPolicyRecommendation::getGeneratedAt)
                 .findFirst()
                 .orElse(null);
-        List<MemberPolicyRecommendation> eligibleRecommendations = filterStoredRecommendations(recommendations, profile, age);
+        List<MemberPolicyRecommendation> eligibleRecommendations = filterStoredRecommendations(recommendations, member, profile, age);
         return new PolicyRecommendationListResponse(
                 true,
                 generatedAt,
@@ -115,6 +141,7 @@ public class PolicyRecommendationService {
     }
 
     private List<MemberPolicyRecommendation> filterStoredRecommendations(List<MemberPolicyRecommendation> recommendations,
+                                                                         Member member,
                                                                          PolicyRecommendationProfile profile,
                                                                          int age) {
         if (recommendations.isEmpty()) {
@@ -125,35 +152,36 @@ public class PolicyRecommendationService {
         List<Policy> policies = recommendations.stream().map(MemberPolicyRecommendation::getPolicy).toList();
         Map<Integer, PolicyEmploymentAudience> employmentAudiences = classifyEmployment(policies);
         Map<Integer, PolicyTargetAudienceClassification> targetAudiences = classifyTargetAudience(policies);
+        Map<Integer, PolicyGenderClassificationResult> genderAudiences = classifyGender(policies);
         Map<Integer, PolicyRegionClassification> regionClassifications = findRegionClassifications(policies);
         LocalDate today = LocalDate.now(SEOUL_ZONE);
         return recommendations.stream()
-                .filter(recommendation -> storedRecommendationStillEligible(recommendation, profile, age, region,
-                        employmentAudiences, targetAudiences, regionClassifications, today))
+                .filter(recommendation -> storedRecommendationStillEligible(recommendation, member, profile, age, region,
+                        employmentAudiences, targetAudiences, genderAudiences, regionClassifications, today))
                 .toList();
     }
 
     private boolean storedRecommendationStillEligible(MemberPolicyRecommendation recommendation,
+                                                      Member member,
                                                       PolicyRecommendationProfile profile,
                                                       int age,
                                                       PolicyRecommendationRegionService.ValidatedRegion region,
                                                       Map<Integer, PolicyEmploymentAudience> employmentAudiences,
                                                       Map<Integer, PolicyTargetAudienceClassification> targetAudiences,
+                                                      Map<Integer, PolicyGenderClassificationResult> genderAudiences,
                                                       Map<Integer, PolicyRegionClassification> regionClassifications,
                                                       LocalDate today) {
         Policy policy = recommendation.getPolicy();
         RegionCompatibility compatibility = regionMatchEvaluator.evaluate(policy, region.resolvedUserRegion()).compatibility();
         boolean regionClassificationConflict = regionClassificationConflict(policy, regionClassifications.get(policy.getId()));
-        PolicyRecommendationMatch match = matcher.match(
-                policy,
-                compatibility,
-                age,
-                profile.getEmploymentStatus(),
-                employmentAudiences.get(policy.getId()),
-                targetAudiences.get(policy.getId()),
-                today,
-                regionClassificationConflict
-        );
+        PolicyRecommendationMatch match = genderAudienceClassifier == null
+                ? matcher.match(policy, compatibility, age, profile.getEmploymentStatus(),
+                employmentAudiences.get(policy.getId()), targetAudiences.get(policy.getId()), today,
+                regionClassificationConflict)
+                : matcher.match(policy, compatibility, age, profile.getEmploymentStatus(),
+                employmentAudiences.get(policy.getId()), targetAudiences.get(policy.getId()),
+                UserGender.fromMemberGender(member.getGender()), genderAudiences.get(policy.getId()), today,
+                regionClassificationConflict);
         if (!match.matched()) {
             logRecommendationDecision(policy, compatibility, employmentAudiences.get(policy.getId()),
                     targetAudiences.get(policy.getId()), match, false);
@@ -195,12 +223,14 @@ public class PolicyRecommendationService {
                 employmentAudienceClassifier.classify(compatibilityByPolicyId.keySet());
         Map<Integer, PolicyTargetAudienceClassification> targetAudiences =
                 targetAudienceClassifier.classify(compatibilityByPolicyId.keySet());
+        Map<Integer, PolicyGenderClassificationResult> genderAudiences =
+                findGenderClassifications(compatibilityByPolicyId.keySet());
         Map<Integer, PolicyRegionClassification> regionClassifications =
                 findRegionClassifications(policies);
         return policies.stream()
                 .map(policy -> scored(member, policy, compatibilityByPolicyId.get(policy.getId()), age, profile,
                         employmentAudiences.get(policy.getId()), targetAudiences.get(policy.getId()),
-                        regionClassifications.get(policy.getId()), today, generatedAt))
+                        genderAudiences.get(policy.getId()), regionClassifications.get(policy.getId()), today, generatedAt))
                 .filter(scored -> scored != null)
                 .sorted(Comparator
                         .comparingInt(ScoredRecommendation::regionPriority)
@@ -215,11 +245,15 @@ public class PolicyRecommendationService {
     private ScoredRecommendation scored(Member member, Policy policy, RegionCompatibility compatibility, int age,
                                         PolicyRecommendationProfile profile, PolicyEmploymentAudience audience,
                                         PolicyTargetAudienceClassification targetAudience,
+                                        PolicyGenderClassificationResult genderAudience,
                                         PolicyRegionClassification regionClassification,
                                         LocalDate today, LocalDateTime generatedAt) {
         boolean regionClassificationConflict = regionClassificationConflict(policy, regionClassification);
-        PolicyRecommendationMatch match = matcher.match(policy, compatibility, age, profile.getEmploymentStatus(),
-                audience, targetAudience, today, regionClassificationConflict);
+        PolicyRecommendationMatch match = genderAudienceClassifier == null
+                ? matcher.match(policy, compatibility, age, profile.getEmploymentStatus(), audience, targetAudience,
+                today, regionClassificationConflict)
+                : matcher.match(policy, compatibility, age, profile.getEmploymentStatus(), audience, targetAudience,
+                UserGender.fromMemberGender(member.getGender()), genderAudience, today, regionClassificationConflict);
         if (!match.matched()) {
             logRecommendationDecision(policy, compatibility, audience, targetAudience, match, false);
             return null;
@@ -251,6 +285,20 @@ public class PolicyRecommendationService {
 
     private Map<Integer, PolicyTargetAudienceClassification> classifyTargetAudience(List<Policy> policies) {
         return targetAudienceClassifier.classify(policyIds(policies));
+    }
+
+    private Map<Integer, PolicyGenderClassificationResult> classifyGender(List<Policy> policies) {
+        return findGenderClassifications(policyIds(policies));
+    }
+
+    private Map<Integer, PolicyGenderClassificationResult> findGenderClassifications(Collection<Integer> policyIds) {
+        if (genderAudienceClassifier == null) {
+            Map<Integer, PolicyGenderClassificationResult> unknown = new LinkedHashMap<>();
+            policyIds.forEach(policyId -> unknown.put(policyId,
+                    PolicyGenderClassificationResult.unknown("저장된 성별 분류가 없습니다.")));
+            return unknown;
+        }
+        return genderAudienceClassifier.findClassifications(policyIds);
     }
 
     private Collection<Integer> policyIds(List<Policy> policies) {

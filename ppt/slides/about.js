@@ -1,64 +1,85 @@
 /* ===================== 소개 (4번째 슬라이드) ===================== */
 document.head.insertAdjacentHTML('beforeend', `
 <style>
-#sAbout{ background:#F8F8F8; }
-#sAbout .ptitle{ left:52px; top:40px; width:711px; color:#6B7C8A; font-size:45px; font-weight:800; }
-/* 로고 + 글자: 페이지 정중앙(x=960) 대칭 */
-#sAbout .logo{ left:755px; top:143px; width:410px; height:412px; object-fit:contain; }
-#sAbout .brand{ left:606px; top:436px; width:708px; text-align:center;
-  color:#2D8A5E; font-size:85px; font-weight:800; line-height:1; letter-spacing:-1px; }
-#sAbout .subtitle{ left:606px; top:534px; width:708px; text-align:center;
-  color:#1A2332; font-size:28px; font-weight:500; }
-#sAbout .target{ left:724px; top:588px; width:472px; text-align:center;
-  color:#6B7C8A; font-size:16px; font-weight:500; }
-#sAbout .divider{ left:606px; top:634px; width:708px; height:1px; background:#DCE3E0; }
-/* 정보 리스트 (초록 사각 불릿) */
-#sAbout .info{ position:absolute; left:820px; width:660px; color:#1A2332;
-  font-size:21px; font-weight:500; line-height:1.3; }
-#sAbout .info::before{ content:""; position:absolute; left:-29px; top:8px;
-  width:10px; height:10px; background:#2D8A5E; }
-/* 하단 칩 (클릭 가능 버튼) + 초록 탭 */
-#sAbout .chip{ position:absolute; width:276px; height:70px; background:#E8F5EE;
-  border-radius:16px; display:flex; align-items:center; justify-content:center;
-  color:#2C3E50; font-size:38px; font-weight:600;
-  cursor:pointer; border:1px solid #cfe9db; box-shadow:0 2px 6px rgba(0,0,0,.08);
-  transition:transform .15s, box-shadow .15s, background .15s; }
-#sAbout .chip:hover{ background:#d6f0e2; transform:translateY(-3px);
-  box-shadow:0 8px 18px rgba(45,138,94,.28); }
-#sAbout .chip:active{ transform:translateY(-1px); }
-#sAbout .chiptab{ position:absolute; width:72px; height:9px; background:#2D8A5E; border-radius:5px; }
+#sAbout{ background:transparent; }
+#sAbout .htitle{ left:52px; top:40px; width:711px; color:#6B7C8A; font-size:45px; font-weight:800; z-index:3; }
+#sAbout .hero{ left:0; top:0; width:1920px; height:1080px; object-fit:fill; }
+#sAbout .brandmark{ left:1180px; top:270px; width:560px; height:560px; object-fit:contain;
+  filter:drop-shadow(0 20px 30px rgba(45,138,94,.18)); }
+
+/* 하단 3개 소개 버튼: 동일 크기, 아이콘 위/제목 아래(좁은 간격) */
+#sAbout .chip{
+  position:absolute; top:830px; width:300px; height:118px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  border-radius:24px;
+  background:#fff; border:1px solid #E3EDE7; box-shadow:0 10px 26px rgba(30,60,45,.10);
+  cursor:pointer;
+  transition:transform .22s cubic-bezier(.2,.8,.3,1), box-shadow .22s ease, background .22s ease, border-color .22s ease;
+}
+#sAbout .chip:hover{
+  transform:translateY(-6px) scale(1.02);
+  background:linear-gradient(135deg,#2D8A5E,#43A873);
+  border-color:transparent;
+  box-shadow:0 22px 40px rgba(28,110,70,.32);
+}
+#sAbout .chip .icircle{
+  width:44px; height:44px; border-radius:50%; background:#EAF6EF; flex:none;
+  display:flex; align-items:center; justify-content:center;
+  transition:background .22s ease;
+}
+#sAbout .chip:hover .icircle{ background:rgba(255,255,255,.22); }
+#sAbout .chip .icircle svg{ width:22px; height:22px; stroke:#2D8A5E; color:#2D8A5E; transition:stroke .22s ease, color .22s ease; }
+#sAbout .chip:hover .icircle svg{ stroke:#fff; color:#fff; }
+#sAbout .chip .ctitle{
+  color:#171717; font-size:22px; font-weight:800; letter-spacing:-.3px; white-space:nowrap;
+  transition:color .22s ease;
+}
+#sAbout .chip:hover .ctitle{ color:#fff; }
 </style>
 `);
 
 document.getElementById('deck').insertAdjacentHTML('beforeend', `
-<section class="slide" id="sAbout">
-  <div class="abs ptitle">소개</div>
-  <img class="abs logo" src="assets/about_logo.png" alt="TheMoa 로고">
-  <div class="abs brand">TheMoa</div>
-  <div class="abs subtitle">맞춤형 청년 자산관리 플랫폼</div>
-  <div class="abs target">Target: 사회초년생 · 청년</div>
-  <div class="abs divider"></div>
+<section class="slide" id="sAbout" data-skip-to="16">
+  <div class="abs htitle">소개</div>
+  <img class="abs hero" src="assets/about_intro.png" alt="TheMoa 소개">
+  <img class="abs brandmark" src="assets/themoa_logo.png" alt="TheMoa 로고">
 
-  <div class="info" style="top:659px">이름: TheMoa(더모아)</div>
-  <div class="info" style="top:715px">주소: https://www.themoa.kro.kr</div>
-  <div class="info" style="top:772px">타켓: 사회초년생 + 청년</div>
+  <div class="chip" style="left:154px" data-feature="소비관리">
+    <div class="icircle"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v2h1a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-1v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
+      <path d="M16 12h2"/>
+    </svg></div>
+    <div class="ctitle">소비관리</div>
+  </div>
 
-  <div class="abs chiptab" style="left:608px;top:865px"></div>
-  <div class="abs chip"    style="left:508px;top:871px"  data-feature="소비관리">소비관리</div>
-  <div class="abs chiptab" style="left:930px;top:865px"></div>
-  <div class="abs chip"    style="left:828px;top:871px"  data-feature="정책추천">정책 추천</div>
-  <div class="abs chiptab" style="left:1255px;top:866px"></div>
-  <div class="abs chip"    style="left:1147px;top:873px" data-feature="금융상품추천">금융상품 추천</div>
+  <div class="chip" style="left:502px" data-feature="정책추천">
+    <div class="icircle"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 10 12 4l9 6"/><path d="M5 10v9M10 10v9M14 10v9M19 10v9"/><path d="M3 19h18"/>
+    </svg></div>
+    <div class="ctitle">정책 추천</div>
+  </div>
+
+  <div class="chip" style="left:850px" data-feature="금융상품추천">
+    <div class="icircle"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12.5 5.5c-3.5 0-6.5 2.2-6.5 5.6 0 1.5.5 2.6 1.3 3.4V17a1 1 0 0 0 1 1H10v-1.3c.6.1 1.3.2 2 .2s1.4-.1 2-.2V18a1 1 0 0 0 1 1h1.7a1 1 0 0 0 1-1v-2.5c1-.8 1.8-2 1.8-3.5v-.6h1.1c.5 0 .9-.4.9-.9 0-.9-.7-1.6-1.6-1.6h-.7C18.4 7 15.8 5.5 12.5 5.5Z"/>
+      <path d="M8.7 7.2 7.3 5.8"/>
+      <circle cx="15.3" cy="10" r=".55" fill="currentColor" stroke="none"/>
+    </svg></div>
+    <div class="ctitle">금융상품 추천</div>
+  </div>
 </section>
 `);
 
-/* 칩 클릭 → (나중에) 각 기능 핵심소개 페이지로 이동. 아직 페이지가 없어 준비만 해둠 */
+/* 버튼 클릭 → 각 기능 핵심소개 페이지로 이동 */
+const ABOUT_FEATURE_PAGE = {
+  '소비관리': 8,     // key-features.js
+  '정책추천': 9,     // slide22.js (정책 4장 중 첫 장, 9~12페이지)
+  '금융상품추천': 13 // slide40.js (금융상품 3장 중 첫 장, 13~15페이지)
+};
 document.querySelectorAll('#sAbout .chip').forEach(function(chip){
   chip.addEventListener('click', function(e){
     e.stopPropagation();          // 클릭해도 슬라이드가 넘어가지 않게
-    const target = chip.dataset.feature;
-    // TODO: 핵심기능소개 페이지를 만들면 여기서 이동을 연결하세요.
-    //  예) location.hash = '#' + target;  또는 해당 슬라이드로 goTo
-    console.log('[TODO] ' + target + ' 핵심기능 소개 페이지로 이동');
+    const page = ABOUT_FEATURE_PAGE[chip.dataset.feature];
+    if(page) location.hash = '#' + page;
   });
 });

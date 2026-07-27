@@ -340,74 +340,76 @@ function MerchantMasterAdminPage() {
           ) : unclassified.length === 0 ? (
             <div className="mma-empty">미식별 가맹점이 없습니다.</div>
           ) : (
-            <table className="mma-table">
-              <thead>
-                <tr>
-                  <th>발생 건수</th>
-                  <th>카드사 원본 가맹점명</th>
-                  <th>카드사 업종</th>
-                  <th>평균 결제 금액</th>
-                  <th>빠른 마스터 매핑 폼</th>
-                </tr>
-              </thead>
-              <tbody>
-                {unclassified.map((merchant) => {
-                  const form = quickForm[merchant.merchantId] || {};
-                  const isRegistering = registeringId === merchant.merchantId;
-                  return (
-                    <tr key={merchant.merchantId}>
-                      <td>
-                        <strong>{merchant.transactionCount} 건</strong>
-                      </td>
-                      <td>
-                        <code>{merchant.merchantNameRaw}</code>
-                      </td>
-                      <td>{merchant.merchantTypeRaw || "-"}</td>
-                      <td>{formatAmount(merchant.averageAmount)}</td>
-                      <td>
-                        <div className="mma-quick-form">
-                          <input
-                            type="text"
-                            className="mma-input"
-                            placeholder="서비스명"
-                            value={form.name ?? merchant.merchantNameRaw}
-                            onChange={(e) =>
-                              updateQuickForm(merchant.merchantId, {
-                                name: e.target.value,
-                              })
-                            }
-                          />
-                          <select
-                            className="mma-select"
-                            value={form.categoryId || ""}
-                            onChange={(e) =>
-                              updateQuickForm(merchant.merchantId, {
-                                categoryId: e.target.value,
-                              })
-                            }
-                          >
-                            <option value="">카테고리</option>
-                            {categories.map((category) => (
-                              <option key={category.id} value={category.id}>
-                                {category.name}
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            type="button"
-                            className="mma-btn mma-btn-primary mma-btn-sm"
-                            disabled={isRegistering}
-                            onClick={() => handleQuickRegister(merchant)}
-                          >
-                            {isRegistering ? "등록 중..." : "등록"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="mma-table-scroll">
+              <table className="mma-table">
+                <thead>
+                  <tr>
+                    <th>발생 건수</th>
+                    <th>카드사 원본 가맹점명</th>
+                    <th>카드사 업종</th>
+                    <th>평균 결제 금액</th>
+                    <th>빠른 마스터 매핑 폼</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unclassified.map((merchant) => {
+                    const form = quickForm[merchant.merchantId] || {};
+                    const isRegistering = registeringId === merchant.merchantId;
+                    return (
+                      <tr key={merchant.merchantId}>
+                        <td>
+                          <strong>{merchant.transactionCount} 건</strong>
+                        </td>
+                        <td>
+                          <code>{merchant.merchantNameRaw}</code>
+                        </td>
+                        <td>{merchant.merchantTypeRaw || "-"}</td>
+                        <td>{formatAmount(merchant.averageAmount)}</td>
+                        <td>
+                          <div className="mma-quick-form">
+                            <input
+                              type="text"
+                              className="mma-input"
+                              placeholder="서비스명"
+                              value={form.name ?? merchant.merchantNameRaw}
+                              onChange={(e) =>
+                                updateQuickForm(merchant.merchantId, {
+                                  name: e.target.value,
+                                })
+                              }
+                            />
+                            <select
+                              className="mma-select"
+                              value={form.categoryId || ""}
+                              onChange={(e) =>
+                                updateQuickForm(merchant.merchantId, {
+                                  categoryId: e.target.value,
+                                })
+                              }
+                            >
+                              <option value="">카테고리</option>
+                              {categories.map((category) => (
+                                <option key={category.id} value={category.id}>
+                                  {category.name}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              className="mma-btn mma-btn-primary mma-btn-sm"
+                              disabled={isRegistering}
+                              onClick={() => handleQuickRegister(merchant)}
+                            >
+                              {isRegistering ? "등록 중..." : "등록"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       </div>

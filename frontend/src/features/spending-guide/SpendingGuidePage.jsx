@@ -28,6 +28,7 @@ import useSpendingGuide from "./hooks/useSpendingGuide";
 import IncomeAdjustmentModal from "./IncomeAdjustmentModal";
 import ManualTransactionModal from "./ManualTransactionModal";
 import SavingsGoalModal from "./SavingsGoalModal";
+import SurplusTransferModal from "./SurplusTransferModal";
 import {
   errorMessage,
   formatDate,
@@ -72,6 +73,7 @@ function SpendingGuidePage() {
   } = useSpendingGuide();
   const navigate = useNavigate();
   const [isSavingsGoalOpen, setIsSavingsGoalOpen] = useState(false);
+  const [isSurplusTransferOpen, setIsSurplusTransferOpen] = useState(false);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [fixedExpenseInitial, setFixedExpenseInitial] = useState(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -147,13 +149,18 @@ function SpendingGuidePage() {
     isSelectedToday || (!isDayCategoryLoading && !dayCategoryError);
   // 진행 중인 이번 주기는 summary.cycleSavingsAmount(하루 권장액을 날짜별로 재구성해 실사용액과
   // 비교한 누적 절약액)로 보여준다 — remainingAmount(예산 - 누적 사용액, 주기 마감 시 그대로
-  // surplus_fund에 적립되는 값)와는 다른 지표다. 완료된 주기 합산은 surplus_fund를 그대로 반영한
-  // summary.completedCycleCount/totalSurplusAmount를 쓴다.
+  // surplus_fund에 적립되는 값)와는 다른 지표다. 사용 가능한 잉여금은 완료 주기 합산에서
+  // 이미 이번 주기들로 가져온 금액을 제외한 summary.availableSurplusAmount를 쓴다.
   const surplusSummary = {
     hasSavingsGoal: toNumber(summary?.savingsGoalAmount) > 0,
     savingsTargetAmount: toNumber(summary?.savingsGoalAmount),
     completedCycleCount: summary?.completedCycleCount ?? 0,
     totalSurplusAmount: toNumber(summary?.totalSurplusAmount),
+    totalSurplusTransferAmount: toNumber(summary?.totalSurplusTransferAmount),
+    currentCycleSurplusTransferAmount: toNumber(
+      summary?.currentCycleSurplusTransferAmount,
+    ),
+    availableSurplusAmount: toNumber(summary?.availableSurplusAmount),
     recentCycle: null,
     ongoingCycle: summary
       ? {
@@ -420,7 +427,13 @@ function SpendingGuidePage() {
                       </div>
                       <div className="spending-progress" key={selectedDate}>
                         <i
-                          className={displayUseRate > 100 ? "over" : ""}
+                          className={
+                            displayUseRate >= 100
+                              ? "over"
+                              : displayUseRate >= 80
+                                ? "warning"
+                                : ""
+                          }
                           style={{
                             width: `${Math.min(100, Math.max(0, displayUseRate))}%`,
                           }}
@@ -521,6 +534,7 @@ function SpendingGuidePage() {
                   <SurplusSummary
                     data={surplusSummary}
                     onSetGoal={() => setIsSavingsGoalOpen(true)}
+                    onTransfer={() => setIsSurplusTransferOpen(true)}
                   />
                   <section className="spending-panel spending-transactions-panel">
                     <div className="spending-panel-head">
@@ -707,6 +721,14 @@ function SpendingGuidePage() {
         <SavingsGoalModal
           currentAmount={summary.savingsGoalAmount}
           onClose={() => setIsSavingsGoalOpen(false)}
+          onSaved={loadGuide}
+        />
+      )}
+      {isSurplusTransferOpen && summary && (
+        <SurplusTransferModal
+          availableAmount={summary.availableSurplusAmount}
+          currentRemainingAmount={summary.remainingAmount}
+          onClose={() => setIsSurplusTransferOpen(false)}
           onSaved={loadGuide}
         />
       )}

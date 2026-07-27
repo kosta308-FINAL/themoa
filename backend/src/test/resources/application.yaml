@@ -49,6 +49,18 @@ spring:
       api-key: test-openai-api-key
 
 app:
+  demo:
+    card-transaction:
+      enabled: false
+    fixed-expense:
+      enabled: false
+  policy:
+    gender-classification:
+      batch-size: 5
+      concurrency: 2
+      max-retries: 2
+      retry-backoff: 10ms
+      call-timeout: 2s
   auth:
     jwt:
       # 테스트 전용 키. 운영 키가 아니며 운영 환경은 JWT_SECRET 환경변수로 주입한다.

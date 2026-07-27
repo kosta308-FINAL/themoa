@@ -11,8 +11,8 @@ export const postRecommend = (payload) =>
   axiosInstance.post("/api/recommend", payload).then(responseData);
 
 /**
- * 추천 입력 폼 기본값. 회원가입 월급과 소비내역 연동으로 쌓인 잉여금에서 가져온다.
- * monthlyIncomeManwon은 소비가이드 설정 전이면 null이고, monthlyDepositWon은 항상 값이 있다.
+ * 추천 입력 폼 기본값. 나이·월소득·월 납입가능금액은 회원 정보와 소비내역에서 계산하고,
+ * 나머지 추천 조건은 회원이 마지막으로 추천받을 때 저장한 값으로 가져온다.
  */
 export const getRecommendDefaults = () =>
   axiosInstance.get("/api/recommend/defaults").then(responseData);

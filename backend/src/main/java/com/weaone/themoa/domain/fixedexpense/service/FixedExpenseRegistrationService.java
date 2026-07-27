@@ -54,6 +54,7 @@ public class FixedExpenseRegistrationService {
     private final MerchantIdentityService merchantIdentityService;
     private final MemberRepository memberRepository;
     private final FixedExpenseKrwConverter krwConverter;
+    private final FixedExpenseMatchingService fixedExpenseMatchingService;
 
     @Transactional
     public FixedExpense registerFromCandidate(Long memberId, Long candidateId,
@@ -87,6 +88,9 @@ public class FixedExpenseRegistrationService {
                 category, merchantAlias, billerMerchant, request.expectedPayDay(), request.expectedAmount(), currency,
                 converted.krwAmount(), converted.convertedDate(), converted.exchangeRate()));
         candidate.register();
+        // 방금 만든 이 고정지출을 탐지하게 해준 바로 그 과거 거래들은, 등록 전엔 대응할 고정지출이 없어
+        // 실시간 매칭(FixedExpenseMatchingService#match)의 사각지대에 있었다 — 등록 직후 소급 확정한다.
+        fixedExpenseMatchingService.matchPastTransactions(fixedExpense);
         return fixedExpense;
     }
 
@@ -98,9 +102,12 @@ public class FixedExpenseRegistrationService {
         String currency = resolveCurrency(request.expectedCurrency());
         ConvertedKrwAmount converted = convertToKrw(request.expectedAmount(), currency);
 
-        return fixedExpenseRepository.save(FixedExpense.registerDirect(member, request.name(), category,
+        FixedExpense fixedExpense = fixedExpenseRepository.save(FixedExpense.registerDirect(member, request.name(), category,
                 merchantAlias, request.paymentMethod(), request.expectedPayDay(), request.expectedAmount(), currency,
                 converted.krwAmount(), converted.convertedDate(), converted.exchangeRate()));
+        // CARD형으로 기존 alias를 골랐다면 그 alias의 과거 거래도 같은 사각지대를 겪는다(registerFromCandidate 참고).
+        fixedExpenseMatchingService.matchPastTransactions(fixedExpense);
+        return fixedExpense;
     }
 
     @Transactional(readOnly = true)

@@ -6,7 +6,7 @@ import com.weaone.themoa.domain.recommend.service.RiskType;
 
 /**
  * 추천 입력 = 회원 기본정보 + 금융성향 진단 결과를 합친 사용자 프로필.
- * (지금은 데모용으로 직접 만들고, 나중에 member/financial_profile에서 채운다.)
+ * 추천 요청을 실행할 때 저장 대상 조건은 financial_profile에도 반영한다.
  *
  * @param age               나이(세)
  * @param monthlyIncomeManwon 월소득(만원) - 소득 하드필터용. 모르면 null이면 소득필터 건너뜀

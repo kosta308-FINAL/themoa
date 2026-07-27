@@ -20,10 +20,13 @@ import com.weaone.themoa.domain.recommend.dto.UserProfile;
 import com.weaone.themoa.domain.recommend.dto.request.RecommendRequest;
 import com.weaone.themoa.domain.recommend.dto.response.RecommendDefaultsResponse;
 import com.weaone.themoa.domain.recommend.dto.response.RecommendResponse;
+import com.weaone.themoa.domain.recommend.entity.FinancialProfile;
 import com.weaone.themoa.domain.recommend.entity.RecommendSnapshot;
+import com.weaone.themoa.domain.recommend.repository.FinancialProfileRepository;
 import com.weaone.themoa.domain.recommend.repository.RecommendBudgetRepository;
 import com.weaone.themoa.domain.recommend.repository.RecommendSnapshotRepository;
 import com.weaone.themoa.domain.recommend.repository.RecommendSurplusFundRepository;
+import com.weaone.themoa.domain.recommend.repository.RecommendSurplusFundTransferRepository;
 
 /**
  * 추천 요청(JSON)을 받아 기존 RecommendationService로 위임하고 응답 DTO로 조립한다.
@@ -45,31 +48,36 @@ public class RecommendQueryService {
     private final RecommendationService recommendationService;
     private final RecommendBudgetRepository budgetRepository;
     private final RecommendSurplusFundRepository surplusFundRepository;
+    private final RecommendSurplusFundTransferRepository surplusFundTransferRepository;
     private final RecommendSnapshotRepository snapshotRepository;
+    private final FinancialProfileRepository financialProfileRepository;
     private final MemberRepository memberRepository;
 
     public RecommendQueryService(RecommendationService recommendationService,
                                  RecommendBudgetRepository budgetRepository,
                                  RecommendSurplusFundRepository surplusFundRepository,
+                                 RecommendSurplusFundTransferRepository surplusFundTransferRepository,
                                  RecommendSnapshotRepository snapshotRepository,
+                                 FinancialProfileRepository financialProfileRepository,
                                  MemberRepository memberRepository) {
         this.recommendationService = recommendationService;
         this.budgetRepository = budgetRepository;
         this.surplusFundRepository = surplusFundRepository;
+        this.surplusFundTransferRepository = surplusFundTransferRepository;
         this.snapshotRepository = snapshotRepository;
+        this.financialProfileRepository = financialProfileRepository;
         this.memberRepository = memberRepository;
     }
 
     /**
-     * 추천 입력 폼의 기본값. 회원가입·소비내역 연동으로 이미 아는 값을 미리 채워준다.
+     * 추천 입력 폼의 기본값. 계산 가능한 회원 값과 마지막으로 저장한 추천 조건을 미리 채워준다.
      *
      * <p>월소득은 최근 급여주기 스냅샷(budget.salary_amount)에서 가져온다. 소득유형(고정월급/시급제)에 맞는
      * 계산이 이미 반영된 값이라 여기서 다시 계산하지 않는다. 소비가이드 설정 전이면 주기가 없어 null이다.
      *
-     * <p>월 납입가능금액은 회원의 전체 급여주기 잉여금 평균을 쓴다. 적자 주기는 음수로 적립되어 있는데
-     * (SurplusFund 참고), 평균 낼 때도 0으로 깎지 않고 그대로 더한다 — 한두 달 우연히 많이 남았다고
-     * 평균이 부풀려지거나, 반대로 적자가 있었는데도 무시되면 안 되기 때문이다. 아직 적립된 잉여금이
-     * 없거나(가입 직후 등) 평균이 최소 납입금액에 못 미치면 기본값을 내려준다.
+     * <p>월 납입가능금액은 전체 급여주기 잉여금에서 이미 이번 주기들로 가져간 금액을 뺀 순잔액의
+     * 주기당 평균을 쓴다. 원본 잉여금 행은 당시 결과로 보존하면서, 사용자가 다른 용도로 배정한 돈은
+     * 추천 여력에서 즉시 제외한다. 아직 적립된 잉여금이 없을 때만 기본값을 내려준다.
      */
     @Transactional(readOnly = true)
     public RecommendDefaultsResponse findDefaults(Long memberId) {
@@ -82,17 +90,33 @@ public class RecommendQueryService {
                 .orElse(null);
 
         List<SurplusFund> allCycles = surplusFundRepository.findByMember_Id(memberId);
+        BigDecimal transferredSurplus = surplusFundTransferRepository.sumAmountByMember_Id(memberId);
         BigDecimal averageSurplus = allCycles.isEmpty()
                 ? null
                 : allCycles.stream()
                         .map(SurplusFund::getAmount)
                         .reduce(BigDecimal.ZERO, BigDecimal::add)
+                        .subtract(transferredSurplus)
                         .divide(BigDecimal.valueOf(allCycles.size()), 0, RoundingMode.HALF_UP);
-        boolean usableSurplus = averageSurplus != null
-                && averageSurplus.compareTo(BigDecimal.valueOf(MIN_MONTHLY_DEPOSIT_WON)) >= 0;
-        int monthlyDepositWon = usableSurplus ? averageSurplus.intValue() : DEFAULT_MONTHLY_DEPOSIT_WON;
+        boolean usableSurplus = averageSurplus != null;
+        int monthlyDepositWon = usableSurplus
+                ? averageSurplus.max(BigDecimal.valueOf(MIN_MONTHLY_DEPOSIT_WON)).intValue()
+                : DEFAULT_MONTHLY_DEPOSIT_WON;
 
-        return new RecommendDefaultsResponse(age, monthlyIncomeManwon, monthlyDepositWon, usableSurplus);
+        FinancialProfile profile = financialProfileRepository.findByMember_Id(memberId).orElse(null);
+        return new RecommendDefaultsResponse(
+                age,
+                monthlyIncomeManwon,
+                monthlyDepositWon,
+                usableSurplus,
+                profile == null ? null : profile.getEmploymentType(),
+                profile != null && profile.isLowIncome(),
+                profile == null ? null : profile.getRiskType(),
+                profile == null ? null : profile.getPreferredPeriod(),
+                profile != null && profile.isAcceptCondition(),
+                profile != null && profile.isNeedLiquidity(),
+                profile == null ? null : profile.getGoalAmountWon(),
+                profile == null ? null : profile.getGoalMonths());
     }
 
     /**
@@ -102,6 +126,7 @@ public class RecommendQueryService {
     @Transactional
     public RecommendResponse recommend(Long memberId, RecommendRequest request) {
         UserProfile profile = toProfile(request);
+        saveFinancialProfile(memberId, profile);
 
         List<Recommendation> recommendations = recommendationService.recommend(profile, TOP_N).stream()
                 .map(RecommendQueryService::withCleanReasons)
@@ -113,6 +138,21 @@ public class RecommendQueryService {
 
         saveSnapshot(memberId, recommendations);
         return new RecommendResponse(feasibility, recommendations);
+    }
+
+    private void saveFinancialProfile(Long memberId, UserProfile profile) {
+        FinancialProfile financialProfile = financialProfileRepository.findByMember_Id(memberId)
+                .orElseGet(() -> FinancialProfile.create(memberRepository.getReferenceById(memberId)));
+        financialProfile.update(
+                profile.employmentType(),
+                profile.lowIncome(),
+                profile.riskType(),
+                profile.preferredPeriod(),
+                profile.acceptCondition(),
+                profile.needLiquidity(),
+                profile.goalAmountWon(),
+                profile.goalMonths());
+        financialProfileRepository.save(financialProfile);
     }
 
     /**

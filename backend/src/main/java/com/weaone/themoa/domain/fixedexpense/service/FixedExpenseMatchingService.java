@@ -3,6 +3,7 @@ package com.weaone.themoa.domain.fixedexpense.service;
 import com.weaone.themoa.domain.budget.service.BudgetCycleService;
 import com.weaone.themoa.domain.cardtransaction.entity.CardTransaction;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
+import com.weaone.themoa.domain.cardtransaction.repository.CardTransactionRepository;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpense;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpenseCandidate;
 import com.weaone.themoa.domain.fixedexpense.entity.FixedExpensePayment;
@@ -19,6 +20,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,6 +39,7 @@ public class FixedExpenseMatchingService {
     private final BillerRepository billerRepository;
     private final NotificationService notificationService;
     private final BudgetCycleService budgetCycleService;
+    private final CardTransactionRepository cardTransactionRepository;
 
     @Transactional
     public void match(CardTransaction transaction) {
@@ -49,6 +52,8 @@ public class FixedExpenseMatchingService {
             return;
         }
         String yearMonth = yearMonthOf(transaction);
+        FixedExpense bestMatch = null;
+        BigDecimal bestMatchDistance = null;
         List<FixedExpense> amountChangeCandidates = new ArrayList<>();
         for (FixedExpense fixedExpense : candidates) {
             if (fixedExpensePaymentRepository.existsByFixedExpense_IdAndYearMonth(fixedExpense.getId(), yearMonth)) {
@@ -62,10 +67,21 @@ public class FixedExpenseMatchingService {
             if (FixedExpenseMatchRules.isAmountMatch(fixedExpense.getExpectedCurrency(), fixedExpense.getExpectedAmount(),
                     fixedExpense.getExpectedAmountKrw(), transaction.getCurrencyCode(), transaction.getAmount(),
                     transaction.getOriginalAmount())) {
-                tagAndRecord(transaction, fixedExpense, yearMonth, false, null, false);
-                return; // 거래 1건은 최대 하나의 고정지출에만 붙는다
+                // 같은 biller(예: Apple) 밑에 금액이 비슷한 구독이 여러 건 있으면 허용오차(±10~15%)가
+                // 겹쳐 둘 다 조건②를 통과할 수 있다 — 먼저 나온 후보에 바로 확정하지 않고, 원화 환산
+                // 기준으로 가장 가까운 후보를 골라 오배정 위험을 낮춘다.
+                BigDecimal distance = transaction.getAmount().subtract(fixedExpense.getExpectedAmountKrw()).abs();
+                if (bestMatch == null || distance.compareTo(bestMatchDistance) < 0) {
+                    bestMatch = fixedExpense;
+                    bestMatchDistance = distance;
+                }
+                continue;
             }
             amountChangeCandidates.add(fixedExpense);
+        }
+        if (bestMatch != null) {
+            tagAndRecord(transaction, bestMatch, yearMonth, false, null, false);
+            return; // 거래 1건은 최대 하나의 고정지출에만 붙는다
         }
         // 같은 alias에 여러 구독이 있으면 다른 상품과의 금액 불일치는 정상이다.
         // 실제 매칭이 없고 결제일상 대상이 하나로 특정될 때만 가격 인상으로 본다.
@@ -114,6 +130,50 @@ public class FixedExpenseMatchingService {
                 throw e;
             }
             // 동시 경합으로 같은 주기가 이미 이행 처리됨 — 태깅은 유지하고 이행 기록만 스킵한다.
+        }
+    }
+
+    /**
+     * F-01 후보 승인·직접 등록 직후 소급 매칭. {@link #match}는 거래가 카드사에서 수집되는 시점에만
+     * 실행되는데, 방금 만든 고정지출은 그 시점엔 존재하지 않았으므로 이 고정지출을 탐지하는 근거가 된
+     * 과거 거래들(그리고 등록 후 재수집 없이 지나간 최근 결제)마저 매칭 기회를 영원히 놓친다 — 등록
+     * 직후 한 번 더 훑어 조건①(이미 alias/biller로 신원 확정된 거래만 대상)·②·③이 맞는 미태깅 거래를
+     * 확정해 준다. 계좌이체형(경로 B·C)처럼 alias·biller가 둘 다 없으면 대조할 대상이 없어 그냥 넘어간다.
+     */
+    @Transactional
+    public void matchPastTransactions(FixedExpense fixedExpense) {
+        List<CardTransaction> transactions;
+        if (fixedExpense.getBillerMerchant() != null) {
+            transactions = cardTransactionRepository.findByMember_IdAndMerchant_IdAndMerchantAliasIsNullAndStatusNotOrderByAmountAsc(
+                    fixedExpense.getMember().getId(), fixedExpense.getBillerMerchant().getId(), TransactionStatus.CANCELED);
+        } else if (fixedExpense.getMerchantAlias() != null) {
+            transactions = cardTransactionRepository.findByMember_IdAndMerchantAlias_IdAndStatusNotOrderByUsedDateAsc(
+                    fixedExpense.getMember().getId(), fixedExpense.getMerchantAlias().getId(), TransactionStatus.CANCELED);
+        } else {
+            return;
+        }
+
+        int payDayWindow = FixedExpenseMatchRules.resolvePayDayWindow(observedPayDayVariance(fixedExpense));
+        for (CardTransaction transaction : transactions) {
+            if (transaction.getFixedExpense() != null
+                    || (transaction.getStatus() != TransactionStatus.APPROVED
+                    && transaction.getStatus() != TransactionStatus.PARTIAL_CANCELED)) {
+                continue;
+            }
+            if (!FixedExpenseMatchRules.isPayDayWithinWindow(fixedExpense.getExpectedPayDay(),
+                    transaction.getUsedDate().getDayOfMonth(), payDayWindow)) {
+                continue;
+            }
+            if (!FixedExpenseMatchRules.isAmountMatch(fixedExpense.getExpectedCurrency(), fixedExpense.getExpectedAmount(),
+                    fixedExpense.getExpectedAmountKrw(), transaction.getCurrencyCode(), transaction.getAmount(),
+                    transaction.getOriginalAmount())) {
+                continue;
+            }
+            String yearMonth = yearMonthOf(transaction);
+            if (fixedExpensePaymentRepository.existsByFixedExpense_IdAndYearMonth(fixedExpense.getId(), yearMonth)) {
+                continue;
+            }
+            tagAndRecord(transaction, fixedExpense, yearMonth, false, null, false);
         }
     }
 

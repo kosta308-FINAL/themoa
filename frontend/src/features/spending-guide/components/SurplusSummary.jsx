@@ -3,7 +3,7 @@ import DashboardIcon from "../../../components/common/DashboardIcon";
 import { formatWon, toNumber } from "../spendingGuideUtils";
 import { EmptyState, PanelTitle } from "./SpendingGuideCommon";
 
-function SurplusSummary({ data, onSetGoal }) {
+function SurplusSummary({ data, onSetGoal, onTransfer }) {
   const surplusTone = (amount) => (toNumber(amount) < 0 ? "negative" : "");
   const surplusSign = (amount) => (toNumber(amount) > 0 ? "+" : "");
   const monthLabel = (yearMonth) =>
@@ -21,21 +21,34 @@ function SurplusSummary({ data, onSetGoal }) {
           description="예산보다 덜 쓴 금액이 급여 주기마다 쌓여요"
           tone="teal"
         />
-        {data.hasSavingsGoal && (
-          <div className="spending-surplus-goal-badge">
-            <span className="spending-status">
-              저축 목표 {formatWon(data.savingsTargetAmount)}
-            </span>
-            <button
-              type="button"
-              className="spending-surplus-goal-edit"
-              onClick={onSetGoal}
-              aria-label="저축 목표 수정"
-            >
-              <DashboardIcon name="edit" size={14} />
-            </button>
-          </div>
-        )}
+        <div className="spending-surplus-head-actions">
+          {data.hasSavingsGoal && (
+            <div className="spending-surplus-goal-badge">
+              <span className="spending-status">
+                저축 목표 {formatWon(data.savingsTargetAmount)}
+              </span>
+              <button
+                type="button"
+                className="spending-surplus-goal-edit"
+                onClick={onSetGoal}
+                aria-label="저축 목표 수정"
+              >
+                <DashboardIcon name="edit" size={14} />
+              </button>
+            </div>
+          )}
+          {data.ongoingCycle &&
+            toNumber(data.availableSurplusAmount) > 0 && (
+              <button
+                type="button"
+                className="spending-surplus-transfer-button"
+                onClick={onTransfer}
+              >
+                <DashboardIcon name="plus" size={13} />
+                이번 주기에 가져오기
+              </button>
+            )}
+        </div>
       </div>
 
       {data.ongoingCycle ? (
@@ -52,23 +65,33 @@ function SurplusSummary({ data, onSetGoal }) {
               />
             </strong>
             <p>
-              {toNumber(data.ongoingCycle.amount) > 0
-                ? "하루 권장액보다 덜 써서 절약하고 있어요"
-                : "아직 절약된 금액이 없어요"}
+              {toNumber(data.currentCycleSurplusTransferAmount) > 0
+                ? `잉여금 ${formatWon(data.currentCycleSurplusTransferAmount)}을 이번 주기에 보탰어요`
+                : toNumber(data.ongoingCycle.amount) > 0
+                  ? "하루 권장액보다 덜 써서 절약하고 있어요"
+                  : "아직 절약된 금액이 없어요"}
             </p>
           </div>
           <div className="spending-surplus-recent">
-            <span>완료된 주기 합산</span>
+            <span>사용 가능한 잉여금</span>
             {data.completedCycleCount > 0 ? (
               <>
-                <strong className={surplusTone(data.totalSurplusAmount)}>
-                  {surplusSign(data.totalSurplusAmount)}
+                <strong className={surplusTone(data.availableSurplusAmount)}>
                   <AnimatedNumber
-                    value={data.totalSurplusAmount}
+                    value={data.availableSurplusAmount}
                     format={formatWon}
                   />
                 </strong>
-                <p>완료된 {data.completedCycleCount}개 주기 합산</p>
+                <p>
+                  완료된 {data.completedCycleCount}개 주기 합산{" "}
+                  {formatWon(data.totalSurplusAmount)}
+                </p>
+                {toNumber(data.totalSurplusTransferAmount) > 0 && (
+                  <p>
+                    예산으로 가져온 누적{" "}
+                    {formatWon(data.totalSurplusTransferAmount)} 제외
+                  </p>
+                )}
               </>
             ) : (
               <>

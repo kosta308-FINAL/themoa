@@ -8,8 +8,6 @@ import com.weaone.themoa.domain.policy.policy.entity.PolicySearchProjection;
 import com.weaone.themoa.domain.policy.policy.repository.PolicyRepository;
 import com.weaone.themoa.domain.policy.policy.repository.PolicySearchProjectionRepository;
 import com.weaone.themoa.domain.policy.policy.repository.PolicySourceSnapshotRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
@@ -21,7 +19,6 @@ import org.springframework.util.StringUtils;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -39,9 +36,6 @@ public class PolicySearchProjectionService {
     private final ObjectMapper objectMapper;
     private final TransactionTemplate transactionTemplate;
     private final PolicyLexicalIndexBuilder lexicalIndexBuilder;
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     public PolicySearchProjectionService(PolicyRepository policyRepository,
                                          PolicySourceSnapshotRepository snapshotRepository,
@@ -85,7 +79,8 @@ public class PolicySearchProjectionService {
     @Transactional
     public void rebuildOne(Policy policy) {
         ProjectionSource source = source(policy);
-        upsert(policy, source.fields(), source.missingSnapshot());
+        PolicySearchProjection existing = projectionRepository.findByPolicyId(policy.getId()).orElse(null);
+        projectionRepository.save(upsert(policy, source.fields(), source.missingSnapshot(), existing));
         lexicalIndexBuilder.invalidate();
     }
 
@@ -94,12 +89,16 @@ public class PolicySearchProjectionService {
         Map<Integer, com.weaone.themoa.domain.policy.policy.entity.PolicySourceSnapshot> snapshots =
                 snapshotRepository.findByPolicyIdIn(ids).stream()
                         .collect(Collectors.toMap(snapshot -> snapshot.getPolicy().getId(), Function.identity()));
+        Map<Integer, PolicySearchProjection> projections = projectionRepository.findByPolicyIdIn(ids).stream()
+                .collect(Collectors.toMap(PolicySearchProjection::getPolicyId, Function.identity()));
         long missingSnapshot = 0;
+        List<PolicySearchProjection> updated = new java.util.ArrayList<>();
         for (Policy policy : policies) {
             ProjectionSource source = source(policy, snapshots.get(policy.getId()));
-            upsert(policy, source.fields(), source.missingSnapshot());
+            updated.add(upsert(policy, source.fields(), source.missingSnapshot(), projections.get(policy.getId())));
             if (source.missingSnapshot()) missingSnapshot++;
         }
+        projectionRepository.saveAll(updated);
         return new ProjectionBatchResult(policies.size(), missingSnapshot);
     }
 
@@ -128,11 +127,11 @@ public class PolicySearchProjectionService {
         return new ProjectionSource(fallback, true);
     }
 
-    private void upsert(Policy policy, Map<String, Object> fields, boolean missingSnapshot) {
-        Optional<PolicySearchProjection> existing = projectionRepository.findByPolicyId(policy.getId());
+    private PolicySearchProjection upsert(Policy policy, Map<String, Object> fields, boolean missingSnapshot,
+                                          PolicySearchProjection existing) {
         String title = mostCompleteTitle(text(fields, "plcyNm", "title", "policyName"),
                 policy.getTitle(),
-                existing.map(PolicySearchProjection::getTitleText).orElse(null));
+                existing == null ? null : existing.getTitleText());
         if (!StringUtils.hasText(title)) {
             title = policy.getTitle();
         }
@@ -148,13 +147,11 @@ public class PolicySearchProjectionService {
         String full = Stream.of(title, keyword, category, description, support, target, qualification, application, institution)
                 .filter(StringUtils::hasText)
                 .collect(Collectors.joining("\n"));
-        PolicySearchProjection projection = existing.orElseGet(() -> new PolicySearchProjection(policy));
-        logTitleMismatch(policy, fields, existing.orElse(null), title);
+        PolicySearchProjection projection = existing == null ? new PolicySearchProjection(policy) : existing;
+        logTitleMismatch(policy, fields, existing, title);
         projection.update(normalizer.normalize(title), title, keyword, category, description, support,
                 target, qualification, application, institution, full, VERSION, missingSnapshot);
-        if (existing.isEmpty()) {
-            entityManager.persist(projection);
-        }
+        return projection;
     }
 
     private String text(Map<String, Object> fields, String... keys) {

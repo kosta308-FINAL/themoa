@@ -36,8 +36,7 @@ public class RecommendApiController {
     }
 
     /**
-     * 추천 입력 폼 기본값. 화면 진입 시 호출해 월소득·월 납입가능금액을 미리 채운다.
-     * 회원가입·소비내역 연동으로 이미 아는 값을 다시 묻지 않기 위한 용도다.
+     * 추천 입력 폼 기본값. 계산 가능한 회원 값과 마지막으로 저장한 추천 조건을 화면 진입 시 채운다.
      */
     @GetMapping("/defaults")
     public ApiResponse<RecommendDefaultsResponse> defaults(@AuthenticationPrincipal Long memberId) {

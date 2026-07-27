@@ -24,6 +24,7 @@ import {
 } from "./spendingGuideUtils";
 import DateTimeFieldModal from "./components/DateTimeFieldModal";
 import SelectFieldModal from "./components/SelectFieldModal";
+import TransactionDetailModal from "./TransactionDetailModal";
 import DashboardIcon from "../../components/common/DashboardIcon";
 import "./SpendingHistoryPage.css";
 import "./SpendingGuidePage.css";
@@ -297,7 +298,7 @@ function groupTransactions(items) {
   return groups;
 }
 
-function TransactionGroup({ group, isToday, innerRef, highlighted }) {
+function TransactionGroup({ group, isToday, innerRef, highlighted, onSelect }) {
   return (
     <div
       className={`history-group${highlighted ? " highlighted" : ""}`}
@@ -331,7 +332,12 @@ function TransactionGroup({ group, isToday, innerRef, highlighted }) {
             ? `${PAYMENT_METHOD_LABELS[item.paymentMethod] || item.paymentMethod} · 직접 입력`
             : `${item.cardOrganizationName || ""} ${item.cardNumberMasked || ""} · 카드 자동수집`.trim();
           return (
-            <div className="transaction-row" key={item.id}>
+            <button
+              type="button"
+              className="transaction-row"
+              key={item.id}
+              onClick={() => onSelect?.(item.id)}
+            >
               <span className={`tx-icon ${visual.tone}`}>
                 <HistoryIcon name={visual.icon} />
               </span>
@@ -356,7 +362,7 @@ function TransactionGroup({ group, isToday, innerRef, highlighted }) {
                 <strong>{`${isRefund ? "+" : "-"}${formatWon(Math.abs(toNumber(item.netAmount)))}`}</strong>
                 <span>{amountSub}</span>
               </span>
-            </div>
+            </button>
           );
         })}
       </div>
@@ -394,6 +400,7 @@ function SpendingHistoryPage() {
   const [isDayLoading, setIsDayLoading] = useState(false);
   const [dayError, setDayError] = useState("");
   const [dailyGuideAmount, setDailyGuideAmount] = useState(null);
+  const [detailId, setDetailId] = useState(null);
   const today = todayDate();
 
   useEffect(() => {
@@ -503,6 +510,20 @@ function SpendingHistoryPage() {
       loadCycle(initialBudgetId ? Number(initialBudgetId) : null);
     run();
   }, [loadCycle, initialBudgetId]);
+
+  const refreshAfterTransactionChange = useCallback(async () => {
+    if (selectedDate) {
+      loadDay(selectedDate);
+    } else if (cycleBudgetId) {
+      await loadTransactions(cycleBudgetId, transactionsData?.page ?? 0);
+    }
+  }, [
+    selectedDate,
+    loadDay,
+    cycleBudgetId,
+    loadTransactions,
+    transactionsData,
+  ]);
 
   useEffect(() => {
     getCategories()
@@ -824,6 +845,7 @@ function SpendingHistoryPage() {
                     key={group.date}
                     group={group}
                     isToday={group.date === today}
+                    onSelect={setDetailId}
                   />
                 ))}
             </section>
@@ -1038,6 +1060,7 @@ function SpendingHistoryPage() {
                           else groupRefs.current.delete(group.date);
                         }}
                         highlighted={group.date === highlightDate}
+                        onSelect={setDetailId}
                       />
                     ))}
                   </div>
@@ -1243,6 +1266,14 @@ function SpendingHistoryPage() {
           </>
         )}
       </main>
+      {detailId && (
+        <TransactionDetailModal
+          transactionId={detailId}
+          categories={categories}
+          onClose={() => setDetailId(null)}
+          onChanged={refreshAfterTransactionChange}
+        />
+      )}
       <div
         className={`toast${toast ? " show" : ""}`}
         role="status"

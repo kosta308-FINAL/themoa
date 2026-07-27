@@ -17,79 +17,316 @@
   color: #fff;
 }
 
-/* ─── 검색 패널 ───────────────────────────────────────── */
-.fs-panel {
+/* ─── 검색 히어로 ─────────────────────────────────────────
+   정책 페이지는 그린(95%)+그레이(5%)라면, 금융은 반대로 그레이(95%)+그린(5%).
+   다만 완전히 무채색이면 밋밋해서, 은은한 그린·민트 톤 글로우로 색감과
+   반짝이는 느낌을 살짝 얹는다. 채워진 진한 초록은 여전히 검색 버튼(CTA)뿐. */
+.fs-hero {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  background: var(--dash-bg-card);
-  border: 1px solid var(--dash-border);
-  border-radius: var(--dash-radius);
-  box-shadow: var(--dash-shadow);
-  padding: 18px 20px;
+  gap: 14px;
+  padding: 34px 38px 30px;
+  border-radius: 26px;
+  background: linear-gradient(150deg, #e9edf0 0%, #e1e6e9 45%, #e7ebea 100%);
 }
 
-.fs-search-row {
+/* 카드 전체에 흩뿌린 작은 반짝임(별) — 두 레이어를 다른 위치·타이밍으로 겹쳐
+   비동기적으로 반짝이게 한다. 그레이 베이스는 유지하면서 생동감만 더한다. */
+.fs-hero::before,
+.fs-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-repeat: no-repeat;
+}
+
+.fs-hero::before {
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 2px, transparent 3px),
+    radial-gradient(
+      circle,
+      rgba(148, 163, 184, 0.55) 0 1.6px,
+      transparent 2.6px
+    ),
+    radial-gradient(circle, rgba(255, 255, 255, 0.9) 0 1.4px, transparent 2.4px);
+  background-position:
+    12% 22%,
+    85% 16%,
+    68% 78%;
+  animation: fs-sparkle-twinkle 3.4s ease-in-out infinite;
+}
+
+.fs-hero::after {
+  background-image:
+    radial-gradient(circle, rgba(34, 197, 94, 0.45) 0 1.5px, transparent 2.5px),
+    radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.9) 0 1.8px,
+      transparent 2.8px
+    ),
+    radial-gradient(circle, rgba(148, 163, 184, 0.5) 0 1.3px, transparent 2.3px);
+  background-position:
+    30% 68%,
+    93% 55%,
+    50% 12%;
+  animation: fs-sparkle-twinkle 4.2s ease-in-out infinite;
+  animation-delay: 1.1s;
+}
+
+@keyframes fs-sparkle-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.fs-hero-badge {
+  position: relative;
+  z-index: 1;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid rgba(22, 163, 74, 0.16);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--dash-accent-dark);
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.1);
+  animation: fs-badge-glow 2.6s ease-in-out infinite;
+}
+
+@keyframes fs-badge-glow {
+  0%,
+  100% {
+    box-shadow: 0 4px 14px rgba(22, 163, 74, 0.1);
+  }
+  50% {
+    box-shadow: 0 4px 18px rgba(22, 163, 74, 0.3);
+  }
+}
+
+.fs-hero-title {
+  position: relative;
+  z-index: 1;
+  margin: 2px 0 0;
+  color: var(--dash-text-primary);
+  font-size: clamp(22px, 2.6vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.6px;
+}
+
+.fs-hero-subtitle {
+  position: relative;
+  z-index: 1;
+  max-width: 580px;
+  margin: 0;
+  color: var(--dash-text-secondary);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.fs-hero-input-bar {
+  position: relative;
+  z-index: 1;
   display: flex;
+  align-items: center;
   gap: 10px;
+  margin-top: 8px;
+  padding: 9px 9px 9px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow:
+    0 16px 36px rgba(15, 23, 42, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.03);
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 
-.fs-input {
+/* 검색바를 가로지르는 은은한 반짝임 스윕. 별도 레이어에서만 overflow:hidden을 걸어
+   검색 버튼의 그림자(box-shadow)가 잘리지 않게 한다. */
+.fs-hero-shimmer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.fs-hero-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(74, 222, 128, 0.18),
+    transparent
+  );
+  animation: fs-shimmer 3.4s ease-in-out infinite;
+}
+
+@keyframes fs-shimmer {
+  0% {
+    left: -60%;
+  }
+  55% {
+    left: 130%;
+  }
+  100% {
+    left: 130%;
+  }
+}
+
+/* 포커스 링만 초록으로 — 상호작용 시점의 유일한 초록 포인트 */
+.fs-hero-input-bar:focus-within {
+  box-shadow:
+    0 18px 40px rgba(15, 23, 42, 0.1),
+    0 0 0 3px var(--dash-accent-light);
+}
+
+.fs-hero-input-icon {
+  flex: 0 0 auto;
+  color: #94a3b8;
+}
+
+.fs-hero-input {
   flex: 1;
   min-width: 0;
-  padding: 11px 14px;
-  border: 1px solid var(--dash-border);
-  border-radius: 10px;
-  background: var(--dash-bg-card);
+  padding: 9px 0;
+  border: 0;
+  background: transparent;
   color: var(--dash-text-primary);
   font: inherit;
-  outline: none;
-  transition: border-color 0.15s ease;
-}
-
-.fs-input:focus,
-.fs-sort:focus {
-  border-color: var(--dash-accent);
-}
-
-.fs-sort {
-  flex-shrink: 0;
-  padding: 11px 12px;
-  border: 1px solid var(--dash-border);
-  border-radius: 10px;
-  background: var(--dash-bg-card);
-  color: var(--dash-text-primary);
-  font: inherit;
+  font-size: 14px;
   outline: none;
 }
 
-.fs-submit {
-  flex-shrink: 0;
-  min-width: 92px;
-  padding: 11px 20px;
-  border-radius: 10px;
+.fs-hero-input::placeholder {
+  color: #94a3b8;
+}
+
+.fs-hero-sort {
+  flex: 0 0 auto;
+  padding: 9px 10px;
+  border: 1px solid var(--dash-border);
+  border-radius: 999px;
+  background: #f8fafc;
+  color: var(--dash-text-secondary);
+  font: inherit;
+  font-size: 12.5px;
+  outline: none;
+}
+
+/* 이 히어로에서 유일하게 채워진 초록 — 검색 버튼(CTA)만 강조한다 */
+.fs-hero-send {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
   background: var(--dash-accent);
   color: #fff;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
-  transition: background 0.15s ease;
+  box-shadow: 0 10px 22px rgba(34, 197, 94, 0.32);
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-.fs-submit:hover:not(:disabled) {
+.fs-hero-send:hover:not(:disabled) {
   background: var(--dash-accent-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(22, 163, 74, 0.36);
 }
 
-.fs-submit:disabled {
+.fs-hero-send:disabled {
+  background: #cbd5e1;
+  color: #fff;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.fs-hero-examples {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.fs-hero-examples-label {
+  flex: 0 0 auto;
+  margin-right: 2px;
+  color: var(--dash-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fs-hero-examples button {
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--dash-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--dash-text-secondary);
+  font-size: 12px;
+  white-space: normal;
+  word-break: keep-all;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.fs-hero-examples button:hover:not(:disabled) {
+  border-color: var(--dash-accent);
+  background: #fff;
+  color: var(--dash-accent-dark);
+}
+
+.fs-hero-examples button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.fs-examples {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+@media (max-width: 720px) {
+  .fs-hero {
+    padding: 24px 20px 22px;
+  }
+
+  .fs-hero-input-bar {
+    flex-wrap: wrap;
+    border-radius: 22px;
+  }
+
+  .fs-hero-sort,
+  .fs-hero-send {
+    width: 100%;
+  }
 }
 
+/* 결과 영역의 대안 검색어 칩(fs-example)은 기존 카드 배경 위에서 그대로 유지 */
 .fs-example {
   padding: 7px 12px;
   border: 1px solid var(--dash-border);
@@ -128,12 +365,12 @@
 }
 
 .fs-count strong {
-  color: var(--dash-accent-dark);
+  color: var(--dash-text-primary);
 }
 
 .fs-results {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -190,89 +427,145 @@
   color: #a12c2c;
 }
 
-/* ─── 결과 카드 ───────────────────────────────────────── */
-.fs-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* ─── 결과 카드 (정책 검색과 같은 목록형 카드 — 클릭하면 상세 모달) ───── */
+.fs-result-card {
+  position: relative;
+  width: 100%;
   background: var(--dash-bg-card);
   border: 1px solid var(--dash-border);
   border-radius: var(--dash-radius);
   box-shadow: var(--dash-shadow);
-  padding: 18px 20px;
   transition:
     transform 0.15s ease,
-    border-color 0.15s ease;
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-.fs-card:hover {
+/* 카드 자체는 <article>이고, 실제로 상세 모달을 여는 클릭 영역만 내부 버튼으로 둔다
+   (북마크 버튼과 중첩되지 않도록 — button 안에 button을 넣을 수 없다). */
+.fs-result-hit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  /* 우측 상단에 겹쳐 있는 북마크 아이콘과 상태 배지가 부딪히지 않도록 여유를 둔다 */
+  padding: 18px 44px 18px 20px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* 북마크는 카드 우측 상단에 겹쳐서 바로 토글할 수 있게 한다 */
+.fs-result-bookmark {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+}
+
+.fs-result-card:hover {
   transform: translateY(-2px);
   border-color: var(--dash-accent);
 }
 
-.fs-card-head {
+.fs-result-card.active {
+  border-color: var(--dash-accent);
+  box-shadow:
+    0 0 0 2px rgba(34, 197, 94, 0.1),
+    var(--dash-shadow);
+}
+
+.fs-result-title-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
 }
 
-/* 금리 + 북마크 버튼을 카드 오른쪽 상단에 묶어 배치한다. */
-.fs-card-head-right {
+.fs-result-title-main {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
+  min-width: 0;
 }
 
-.fs-type {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--dash-accent-light);
-  color: var(--dash-accent-dark);
-  font-size: 12px;
+.fs-result-title-main strong {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dash-text-primary);
+  font-size: 16px;
   font-weight: 700;
+  line-height: 1.4;
 }
 
-.fs-type-loan {
+.fs-result-company {
+  display: block;
+  color: var(--dash-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fs-result-status {
+  flex-shrink: 0;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--dash-bg, #f4f5f7);
+  color: var(--dash-text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.fs-result-status.loan {
   background: var(--c-blue-light, #dbeafe);
   color: var(--c-blue, #3b82f6);
 }
 
-.fs-rate {
+.fs-result-status-discontinued {
+  background: #fdeeee;
+  color: #a12c2c;
+}
+
+.fs-result-card p {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--dash-text-secondary);
   font-size: 13px;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.fs-result-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
   color: var(--dash-text-secondary);
-  white-space: nowrap;
-}
-
-.fs-rate strong {
-  font-size: 17px;
-  color: var(--dash-accent-dark);
-}
-
-.fs-name-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.fs-name {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--dash-text-primary);
-  line-height: 1.4;
-}
-
-.fs-company {
   font-size: 12px;
-  font-weight: 600;
-  color: var(--dash-text-secondary);
 }
 
-.fs-join,
+.fs-result-meta-row span {
+  padding: 5px 9px;
+  border: 1px solid var(--dash-border);
+  border-radius: 999px;
+  background: #f8fbf9;
+}
+
+/* 대표금리만 이 카드에서 유일하게 초록으로 강조한다(그레이 95% + 그린 5%) */
+.fs-result-meta-row span.fs-result-rate {
+  border-color: transparent;
+  background: var(--dash-accent-light);
+  color: var(--dash-accent-dark);
+  font-weight: 700;
+}
+
 .fs-special {
   font-size: 12.5px;
   color: var(--dash-text-secondary);
@@ -283,25 +576,22 @@
 .fs-conditions {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
   list-style: none;
 }
 
 .fs-conditions li {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
   gap: 8px;
   font-size: 12.5px;
   line-height: 1.5;
   color: var(--dash-text-primary);
 }
 
-.fs-conditions li::before {
-  content: "✓";
-  margin-right: 6px;
-  color: var(--dash-accent-dark);
-  font-weight: 700;
+.fs-conditions li > svg {
+  flex-shrink: 0;
+  color: var(--dash-accent);
 }
 
 .fs-conditions li span {
@@ -311,7 +601,11 @@
 
 .fs-conditions li em {
   flex-shrink: 0;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #ffffff;
   font-style: normal;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--dash-accent-dark);
 }
@@ -330,30 +624,255 @@
   color: var(--dash-accent-dark);
 }
 
-.fs-link {
-  align-self: flex-start;
-  margin-top: auto;
-  padding-top: 4px;
+/* ─── 상세 모달 (정책 검색의 상세 모달과 같은 구조) ───────────────── */
+/*
+ * createPortal로 document.body에 붙기 때문에 .dashboard 아래에서 정의된
+ * --dash-* 변수를 상속받지 못한다(DOM 트리 밖). var() 하나하나에 폴백을
+ * 넣는 대신 이 서브트리 루트에서 변수를 다시 선언해 모든 하위 규칙이
+ * 정상적으로 값을 받도록 한다.
+ */
+.fs-detail-modal-backdrop {
+  --dash-accent: #22c55e;
+  --dash-accent-dark: #16a34a;
+  --dash-accent-light: #e7f9ee;
+  --dash-bg: #ffffff;
+  --dash-border: #e5ede8;
+  --dash-text-primary: #16241c;
+  --dash-text-secondary: #6b7a72;
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  /* 뒤 배경이 비쳐 보이지 않도록 확실히 어둡게 덮는다(반투명 논란 방지) */
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(6px);
+}
+
+.fs-detail-modal {
+  width: min(500px, 100%);
+  max-height: calc(100vh - 40px);
+  padding: 28px;
+  overflow-y: auto;
+  border-radius: 22px;
+  /* 변수 대신 불투명 흰색을 직접 명시해 배경이 절대 비치지 않게 한다 */
+  background: #ffffff;
+  border: 1px solid var(--dash-border);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+}
+
+.fs-detail-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 18px;
+}
+
+.fs-detail-modal-head strong {
+  color: var(--dash-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fs-detail-close {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dash-text-secondary);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.fs-detail-close:hover {
+  background: var(--dash-bg, #f4f5f7);
+  color: var(--dash-text-primary);
+}
+
+.fs-detail-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.fs-eyebrow {
+  display: inline-flex;
+  margin: 0;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--dash-bg, #f4f5f7);
+  color: var(--dash-text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.fs-eyebrow-discontinued {
+  background: #fdeeee;
+  color: #a12c2c;
+}
+
+.fs-detail-modal h2 {
+  margin: 0 0 6px;
+  color: var(--dash-text-primary);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  line-height: 1.35;
+}
+
+.fs-detail-company {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 0 20px;
+  color: var(--dash-text-secondary);
   font-size: 13px;
   font-weight: 600;
+}
+
+.fs-detail-company svg {
+  flex-shrink: 0;
+  color: var(--dash-text-secondary);
+}
+
+/* 대표금리 — 이 모달에서 가장 중요한 숫자이므로 별도 카드로 강조 */
+.fs-detail-rate {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--dash-accent-light);
+}
+
+.fs-detail-rate-label {
+  flex-shrink: 0;
+  color: var(--dash-accent-dark);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.fs-detail-rate-value {
+  color: var(--dash-accent-dark);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+
+.fs-detail-rate-value em {
+  margin-left: 1px;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.fs-detail-rate-term {
+  margin-left: auto;
+  color: var(--dash-accent-dark);
+  font-size: 12.5px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.fs-detail-list {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--dash-accent-light);
+}
+
+.fs-detail-list div {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.fs-detail-list dt {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--dash-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fs-detail-list dt svg {
+  flex-shrink: 0;
+}
+
+.fs-detail-list dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--dash-text-primary);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.fs-detail-section {
+  margin: 0 0 18px;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--dash-accent-light);
+}
+
+.fs-detail-section-title {
+  margin: 0 0 10px;
+  color: var(--dash-text-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fs-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--dash-border);
+}
+
+.fs-official-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  margin-left: auto;
+  padding: 0 14px;
+  border: 1px solid var(--dash-border);
+  border-radius: 10px;
+  background: var(--dash-bg-card);
+  color: var(--dash-text-primary);
+  font-size: 13px;
+  font-weight: 700;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.fs-official-link:hover {
+  border-color: var(--dash-accent);
+  background: var(--dash-accent-light);
   color: var(--dash-accent-dark);
 }
 
-.fs-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: auto;
-  padding-top: 4px;
-}
-
-.fs-actions .fs-link {
-  margin-top: 0;
-  padding-top: 0;
-}
-
 .fs-register {
-  padding: 8px 16px;
+  min-height: 40px;
+  padding: 0 18px;
   border: none;
   border-radius: 10px;
   background: var(--dash-accent, #22c55e);
@@ -361,6 +880,7 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
 .fs-register:hover {
@@ -368,15 +888,23 @@
 }
 
 @media (max-width: 720px) {
-  .fs-search-row {
-    flex-wrap: wrap;
-  }
-
-  .fs-input {
-    flex-basis: 100%;
-  }
-
   .fs-results {
     grid-template-columns: 1fr;
+  }
+
+  .fs-detail-modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .fs-detail-modal {
+    width: 100%;
+    max-height: calc(100vh - 32px);
+    padding: 20px;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .fs-detail-list div {
+    grid-template-columns: 64px minmax(0, 1fr);
   }
 }

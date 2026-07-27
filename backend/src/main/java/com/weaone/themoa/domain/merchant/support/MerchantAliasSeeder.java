@@ -41,33 +41,56 @@ public class MerchantAliasSeeder implements ApplicationRunner {
         seedBillers();
     }
 
+    /**
+     * 없는 것만 추가한다(category.md의 CategorySeeder와 동일한 이유 — 이미 시드가 끝난 DB에도 새 alias·
+     * 표기가 반영돼야 한다). ChatGPT 구독(OpenAI)은 Claude와 같은 패턴(전역 시드 alias + 자기 서비스명이
+     * 드러나는 결제 표기)이라 2026-07 실데이터 분석으로 추가했다. 쿠팡와우 멤버십은 "쿠팡(쿠페이)" 외에
+     * "쿠팡(와우 멤버십)"/"쿠팡(와우멤버십)" 표기 변형이 실데이터에서 추가로 확인돼 함께 등록한다.
+     */
     private void seedAliasesAndTerms() {
-        if (merchantAliasRepository.count() > 0) {
-            return;
-        }
         Category subscription = findCategory(CategoryCode.SUBSCRIPTION);
         Category donation = findCategory(CategoryCode.DONATION);
-        MerchantAlias claude = merchantAliasRepository.save(MerchantAlias.create("Claude 구독", subscription));
-        MerchantAlias coupangWow = merchantAliasRepository.save(MerchantAlias.create("쿠팡와우 멤버십", subscription));
-        MerchantAlias redCross = merchantAliasRepository.save(MerchantAlias.create("대한적십자사 정기후원", donation));
 
-        merchantAliasTermsRepository.saveAll(List.of(
-                MerchantAliasTerms.seed(claude, "CLAUDE.AI SUBSCRIPTION"),
-                MerchantAliasTerms.seed(claude, "ANTHROPIC* CLAUDE SUB"),
-                MerchantAliasTerms.seed(coupangWow, "쿠팡(쿠페이)"),
-                MerchantAliasTerms.seed(redCross, "대한적십자사")
-        ));
+        MerchantAlias claude = findOrCreateAlias("Claude 구독", subscription);
+        MerchantAlias coupangWow = findOrCreateAlias("쿠팡와우 멤버십", subscription);
+        MerchantAlias redCross = findOrCreateAlias("대한적십자사 정기후원", donation);
+        MerchantAlias chatGpt = findOrCreateAlias("ChatGPT 구독", subscription);
+
+        seedTermIfAbsent(claude, "CLAUDE.AI SUBSCRIPTION");
+        seedTermIfAbsent(claude, "ANTHROPIC* CLAUDE SUB");
+        seedTermIfAbsent(coupangWow, "쿠팡(쿠페이)");
+        seedTermIfAbsent(coupangWow, "쿠팡(와우 멤버십)");
+        seedTermIfAbsent(coupangWow, "쿠팡(와우멤버십)");
+        seedTermIfAbsent(redCross, "대한적십자사");
+        seedTermIfAbsent(chatGpt, "OPENAI *CHATGPT SUBSCR");
     }
 
-    private void seedBillers() {
-        if (billerRepository.count() > 0) {
-            return;
+    private MerchantAlias findOrCreateAlias(String canonicalServiceName, Category defaultCategory) {
+        return merchantAliasRepository.findByCanonicalServiceNameNormalized(canonicalServiceName)
+                .orElseGet(() -> merchantAliasRepository.save(MerchantAlias.create(canonicalServiceName, defaultCategory)));
+    }
+
+    private void seedTermIfAbsent(MerchantAlias alias, String aliasText) {
+        if (merchantAliasTermsRepository.findGlobalByRawName(aliasText).isEmpty()) {
+            merchantAliasTermsRepository.save(MerchantAliasTerms.seed(alias, aliasText));
         }
-        billerRepository.saveAll(List.of(
-                Biller.seed("Apple"),
-                Biller.seed("Google Play"),
-                Biller.seed("구글페이먼트코리아")
-        ));
+    }
+
+    /**
+     * 없는 것만 추가한다. 비바리퍼블리카(토스페이먼츠)·NICE 결제대행은 Apple·Google Play와 같은 성격의
+     * 결제대행자다 — 원본 가맹점명이 그 이름 하나로만 찍혀 나와서(2026-07 실데이터 확인) 이름만으로는
+     * 어떤 실제 서비스인지 구분할 수 없다(merchant.md §5-D-1).
+     */
+    private void seedBillers() {
+        List<String> desired = List.of(
+                "Apple", "Google Play", "구글페이먼트코리아", "비바리퍼블리카", "NICE 결제대행");
+        List<Biller> missing = desired.stream()
+                .filter(name -> !billerRepository.existsByNameNormalized(name))
+                .map(Biller::seed)
+                .toList();
+        if (!missing.isEmpty()) {
+            billerRepository.saveAll(missing);
+        }
     }
 
     private Category findCategory(CategoryCode code) {

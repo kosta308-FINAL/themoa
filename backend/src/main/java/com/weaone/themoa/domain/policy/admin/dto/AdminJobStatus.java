@@ -15,6 +15,7 @@ public record AdminJobStatus(
         long processedCount,
         long successCount,
         long failedCount,
+        long skippedCount,
         long remainingCount,
         int currentPage,
         int totalPages,
@@ -41,9 +42,9 @@ public record AdminJobStatus(
                           long remainingCount,
                           int currentPage,
                           int currentBatch,
-                          String message) {
+        String message) {
         this(jobId, jobType, status, null, null, null, null, totalCount <= 0,
-                totalCount, processedCount, successCount, failedCount, remainingCount,
+                totalCount, processedCount, successCount, failedCount, 0, remainingCount,
                 currentPage, 0, currentBatch, 0, null, 0, 0, null, null, null, 0, null, null, message);
     }
 }

@@ -108,6 +108,26 @@ class PolicyAdminControllerTest {
     }
 
     @Test
+    @DisplayName("관리자 정책 성별 분류 Job endpoint는 POLICY_GENDER_CLASSIFICATION으로 202 Accepted를 반환한다")
+    void policyGenderClassificationJobEndpointKeepsContract() throws Exception {
+        AdminJobService jobService = mock(AdminJobService.class);
+        AdminJobStatus job = new AdminJobStatus("job-gender-1", "POLICY_GENDER_CLASSIFICATION", "RUNNING",
+                0, 0, 0, 0, 0, 0, 0, "");
+        given(jobService.start("POLICY_GENDER_CLASSIFICATION")).willReturn(job);
+        MockMvc mockMvc = MockMvcBuilders
+                .standaloneSetup(new PolicyAdminJobController(jobService))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter())
+                .build();
+
+        mockMvc.perform(post("/api/policies/admin/jobs/policy-gender-classification"))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.jobId").value("job-gender-1"))
+                .andExpect(jsonPath("$.data.jobType").value("POLICY_GENDER_CLASSIFICATION"));
+        verify(jobService).start("POLICY_GENDER_CLASSIFICATION");
+    }
+
+    @Test
     @DisplayName("존재하지 않는 관리자 Job 조회는 POLICY_JOB_NOT_FOUND를 반환한다")
     void missingJobReturnsPolicyJobNotFound() throws Exception {
         AdminJobService jobService = mock(AdminJobService.class);

@@ -20,6 +20,7 @@ public record MyPageResponse(
     public record ProfileResponse(
             String email,
             String name,
+            boolean passwordLoginEnabled,
             String gender,
             LocalDate birthDate,
             String incomeType,
@@ -34,6 +35,7 @@ public record MyPageResponse(
             return new ProfileResponse(
                     member.getEmail(),
                     member.getName(),
+                    member.getPassword() != null,
                     member.getGender().name(),
                     member.getBirthDate(),
                     member.getIncomeType().name(),

@@ -180,3 +180,8 @@ export const getIncomeAdjustments = () =>
 
 export const deleteIncomeAdjustment = (id) =>
   axiosInstance.delete(`/api/spending-guide/income-adjustments/${id}`);
+
+export const createSurplusTransfer = (payload) =>
+  axiosInstance
+    .post("/api/spending-guide/surplus-transfers", payload)
+    .then(responseData);
