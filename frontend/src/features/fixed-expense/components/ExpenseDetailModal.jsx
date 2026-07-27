@@ -73,7 +73,6 @@ function ConfirmModal({
 function MissedPaymentSection({
   fixedExpenseId,
   fixedExpenseName,
-  paymentStatus,
   onConfirmed,
 }) {
   const [state, setState] = useState({
@@ -163,22 +162,17 @@ function MissedPaymentSection({
     }
   };
 
-  // 이번 달 결제가 이미 자동으로(F-05 수동 확인이 아니라) 매칭돼 있으면, 아직 결제를 못 찾은
-  // 것처럼 "결제내역이 안 보이나요?"를 보여줄 필요가 없다 — getFixedExpensePaymentConfirmation은
-  // 사용자가 직접 확인한 건만 돌려주므로, 자동 매칭 건은 여기선 null로 온다.
-  const isAutoResolved = paymentStatus === "PAID" && confirmedPayment === null;
-
   return (
     <div className="fx-missed-payment">
       <div className="fx-missed-payment-head">
         <h4>
           {confirmedPayment
-            ? "이번 달 연결된 결제"
-            : isAutoResolved
-              ? "이번 달 결제, 자동으로 확인했어요"
-              : "결제내역이 안 보이나요?"}
+            ? confirmedPayment.userConfirmedMatch
+              ? "이번 달 연결된 결제"
+              : "이번 달 결제, 자동으로 확인했어요"
+            : "결제내역이 안 보이나요?"}
         </h4>
-        {confirmedPayment === null && !isAutoResolved && (
+        {confirmedPayment === null && (
           <button type="button" className="fx-ghost-button" onClick={load}>
             {state.loading ? "찾는 중..." : "결제내역 확인"}
           </button>
@@ -204,15 +198,15 @@ function MissedPaymentSection({
               {isUndoing ? "해제 중..." : "연결 해제"}
             </button>
           </div>
+          {!confirmedPayment.userConfirmedMatch && (
+            <p className="fx-missed-payment-empty">
+              카드 결제내역과 자동으로 대조해 연결했어요. 다른 구독과 헷갈려
+              잘못 연결됐다면 해제 후 아래에서 직접 다시 연결할 수 있어요.
+            </p>
+          )}
         </div>
       )}
-      {isAutoResolved && (
-        <p className="fx-missed-payment-empty">
-          카드 결제내역과 자동으로 대조해 이번 달 결제를 확인했어요.
-        </p>
-      )}
       {confirmedPayment === null &&
-        !isAutoResolved &&
         state.items &&
         (state.items.length ? (
           <div className="fx-missed-payment-list">
@@ -258,7 +252,11 @@ function MissedPaymentSection({
       {pendingUndo && (
         <ConfirmModal
           title="결제 연결을 해제할까요?"
-          message={`'${confirmedPayment?.merchantName}' 결제 연결을 해제할까요?\n이번 연결에서 새로 학습된 가맹점 정보도 함께 되돌립니다.`}
+          message={
+            confirmedPayment?.userConfirmedMatch
+              ? `'${confirmedPayment?.merchantName}' 결제 연결을 해제할까요?\n이번 연결에서 새로 학습된 가맹점 정보도 함께 되돌립니다.`
+              : `'${confirmedPayment?.merchantName}' 결제 연결을 해제할까요?\n해제하면 이번 달은 다시 미확인 상태가 되고, 결제내역에서 직접 연결할 수 있어요.`
+          }
           confirmLabel="해제할게요"
           isDanger
           isBusy={isUndoing}
@@ -329,7 +327,9 @@ function ExpenseDetailModal({
       await onChanged("이름을 수정했어요.");
       setIsEditingName(false);
     } catch (requestError) {
-      setNameError(getApiErrorMessage(requestError, "이름을 수정하지 못했어요."));
+      setNameError(
+        getApiErrorMessage(requestError, "이름을 수정하지 못했어요."),
+      );
     } finally {
       setIsSavingName(false);
     }
@@ -374,7 +374,9 @@ function ExpenseDetailModal({
       await onChanged("결제 처리했어요.");
       onClose();
     } catch (requestError) {
-      setConfirmError(getApiErrorMessage(requestError, "결제 처리에 실패했어요."));
+      setConfirmError(
+        getApiErrorMessage(requestError, "결제 처리에 실패했어요."),
+      );
     } finally {
       setIsConfirmingPayment(false);
     }
@@ -427,10 +429,7 @@ function ExpenseDetailModal({
               {serviceInitial(expense.merchantAliasName || expense.name)}
             </ServiceIcon>
             {isEditingName ? (
-              <form
-                className="fx-detail-name-edit"
-                onSubmit={handleNameSave}
-              >
+              <form className="fx-detail-name-edit" onSubmit={handleNameSave}>
                 <input
                   className="fx-detail-name-input"
                   value={nameDraft}
@@ -477,9 +476,7 @@ function ExpenseDetailModal({
                 )}
               </div>
             )}
-            {nameError && (
-              <p className="fx-detail-name-error">{nameError}</p>
-            )}
+            {nameError && <p className="fx-detail-name-error">{nameError}</p>}
             <strong>
               {formatAmount(expense.expectedAmount, expense.expectedCurrency)}
             </strong>
@@ -596,7 +593,6 @@ function ExpenseDetailModal({
                 <MissedPaymentSection
                   fixedExpenseId={expense.id}
                   fixedExpenseName={expense.name}
-                  paymentStatus={expense.paymentStatus}
                   onConfirmed={onChanged}
                 />
               )}

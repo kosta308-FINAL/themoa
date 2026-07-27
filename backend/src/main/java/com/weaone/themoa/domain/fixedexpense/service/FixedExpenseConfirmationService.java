@@ -96,28 +96,31 @@ public class FixedExpenseConfirmationService {
         fixedExpenseMatchingService.confirmMatch(transaction, fixedExpense, learnedTerm, billerAssigned);
     }
 
-    /** 이번 주기에 사용자가 "이 거래예요"로 직접 연결한 거래. 자동 매칭·수기 결제는 반환하지 않는다. */
+    /**
+     * 이번 주기에 연결된 결제 — 자동 매칭, 수기 결제처리, "이 거래예요" 사용자 확정을 모두 포함한다.
+     * 자동 매칭 건도 사용자가 잘못 연결된 걸 발견하면 되돌릴 수 있어야 해서(troubleshooting: biller
+     * 오배정), userConfirmedMatch 여부로 걸러내지 않는다 — 그 값은 응답에 실어 프런트 문구 분기에만 쓴다.
+     */
     @Transactional(readOnly = true)
     public FixedExpensePaymentConfirmationResponse getCurrentConfirmation(Long memberId, Long fixedExpenseId) {
         FixedExpense fixedExpense = getOwned(memberId, fixedExpenseId);
         String yearMonth = currentYearMonth(memberId, LocalDate.now(FixedExpenseCyclePolicy.ZONE_SEOUL));
         return fixedExpensePaymentRepository.findByFixedExpense_IdAndYearMonth(fixedExpense.getId(), yearMonth)
-                .filter(payment -> Boolean.TRUE.equals(payment.getUserConfirmedMatch()))
                 .filter(payment -> payment.getCardTransaction() != null)
                 .map(FixedExpensePaymentConfirmationResponse::from)
                 .orElse(null);
     }
 
     /**
-     * 사용자가 잘못 고른 F-05 연결을 되돌린다. 이 확정에서 새로 만든 학습어와 biller만 복구하고,
-     * 확정 전부터 존재하던 사용자 학습어·biller는 보존한다.
+     * 이번 주기에 연결된 결제를 해제한다 — 자동 매칭이든 "이 거래예요" 사용자 확정이든 동일한 경로로
+     * 되돌린다. 학습어 삭제·biller 초기화는 그 확정에서 새로 만들어진 값이 있을 때만 일어나므로(자동
+     * 매칭 건은 둘 다 null/false), 자동 매칭 건은 태깅만 풀리고 학습 상태는 건드리지 않는다.
      */
     @Transactional
     public void undoConfirmation(Long memberId, Long fixedExpenseId, Long transactionId) {
         FixedExpense fixedExpense = getOwned(memberId, fixedExpenseId);
         FixedExpensePayment payment = fixedExpensePaymentRepository.findByCardTransaction_Id(transactionId)
                 .filter(found -> found.getFixedExpense().getId().equals(fixedExpense.getId()))
-                .filter(found -> Boolean.TRUE.equals(found.getUserConfirmedMatch()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.FIXED_EXPENSE_PAYMENT_CONFIRMATION_NOT_FOUND));
         CardTransaction transaction = payment.getCardTransaction();
         Merchant merchant = transaction.getMerchant();

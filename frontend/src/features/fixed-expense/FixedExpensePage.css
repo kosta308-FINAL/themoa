@@ -1552,9 +1552,10 @@
 }
 
 .fx-detail-name {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  position: relative;
+  display: inline-block;
+  max-width: calc(100% - 36px);
+  vertical-align: top;
 }
 
 .fx-detail-name-button,
@@ -1574,6 +1575,13 @@
 .fx-detail-name-action:hover:not(:disabled) {
   color: var(--fx-green-dark);
   background: var(--fx-green-soft);
+}
+
+.fx-detail-name-button {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 5px);
+  transform: translateY(-50%);
 }
 
 .fx-detail-name-edit {
