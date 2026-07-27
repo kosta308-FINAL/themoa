@@ -20,12 +20,11 @@ html,body{ height:100%; background:#0d0f0c; overflow:hidden; font-family:var(--p
   position:absolute; inset:0;
   width:var(--slide-w); height:var(--slide-h);
   overflow:hidden;
-  transform:translateX(100%);          /* 아직 안 나온 슬라이드는 오른쪽 대기 */
-  transition:transform .55s cubic-bezier(.7,0,.25,1);
-  will-change:transform;
+  opacity:0; pointer-events:none;      /* 아직 안 나온/지나간 슬라이드는 숨김 */
+  transition:opacity .4s ease;
+  will-change:opacity;
 }
-.slide.active{ transform:translateX(0); }      /* 현재 슬라이드 */
-.slide.past{ transform:translateX(-100%); }    /* 지나간 슬라이드는 왼쪽으로 */
+.slide.active{ opacity:1; pointer-events:auto; z-index:2; }  /* 현재 슬라이드 */
 #deck.notrans .slide{ transition:none; }       /* 최초 로드 시 애니메이션 방지 */
 
 /* 절대좌표 배치용 헬퍼: 원본 PPT 1920x1080 좌표를 그대로 사용 */
