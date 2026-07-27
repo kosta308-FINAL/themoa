@@ -123,6 +123,12 @@ document.head.insertAdjacentHTML('beforeend', `
   border:3px solid #000; box-shadow:0 18px 40px rgba(0,0,0,.16); z-index:2; }
 #s3.morphed .flowimg.show{ display:block; }
 #s3 .flowimg img{ width:100%; display:block; }
+/* 테이블 설계: ERD (세로로 긴 이미지라 높이 기준으로 표시, 클릭 시 확대) */
+#s3 .erdimg{ position:absolute; left:951px; top:145px; height:860px; display:none;
+  border-radius:16px; overflow:hidden; background:#fff; cursor:zoom-in;
+  border:3px solid #000; box-shadow:0 18px 40px rgba(0,0,0,.16); z-index:2; }
+#s3.morphed .erdimg.show{ display:block; }
+#s3 .erdimg img{ height:100%; width:auto; display:block; }
 /* 확대 라이트박스 — 현재 페이지를 살짝 블러 처리한 배경 */
 #s3 .lightbox{ position:absolute; inset:0; z-index:50; display:none;
   background:rgba(245,255,248,.35);
@@ -230,6 +236,9 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
   <!-- 흐름설계서 클릭 시: 유즈케이스 다이어그램 -->
   <div class="flowimg"><img src="assets/flow_usecase.png" alt="흐름설계서 유즈케이스"></div>
 
+  <!-- 테이블 설계 클릭 시: ERD -->
+  <div class="erdimg"><img src="assets/erd.png" alt="테이블 설계 ERD"></div>
+
   <!-- 확대 보기(다이어그램·스크린샷·영상 공용) -->
   <div class="lightbox"><div class="lb-content"></div></div>
 
@@ -318,6 +327,7 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
   const gif = sec.querySelector('.featgif');
   const tag = sec.querySelector('.feattag');
   const flowimg = sec.querySelector('.flowimg');
+  const erdimg = sec.querySelector('.erdimg');
   const agentbox = sec.querySelector('.agentbox');
   const ph = sec.querySelector('.placeholder');
   const phName = ph.querySelector('.pht');
@@ -335,9 +345,10 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
     svccard.classList.toggle('off', n !== '1');
     gif.classList.toggle('show', n === '2');
     tag.classList.toggle('show', n === '2');
+    erdimg.classList.toggle('show', n === '3');
     flowimg.classList.toggle('show', n === '4');
     agentbox.classList.toggle('show', n === '5');
-    const isPh = (n !== '1' && n !== '2' && n !== '4' && n !== '5');
+    const isPh = (n !== '1' && n !== '2' && n !== '3' && n !== '4' && n !== '5');
     ph.classList.toggle('show', isPh);
     if(isPh) phName.textContent = names[n];
   }
@@ -377,6 +388,8 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
   lightbox.addEventListener('click', function(e){ e.stopPropagation(); lightbox.classList.remove('show'); lbContent.innerHTML = ''; });
   // 흐름설계서 다이어그램 확대
   flowimg.addEventListener('click', function(e){ e.stopPropagation(); openLB(flowimg.querySelector('img')); });
+  // 테이블 설계(ERD) 확대
+  erdimg.addEventListener('click', function(e){ e.stopPropagation(); openLB(erdimg.querySelector('img')); });
   // agent규칙 썸네일(스크린샷·영상) 확대
   sec.querySelectorAll('.agentbox .zoom, .agentbox .zoom-v').forEach(function(node){
     node.addEventListener('click', function(e){ e.stopPropagation(); openLB(node); });
