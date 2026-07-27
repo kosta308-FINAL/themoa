@@ -95,10 +95,7 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
 
   <div class="abs members">
     <div class="member m1">
-      <div class="photo">
-        <div class="phead"></div><div class="pbody"></div>
-        <div class="ptag">사진 추가</div>
-      </div>
+      <div class="photo has-photo" style="background-image:url('assets/team_imsuji.png')"></div>
       <div class="body">
         <div class="mname"><span class="dot"></span>임수지</div>
         <div class="mcount">담당 1개</div>
@@ -108,7 +105,7 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
         <div class="persona">
           <div class="hr"></div>
           <div class="plabel">AI가 본 성격</div>
-          <div class="pbox empty">여기에 성격을 채워보세요</div>
+          <div class="pbox filled">효율적이고 군더더기 없는 결과물을 선호하시는 스타일</div>
         </div>
       </div>
     </div>

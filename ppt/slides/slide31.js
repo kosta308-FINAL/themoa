@@ -8,7 +8,7 @@ document.head.insertAdjacentHTML('beforeend', `
   display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800;
   box-shadow:0 8px 18px rgba(45,138,78,.32); }
 #s31 .sitem .stitle{ color:#171717; font-size:23px; font-weight:800; margin-bottom:5px; }
-#s31 .sitem .sdesc{ color:#555; font-size:18px; font-weight:500; line-height:1.5; }
+#s31 .sitem .sdesc{ color:#555; font-size:27px; font-weight:500; line-height:1.5; }
 </style>
 `);
 
