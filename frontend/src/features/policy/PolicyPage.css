@@ -92,7 +92,6 @@
 }
 
 .policy-recommendation-head p,
-.policy-recommendation-age p,
 .policy-recommendation-reason {
   margin: 0;
   color: var(--dash-text-secondary);
@@ -143,10 +142,15 @@
 }
 
 .policy-recommendation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.policy-recommendation-fields {
   display: grid;
-  grid-template-columns: minmax(180px, 0.8fr) repeat(3, minmax(0, 1fr)) auto;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
-  align-items: end;
 }
 
 .policy-recommendation-select {
@@ -195,26 +199,45 @@
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--dash-border);
 }
 
 .policy-recommendation-age {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
   border-radius: 12px;
   background: var(--dash-accent-light);
 }
 
-.policy-recommendation-age span {
+.policy-recommendation-age-badge {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.policy-recommendation-age-badge span {
   color: var(--dash-text-secondary);
   font-size: 12px;
   font-weight: 700;
 }
 
-.policy-recommendation-age strong {
+.policy-recommendation-age-badge strong {
   color: var(--dash-accent-dark);
   font-size: 18px;
+  white-space: nowrap;
+}
+
+.policy-recommendation-age p {
+  margin: 0;
+  padding-left: 14px;
+  border-left: 1px solid var(--dash-border);
+  color: var(--dash-text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 .policy-recommendation-summary {
@@ -304,8 +327,11 @@
 }
 
 .policy-recommendation-modal .policy-recommendation-form {
-  grid-template-columns: 1fr;
   margin-top: 0;
+}
+
+.policy-recommendation-modal .policy-recommendation-fields {
+  grid-template-columns: 1fr;
 }
 
 .policy-recommendation-list,
@@ -1253,8 +1279,18 @@
     align-items: stretch;
   }
 
-  .policy-recommendation-form {
+  .policy-recommendation-fields {
     grid-template-columns: 1fr;
+  }
+
+  .policy-recommendation-age {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .policy-recommendation-age p {
+    padding-left: 0;
+    border-left: none;
   }
 
   .policy-recommendation-tile-row {

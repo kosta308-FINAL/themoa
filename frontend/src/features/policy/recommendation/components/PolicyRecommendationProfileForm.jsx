@@ -92,83 +92,87 @@ function PolicyRecommendationProfileForm({
   return (
     <form className="policy-recommendation-form" onSubmit={handleSubmit}>
       <div className="policy-recommendation-age">
-        <span>적용 나이</span>
-        <strong>만 {profile?.age ?? "-"}세</strong>
+        <div className="policy-recommendation-age-badge">
+          <span>적용 나이</span>
+          <strong>만 {profile?.age ?? "-"}세</strong>
+        </div>
         <p>회원가입 시 입력한 생년월일을 기준으로 자동 계산됩니다.</p>
       </div>
-      <div className="policy-recommendation-select">
-        <span>거주 시·도</span>
-        <div className="policy-recommendation-select-field">
-          <button
-            type="button"
-            className="policy-recommendation-select-trigger"
-            disabled={isSaving}
-            onClick={() => setIsSidoOpen((open) => !open)}
-          >
-            {sido || "선택"}
-            <DashboardIcon name="chevron-down" size={13} />
-          </button>
-          {isSidoOpen && (
-            <OptionPicker
-              options={sidoOptions}
-              value={sido}
-              title="거주 시·도 선택"
-              onSelect={handleSidoSelect}
-              onClose={() => setIsSidoOpen(false)}
-            />
-          )}
+      <div className="policy-recommendation-fields">
+        <div className="policy-recommendation-select">
+          <span>거주 시·도</span>
+          <div className="policy-recommendation-select-field">
+            <button
+              type="button"
+              className="policy-recommendation-select-trigger"
+              disabled={isSaving}
+              onClick={() => setIsSidoOpen((open) => !open)}
+            >
+              {sido || "선택"}
+              <DashboardIcon name="chevron-down" size={13} />
+            </button>
+            {isSidoOpen && (
+              <OptionPicker
+                options={sidoOptions}
+                value={sido}
+                title="거주 시·도 선택"
+                onSelect={handleSidoSelect}
+                onClose={() => setIsSidoOpen(false)}
+              />
+            )}
+          </div>
         </div>
-      </div>
-      <div className="policy-recommendation-select">
-        <span>거주 시·군·구</span>
-        <div className="policy-recommendation-select-field">
-          <button
-            type="button"
-            className="policy-recommendation-select-trigger"
-            disabled={isSaving || !sido || !sigunguRequired}
-            onClick={() => setIsSigunguOpen((open) => !open)}
-          >
-            {sigungu || (sigunguRequired ? "선택" : "해당 없음")}
-            <DashboardIcon name="chevron-down" size={13} />
-          </button>
-          {isSigunguOpen && (
-            <OptionPicker
-              options={sigunguPickerOptions}
-              value={sigungu}
-              title="거주 시·군·구 선택"
-              onSelect={(value) => {
-                setSigungu(value);
-                setIsSigunguOpen(false);
-              }}
-              onClose={() => setIsSigunguOpen(false)}
-            />
-          )}
+        <div className="policy-recommendation-select">
+          <span>거주 시·군·구</span>
+          <div className="policy-recommendation-select-field">
+            <button
+              type="button"
+              className="policy-recommendation-select-trigger"
+              disabled={isSaving || !sido || !sigunguRequired}
+              onClick={() => setIsSigunguOpen((open) => !open)}
+            >
+              {sigungu || (sigunguRequired ? "선택" : "해당 없음")}
+              <DashboardIcon name="chevron-down" size={13} />
+            </button>
+            {isSigunguOpen && (
+              <OptionPicker
+                options={sigunguPickerOptions}
+                value={sigungu}
+                title="거주 시·군·구 선택"
+                onSelect={(value) => {
+                  setSigungu(value);
+                  setIsSigunguOpen(false);
+                }}
+                onClose={() => setIsSigunguOpen(false)}
+              />
+            )}
+          </div>
         </div>
-      </div>
-      <div className="policy-recommendation-select">
-        <span>취업 상태</span>
-        <div className="policy-recommendation-select-field">
-          <button
-            type="button"
-            className="policy-recommendation-select-trigger"
-            disabled={isSaving}
-            onClick={() => setIsEmploymentOpen((open) => !open)}
-          >
-            {EMPLOYMENT_STATUS_LABELS[employmentStatus] || "선택"}
-            <DashboardIcon name="chevron-down" size={13} />
-          </button>
-          {isEmploymentOpen && (
-            <OptionPicker
-              options={employmentOptions}
-              value={employmentStatus}
-              title="취업 상태 선택"
-              onSelect={(value) => {
-                setEmploymentStatus(value);
-                setIsEmploymentOpen(false);
-              }}
-              onClose={() => setIsEmploymentOpen(false)}
-            />
-          )}
+        <div className="policy-recommendation-select">
+          <span>취업 상태</span>
+          <div className="policy-recommendation-select-field">
+            <button
+              type="button"
+              className="policy-recommendation-select-trigger"
+              disabled={isSaving}
+              onClick={() => setIsEmploymentOpen((open) => !open)}
+            >
+              {EMPLOYMENT_STATUS_LABELS[employmentStatus] || "선택"}
+              <DashboardIcon name="chevron-down" size={13} />
+            </button>
+            {isEmploymentOpen && (
+              <OptionPicker
+                options={employmentOptions}
+                value={employmentStatus}
+                title="취업 상태 선택"
+                onSelect={(value) => {
+                  setEmploymentStatus(value);
+                  setIsEmploymentOpen(false);
+                }}
+                onClose={() => setIsEmploymentOpen(false)}
+              />
+            )}
+          </div>
         </div>
       </div>
       {formError && <p className="policy-recommendation-error">{formError}</p>}
