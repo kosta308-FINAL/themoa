@@ -8,8 +8,6 @@ function PolicyRecommendationSection({
   recommendation,
   onSaveProfile,
   onRefresh,
-  onOpenDetail,
-  selected,
 }) {
   const bookmarks = usePolicyBookmarks();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -186,14 +184,12 @@ function PolicyRecommendationSection({
                       key={item.policyId}
                       item={item}
                       rank={index + 1}
-                      active={selected?.policyId === item.policyId}
                       bookmarked={bookmarks.isBookmarked(item.policyId)}
                       bookmarkBusy={
                         bookmarks.loading ||
                         bookmarks.busyPolicyId === item.policyId
                       }
                       onBookmarkToggle={bookmarks.toggleBookmark}
-                      onOpenDetail={onOpenDetail}
                     />
                   ))}
                 </div>

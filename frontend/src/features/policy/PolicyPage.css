@@ -309,47 +309,53 @@
 }
 
 .policy-recommendation-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  align-items: start;
 }
 
 .policy-recommendation-tile {
+  position: relative;
   display: flex;
   min-width: 0;
-  align-items: flex-start;
-  gap: 16px;
+  height: 100%;
+  flex-direction: column;
   padding: 18px 20px;
   border: 1px solid var(--dash-border);
   border-radius: var(--dash-radius);
   background: var(--dash-bg-card);
   box-shadow: var(--dash-shadow);
-  color: inherit;
-  cursor: pointer;
   transition:
     border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
+    box-shadow 0.15s ease;
 }
 
 .policy-recommendation-tile:hover {
   border-color: var(--dash-accent);
-  transform: translateY(-1px);
-}
-
-.policy-recommendation-tile:focus-visible {
-  border-color: var(--dash-accent);
-  outline: none;
-  box-shadow:
-    0 0 0 3px var(--dash-accent-light),
-    var(--dash-shadow);
 }
 
 .policy-recommendation-tile.active {
+  z-index: 6;
   border-color: var(--dash-accent);
   box-shadow:
     0 0 0 2px var(--dash-accent-light),
     var(--dash-shadow);
+}
+
+.policy-recommendation-tile-row {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 14px;
+  color: inherit;
+  cursor: pointer;
+}
+
+.policy-recommendation-tile-row:focus-visible {
+  outline: 2px solid var(--dash-accent);
+  outline-offset: 4px;
+  border-radius: 12px;
 }
 
 .policy-recommendation-rank {
@@ -462,10 +468,10 @@
   gap: 10px;
 }
 
-.policy-recommendation-tile-side button {
+.policy-recommendation-toggle {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
   min-height: 34px;
   padding: 0 14px;
   border: 1px solid var(--dash-border);
@@ -482,9 +488,81 @@
     color 0.15s ease;
 }
 
-.policy-recommendation-tile-side button:hover {
+.policy-recommendation-toggle:hover {
   border-color: var(--dash-accent);
   background: var(--dash-accent-light);
+}
+
+.policy-recommendation-toggle.open {
+  border-color: var(--dash-accent);
+  background: var(--dash-accent-light);
+}
+
+.policy-recommendation-toggle-icon {
+  transition: transform 0.2s ease;
+}
+
+.policy-recommendation-toggle.open .policy-recommendation-toggle-icon {
+  transform: rotate(180deg);
+}
+
+.policy-recommendation-detail {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  right: 0;
+  z-index: 6;
+  padding: 20px;
+  border: 1px solid var(--dash-border);
+  border-radius: var(--dash-radius);
+  background: var(--dash-bg-card);
+  box-shadow: 0 24px 50px rgba(15, 34, 23, 0.18);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition:
+    opacity 0.22s ease-out,
+    transform 0.22s ease-out,
+    visibility 0.22s;
+}
+
+.policy-recommendation-detail.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.policy-recommendation-detail-loading {
+  margin: 0;
+  color: var(--dash-text-secondary);
+  font-size: 13px;
+}
+
+.policy-recommendation-detail-list {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.policy-recommendation-detail-list div {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.policy-recommendation-detail-list dt {
+  color: var(--dash-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.policy-recommendation-detail-list dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--dash-text-primary);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .policy-recommendation-error {
@@ -1142,6 +1220,12 @@
   text-align: center;
 }
 
+@media (max-width: 1100px) {
+  .policy-recommendation-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 720px) {
   .policy-chat-hero {
     padding: 24px 20px 22px;
@@ -1170,7 +1254,7 @@
     grid-template-columns: 1fr;
   }
 
-  .policy-recommendation-tile {
+  .policy-recommendation-tile-row {
     flex-wrap: wrap;
   }
 

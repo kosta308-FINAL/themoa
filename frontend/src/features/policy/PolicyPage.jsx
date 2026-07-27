@@ -70,10 +70,8 @@ function PolicyPage() {
       {mode === MODE_RECOMMEND ? (
         <PolicyRecommendationSection
           recommendation={recommendation}
-          selected={search.selected}
           onSaveProfile={handleSaveRecommendationProfile}
           onRefresh={handleRefreshRecommendations}
-          onOpenDetail={search.openDetail}
         />
       ) : (
         <>
