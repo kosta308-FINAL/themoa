@@ -202,7 +202,9 @@ function FixedExpensePage() {
   const ratio =
     cycleIncomeAmount > 0 ? (totalExpected / cycleIncomeAmount) * 100 : null;
   const remaining = cycleIncomeAmount - totalExpected;
-  const isOverBudget = ratio !== null && ratio > 100;
+  const isOverBudget = ratio !== null && ratio >= 100;
+  const isNearBudget = ratio !== null && ratio >= 80 && ratio < 100;
+  const ratioTone = isOverBudget ? "over" : isNearBudget ? "warning" : "";
   const isEmptyState = items.length === 0 && candidates.length === 0;
   const itemCount = expenseList?.count || 0;
   const cardPaymentCount = items.filter(
@@ -290,8 +292,7 @@ function FixedExpensePage() {
                   </span>
                 </div>
                 <p className="fx-summary-caption">
-                  등록된 고정지출 {itemCount}건의 원화 예상
-                  금액이에요.
+                  등록된 고정지출 {itemCount}건의 원화 예상 금액이에요.
                 </p>
                 <div className="fx-summary-stats">
                   <div>
@@ -337,7 +338,7 @@ function FixedExpensePage() {
                         <DashboardIcon name="wallet" size={15} />
                         급여 대비 고정지출
                       </span>
-                      <strong className={isOverBudget ? "over" : ""}>
+                      <strong className={ratioTone}>
                         <AnimatedNumber
                           value={Math.round(ratio * 10)}
                           duration={850}
@@ -364,7 +365,7 @@ function FixedExpensePage() {
                       aria-valuenow={Math.min(100, Math.round(ratio))}
                     >
                       <div
-                        className={`fx-progress-value${isOverBudget ? " over" : ""}`}
+                        className={`fx-progress-value${ratioTone ? ` ${ratioTone}` : ""}`}
                         style={{
                           width: `${animatedRatio}%`,
                           minWidth: animatedRatio > 0 ? "8px" : "0",
@@ -382,7 +383,7 @@ function FixedExpensePage() {
                       이 고정지출로 먼저 나가요.
                     </p>
                     <div
-                      className={`fx-salary-remaining${isOverBudget ? " over" : ""}`}
+                      className={`fx-salary-remaining${ratioTone ? ` ${ratioTone}` : ""}`}
                     >
                       <span>
                         {remaining >= 0

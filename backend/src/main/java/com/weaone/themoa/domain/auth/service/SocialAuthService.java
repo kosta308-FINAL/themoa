@@ -54,6 +54,11 @@ public class SocialAuthService {
         return memberSocialAccountRepository.findByProviderAndProviderUserId(provider, providerUserId)
                 .map(account -> {
                     Member member = account.getMember();
+                    if (member.getWithdrawnAt() != null) {
+                        memberSocialAccountRepository.delete(account);
+                        return OAuthExchangeResult.requiresSignup(
+                                signupTicketStore.issue(provider, providerUserId, nickname, email), nickname, email);
+                    }
                     member.recordLoginSuccess(now);
                     return OAuthExchangeResult.loggedIn(authTokenService.issue(member, now));
                 })

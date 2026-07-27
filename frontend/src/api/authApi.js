@@ -38,8 +38,9 @@ export const logoutAllDevices = () =>
   axiosInstance.post("/api/auth/logout-all");
 
 /**
- * 회원 탈퇴. 비밀번호 확인 후 즉시 처리되며 전 세션이 무효화되어 다시 로그인할 수 없다.
- * @param {{ password: string }} payload
+ * 회원 탈퇴. 일반 회원은 비밀번호를 제출하고 소셜 전용 회원은 빈 요청을 보낸다.
+ * 성공하면 전 세션이 무효화되고, 제거된 소셜 연결은 다음 로그인에서 신규 가입으로 분기된다.
+ * @param {{ password?: string }} payload
  */
 export const withdrawAccount = (payload) =>
   axiosInstance.delete("/api/auth/account", { data: payload });

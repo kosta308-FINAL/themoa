@@ -12,6 +12,6 @@ import java.util.List;
  */
 public interface RecommendSurplusFundRepository extends JpaRepository<SurplusFund, Long> {
 
-    /** 회원의 전체 급여주기 잉여금(평균 계산용). 순서는 평균에 영향이 없어 정렬을 강제하지 않는다. */
+    /** 회원의 전체 급여주기 잉여금. 이동 합계를 뺀 순잔액의 주기당 평균 계산에 사용한다. */
     List<SurplusFund> findByMember_Id(Long memberId);
 }

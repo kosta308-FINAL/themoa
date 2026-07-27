@@ -7,18 +7,22 @@ import com.weaone.themoa.domain.budget.dto.request.PaydayUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.SalaryUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.SavingsGoalUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.SpendingGuideSetupRequest;
+import com.weaone.themoa.domain.budget.dto.request.SurplusTransferCreateRequest;
 import com.weaone.themoa.domain.budget.dto.request.WorkScheduleItem;
 import com.weaone.themoa.domain.budget.dto.request.WorkScheduleUpdateRequest;
 import com.weaone.themoa.domain.budget.dto.request.IncomeAdjustmentCreateRequest;
 import com.weaone.themoa.domain.budget.dto.response.IncomeAdjustmentResponse;
 import com.weaone.themoa.domain.budget.dto.response.RecentDaysResponse;
 import com.weaone.themoa.domain.budget.dto.response.SpendingGuideSummaryResponse;
+import com.weaone.themoa.domain.budget.dto.response.SurplusTransferResponse;
 import com.weaone.themoa.domain.budget.dto.response.TodayTransactionsResponse;
 import com.weaone.themoa.domain.budget.entity.Budget;
 import com.weaone.themoa.domain.budget.entity.BudgetIncomeAdjustment;
+import com.weaone.themoa.domain.budget.entity.SurplusFundTransfer;
 import com.weaone.themoa.domain.budget.repository.BudgetIncomeAdjustmentRepository;
 import com.weaone.themoa.domain.budget.repository.BudgetRepository;
 import com.weaone.themoa.domain.budget.repository.SurplusFundRepository;
+import com.weaone.themoa.domain.budget.repository.SurplusFundTransferRepository;
 import com.weaone.themoa.domain.cardconnection.entity.InitialSyncStatus;
 import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CardTransactionListResponse;
@@ -77,6 +81,7 @@ public class SpendingGuideService {
     private final WorkScheduleSalaryCalculator workScheduleSalaryCalculator;
     private final BudgetIncomeAdjustmentRepository budgetIncomeAdjustmentRepository;
     private final SurplusFundRepository surplusFundRepository;
+    private final SurplusFundTransferRepository surplusFundTransferRepository;
 
     /**
      * S-00A 최초 설정. 월급·급여일을 저장하고 현재 주기 예산을 없으면 생성한 뒤 요약을 돌려준다.
@@ -398,9 +403,12 @@ public class SpendingGuideService {
         BigDecimal todayNetSpend = netSpend(memberId, today, today);
         BigDecimal spentThisCycle = netSpend(memberId, cycleStart, today);
 
-        BigDecimal incomeAdjustmentTotal = incomeAdjustmentTotal(budget);
-        BigDecimal available = budget.getAvailableAmount(incomeAdjustmentTotal);
-        BigDecimal daily = budget.getDailyRecommendedAmount(incomeAdjustmentTotal);
+        BigDecimal currentCycleSurplusTransferAmount =
+                surplusFundTransferRepository.sumAmountByBudget_Id(budget.getId());
+        BigDecimal budgetAdjustmentTotal =
+                incomeAdjustmentTotal(budget).add(currentCycleSurplusTransferAmount);
+        BigDecimal available = budget.getAvailableAmount(budgetAdjustmentTotal);
+        BigDecimal daily = budget.getDailyRecommendedAmount(budgetAdjustmentTotal);
         // 오늘 사용 가능 = max(0, 하루 권장액 − max(오늘 순사용액, 0)). Type 2 취소로 순사용액이 음수여도 권장액을 넘기지 않는다.
         BigDecimal todayAvailable = daily.subtract(todayNetSpend.max(BigDecimal.ZERO)).max(BigDecimal.ZERO);
         BigDecimal remaining = available.subtract(spentThisCycle);
@@ -421,13 +429,17 @@ public class SpendingGuideService {
         // surplus_fund를 적립하므로, 이 회원의 전체 행 수·합계가 곧 완료 주기 통계다.
         int completedCycleCount = (int) surplusFundRepository.countByMember_Id(memberId);
         BigDecimal totalSurplusAmount = surplusFundRepository.sumAmountByMember_Id(memberId);
+        BigDecimal totalSurplusTransferAmount = surplusFundTransferRepository.sumAmountByMember_Id(memberId);
+        BigDecimal availableSurplusAmount =
+                totalSurplusAmount.subtract(totalSurplusTransferAmount).max(BigDecimal.ZERO);
 
         return SpendingGuideSummaryResponse.ready(member.getIncomeType(), member.getHourlyWage(), workSchedule,
                 member.getPayday(), member.getPendingPayday(),
                 budget.getYearMonth(), cycleStart, cycleEnd, remainingDays,
                 budget.getSalaryAmount(), budget.getSavingsGoalAmount(), budget.getExpectedFixedExpenseTotal(),
                 available, daily, todayNetSpend, todayAvailable, remaining, cycleSavings, overCycleBudget,
-                cycleOverspent, budgetUnaffordable, completedCycleCount, totalSurplusAmount);
+                cycleOverspent, budgetUnaffordable, completedCycleCount, totalSurplusAmount,
+                totalSurplusTransferAmount, currentCycleSurplusTransferAmount, availableSurplusAmount);
     }
 
     /**
@@ -486,6 +498,32 @@ public class SpendingGuideService {
                 .findByIdAndBudget_Member_Id(adjustmentId, memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INCOME_ADJUSTMENT_NOT_FOUND));
         budgetIncomeAdjustmentRepository.delete(adjustment);
+    }
+
+    /**
+     * 완료 주기 잉여금을 현재 급여 주기 예산으로 가져온다. 회원 행 잠금 안에서 잔액을 다시 계산해
+     * 동시 요청이 사용 가능한 잉여금을 초과하지 못하게 한다.
+     */
+    @Transactional
+    public SurplusTransferResponse transferSurplus(Long memberId, SurplusTransferCreateRequest request) {
+        Member member = memberRepository.findByIdForUpdate(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        if (!member.hasSpendingGuideSetup()) {
+            throw new BusinessException(ErrorCode.SPENDING_GUIDE_SETUP_REQUIRED);
+        }
+
+        BigDecimal totalSurplusAmount = surplusFundRepository.sumAmountByMember_Id(memberId);
+        BigDecimal totalSurplusTransferAmount = surplusFundTransferRepository.sumAmountByMember_Id(memberId);
+        BigDecimal availableSurplusAmount = totalSurplusAmount.subtract(totalSurplusTransferAmount);
+        if (request.amount().compareTo(availableSurplusAmount) > 0) {
+            throw new BusinessException(ErrorCode.SURPLUS_TRANSFER_INSUFFICIENT);
+        }
+
+        LocalDate today = LocalDate.now(BudgetCyclePolicy.ZONE_SEOUL);
+        Budget budget = budgetCycleService.getOrCreateCurrentBudget(member, today);
+        SurplusFundTransfer transfer = surplusFundTransferRepository.save(
+                SurplusFundTransfer.create(budget, request.amount(), LocalDateTime.now()));
+        return SurplusTransferResponse.from(transfer, availableSurplusAmount.subtract(request.amount()));
     }
 
     private List<String> missingFields(Member member) {

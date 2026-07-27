@@ -105,6 +105,7 @@ public enum ErrorCode {
     INCOME_TYPE_MISMATCH(HttpStatus.BAD_REQUEST, "현재 소득유형과 일치하지 않는 요청입니다."),
     INCOME_ADJUSTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "수입 보정 내역을 찾을 수 없습니다."),
     INCOME_ADJUSTMENT_AMOUNT_ZERO(HttpStatus.BAD_REQUEST, "0원은 입력할 수 없습니다."),
+    SURPLUS_TRANSFER_INSUFFICIENT(HttpStatus.CONFLICT, "사용 가능한 잉여금보다 큰 금액은 가져올 수 없습니다."),
 
     // Policy
     POLICY_NOT_FOUND(HttpStatus.NOT_FOUND, "정책을 찾을 수 없습니다."),

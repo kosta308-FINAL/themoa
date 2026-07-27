@@ -7,6 +7,7 @@ import com.weaone.themoa.domain.budget.entity.Budget;
 import com.weaone.themoa.domain.budget.repository.BudgetIncomeAdjustmentRepository;
 import com.weaone.themoa.domain.budget.repository.BudgetRepository;
 import com.weaone.themoa.domain.budget.repository.SurplusFundRepository;
+import com.weaone.themoa.domain.budget.repository.SurplusFundTransferRepository;
 import com.weaone.themoa.domain.cardtransaction.dto.response.CategorySummaryListResponse;
 import com.weaone.themoa.domain.cardtransaction.entity.TransactionStatus;
 import com.weaone.themoa.domain.cardconnection.repository.CardConnectionRepository;
@@ -65,11 +66,13 @@ class SpendingGuideServiceTest {
     private BudgetIncomeAdjustmentRepository budgetIncomeAdjustmentRepository;
     @Mock
     private SurplusFundRepository surplusFundRepository;
+    @Mock
+    private SurplusFundTransferRepository surplusFundTransferRepository;
 
     private SpendingGuideService service() {
         return new SpendingGuideService(memberRepository, budgetRepository, budgetCycleService, cardTransactionRepository,
                 cardTransactionResponseMapper, cardConnectionRepository, memberWorkScheduleRepository, workScheduleSalaryCalculator,
-                budgetIncomeAdjustmentRepository, surplusFundRepository);
+                budgetIncomeAdjustmentRepository, surplusFundRepository, surplusFundTransferRepository);
     }
 
     private Member member(BigDecimal salary, Integer payday, BigDecimal savingsTarget) {

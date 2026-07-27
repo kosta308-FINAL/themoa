@@ -59,20 +59,34 @@ function RecommendForm({ loading, defaults, onSubmit }) {
       ? String(defaults.monthlyIncomeManwon)
       : "",
   );
-  const [employment, setEmployment] = useState("직장인");
-  const [risk, setRisk] = useState("STABLE");
+  const [employment, setEmployment] = useState(
+    defaults?.employmentType || "직장인",
+  );
+  const [risk, setRisk] = useState(defaults?.riskType || "STABLE");
   const [deposit, setDeposit] = useState(
     defaults?.monthlyDepositWon != null
       ? roundToDepositUnit(defaults.monthlyDepositWon)
       : FALLBACK_DEPOSIT_WON,
   );
-  const [period, setPeriod] = useState("SHORT");
-  const [goalMode, setGoalMode] = useState("none"); // none | set
-  const [goalAmount, setGoalAmount] = useState("");
-  const [goalMonths, setGoalMonths] = useState("");
-  const [lowIncome, setLowIncome] = useState(false);
-  const [acceptCondition, setAcceptCondition] = useState(false);
-  const [needLiquidity, setNeedLiquidity] = useState(false);
+  const [period, setPeriod] = useState(
+    defaults?.preferredPeriod || "SHORT",
+  );
+  const [goalMode, setGoalMode] = useState(
+    defaults?.goalAmountWon != null ? "set" : "none",
+  ); // none | set
+  const [goalAmount, setGoalAmount] = useState(
+    defaults?.goalAmountWon != null ? String(defaults.goalAmountWon) : "",
+  );
+  const [goalMonths, setGoalMonths] = useState(
+    defaults?.goalMonths != null ? String(defaults.goalMonths) : "",
+  );
+  const [lowIncome, setLowIncome] = useState(Boolean(defaults?.lowIncome));
+  const [acceptCondition, setAcceptCondition] = useState(
+    Boolean(defaults?.acceptCondition),
+  );
+  const [needLiquidity, setNeedLiquidity] = useState(
+    Boolean(defaults?.needLiquidity),
+  );
   // 결과를 넓게 보고 싶을 때 입력 패널을 접을 수 있다.
   const [collapsed, setCollapsed] = useState(false);
   const [isEmploymentOpen, setIsEmploymentOpen] = useState(false);
