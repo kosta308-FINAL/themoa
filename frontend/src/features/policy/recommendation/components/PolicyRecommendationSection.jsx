@@ -36,9 +36,22 @@ function PolicyRecommendationSection({
     }
   };
 
+  const isProfileUnchanged = (payload) =>
+    (payload.residenceSido || "") === (profile?.residenceSido || "") &&
+    (payload.residenceSigungu || null) ===
+      (profile?.residenceSigungu || null) &&
+    (payload.employmentStatus || "") === (profile?.employmentStatus || "");
+
   const handleProfileUpdate = async (payload) => {
-    await onSaveProfile(payload);
     setIsEditingProfile(false);
+    if (isProfileUnchanged(payload)) {
+      return;
+    }
+    try {
+      await onSaveProfile(payload);
+    } catch {
+      // 서버 오류 문구는 Hook의 mutationError로 표시한다.
+    }
   };
 
   return (
@@ -120,60 +133,74 @@ function PolicyRecommendationSection({
           <PolicyRecommendationProfileSummary
             profile={recommendations?.profile || profile}
           />
-          {recommendationWarning && (
-            <div className="policy-recommendation-warning">
-              <p>{recommendationWarning}</p>
-              <button
-                type="button"
-                className="policy-primary-button"
-                disabled={isSaving}
-                onClick={handleRefresh}
-              >
-                {isSaving ? "계산 중..." : "다시 추천받기"}
-              </button>
+          {isSaving ? (
+            <div
+              className="policy-recommendation-recalculating"
+              role="status"
+              aria-live="polite"
+            >
+              <span className="policy-recommendation-recalculating-spinner" />
+              <strong>변경된 조건에 맞춰 다시 추천해드려요</strong>
+              <p>정책을 다시 계산하고 있어요. 잠시만 기다려주세요.</p>
             </div>
-          )}
-          {mutationError && (
-            <p className="policy-recommendation-error">{mutationError}</p>
-          )}
-          {recommendationError && (
-            <div className="policy-recommendation-state">
-              <p>{recommendationError}</p>
-              <button
-                type="button"
-                className="policy-primary-button"
-                onClick={recommendation.load}
-              >
-                다시 불러오기
-              </button>
-            </div>
-          )}
-          {!recommendationError && recommendations?.items?.length === 0 && (
-            <div className="policy-empty">
-              현재 기본 조건과 일치하는 추천 정책이 없어요. 아래 자연어 검색에서
-              다른 조건으로 찾아볼 수 있어요.
-            </div>
-          )}
-          {!recommendationError && recommendations?.items?.length > 0 && (
-            <div className="policy-recommendation-grid">
-              {recommendations.items.map((item) => (
-                <PolicyRecommendationTile
-                  key={item.policyId}
-                  item={item}
-                  active={selected?.policyId === item.policyId}
-                  bookmarked={bookmarks.isBookmarked(item.policyId)}
-                  bookmarkBusy={
-                    bookmarks.loading ||
-                    bookmarks.busyPolicyId === item.policyId
-                  }
-                  onBookmarkToggle={bookmarks.toggleBookmark}
-                  onOpenDetail={onOpenDetail}
-                />
-              ))}
-            </div>
-          )}
-          {bookmarks.error && (
-            <p className="policy-bookmark-error">{bookmarks.error}</p>
+          ) : (
+            <>
+              {recommendationWarning && (
+                <div className="policy-recommendation-warning">
+                  <p>{recommendationWarning}</p>
+                  <button
+                    type="button"
+                    className="policy-primary-button"
+                    disabled={isSaving}
+                    onClick={handleRefresh}
+                  >
+                    다시 추천받기
+                  </button>
+                </div>
+              )}
+              {mutationError && (
+                <p className="policy-recommendation-error">{mutationError}</p>
+              )}
+              {recommendationError && (
+                <div className="policy-recommendation-state">
+                  <p>{recommendationError}</p>
+                  <button
+                    type="button"
+                    className="policy-primary-button"
+                    onClick={recommendation.load}
+                  >
+                    다시 불러오기
+                  </button>
+                </div>
+              )}
+              {!recommendationError && recommendations?.items?.length === 0 && (
+                <div className="policy-empty">
+                  현재 기본 조건과 일치하는 추천 정책이 없어요. 아래 자연어
+                  검색에서 다른 조건으로 찾아볼 수 있어요.
+                </div>
+              )}
+              {!recommendationError && recommendations?.items?.length > 0 && (
+                <div className="policy-recommendation-grid">
+                  {recommendations.items.map((item) => (
+                    <PolicyRecommendationTile
+                      key={item.policyId}
+                      item={item}
+                      active={selected?.policyId === item.policyId}
+                      bookmarked={bookmarks.isBookmarked(item.policyId)}
+                      bookmarkBusy={
+                        bookmarks.loading ||
+                        bookmarks.busyPolicyId === item.policyId
+                      }
+                      onBookmarkToggle={bookmarks.toggleBookmark}
+                      onOpenDetail={onOpenDetail}
+                    />
+                  ))}
+                </div>
+              )}
+              {bookmarks.error && (
+                <p className="policy-bookmark-error">{bookmarks.error}</p>
+              )}
+            </>
           )}
         </>
       )}
