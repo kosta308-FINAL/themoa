@@ -20,6 +20,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,6 +52,8 @@ public class FixedExpenseMatchingService {
             return;
         }
         String yearMonth = yearMonthOf(transaction);
+        FixedExpense bestMatch = null;
+        BigDecimal bestMatchDistance = null;
         List<FixedExpense> amountChangeCandidates = new ArrayList<>();
         for (FixedExpense fixedExpense : candidates) {
             if (fixedExpensePaymentRepository.existsByFixedExpense_IdAndYearMonth(fixedExpense.getId(), yearMonth)) {
@@ -64,10 +67,21 @@ public class FixedExpenseMatchingService {
             if (FixedExpenseMatchRules.isAmountMatch(fixedExpense.getExpectedCurrency(), fixedExpense.getExpectedAmount(),
                     fixedExpense.getExpectedAmountKrw(), transaction.getCurrencyCode(), transaction.getAmount(),
                     transaction.getOriginalAmount())) {
-                tagAndRecord(transaction, fixedExpense, yearMonth, false, null, false);
-                return; // 거래 1건은 최대 하나의 고정지출에만 붙는다
+                // 같은 biller(예: Apple) 밑에 금액이 비슷한 구독이 여러 건 있으면 허용오차(±10~15%)가
+                // 겹쳐 둘 다 조건②를 통과할 수 있다 — 먼저 나온 후보에 바로 확정하지 않고, 원화 환산
+                // 기준으로 가장 가까운 후보를 골라 오배정 위험을 낮춘다.
+                BigDecimal distance = transaction.getAmount().subtract(fixedExpense.getExpectedAmountKrw()).abs();
+                if (bestMatch == null || distance.compareTo(bestMatchDistance) < 0) {
+                    bestMatch = fixedExpense;
+                    bestMatchDistance = distance;
+                }
+                continue;
             }
             amountChangeCandidates.add(fixedExpense);
+        }
+        if (bestMatch != null) {
+            tagAndRecord(transaction, bestMatch, yearMonth, false, null, false);
+            return; // 거래 1건은 최대 하나의 고정지출에만 붙는다
         }
         // 같은 alias에 여러 구독이 있으면 다른 상품과의 금액 불일치는 정상이다.
         // 실제 매칭이 없고 결제일상 대상이 하나로 특정될 때만 가격 인상으로 본다.
