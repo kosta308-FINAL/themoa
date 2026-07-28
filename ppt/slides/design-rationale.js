@@ -32,31 +32,29 @@ document.head.insertAdjacentHTML('beforeend', `
 
 document.getElementById('deck').insertAdjacentHTML('beforeend', `
 <section class="slide" id="s-whydesign">
-  <div class="ptitle">왜 이렇게 설계했는가</div>
+  <div class="ptitle">비기능적 요구사항</div>
 
   <div class="threecol">
     <div class="col evt">
       <div class="badge">요구사항 01</div>
-      <div class="stitle">도메인이 계속 늘어나는 구조</div>
-      <div class="sdesc">CODEF 마이데이터 연동, 예·적금, 고정지출처럼<br>서로 다른 시점에 생긴 도메인이 계속 늘어나는데,<br>직접 참조로 얽으면 한 쪽 변경이 반대쪽 코드까지<br>번지는 구조가 됩니다. 유지보수성·확장성과<br>API 응답 속도 개선이 필요했습니다.</div>
+      <div class="stitle">확장성 · 유지보수성</div>
+      <div class="sdesc">CODEF 마이데이터 연동, 예·적금, 고정지출처럼<br>서로 다른 시점에 생긴 도메인이 계속 늘어나는 구조라,<br>직접 참조로 얽으면 한 쪽 변경이 반대쪽 코드까지<br>번지고 API 응답 속도도 함께 떨어질 수 있었습니다.</div>
       <div class="next"><span class="arrow">&#9656;</span>이벤트 기반 아키텍처로 해결</div>
     </div>
 
     <div class="col sec">
       <div class="badge">요구사항 02</div>
-      <div class="stitle">실제 금융·개인정보를 다루는 서비스</div>
-      <div class="sdesc">카드사 로그인 정보, 계좌·소비 내역처럼<br>실제 금융·개인정보가 오가기 때문에,<br>탈취를 막는 데 그치지 않고 탈취돼도 피해를<br>최소화하는 방향이 필요했습니다.</div>
+      <div class="stitle">보안성 (기밀성)</div>
+      <div class="sdesc">카드사 로그인 정보, 계좌·소비 내역처럼<br>실제 금융·개인정보가 오가는 서비스라,<br>탈취를 막는 데 그치지 않고 탈취돼도 피해를<br>최소화하는 방향이 필요했습니다.</div>
       <div class="next"><span class="arrow">&#9656;</span>인증 보안 설계로 해결</div>
     </div>
 
     <div class="col infra">
       <div class="badge">요구사항 03</div>
-      <div class="stitle">서버·DB가 외부에 그대로 노출되는 구조</div>
-      <div class="sdesc">실제 금융·개인정보를 다루는 서비스라,<br>서버나 DB가 외부에 그대로 노출되면<br>해킹·무단 접근의 표적이 되기 쉽습니다.<br>외부 접근 지점을 최소화할 필요가 있었습니다.</div>
+      <div class="stitle">안정성 · 보안성</div>
+      <div class="sdesc">실제 금융·개인정보를 다루는 서비스라,<br>서버나 DB가 외부에 그대로 노출되면<br>해킹·무단 접근의 표적이 되기 쉬운 구조였습니다.<br>외부 접근 지점을 최소화할 필요가 있었습니다.</div>
       <div class="next"><span class="arrow">&#9656;</span>AWS 인프라 설계로 해결</div>
     </div>
   </div>
-
-  <div class="note"><div class="dot"></div>세 결정 모두 출발점은 같습니다 — 데모가 아니라 실제로 동작하는 서비스를 만든다는 목표입니다.</div>
 </section>
 `);
