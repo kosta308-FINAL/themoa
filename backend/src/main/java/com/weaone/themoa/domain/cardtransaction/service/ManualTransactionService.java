@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 
 /**
  * 수기 입력(entryMode.md §5, dayguide.md §4.2·§8.1)의 생성·수정·삭제. 가맹점 신원·업종이 없어 카테고리
@@ -29,6 +30,8 @@ import java.time.LocalTime;
 @Service
 @RequiredArgsConstructor
 public class ManualTransactionService {
+
+    private static final ZoneId ZONE_SEOUL = ZoneId.of("Asia/Seoul");
 
     private final MemberRepository memberRepository;
     private final CategoryRepository categoryRepository;
@@ -94,7 +97,7 @@ public class ManualTransactionService {
 
     /** 신규 입력 기본값은 현재 시각이며 과거로는 자유롭게 변경 가능하지만 미래 시각은 저장할 수 없다(dayguide.md §4.2). */
     private void rejectFutureUsedAt(LocalDateTime usedAt) {
-        if (usedAt.isAfter(LocalDateTime.now())) {
+        if (usedAt.isAfter(LocalDateTime.now(ZONE_SEOUL))) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
     }
