@@ -130,12 +130,13 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
       <div class="photo has-photo" style="background-image:url('assets/solmin.png')"></div>
       <div class="body">
         <div class="mname"><span class="dot"></span>김솔민</div>
-        <div class="mcount">담당 4개</div>
+        <div class="mcount">담당 5개</div>
         <div class="roletags">
           <div class="roletag">고정지출</div>
           <div class="roletag">소비가이드</div>
           <div class="roletag">관리자</div>
           <div class="roletag">고객센터</div>
+          <div class="roletag">인프라</div>
         </div>
         <div class="persona">
           <div class="hr"></div>

@@ -295,13 +295,16 @@
 }
 
 .stats-item p {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
 }
 
 .stats-unit {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--dash-text-secondary);
   margin-left: 2px;
 }
@@ -476,8 +479,16 @@
 }
 
 .summary-card strong {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.summary-card-highlight strong {
+  font-size: 32px;
+  letter-spacing: -0.6px;
 }
 
 .summary-card-label {
@@ -1024,8 +1035,10 @@
 }
 
 .donut-center strong {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
 }
 
 .donut-center span {
@@ -1126,8 +1139,10 @@
 }
 
 .product-rate strong {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  font-variant-numeric: tabular-nums;
   color: var(--dash-accent-dark);
 }
 
