@@ -33,9 +33,10 @@ function FeasibilityNotice({ feasibility }) {
   if (!feasibility.reachableAtGoalMonths) {
     return (
       <div className="rec-alert rec-alert-warn">
-        ⚠️ 입력한 목표기간 안에는 목표금액을 채우기 어려워요.
+        ⚠️ 입력하신 기간으로 판매 중인 상품이 없어 목표기간 안에는 채우기
+        어려워요.
         {feasibility.actualMonthsNeeded != null &&
-          ` 실제로는 약 ${feasibility.actualMonthsNeeded}개월이 필요해요.`}
+          ` 실제 판매 중인 상품 기준으로 약 ${feasibility.actualMonthsNeeded}개월 상품을 추천해 드려요.`}
       </div>
     );
   }
