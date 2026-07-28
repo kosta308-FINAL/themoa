@@ -1,67 +1,51 @@
-/* ===================== Slide 2 ===================== */
+/* ===================== Slide 2 (문제제기) ===================== */
 document.head.insertAdjacentHTML('beforeend', `
 <style>
-#s2{ background:transparent; }   /* 배경은 #deck에 고정 */
-#s2 .blob{ left:1286px; top:-444px; width:984px; height:984px; z-index:0; }
+#s2{ background:transparent; }
 #s2 .ptitle{ left:52px; top:40px; width:711px; color:#6B7C8A; font-size:45px; font-weight:800; }
-#s2 .subq{ left:262px; top:250px; width:1000px; color:#111; font-size:42px; font-weight:600; }
-/* 왼쪽 스크린샷 콜라주 */
-#s2 .post{ position:absolute; z-index:2; filter:drop-shadow(0 6px 14px rgba(0,0,0,.10)); }
-#s2 .p1{ left:142px; top:350px; width:752px; }
-#s2 .p2{ left:290px; top:530px; width:548px; }
-#s2 .p3{ left:99px;  top:694px; width:433px; }
-#s2 .p4{ left:277px; top:813px; width:772px; }
-/* 검은 리본 배너 */
-#s2 .ribbon{
-  left:218px; top:454px; width:1426px; height:130px;
-  background:#111; color:#fff; transform:rotate(5.196deg);
-  display:flex; align-items:center; justify-content:center;
-  font-size:26px; font-weight:500; text-align:center; padding:0 40px;
-  z-index:6; box-shadow:0 10px 24px rgba(0,0,0,.25);
-}
-/* 오른쪽 문제 3가지 */
-#s2 .prob{ left:1153px; width:740px; color:#111; font-size:35px; font-weight:400; }
-#s2 .prob1{ top:386px; } #s2 .prob2{ top:564px; } #s2 .prob3{ top:741px; }
-#s2 .marker{ position:absolute; left:1012px; width:91px; height:45px;
-  background:#8E8E90; z-index:2;
-  clip-path:polygon(0 0, 75% 0, 100% 50%, 75% 100%, 0 100%, 25% 50%); }
-#s2 .m1{ top:396px; } #s2 .m2{ top:574px; } #s2 .m3{ top:751px; }
 
-/* ---- 클릭 애니메이션(프래그먼트) ---- */
-#s2 .prob.frag{ transform:translateY(16px); }
-#s2 .prob.frag.show{ transform:translateY(0); }
-#s2 .marker.frag{ transform:translateY(16px); }
-#s2 .marker.frag.show{ transform:translateY(0); }
-/* 검은 리본 "쿵!" 슬램 */
-#s2 .ribbon.frag{ opacity:0; }
-#s2 .ribbon.frag.show{ animation:slam .55s cubic-bezier(.18,.7,.28,1.25) forwards; }
-@keyframes slam{
-  0%  { opacity:0; transform:rotate(5.196deg) scale(1.7); }
-  55% { opacity:1; transform:rotate(5.196deg) scale(.93); }
-  75% { transform:rotate(5.196deg) scale(1.04); }
-  100%{ opacity:1; transform:rotate(5.196deg) scale(1); }
+#s2 .cards{ left:88px; top:302px; width:1744px; display:flex; gap:32px; }
+#s2 .card{
+  flex:1; background:#fff; border-radius:22px; padding:34px 34px 40px;
+  box-shadow:0 18px 40px rgba(20,40,25,.09);
+  display:flex; flex-direction:column;
 }
+#s2 .num{ color:#2D8A5E; font-size:32px; font-weight:800; font-variant-numeric:tabular-nums; }
+#s2 .head{ color:#171717; font-size:26px; font-weight:800; margin-top:10px; line-height:1.35; }
+#s2 .illust{ width:150px; height:143px; object-fit:contain; margin:38px auto 30px; display:block; }
+#s2 .divider{ height:1px; background:#E7ECE8; margin-bottom:22px; }
+#s2 .cap{ color:#6B7C8A; font-size:17px; font-weight:600; text-align:center; line-height:1.55; }
 </style>
 `);
 
 document.getElementById('deck').insertAdjacentHTML('beforeend', `
 <section class="slide" id="s2">
-  <img class="abs blob" src="assets/s2_blob.png" alt="">
-  <div class="abs ptitle">문제정의</div>
-  <div class="abs subq">[20대들의 흔한 ‘소비’ 고민]</div>
+  <div class="abs ptitle">문제제기</div>
 
-  <img class="post p1" src="assets/s2_post1.png" alt="블라인드 - 사회초년생 소비 패턴">
-  <img class="post p2" src="assets/s2_post2.png" alt="사회초년생 소비습관 조언">
-  <img class="post p3" src="assets/s2_post3.png" alt="신용 체크 카드 추천">
-  <img class="post p4" src="assets/s2_post4.png" alt="20대 저축 얼마나">
+  <div class="abs cards">
+    <div class="card">
+      <div class="num">01</div>
+      <div class="head">고정지출 및 소비 내역 관리의 어려움</div>
+      <img class="illust" src="assets/problem1_consume.png" alt="OTT 구독을 보고 당황한 26세 김다미양">
+      <div class="divider"></div>
+      <div class="cap">자신이 사용하지 않는 OTT가 구독되어있어서<br>당황스러운 26세 김다미양</div>
+    </div>
 
-  <div class="abs marker m1 frag" data-step="1"></div>
-  <div class="abs prob prob1 frag" data-step="1">고정지출 및 소비 내역 관리의 어려움</div>
-  <div class="abs marker m2 frag" data-step="2"></div>
-  <div class="abs prob prob2 frag" data-step="2">개인 맞춤형 청년 정책 정보 접근성 부족</div>
-  <div class="abs marker m3 frag" data-step="3"></div>
-  <div class="abs prob prob3 frag" data-step="3">여유 자금의 비효율적인 활용</div>
+    <div class="card">
+      <div class="num">02</div>
+      <div class="head">여유 자금의 비효율적인 활용</div>
+      <img class="illust" src="assets/problem2_saving.png" alt="어떤 저축상품을 들어야할지 혼란스러운 신입사원 박호민군">
+      <div class="divider"></div>
+      <div class="cap">어떤 저축상품을 들어야할지 혼란스러운<br>신입사원 박호민군</div>
+    </div>
 
-  <div class="abs ribbon frag" data-step="4">소비내역을 관리해주고, 나에게 필요한 정보를 한 곳에서 쉽게 찾을 수 있는 서비스 필요</div>
+    <div class="card">
+      <div class="num">03</div>
+      <div class="head">개인 맞춤형 청년 정책 정보 접근성 부족</div>
+      <img class="illust" src="assets/problem3_policy.png" alt="청년 면접정장 대여료 지원사업 정책을 면접이 끝난 뒤 본 취준생 임연호군">
+      <div class="divider"></div>
+      <div class="cap">청년 면접정장 대여료 지원사업 정책을<br>면접이 끝난 뒤 본 취준생 임연호군</div>
+    </div>
+  </div>
 </section>
 `);
