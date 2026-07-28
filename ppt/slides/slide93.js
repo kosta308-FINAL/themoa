@@ -16,11 +16,11 @@ document.head.insertAdjacentHTML('beforeend', `
   box-shadow:0 10px 26px rgba(20,40,25,.08);
 }
 #s93 .common .ctag{
-  background:var(--accent-soft); color:var(--accent); font-size:15px; font-weight:800;
+  background:var(--accent-soft); color:var(--accent); font-size:16px; font-weight:800;
   padding:7px 14px; border-radius:8px; flex:none;
 }
 #s93 .common .cvalue{ color:var(--ink); font-size:18px; font-weight:700; }
-#s93 .common .cnote{ color:var(--muted); font-size:14px; font-weight:600; margin-left:auto; }
+#s93 .common .cnote{ color:var(--muted); font-size:16px; font-weight:600; margin-left:auto; }
 
 /* 팀원 카드 */
 #s93 .members{ left:70px; top:256px; width:1780px; display:flex; gap:32px; }
@@ -45,7 +45,7 @@ document.head.insertAdjacentHTML('beforeend', `
 #s93 .photo .pbody{ width:132px; height:64px; border-radius:66px 66px 0 0; background:var(--pc); opacity:.38; margin-top:8px; position:absolute; bottom:34px; left:50%; transform:translateX(-50%); }
 #s93 .photo .ptag{
   position:absolute; right:16px; bottom:16px; background:rgba(255,255,255,.85);
-  color:var(--muted); font-size:13px; font-weight:700; padding:6px 12px; border-radius:999px;
+  color:var(--muted); font-size:16px; font-weight:700; padding:6px 12px; border-radius:999px;
   backdrop-filter:blur(2px);
 }
 #s93 .photo.has-photo{
@@ -57,21 +57,21 @@ document.head.insertAdjacentHTML('beforeend', `
 
 #s93 .mname{ display:flex; align-items:center; gap:9px; color:var(--ink); font-size:29px; font-weight:800; }
 #s93 .mname .dot{ width:11px; height:11px; border-radius:50%; background:var(--pc); flex:none; }
-#s93 .mcount{ color:var(--muted); font-size:14px; font-weight:700; margin-top:5px; font-variant-numeric:tabular-nums; }
+#s93 .mcount{ color:var(--muted); font-size:16px; font-weight:700; margin-top:5px; font-variant-numeric:tabular-nums; }
 
-#s93 .roletags{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+#s93 .roletags{ display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
 #s93 .roletag{
   background:color-mix(in srgb, var(--pc) 10%, #fff); color:var(--ink);
-  font-size:14px; font-weight:700; padding:6px 12px; border-radius:8px;
+  font-size:16px; font-weight:700; padding:6px 10px; border-radius:8px;
 }
 #s93 .roletags.empty .roletag{ background:#F1F3F1; color:#A6AFA9; font-style:italic; font-weight:600; }
 
 /* AI가 본 성격 — 하단 고정 */
 #s93 .persona{ margin-top:auto; }
-#s93 .hr{ height:1px; background:var(--line); margin:20px 0 16px; }
-#s93 .plabel{ color:var(--gold); font-size:13px; font-weight:800; letter-spacing:.3px; margin-bottom:10px; }
+#s93 .hr{ height:1px; background:var(--line); margin:18px 0 14px; }
+#s93 .plabel{ color:var(--gold); font-size:16px; font-weight:800; letter-spacing:.3px; margin-bottom:10px; }
 #s93 .pbox{
-  border-radius:10px; padding:16px 18px; font-size:15px; font-weight:600; line-height:1.55;
+  border-radius:10px; padding:14px 16px; font-size:16px; font-weight:600; line-height:1.5;
 }
 #s93 .pbox.filled{
   background:var(--gold-soft); color:var(--ink); border-left:4px solid var(--gold);
@@ -98,14 +98,17 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
       <div class="photo has-photo" style="background-image:url('assets/team_imsuji.png')"></div>
       <div class="body">
         <div class="mname"><span class="dot"></span>임수지</div>
-        <div class="mcount">담당 1개</div>
+        <div class="mcount">담당 4개</div>
         <div class="roletags">
           <div class="roletag">금융상품</div>
+          <div class="roletag">북마크</div>
+          <div class="roletag">PPT</div>
+          <div class="roletag">관리자-금융</div>
         </div>
         <div class="persona">
           <div class="hr"></div>
           <div class="plabel">AI가 본 성격</div>
-          <div class="pbox filled">효율적이고 군더더기 없는 결과물을 선호하시는 스타일</div>
+          <div class="pbox filled">효율적이고 군더더기 없는<br>결과물을 선호하시는 스타일</div>
         </div>
       </div>
     </div>
@@ -114,9 +117,12 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
       <div class="photo has-photo" style="background-image:url('assets/team_munhoyeon.png')"></div>
       <div class="body">
         <div class="mname"><span class="dot"></span>문호연</div>
-        <div class="mcount">담당 1개</div>
+        <div class="mcount">담당 4개</div>
         <div class="roletags">
           <div class="roletag">정책</div>
+          <div class="roletag">캘린더</div>
+          <div class="roletag">알림</div>
+          <div class="roletag">관리자-정책</div>
         </div>
         <div class="persona">
           <div class="hr"></div>
