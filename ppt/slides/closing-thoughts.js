@@ -76,7 +76,7 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
         <div><div class="cname">임수지</div><div class="crole">금융상품</div></div>
       </div>
       <div class="cdivider"></div>
-      <div class="placeholder">여기에 임수지님의 소감을<br>채워주세요.</div>
+      <div class="ctext">이번 프로젝트를 하면서 정보를 많이 보여주는 것보다<br>필요한 것만 정확히, 신뢰감 있게 보여주는 게<br>훨씬 중요하다는 걸 느꼈습니다.<br><br>특히 소비, 금융, 정책이 따로 노는 문제가 아니라<br>하나로 이어진 흐름이라는 걸 발견한 게<br>가장 큰 소득이었고, 우대조건에 따라<br>만기금액이 바뀌는 계산 부분을 만들면서<br>작은 문구 하나가 서비스 신뢰도를 좌우한다는 것도<br>배웠습니다.</div>
     </div>
   </div>
 </section>
