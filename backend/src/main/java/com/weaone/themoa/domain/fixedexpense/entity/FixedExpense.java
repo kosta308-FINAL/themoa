@@ -214,6 +214,15 @@ public class FixedExpense {
         this.billerMerchant = null;
     }
 
+    /**
+     * 해지 시 후보와의 연결을 끊는다. candidate_id는 UNIQUE라, 해지된 행이 계속 물고 있으면
+     * 같은 후보를 재승인({@link com.weaone.themoa.domain.fixedexpense.service.FixedExpenseRegistrationService#cancel})할
+     * 때 유니크 제약을 위반한다(fixedExpenseCandidateReopen 이슈).
+     */
+    public void clearCandidateLink() {
+        this.candidate = null;
+    }
+
     public boolean isActive() {
         return status == FixedExpenseStatus.ACTIVE;
     }
