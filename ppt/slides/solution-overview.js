@@ -52,24 +52,6 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
       </svg>
     </div>
 
-    <div class="card c2">
-      <div class="cicon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 10 12 4l9 6"/><path d="M5 10v9M10 10v9M14 10v9M19 10v9"/><path d="M3 19h18"/>
-      </svg></div>
-      <div class="ctitle">정책 추천</div>
-      <div class="cdesc">내 상황에 꼭 맞는 청년 정책을 자동으로 찾아<br>추천해드립니다</div>
-      <svg class="bigicon" viewBox="0 0 100 100">
-        <ellipse cx="50" cy="88" rx="36" ry="6" fill="#E8F5EA"/>
-        <path d="M50 10 L88 32 L12 32 Z" fill="#4FBE5D"/>
-        <rect x="16" y="36" width="8" height="38" rx="2" fill="#007613"/>
-        <rect x="34" y="36" width="8" height="38" rx="2" fill="#007613"/>
-        <rect x="58" y="36" width="8" height="38" rx="2" fill="#007613"/>
-        <rect x="76" y="36" width="8" height="38" rx="2" fill="#007613"/>
-        <rect x="10" y="76" width="80" height="10" rx="3" fill="#007613"/>
-        <circle cx="50" cy="21" r="5" fill="#FFC94D"/>
-      </svg>
-    </div>
-
     <div class="card c3">
       <div class="cicon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12.5 5.5c-3.5 0-6.5 2.2-6.5 5.6 0 1.5.5 2.6 1.3 3.4V17a1 1 0 0 0 1 1H10v-1.3c.6.1 1.3.2 2 .2s1.4-.1 2-.2V18a1 1 0 0 0 1 1h1.7a1 1 0 0 0 1-1v-2.5c1-.8 1.8-2 1.8-3.5v-.6h1.1c.5 0 .9-.4.9-.9 0-.9-.7-1.6-1.6-1.6h-.7C18.4 7 15.8 5.5 12.5 5.5Z"/>
@@ -85,6 +67,24 @@ document.getElementById('deck').insertAdjacentHTML('beforeend', `
         <path d="M30 47 22 40" stroke="#B48CF7" stroke-width="4" stroke-linecap="round"/>
         <circle cx="60" cy="16" r="10" fill="#FFC94D"/>
         <path d="M56 16 l3 3 6-6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <div class="card c2">
+      <div class="cicon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 10 12 4l9 6"/><path d="M5 10v9M10 10v9M14 10v9M19 10v9"/><path d="M3 19h18"/>
+      </svg></div>
+      <div class="ctitle">정책 추천</div>
+      <div class="cdesc">내 상황에 꼭 맞는 청년 정책을 자동으로 찾아<br>추천해드립니다</div>
+      <svg class="bigicon" viewBox="0 0 100 100">
+        <ellipse cx="50" cy="88" rx="36" ry="6" fill="#E8F5EA"/>
+        <path d="M50 10 L88 32 L12 32 Z" fill="#4FBE5D"/>
+        <rect x="16" y="36" width="8" height="38" rx="2" fill="#007613"/>
+        <rect x="34" y="36" width="8" height="38" rx="2" fill="#007613"/>
+        <rect x="58" y="36" width="8" height="38" rx="2" fill="#007613"/>
+        <rect x="76" y="36" width="8" height="38" rx="2" fill="#007613"/>
+        <rect x="10" y="76" width="80" height="10" rx="3" fill="#007613"/>
+        <circle cx="50" cy="21" r="5" fill="#FFC94D"/>
       </svg>
     </div>
   </div>
