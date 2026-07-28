@@ -130,13 +130,18 @@ public class FixedExpenseRegistrationService {
                 converted.convertedDate(), converted.exchangeRate(), request.expectedPayDay());
     }
 
-    /** 해지 시 후보를 함께 되돌린다 — REGISTERED로 남으면 재탐지에서 영구히 제외되기 때문(fixedExpenseCandidateReopen 이슈). */
+    /**
+     * 해지 시 후보를 함께 되돌린다 — REGISTERED로 남으면 재탐지에서 영구히 제외되기 때문(fixedExpenseCandidateReopen 이슈).
+     * candidate_id는 UNIQUE라, 해지된 이 행이 후보 연결을 계속 물고 있으면 같은 후보를 다시 승인할 때
+     * 유니크 제약 위반으로 등록이 실패한다 — 그래서 해지 시 연결을 끊어둔다.
+     */
     @Transactional
     public void cancel(Long memberId, Long fixedExpenseId) {
         FixedExpense fixedExpense = getOwned(memberId, fixedExpenseId);
-        fixedExpense.cancel();
         FixedExpenseCandidate candidate = fixedExpense.getCandidate();
+        fixedExpense.cancel();
         if (candidate != null) {
+            fixedExpense.clearCandidateLink();
             candidate.reopen();
         }
     }
