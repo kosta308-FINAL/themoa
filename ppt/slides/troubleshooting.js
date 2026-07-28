@@ -16,20 +16,20 @@ document.head.insertAdjacentHTML('beforeend', `
 
 .s-trouble .cases{ position:absolute; left:52px; top:264px; width:1816px; }
 .s-trouble .tcase{ background:#fff; border-radius:20px; box-shadow:0 20px 46px rgba(0,0,0,.14);
-  padding:30px 40px; margin-bottom:28px; border-left:8px solid; }
+  padding:38px 46px; margin-bottom:36px; border-left:8px solid; }
 .s-trouble.p1 .tcase{ border-left-color:#2F6FED; }
 .s-trouble.p2 .tcase{ border-left-color:#007613; }
 .s-trouble.p3 .tcase{ border-left-color:#7C3AED; }
 
 .s-trouble .ttop{ display:flex; align-items:center; gap:14px; margin-bottom:18px; }
-.s-trouble .ttag{ flex:none; background:#F3F5F7; color:#555; font-size:14px; font-weight:700;
-  padding:6px 14px; border-radius:999px; }
-.s-trouble .ttitle{ font-size:23px; font-weight:800; color:#171717; }
+.s-trouble .ttag{ flex:none; background:#F3F5F7; color:#555; font-size:16px; font-weight:700;
+  padding:7px 16px; border-radius:999px; }
+.s-trouble .ttitle{ font-size:27px; font-weight:800; color:#171717; }
 
 .s-trouble .body{ display:flex; }
-.s-trouble .half{ flex:1; padding-right:36px; font-size:17px; color:#444; font-weight:500; line-height:1.65; }
+.s-trouble .half{ flex:1; padding-right:36px; font-size:21px; color:#444; font-weight:500; line-height:1.62; }
 .s-trouble .half.sol{ padding-right:0; padding-left:36px; border-left:1px solid #EAEDF0; }
-.s-trouble .lbl{ display:inline-block; font-size:14px; font-weight:800; padding:3px 10px;
+.s-trouble .lbl{ display:inline-block; font-size:17px; font-weight:800; padding:5px 12px;
   border-radius:6px; margin-right:9px; vertical-align:2px; }
 .s-trouble .lbl.bad{ background:#FDECEA; color:#C0392B; }
 .s-trouble .lbl.good{ background:#E8F5EE; color:#1E7A3D; }
@@ -37,15 +37,10 @@ document.head.insertAdjacentHTML('beforeend', `
 .s-trouble .placeholder{ background:#fff; border-radius:20px; border:2px dashed #D8DEE5;
   padding:120px 40px; color:#9AA5B1; font-size:22px; font-weight:700; text-align:center; line-height:1.8; }
 
-/* p1(김솔민)만 글자를 키우고 카드 여백을 넉넉히 줘서 공간을 채움 (헤더 바로 아래에서 시작하는 건 p2/p3와 동일) */
-#s-trouble-1 .cases{ top:264px; }
-#s-trouble-1 .tcase{ margin-bottom:36px; padding:38px 46px; }
-#s-trouble-1 .ttag{ font-size:16px; padding:7px 16px; }
-#s-trouble-1 .ttitle{ font-size:27px; }
-#s-trouble-1 .half{ font-size:19px; line-height:1.7; }
-#s-trouble-1 .lbl{ font-size:15px; padding:4px 11px; }
-#s-trouble-1 .tname{ font-size:36px; }
-#s-trouble-1 .tavatar{ width:70px; height:70px; font-size:24px; }
+/* 세 명 모두 같은 기준의 카드 크기와 텍스트 크기를 사용 */
+.s-trouble .cases{ top:264px; }
+.s-trouble .tname{ font-size:36px; }
+.s-trouble .tavatar{ width:70px; height:70px; font-size:24px; }
 </style>
 `);
 
