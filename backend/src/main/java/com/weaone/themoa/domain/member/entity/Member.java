@@ -172,6 +172,20 @@ public class Member {
     }
 
     /**
+     * 관리자에 의한 수동 계정 잠금. 로그인 실패 자동잠금과 같은 {@link #lockedUntil} 필드를 쓰되,
+     * 관리자가 {@link #adminUnlock()}으로 직접 해제하기 전까지 유지되도록 먼 미래 시각을 받는다.
+     */
+    public void adminLock(LocalDateTime lockedUntil) {
+        this.lockedUntil = lockedUntil;
+    }
+
+    /** 관리자에 의한 수동 잠금 해제. 로그인 실패 카운트도 함께 초기화한다. */
+    public void adminUnlock() {
+        this.lockedUntil = null;
+        this.loginFailCount = 0;
+    }
+
+    /**
      * 관리자 지정·해제(erd.md §1). 운영자가 DB에서 직접 처리하는 범위라 별도 API는 없다.
      * role 클레임이 담긴 기존 Access Token을 즉시 무효화하기 위해 token_version도 함께 올린다.
      */

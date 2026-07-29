@@ -2,12 +2,15 @@ package com.weaone.themoa.domain.member.repository;
 
 import com.weaone.themoa.domain.member.entity.Member;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,4 +37,20 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select m from Member m where m.id = :memberId")
     Optional<Member> findByIdForUpdate(@Param("memberId") Long memberId);
+
+    /** 관리자 회원 목록(personalinfo.md — 최소 이용): 이메일·회원ID는 정확히 일치만 지원한다. */
+    @Query("""
+            select m from Member m
+            where (:email is null or m.email = :email)
+              and (:memberId is null or m.id = :memberId)
+              and (:includeWithdrawn = true or m.withdrawnAt is null)
+              and (:lockedOnly = false or (m.lockedUntil is not null and m.lockedUntil > :now))
+            order by m.createdAt desc, m.id desc
+            """)
+    Page<Member> searchForAdmin(@Param("email") String email,
+                                 @Param("memberId") Long memberId,
+                                 @Param("includeWithdrawn") boolean includeWithdrawn,
+                                 @Param("lockedOnly") boolean lockedOnly,
+                                 @Param("now") LocalDateTime now,
+                                 Pageable pageable);
 }
