@@ -160,7 +160,11 @@ public enum ErrorCode {
     CUSTOMER_UNANSWERED_QUESTION_NOT_FOUND(HttpStatus.NOT_FOUND, "미답변 질문을 찾을 수 없습니다."),
 
     // 운영 에러 관리 (managelogging.md)
-    ADMIN_ERROR_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "에러 로그를 찾을 수 없습니다.");
+    ADMIN_ERROR_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "에러 로그를 찾을 수 없습니다."),
+
+    // 회원 관리 (관리자)
+    ADMIN_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."),
+    ADMIN_MEMBER_SELF_ACTION_FORBIDDEN(HttpStatus.FORBIDDEN, "본인 계정에는 이 조치를 적용할 수 없습니다.");
     private final HttpStatus status;
     private final String message;
 

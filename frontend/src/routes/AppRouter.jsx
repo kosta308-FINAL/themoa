@@ -21,6 +21,7 @@ import CustomerServicePage from "../features/customer-service/CustomerServicePag
 import CustomerServiceAdminPage from "../features/customer-service-admin/CustomerServiceAdminPage";
 import CustomerServiceAiQualityPage from "../features/customer-service-admin/CustomerServiceAiQualityPage";
 import MerchantMasterAdminPage from "../features/merchant-admin/MerchantMasterAdminPage";
+import MemberAdminPage from "../features/member-admin/MemberAdminPage";
 import FinancialProductAdminPage from "../features/financial-admin/FinancialProductAdminPage";
 import ErrorLogAdminPage from "../features/error-log-admin/ErrorLogAdminPage";
 import ProtectedRoute from "./ProtectedRoute";
@@ -82,6 +83,7 @@ function AppRouter() {
             path="/admin/merchants"
             element={<MerchantMasterAdminPage />}
           />
+          <Route path="/admin/members" element={<MemberAdminPage />} />
           <Route path="/admin/policies" element={<PolicyAdminPage />} />
           <Route
             path="/admin/financial-products"
