@@ -12,7 +12,7 @@ document.head.insertAdjacentHTML('beforeend', `
 
 document.getElementById('deck').insertAdjacentHTML('beforeend', `
 <section class="slide" id="s-demo">
-  <div class="demo-text">시현</div>
+  <div class="demo-text">시연</div>
   <div class="video-wrap">
     <video src="assets/demo_video.mp4" controls playsinline></video>
   </div>
